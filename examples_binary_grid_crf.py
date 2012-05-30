@@ -21,7 +21,8 @@ def make_dataset_checker():
     Y = np.ones((20, 11, 13))
     Y[:, ::2, ::2] = -1
     Y[:, 1::2, 1::2] = -1
-    X = Y + 0.0 * np.random.normal(size=Y.shape)
+    X = Y + 1.5 * np.random.normal(size=Y.shape)
+    X = np.c_['3,4,0', X, -X]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
@@ -36,7 +37,7 @@ def make_dataset_big_checker():
 
 def main():
     X, Y = make_dataset_blocks()
-    #X, Y = make_dataset_checker()
+    X, Y = make_dataset_checker()
     #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     clf = StructuredPerceptron(problem=crf, max_iter=100)
