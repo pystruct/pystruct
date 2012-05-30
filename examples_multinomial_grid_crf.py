@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from crf import MultinomialGridCRF
+from scipy import sparse
+
+from crf import MultinomialFixedGraphCRF
 from structured_perceptron import StructuredPerceptron
+
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -59,12 +62,27 @@ def make_dataset_big_checker_extended():
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
-    #X, Y = make_dataset_big_checker_extended()
-    X, Y = make_dataset_blocks_multinomial(n_samples=100)
-    crf = MultinomialGridCRF(n_labels=3)
+    X, Y = make_dataset_big_checker_extended()
+    #X, Y = make_dataset_blocks_multinomial(n_samples=100)
+    size_y = Y[0].size
+    shape_y = Y[0].shape
+    inds = np.arange(size_y).reshape(shape_y)
+    horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+    vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+    #downleft = np.c_[inds[:-1, :-1].ravel(), inds[1:, 1:].ravel()]
+    #downright = np.c_[inds[:-1, 1:].ravel(), inds[1:, :-1].ravel()]
+    #edges = np.vstack([horz, vert, downleft, downright]).astype(np.int32)
+    edges = np.vstack([horz, vert])
+    graph = sparse.coo_matrix((np.ones(edges.shape[0]),
+        (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
+    graph = graph + graph.T
+
+    crf = MultinomialFixedGraphCRF(n_labels=4, graph=graph)
     clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf.fit(X, Y)
-    Y_pred = clf.predict(X)
+    X_flat = [x.reshape(-1, 4) for x in X]
+    Y_flat = [y.ravel() for y in Y]
+    clf.fit(X_flat, Y_flat)
+    Y_pred = clf.predict(X_flat)
 
     i = 0
     for x, y, y_pred in zip(X, Y, Y_pred):

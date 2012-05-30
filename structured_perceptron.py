@@ -10,18 +10,21 @@ class StructuredPerceptron(object):
         n_samples = len(X)
         size_psi = self.problem.size_psi
         w = np.zeros(size_psi)
-        for iteration in xrange(self.max_iter):
-            alpha = 1. / (1 + iteration)
-            losses = 0
-            print("iteration %d" % iteration)
-            for x, y in zip(X, Y):
-                y_hat = self.problem.inference(x, w)
-                current_loss = self.problem.loss(y, y_hat)
-                losses += current_loss
-                if current_loss:
-                    w += alpha * (self.problem.psi(x, y)
-                            - self.problem.psi(x, y_hat))
-            print("avg loss: %f w: %s" % (losses / n_samples, str(w)))
+        try:
+            for iteration in xrange(self.max_iter):
+                alpha = 1. / (1 + iteration)
+                losses = 0
+                print("iteration %d" % iteration)
+                for x, y in zip(X, Y):
+                    y_hat = self.problem.inference(x, w)
+                    current_loss = self.problem.loss(y, y_hat)
+                    losses += current_loss
+                    if current_loss:
+                        w += alpha * (self.problem.psi(x, y)
+                                - self.problem.psi(x, y_hat))
+                print("avg loss: %f w: %s" % (losses / n_samples, str(w)))
+        except KeyboardInterrupt:
+            pass
         self.w = w
 
     def predict(self, X):
