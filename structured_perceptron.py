@@ -7,6 +7,7 @@ class StructuredPerceptron(object):
         self.problem = problem
 
     def fit(self, X, Y):
+        n_samples = len(X)
         size_psi = self.problem.size_psi
         w = np.zeros(size_psi)
         for iteration in xrange(self.max_iter):
@@ -20,7 +21,7 @@ class StructuredPerceptron(object):
                 if current_loss:
                     w += alpha * (self.problem.psi(x, y)
                             - self.problem.psi(x, y_hat))
-            print("loss: %f w: %s" % (losses, str(w)))
+            print("avg loss: %f w: %s" % (losses / n_samples, str(w)))
         self.w = w
 
     def predict(self, X):

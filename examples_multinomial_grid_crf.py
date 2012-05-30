@@ -1,0 +1,88 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+from crf import MultinomialGridCRF
+from structured_perceptron import StructuredPerceptron
+
+from IPython.core.debugger import Tracer
+tracer = Tracer()
+
+
+def make_dataset_blocks_multinomial(n_samples=20):
+    Y = np.zeros((n_samples, 10, 12, 3))
+    Y[:, :, :4, 0] = -1
+    Y[:, :, 4:8, 1] = -1
+    Y[:, :, 8:16, 2] = -1
+    X = Y + 1.5 * np.random.normal(size=Y.shape)
+    Y = np.argmin(Y, axis=3).astype(np.int32)
+    return X, Y
+
+
+def make_dataset_checker_multinomial():
+    Y = np.ones((20, 10, 12, 3))
+    Y[:, ::2, ::2, 0] = -1
+    Y[:, 1::2, 1::2, 1] = -1
+    Y[:, :, :, 2] = 0
+    X = Y + 1.5 * np.random.normal(size=Y.shape)
+    Y = np.argmin(Y, axis=3).astype(np.int32)
+    return X, Y
+
+
+#def make_dataset_big_checker():
+    #_, Y_small = make_dataset_checker()
+    #Y_small = 2 * Y_small - 1
+    #Y = Y_small.repeat(3, axis=1).repeat(3, axis=2)
+    #X = Y + 0.5 * np.random.normal(size=Y.shape)
+    #Y = (Y > 0).astype(np.int32)
+    ## make unaries with 4 pseudo-classes
+    #X = np.r_['-1, 4,0', X, -X, X, -X]
+    #return X, Y
+
+
+def make_dataset_big_checker_extended():
+    y_small = np.ones((11, 13), dtype=np.int32)
+    y_small[::2, ::2] = 0
+    y_small[1::2, 1::2] = 0
+    y = y_small.repeat(3, axis=0).repeat(3, axis=1)
+    y[1::3, 1::3] = 3
+    y[1::6, 1::6] = 2
+    y[4::6, 4::6] = 2
+    Y = np.repeat(y[np.newaxis, :, :], 20, axis=0)
+    X_shape = list(Y.shape)
+    X_shape.append(4)
+    X = np.zeros(X_shape)
+    gx, gy, gz = np.mgrid[:Y.shape[0], :Y.shape[1], :Y.shape[2]]
+    X[gx, gy, gz, Y] = -1
+    X = X + 0.3 * np.random.normal(size=X.shape)
+    return X, Y
+
+
+def main():
+    #X, Y = make_dataset_checker_multinomial()
+    #X, Y = make_dataset_big_checker_extended()
+    X, Y = make_dataset_blocks_multinomial(n_samples=100)
+    crf = MultinomialGridCRF(n_labels=3)
+    clf = StructuredPerceptron(problem=crf, max_iter=100)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+
+    i = 0
+    for x, y, y_pred in zip(X, Y, Y_pred):
+        plt.subplot(131)
+        plt.imshow(y, interpolation='nearest')
+        plt.colorbar()
+        plt.subplot(132)
+        plt.imshow(np.argmin(x, axis=2), interpolation='nearest')
+        plt.colorbar()
+        plt.subplot(133)
+        plt.imshow(y_pred.reshape(x.shape[0], x.shape[1]),
+                interpolation='nearest')
+        plt.colorbar()
+        plt.savefig("data_%03d.png" % i)
+        plt.close()
+        i += 1
+        if i > 20:
+            break
+
+if __name__ == "__main__":
+    main()
