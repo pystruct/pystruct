@@ -44,6 +44,7 @@ class BinaryGridCRF(StructuredProblem):
            :].reshape(-1, 2))
         pw = vert + horz
         pw[0, 1] += pw[1, 0]
+        #pw = np.zeros((2, 2))
         return np.array([unaries_acc, pw[0, 0], pw[0, 1], pw[1, 1]])
 
     def loss(self, y, y_hat):
@@ -53,8 +54,7 @@ class BinaryGridCRF(StructuredProblem):
     def inference(self, x, w):
         unary_param = w[0]
         pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
-        unaries = - 1000 * unary_param * x
-        pairwise = -1000 * pairwise_params
-        y = binary_grid(unaries.astype(np.int32), (-1000 *
-            pairwise).astype(np.int32))
+        unaries = - 10 * unary_param * x
+        pairwise = -10 * pairwise_params
+        y = binary_grid(unaries.astype(np.int32), pairwise.astype(np.int32))
         return y
