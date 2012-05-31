@@ -21,6 +21,9 @@ class StructuredProblem(object):
     def loss(self, y, y_hat):
         pass
 
+    def loss_augmented_inference(self, x, y, w):
+        return self.inference(self, x, w)
+
 
 class BinaryGridCRF(StructuredProblem):
     def __init__(self):
@@ -63,6 +66,15 @@ class BinaryGridCRF(StructuredProblem):
         pairwise = -10 * pairwise_params
         y = binary_grid(unaries.astype(np.int32), pairwise.astype(np.int32))
         return y
+
+    def loss_augmented_inference(self, x, y, w):
+        unary_param = w[0]
+        pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
+        unaries = - 10 * unary_param * x
+        pairwise = -10 * pairwise_params
+        y_hat = binary_grid(unaries.astype(np.int32),
+                pairwise.astype(np.int32))
+        return y_hat
 
 
 class MultinomialGridCRF(StructuredProblem):
