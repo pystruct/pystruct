@@ -142,7 +142,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
                 dtype=np.int)
         gx = np.ogrid[:y.shape[0]]
         labels[gx, y] = 1
-        # vertical edges
+
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
 
