@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from crf import BinaryGridCRF
-from structured_perceptron import StructuredPerceptron
+#from structured_perceptron import StructuredPerceptron
+from structured_svm import StructuredSVM
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -40,10 +41,11 @@ def make_dataset_big_checker():
 
 def main():
     #X, Y = make_dataset_blocks()
-    #X, Y = make_dataset_checker()
-    X, Y = make_dataset_big_checker()
+    X, Y = make_dataset_checker()
+    #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
-    clf = StructuredPerceptron(problem=crf, max_iter=100)
+    #clf = StructuredPerceptron(problem=crf, max_iter=100)
+    clf = StructuredSVM(problem=crf, max_iter=10)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     i = 0

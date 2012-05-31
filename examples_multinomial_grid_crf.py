@@ -46,13 +46,13 @@ def make_dataset_big_checker():
 
 
 def make_dataset_big_checker_extended():
-    y_small = np.ones((11, 13), dtype=np.int32)
-    y_small[::2, ::2] = 0
-    y_small[1::2, 1::2] = 0
+    y_small = np.zeros((11, 13), dtype=np.int32)
+    y_small[::2, ::2] = 2
+    y_small[1::2, 1::2] = 2
     y = y_small.repeat(3, axis=0).repeat(3, axis=1)
-    y[1::3, 1::3] = 3
-    y[1::6, 1::6] = 2
-    y[4::6, 4::6] = 2
+    y[1::3, 1::3] = 1
+    y[1::6, 1::6] = 3
+    y[4::6, 4::6] = 3
     Y = np.repeat(y[np.newaxis, :, :], 20, axis=0)
     X_shape = list(Y.shape)
     X_shape.append(4)
@@ -65,8 +65,8 @@ def make_dataset_big_checker_extended():
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
-    #X, Y = make_dataset_big_checker_extended()
-    X, Y = make_dataset_big_checker()
+    X, Y = make_dataset_big_checker_extended()
+    #X, Y = make_dataset_big_checker()
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
     size_y = Y[0].size
     shape_y = Y[0].shape

@@ -28,7 +28,7 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=3, graph=graph)
     clf = LatentStructuredPerceptron(problem=crf, max_iter=50)
     X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]
