@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
 
-from example_binary_grid_crf import make_dataset_big_checker
+from examples_binary_grid_crf import make_dataset_big_checker
 
 from latent_crf import LatentFixedGraphCRF
 from structured_perceptron import LatentStructuredPerceptron
@@ -30,7 +30,7 @@ def main():
 
     crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
     clf = LatentStructuredPerceptron(problem=crf, max_iter=50)
-    X_flat = [x.reshape(-1, 4) for x in X]
+    X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
     #clf.fit(X, Y)

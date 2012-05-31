@@ -22,16 +22,13 @@ class LatentFixedGraphCRF(StructuredProblem):
 
     def psi(self, x, h, y):
         # x is unaries
+        # h is latent labeling
         # y is a labeling
         ## unary features:
         gx = np.ogrid[:x.shape[0]]
         selected_unaries = x[gx, y]
-        unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                minlength=self.n_labels)
-        if (h / self.n_states_per_label != y).any():
-            print("inconsistent h and y")
-            tracer()
-        tracer()
+        unaries_acc = np.bincount(h.ravel(), selected_unaries.ravel(),
+                minlength=self.n_states)
 
         ##accumulated pairwise
         #make one hot encoding
@@ -43,7 +40,7 @@ class LatentFixedGraphCRF(StructuredProblem):
         neighbors = self.graph * states
         pw = np.dot(neighbors.T, states)
 
-        feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
+        feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
             dtype=np.bool)]])
         return feature
 
@@ -52,25 +49,44 @@ class LatentFixedGraphCRF(StructuredProblem):
         return np.sum(y != y_hat)
 
     def inference(self, x, w):
-        unary_params = w[:self.n_labels]
-        pairwise_flat = np.asarray(w[self.n_labels:])
-        pairwise_params = np.zeros((self.n_labels, self.n_labels))
-        pairwise_params[np.tri(self.n_labels, dtype=np.bool)] = pairwise_flat
+        # augment unary potentials for latent states
+        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        # do usual inference
+        unary_params = w[:self.n_states]
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (- 10 * unary_params * x).astype(np.int32)
+        unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         pairwise = (-10 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_graph(self.edges, unaries, pairwise)
-        return y
+        h = alpha_expansion_graph(self.edges, unaries, pairwise)
+        # create y from h:
+        y = h / self.n_states_per_label
+        return h, y
 
     def latent(self, x, y, w):
-        unary_params = w[:self.n_labels]
-        pairwise_flat = np.asarray(w[self.n_labels:])
-        pairwise_params = np.zeros((self.n_labels, self.n_labels))
-        pairwise_params[np.tri(self.n_labels, dtype=np.bool)] = pairwise_flat
+        # augment unary potentials for latent states
+        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        # do usual inference
+        unary_params = w[:self.n_states]
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (- 10 * unary_params * x).astype(np.int32)
+        unaries = (- 10 * unary_params * x_wide).astype(np.int32)
+        # forbid h that is incompoatible with y
+        # by modifying unary params
+        other_states = (np.arange(self.n_states) / self.n_states_per_label !=
+                y[:, np.newaxis])
+        unaries[other_states] = +10000
         pairwise = (-10 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_graph(self.edges, unaries, pairwise)
-        return y
+        h = alpha_expansion_graph(self.edges, unaries, pairwise)
+        if (h / self.n_states_per_label != y).any():
+            if np.any(w):
+                print("inconsistent h and y")
+                tracer()
+            else:
+                h = y * self.n_states_per_label
+        return h
