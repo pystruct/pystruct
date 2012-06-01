@@ -45,7 +45,7 @@ def main():
     #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=100)
+    clf = StructuredSVM(problem=crf, max_iter=200, C=1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     i = 0

@@ -9,6 +9,8 @@
 import numpy as np
 import cvxopt
 import cvxopt.solvers
+import matplotlib.pyplot as plt
+
 from IPython.core.debugger import Tracer
 
 #cvxopt.solvers.options['show_progress'] = False
@@ -21,6 +23,7 @@ class StructuredSVM(object):
         self.max_iter = max_iter
         self.problem = problem
         self.C = float(C)
+        self.initvals = dict()
 
     def _solve_qp(self, constraints, psis, losses):
         psi_matrix = np.vstack(psis)
@@ -33,7 +36,7 @@ class StructuredSVM(object):
         tmp2 = np.ones(n_constraints) * self.C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
         # solve QP problem
-        solution = cvxopt.solvers.qp(P, q, G, h)
+        solution = cvxopt.solvers.qp(P, q, G, h, initvals=self.initvals)
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])

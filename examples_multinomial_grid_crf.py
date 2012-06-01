@@ -18,7 +18,7 @@ def make_dataset_blocks_multinomial(n_samples=20):
     Y[:, :, :4, 0] = -1
     Y[:, :, 4:8, 1] = -1
     Y[:, :, 8:16, 2] = -1
-    X = Y + 1.5 * np.random.normal(size=Y.shape)
+    X = Y + 0.5 * np.random.normal(size=Y.shape)
     Y = np.argmin(Y, axis=3).astype(np.int32)
     return X, Y
 
@@ -47,7 +47,7 @@ def make_dataset_big_checker():
 
 
 def make_dataset_big_checker_extended():
-    y_small = np.zeros((11, 13), dtype=np.int32)
+    y_small = np.zeros((6, 6), dtype=np.int32)
     y_small[::2, ::2] = 2
     y_small[1::2, 1::2] = 2
     y = y_small.repeat(3, axis=0).repeat(3, axis=1)
@@ -65,12 +65,13 @@ def make_dataset_big_checker_extended():
 
 
 def main():
-    #X, Y = make_dataset_checker_multinomial()
-    X, Y = make_dataset_big_checker_extended()
+    X, Y = make_dataset_checker_multinomial()
+    #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
     size_y = Y[0].size
     shape_y = Y[0].shape
+    n_labels = len(np.unique(Y))
     inds = np.arange(size_y).reshape(shape_y)
     horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
     vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
@@ -81,11 +82,11 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    crf = MultinomialFixedGraphCRF(n_labels=4, graph=graph)
+    crf = MultinomialFixedGraphCRF(n_labels=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    clf = StructuredSVM(problem=crf, max_iter=50, C=100)
-    X_flat = [x.reshape(-1, 4) for x in X]
+    clf = StructuredSVM(problem=crf, max_iter=100, C=10000)
+    X_flat = [x.reshape(-1, n_labels) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
     #clf.fit(X, Y)
