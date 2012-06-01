@@ -19,10 +19,12 @@ class StructuredProblem(object):
         pass
 
     def loss(self, y, y_hat):
-        pass
+        # hamming loss:
+        return np.sum(y != y_hat)
 
     def loss_augmented_inference(self, x, y, w):
-        return self.inference(self, x, w)
+        print("FALLBACK no loss augmented inference found")
+        return self.inference(x, w)
 
 
 class BinaryGridCRF(StructuredProblem):
@@ -55,10 +57,6 @@ class BinaryGridCRF(StructuredProblem):
         #pw = np.zeros((2, 2))
         return np.array([unaries_acc, pw[0, 0], pw[0, 1], pw[1, 1]])
 
-    def loss(self, y, y_hat):
-        # hamming loss:
-        return np.sum(y != y_hat)
-
     def inference(self, x, w):
         unary_param = w[0]
         pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
@@ -69,8 +67,14 @@ class BinaryGridCRF(StructuredProblem):
 
     def loss_augmented_inference(self, x, y, w):
         unary_param = w[0]
+        if unary_param == 0:
+            # avoid division by zero
+            unary_param = 1e-10
         pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
         unaries = - 10 * unary_param * x
+        # do loss augmentation
+        gx, gy = np.ogrid[:unaries.shape[0], :unaries.shape[1]]
+        unaries[gx, gy, 1 - y] += 1. / unary_param
         pairwise = -10 * pairwise_params
         y_hat = binary_grid(unaries.astype(np.int32),
                 pairwise.astype(np.int32))
@@ -110,10 +114,6 @@ class MultinomialGridCRF(StructuredProblem):
         feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
             dtype=np.bool)]])
         return feature
-
-    def loss(self, y, y_hat):
-        # hamming loss:
-        return np.sum(y != y_hat)
 
     def inference(self, x, w):
         unary_params = w[:self.n_labels]
@@ -162,10 +162,6 @@ class MultinomialFixedGraphCRF(StructuredProblem):
             dtype=np.bool)]])
         return feature
 
-    def loss(self, y, y_hat):
-        # hamming loss:
-        return np.sum(y != y_hat)
-
     def inference(self, x, w):
         unary_params = w[:self.n_labels]
         pairwise_flat = np.asarray(w[self.n_labels:])
@@ -177,3 +173,14 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         pairwise = (-10 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise)
         return y
+
+    def loss_augmented_inference(self, x, y, w):
+        unary_params = w[:self.n_labels]
+        # avoid division by zero:
+        unary_params[unary_params == 0] = 1e-10
+        x_ = x.copy()
+        for l in np.arange(self.n_labels):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_[y != l, l] += 1. / unary_params[l]
+        return self.inference(x_, w)
