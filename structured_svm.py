@@ -60,11 +60,12 @@ class StructuredSVM(object):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            for x, y in zip(X, Y):
+            for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
-                if loss:
-                    constraints.append((x, y, y_hat))
+                constraint = np.str((i, y, y_hat))
+                if loss and not constraints.count(constraint):
+                    constraints.append(constraint)
                     delta_psi = psi(x, y) - psi(x, y_hat)
                     psis.append(delta_psi / 1000.)
                     losses.append(loss)
@@ -127,16 +128,26 @@ class LatentStructuredSVM(StructuredSVM):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            for x, y in zip(X, Y):
+            for i, x, y in zip(np.arange(len(X)), X, Y):
                 h = self.problem.latent(x, y, w)
                 h_hat, y_hat = self.problem.loss_augmented_inference(x, y, w)
+                plt.matshow(h.reshape(18, 18))
+                #plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
+                plt.savefig("h_%03d_%03d.png" % (iteration, i))
+                plt.close()
+                h_hat, y_hat = self.problem.inference(x, w)
+                plt.matshow(h_hat.reshape(18, 18))
+                #plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
+                plt.savefig("h_hat_%03d_%03d.png" % (iteration, i))
+                plt.close()
                 loss = self.problem.loss(y, y_hat)
-                if loss:
-                    constraints.append((x, h, y, h_hat, y_hat))
+                constraint = np.str((x, h, y, h_hat, y_hat))
+                if loss and not constraints.count(constraint):
+                    constraints.append(constraint)
                     delta_psi = psi(x, h, y) - psi(x, h_hat, y_hat)
                     psis.append(delta_psi / 1000.)
                     losses.append(loss)
-                    current_loss += loss[-1]
+                    current_loss += loss
                     new_constraints += 1
             if new_constraints == 0:
                 print("no loss on training set")
@@ -147,9 +158,10 @@ class LatentStructuredSVM(StructuredSVM):
 
             print(w)
         self.w = w
+        tracer()
 
     def predict(self, X):
         prediction = []
         for x in X:
-            prediction.append(self.problem.inference(x, self.w))
+            prediction.append(self.problem.inference(x, self.w)[0])
         return prediction
