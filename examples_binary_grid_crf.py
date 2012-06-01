@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from crf import BinaryGridCRF
 #from structured_perceptron import StructuredPerceptron
 from structured_svm import StructuredSVM
+from examples_latent_crf import make_dataset_easy_latent
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -18,8 +19,8 @@ def make_dataset_blocks():
     return X, Y
 
 
-def make_dataset_checker():
-    Y = np.ones((20, 11, 13))
+def make_dataset_checker(n_samples=20):
+    Y = np.ones((n_samples, 11, 13))
     Y[:, ::2, ::2] = -1
     Y[:, 1::2, 1::2] = -1
     X = Y + 1.5 * np.random.normal(size=Y.shape)
@@ -28,8 +29,8 @@ def make_dataset_checker():
     return X, Y
 
 
-def make_dataset_big_checker():
-    Y_small = np.ones((20, 11, 13))
+def make_dataset_big_checker(n_samples=20):
+    Y_small = np.ones((n_samples, 11, 13))
     Y_small[:, ::2, ::2] = -1
     Y_small[:, 1::2, 1::2] = -1
     Y = Y_small.repeat(3, axis=1).repeat(3, axis=2)
@@ -41,7 +42,8 @@ def make_dataset_big_checker():
 
 def main():
     #X, Y = make_dataset_blocks()
-    X, Y = make_dataset_checker()
+    #X, Y = make_dataset_checker()
+    X, Y = make_dataset_easy_latent()
     #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)

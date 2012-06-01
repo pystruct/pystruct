@@ -104,7 +104,7 @@ class LatentFixedGraphCRF(StructuredProblem):
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
                 y[:, np.newaxis])
-        unaries[other_states] = +10000
+        unaries[other_states] = +1000000
         pairwise = (-10 * pairwise_params).astype(np.int32)
         h = alpha_expansion_graph(self.edges, unaries, pairwise)
         if (h / self.n_states_per_label != y).any():

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
 
-from examples_binary_grid_crf import make_dataset_big_checker
+#from examples_binary_grid_crf import make_dataset_big_checker
 
 from latent_crf import LatentFixedGraphCRF
 #from structured_perceptron import LatentStructuredPerceptron
@@ -12,12 +12,24 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def make_dataset_easy_latent(n_samples=5):
+    Y = np.ones((n_samples, 18, 18))
+    for i in xrange(n_samples):
+        t, l = np.random.randint(8, size=2)
+        Y[i, t:t + 3, l:l + 3] = -1
+    X = Y + 0.5 * np.random.normal(size=Y.shape)
+    X = np.c_['3,4,0', X, -X]
+    Y = (Y > 0).astype(np.int32)
+    return X, Y
+
+
 def main():
     #X, Y = make_dataset_checker_multinomial()
     #X, Y = make_dataset_big_checker_extended()
-    X, Y = make_dataset_big_checker()
-    X = X[:5, :18, :18]
-    Y = Y[:5, :18, :18]
+    #X, Y = make_dataset_big_checker(n_samples=5)
+    X, Y = make_dataset_easy_latent(n_samples=5)
+    X = X[:, :18, :18]
+    Y = Y[:, :18, :18]
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
     size_y = Y[0].size
     shape_y = Y[0].shape
@@ -31,9 +43,10 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
+    #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=1, graph=graph)
     #clf = LatentStructuredPerceptron(problem=crf, max_iter=50)
-    clf = LatentStructuredSVM(problem=crf, max_iter=1000, C=1)
+    clf = LatentStructuredSVM(problem=crf, max_iter=1000, C=1000)
     X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
