@@ -70,15 +70,11 @@ class BinaryGridCRF(StructuredProblem):
         if unary_param == 0:
             # avoid division by zero
             unary_param = 1e-10
-        pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
-        unaries = - 10 * unary_param * x
         # do loss augmentation
-        gx, gy = np.ogrid[:unaries.shape[0], :unaries.shape[1]]
-        unaries[gx, gy, 1 - y] += 1. / unary_param
-        pairwise = -10 * pairwise_params
-        y_hat = binary_grid(unaries.astype(np.int32),
-                pairwise.astype(np.int32))
-        return y_hat
+        gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
+        x_ = x.copy()
+        x_[gx, gy, 1 - y] += 1. / unary_param
+        return self.inference(x_, w)
 
 
 class MultinomialGridCRF(StructuredProblem):
