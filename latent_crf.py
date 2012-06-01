@@ -65,6 +65,27 @@ class LatentFixedGraphCRF(StructuredProblem):
         y = h / self.n_states_per_label
         return h, y
 
+    def loss_augmented_inference(self, x, y, w):
+        unary_params = w[:self.n_labels]
+        # avoid division by zero:
+        unary_params[unary_params == 0] = 1e-10
+        x_ = x.copy()
+        for l in np.arange(self.n_labels):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_[y != l, l] += 1. / unary_params[l]
+        pairwise_flat = np.asarray(w[self.n_labels:])
+        pairwise_params = np.zeros((self.n_labels, self.n_labels))
+        pairwise_params[np.tri(self.n_labels, dtype=np.bool)] = pairwise_flat
+        pairwise_params = pairwise_params + pairwise_params.T\
+                - np.diag(np.diag(pairwise_params))
+        unaries = (- 10 * unary_params * x_).astype(np.int32)
+        pairwise = (-10 * pairwise_params).astype(np.int32)
+        h = alpha_expansion_graph(self.edges, unaries, pairwise)
+        # create y from h:
+        y = h / self.n_states_per_label
+        return y
+
     def latent(self, x, y, w):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
