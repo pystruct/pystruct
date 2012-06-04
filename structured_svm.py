@@ -96,34 +96,6 @@ class StructuredSVM(object):
 
 class LatentStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
-    def _solve_qp(self, psis, losses):
-        psi_matrix = np.vstack(psis)
-        n_constraints = len(psis)
-        P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
-        q = cvxopt.matrix(-np.array(losses, dtype=np.float))
-        idy = np.identity(n_constraints)
-        G = cvxopt.matrix(np.vstack((-idy, idy)))
-        tmp1 = np.zeros(n_constraints)
-        tmp2 = np.ones(n_constraints) * self.C
-        h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
-        # solve QP problem
-        solution = cvxopt.solvers.qp(P, q, G, h)
-
-        # Lagrange multipliers
-        a = np.ravel(solution['x'])
-
-        # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-5
-        print("%d support vectors out of %d points" % (np.sum(sv),
-            n_constraints))
-        print("Coefficients at C: %d" % np.sum(self.C - a < 1e-3))
-        w = np.zeros(self.problem.size_psi)
-        for issv, dpsi, alpha in zip(sv, psis, a):
-            if not issv:
-                continue
-            w += alpha * dpsi
-        return w
-
     def fit(self, X, Y):
         psi = self.problem.psi
         w = np.zeros(self.problem.size_psi)
