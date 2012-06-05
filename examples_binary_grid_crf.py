@@ -43,11 +43,11 @@ def make_dataset_big_checker(n_samples=20):
 def main():
     #X, Y = make_dataset_blocks()
     #X, Y = make_dataset_checker()
-    X, Y = make_dataset_easy_latent()
+    X, Y = make_dataset_easy_latent(n_samples=10)
     #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=1)
+    clf = StructuredSVM(problem=crf, max_iter=200, C=1000)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     i = 0

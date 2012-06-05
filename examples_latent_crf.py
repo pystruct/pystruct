@@ -13,10 +13,12 @@ tracer = Tracer()
 
 
 def make_dataset_easy_latent(n_samples=5):
+    np.random.seed(0)
     Y = np.ones((n_samples, 18, 18))
     for i in xrange(n_samples):
-        t, l = np.random.randint(8, size=2)
-        Y[i, t:t + 3, l:l + 3] = -1
+        for j in xrange(3):
+            t, l = np.random.randint(15, size=2)
+            Y[i, t:t + 3, l:l + 3] = -1
     X = Y + 0.5 * np.random.normal(size=Y.shape)
     X = np.c_['3,4,0', X, -X]
     Y = (Y > 0).astype(np.int32)
@@ -28,8 +30,8 @@ def main():
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker(n_samples=5)
     X, Y = make_dataset_easy_latent(n_samples=5)
-    X = X[:, :18, :18]
-    Y = Y[:, :18, :18]
+    #X = X[:, :18, :18]
+    #Y = Y[:, :18, :18]
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
     size_y = Y[0].size
     shape_y = Y[0].shape
@@ -44,9 +46,9 @@ def main():
     graph = graph + graph.T
 
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=1, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
     #clf = LatentStructuredPerceptron(problem=crf, max_iter=50)
-    clf = LatentStructuredSVM(problem=crf, max_iter=1000, C=1000)
+    clf = LatentStructuredSVM(problem=crf, max_iter=1000, C=100000000)
     X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
