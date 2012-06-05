@@ -67,6 +67,7 @@ class StructuredSVM(object):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
                 constraint = np.str((i, y, y_hat))
+                #if loss:
                 if loss and not constraints.count(constraint):
                     constraints.append(constraint)
                     delta_psi = psi(x, y) - psi(x, y_hat)
@@ -112,7 +113,6 @@ class LatentStructuredSVM(StructuredSVM):
                 #h_hat = self.problem.latent(x, y_hat, w)
                 delta_psi = psi(x, h, y) - psi(x, h_hat, y_hat)
                 psis.append(delta_psi / 1000.)
-
             new_constraints = 0
             current_loss = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
@@ -120,9 +120,11 @@ class LatentStructuredSVM(StructuredSVM):
                 h_hat, y_hat = self.problem.loss_augmented_inference(x, y, w)
                 if i < 5:
                     plt.matshow(h.reshape(18, 18))
+                    plt.colorbar()
                     plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
                     plt.close()
                     plt.matshow(h_hat.reshape(18, 18))
+                    plt.colorbar()
                     plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
                     plt.close()
                 loss = self.problem.loss(y, y_hat)
@@ -144,6 +146,7 @@ class LatentStructuredSVM(StructuredSVM):
 
             if new_constraints == 0:
                 print("no additional constraints found")
+                tracer()
                 break
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))

@@ -115,7 +115,8 @@ class LatentFixedGraphCRF(StructuredProblem):
         if (h / self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
-                tracer()
+                #tracer()
+                h = y * self.n_states_per_label
             else:
                 h = y * self.n_states_per_label
         return h
