@@ -44,7 +44,7 @@ class StructuredSVM(object):
         sv = a > 1e-5
         print("%d support vectors out of %d points" % (np.sum(sv),
             n_constraints))
-        print("Coefficients at C: %d" % np.sum(self.C - a < 1e-3))
+        print("Coefficients at C: %d" % np.sum(1 - a / self.C < 1e-3))
         w = np.zeros(self.problem.size_psi)
         for issv, dpsi, alpha in zip(sv, psis, a):
             if not issv:
@@ -70,7 +70,7 @@ class StructuredSVM(object):
                 if loss and not constraints.count(constraint):
                     constraints.append(constraint)
                     delta_psi = psi(x, y) - psi(x, y_hat)
-                    psis.append(delta_psi / 1000.)
+                    psis.append(delta_psi)
                     losses.append(loss)
                     current_loss += loss
                     new_constraints += 1
@@ -152,7 +152,6 @@ class LatentStructuredSVM(StructuredSVM):
 
             print(w)
         self.w = w
-        tracer()
 
     def predict(self, X):
         prediction = []
