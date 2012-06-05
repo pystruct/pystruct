@@ -71,9 +71,10 @@ class LatentFixedGraphCRF(StructuredProblem):
 
     def loss_augmented_inference(self, x, y, w):
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
-        unary_params = w[:self.n_states]
+        unary_params = w[:self.n_states].copy()
         # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
+        unary_params[unary_params == 0] = 1
+        unary_params[unary_params == 0] = 1
         for s in np.arange(self.n_states):
             # for each class, decrement unaries
             # for loss-agumention
