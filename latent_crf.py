@@ -40,6 +40,10 @@ class LatentFixedGraphCRF(StructuredProblem):
         neighbors = self.graph * states
         pw = np.dot(neighbors.T, states)
 
+        # normalize potentials
+        pw /= y.shape[0]
+        unaries_acc /= y.shape[0]
+
         feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
             dtype=np.bool)]])
         return feature
