@@ -153,6 +153,9 @@ class MultinomialFixedGraphCRF(StructuredProblem):
 
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
+        # normalize potentials
+        pw /= y.shape[0]
+        unaries_acc /= y.shape[0]
 
         feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
             dtype=np.bool)]])
