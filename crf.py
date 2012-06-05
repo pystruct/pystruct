@@ -123,6 +123,17 @@ class MultinomialGridCRF(StructuredProblem):
         y = alpha_expansion_grid(unaries, pairwise)
         return y
 
+    def loss_augmented_inference(self, x, y, w):
+        unary_params = w[:self.n_labels]
+        # avoid division by zero:
+        unary_params[unary_params == 0] = 1e-10
+        x_ = x.copy()
+        for l in np.arange(self.n_labels):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_[y != l, l] += 1. / unary_params[l]
+        return self.inference(x_, w)
+
 
 class MultinomialFixedGraphCRF(StructuredProblem):
     """CRF with general graph that is THE SAME for all examples.
