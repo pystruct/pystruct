@@ -117,7 +117,7 @@ class LatentStructuredSVM(StructuredSVM):
                 h = self.problem.latent(x, y, w)
                 #h_hat = self.problem.latent(x, y_hat, w)
                 delta_psi = psi(x, h, y) - psi(x, h_hat, y_hat)
-                psis.append(delta_psi / 1000.)
+                psis.append(delta_psi)
             new_constraints = 0
             current_loss = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
@@ -145,7 +145,7 @@ class LatentStructuredSVM(StructuredSVM):
                     if not already_active:
                         constraints.append(constraint)
                         delta_psi = psi(x, h, y) - psi(x, h_hat, y_hat)
-                        psis.append(delta_psi / 1000.)
+                        psis.append(delta_psi)
                         losses.append(loss)
                         new_constraints += 1
 

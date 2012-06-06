@@ -55,10 +55,12 @@ class LatentStructuredPerceptron(StructuredPerceptron):
                 h = self.problem.latent(x, y, w)
                 h_hat, y_hat = self.problem.inference(x, w)
                 plt.matshow(h_hat.reshape(18, 18))
-                if not i % 5:
+                if not iteration % 10 and i < 5:
                     plt.matshow(h.reshape(18, 18))
+                    plt.colorbar()
                     plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
                     plt.close()
+                    plt.colorbar()
                     plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
                     plt.close()
                 current_loss = self.problem.loss(y, y_hat)

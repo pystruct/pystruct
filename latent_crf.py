@@ -48,7 +48,10 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
             x_wide[y != s / self.n_states_per_label, s] += 1. / unary_params[s]
         # augment unary potentials for latent states
         # do usual inference
-        return self.inference(x_wide, w)
+        h = super(LatentFixedGraphCRF, self).inference(x_wide, w)
+        # create y from h:
+        y = h / self.n_states_per_label
+        return h, y
 
     def latent(self, x, y, w):
         # augment unary potentials for latent states

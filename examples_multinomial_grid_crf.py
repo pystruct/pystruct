@@ -5,8 +5,8 @@ from scipy import sparse
 
 from crf import MultinomialFixedGraphCRF
 #from crf import MultinomialGridCRF
-from structured_perceptron import StructuredPerceptron
-#from structured_svm import StructuredSVM
+#from structured_perceptron import StructuredPerceptron
+from structured_svm import StructuredSVM
 from examples_latent_crf import make_dataset_easy_latent
 
 
@@ -86,8 +86,8 @@ def main():
 
     crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
-    clf = StructuredPerceptron(problem=crf, max_iter=50)
-    #clf = StructuredSVM(problem=crf, max_iter=100, C=100)
+    #clf = StructuredPerceptron(problem=crf, max_iter=50)
+    clf = StructuredSVM(problem=crf, max_iter=100, C=100)
     X_flat = [x.reshape(-1, n_labels).copy("C") for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
