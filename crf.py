@@ -150,23 +150,24 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         # x is unaries
         # y is a labeling
         ## unary features:
-        gx = np.ogrid[:x.shape[0]]
+        n_nodes = y.shape[0]
+        gx = np.ogrid[:n_nodes]
         selected_unaries = x[gx, y]
         unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
                 minlength=self.n_labels)
 
         ##accumulated pairwise
         #make one hot encoding
-        labels = np.zeros((y.shape[0], self.n_labels),
+        labels = np.zeros((n_nodes, self.n_labels),
                 dtype=np.int)
-        gx = np.ogrid[:y.shape[0]]
+        gx = np.ogrid[:n_nodes]
         labels[gx, y] = 1
 
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
         # normalize potentials
-        pw /= y.shape[0]
-        unaries_acc /= y.shape[0]
+        pw /= n_nodes
+        unaries_acc /= n_nodes
 
         feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
             dtype=np.bool)]])
