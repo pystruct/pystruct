@@ -29,7 +29,7 @@ class StructuredProblem(object):
 
 class BinaryGridCRF(StructuredProblem):
     def __init__(self):
-        self.n_labels = 2
+        self.n_states = 2
         # three parameter for binary, one for unaries
         self.size_psi = 4
 
@@ -42,7 +42,7 @@ class BinaryGridCRF(StructuredProblem):
 
         ##accumulated pairwise
         #make one hot encoding
-        labels = np.zeros((y.shape[0], y.shape[1], self.n_labels),
+        labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
                 dtype=np.int)
         gx, gy = np.ogrid[:y.shape[0], :y.shape[1]]
         labels[gx, gy, y] = 1
@@ -78,10 +78,10 @@ class BinaryGridCRF(StructuredProblem):
 
 
 class MultinomialGridCRF(StructuredProblem):
-    def __init__(self, n_labels):
-        self.n_labels = n_labels
-        # n_labels unary parameters, upper triangular for pairwise
-        self.size_psi = n_labels + n_labels * (n_labels + 1) / 2
+    def __init__(self, n_states):
+        self.n_states = n_states
+        # n_states unary parameters, upper triangular for pairwise
+        self.size_psi = n_states + n_states * (n_states + 1) / 2
 
     def psi(self, x, y):
         # x is unaries
@@ -91,31 +91,31 @@ class MultinomialGridCRF(StructuredProblem):
         selected_unaries = x[gx, gy, y]
         unaries_acc = np.sum(x[gx, gy, y])
         unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                minlength=self.n_labels)
+                minlength=self.n_states)
 
         ##accumulated pairwise
         #make one hot encoding
-        labels = np.zeros((y.shape[0], y.shape[1], self.n_labels),
+        labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
                 dtype=np.int)
         gx, gy = np.ogrid[:y.shape[0], :y.shape[1]]
         labels[gx, gy, y] = 1
         # vertical edges
-        vert = np.dot(labels[1:, :, :].reshape(-1, self.n_labels).T,
-                labels[:-1, :, :].reshape(-1, self.n_labels))
+        vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
+                labels[:-1, :, :].reshape(-1, self.n_states))
         # horizontal edges
-        horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_labels).T, labels[:,
-            :-1, :].reshape(-1, self.n_labels))
+        horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T, labels[:,
+            :-1, :].reshape(-1, self.n_states))
         pw = vert + horz
         pw = pw + pw.T - np.diag(np.diag(pw))
-        feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
+        feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
             dtype=np.bool)]])
         return feature
 
     def inference(self, x, w):
-        unary_params = w[:self.n_labels]
-        pairwise_flat = np.asarray(w[self.n_labels:])
-        pairwise_params = np.zeros((self.n_labels, self.n_labels))
-        pairwise_params[np.tri(self.n_labels, dtype=np.bool)] = pairwise_flat
+        unary_params = w[:self.n_states]
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
         unaries = (- 10 * unary_params * x).astype(np.int32)
@@ -124,11 +124,11 @@ class MultinomialGridCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
-        unary_params = w[:self.n_labels]
+        unary_params = w[:self.n_states]
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
         x_ = x.copy()
-        for l in np.arange(self.n_labels):
+        for l in np.arange(self.n_states):
             # for each class, decrement unaries
             # for loss-agumention
             x_[y != l, l] += 1. / unary_params[l]
@@ -139,10 +139,10 @@ class MultinomialFixedGraphCRF(StructuredProblem):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
-    def __init__(self, n_labels, graph):
-        self.n_labels = n_labels
-        # n_labels unary parameters, upper triangular for pairwise
-        self.size_psi = n_labels + n_labels * (n_labels + 1) / 2
+    def __init__(self, n_states, graph):
+        self.n_states = n_states
+        # n_states unary parameters, upper triangular for pairwise
+        self.size_psi = n_states + n_states * (n_states + 1) / 2
         self.graph = graph
         self.edges = np.c_[graph.nonzero()].copy("C")
 
@@ -154,11 +154,11 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         gx = np.ogrid[:n_nodes]
         selected_unaries = x[gx, y]
         unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                minlength=self.n_labels)
+                minlength=self.n_states)
 
         ##accumulated pairwise
         #make one hot encoding
-        labels = np.zeros((n_nodes, self.n_labels),
+        labels = np.zeros((n_nodes, self.n_states),
                 dtype=np.int)
         gx = np.ogrid[:n_nodes]
         labels[gx, y] = 1
@@ -169,15 +169,15 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         pw /= n_nodes
         unaries_acc /= n_nodes
 
-        feature = np.hstack([unaries_acc, pw[np.tri(self.n_labels,
+        feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
             dtype=np.bool)]])
         return feature
 
     def inference(self, x, w):
-        unary_params = w[:self.n_labels]
-        pairwise_flat = np.asarray(w[self.n_labels:])
-        pairwise_params = np.zeros((self.n_labels, self.n_labels))
-        pairwise_params[np.tri(self.n_labels, dtype=np.bool)] = pairwise_flat
+        unary_params = w[:self.n_states]
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
         unaries = (- 10 * unary_params * x).astype(np.int32)
@@ -186,11 +186,11 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
-        unary_params = w[:self.n_labels]
+        unary_params = w[:self.n_states]
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
         x_ = x.copy()
-        for l in np.arange(self.n_labels):
+        for l in np.arange(self.n_states):
             # for each class, decrement unaries
             # for loss-agumention
             x_[y != l, l] += 1. / unary_params[l]

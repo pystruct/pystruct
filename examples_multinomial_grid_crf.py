@@ -84,7 +84,7 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    crf = MultinomialFixedGraphCRF(n_labels=n_labels, graph=graph)
+    crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     clf = StructuredPerceptron(problem=crf, max_iter=50)
     #clf = StructuredSVM(problem=crf, max_iter=100, C=100)

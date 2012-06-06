@@ -53,17 +53,14 @@ class LatentStructuredPerceptron(StructuredPerceptron):
             for x, y in zip(X, Y):
                 print("example %03d" % i)
                 h = self.problem.latent(x, y, w)
-                if (y != h).any():
-                    tracer()
-                plt.matshow(h.reshape(18, 18))
-                plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
-                plt.close()
                 h_hat, y_hat = self.problem.inference(x, w)
-                if (y_hat != y_hat).any():
-                    tracer()
                 plt.matshow(h_hat.reshape(18, 18))
-                plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
-                plt.close()
+                if not i % 5:
+                    plt.matshow(h.reshape(18, 18))
+                    plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
+                    plt.close()
+                    plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
+                    plt.close()
                 current_loss = self.problem.loss(y, y_hat)
                 losses += current_loss
                 if current_loss:

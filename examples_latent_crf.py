@@ -46,8 +46,8 @@ def main():
     graph = graph + graph.T
 
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=1, graph=graph)
-    clf = LatentStructuredPerceptron(problem=crf, max_iter=50)
+    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
+    clf = LatentStructuredPerceptron(problem=crf, max_iter=500)
     #clf = LatentStructuredSVM(problem=crf, max_iter=100, C=100)
     X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]

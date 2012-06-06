@@ -11,10 +11,10 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
     graph is given by scipy sparse adjacency matrix.
     """
     def __init__(self, n_labels, n_states_per_label, graph):
-        super(LatentFixedGraphCRF, self).__init__(n_labels, graph)
         self.n_states_per_label = n_states_per_label
-        # n_labels unary parameters, upper triangular for pairwise
         n_states = n_labels * n_states_per_label
+        super(LatentFixedGraphCRF, self).__init__(n_states, graph)
+        # n_labels unary parameters, upper triangular for pairwise
         self.n_states = n_states
 
     def psi(self, x, h, y):
@@ -22,7 +22,8 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
         # h is latent labeling
         # y is a labeling
         ## unary features:
-        return super(LatentFixedGraphCRF, self).psi(x, h)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        return super(LatentFixedGraphCRF, self).psi(x_wide, h)
 
     def inference(self, x, w):
         # augment unary potentials for latent states
