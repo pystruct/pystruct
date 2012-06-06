@@ -186,7 +186,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
-        unary_params = w[:self.n_states]
+        unary_params = w[:self.n_states].copy()
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
         x_ = x.copy()

@@ -66,9 +66,14 @@ class StructuredSVM(object):
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
-                constraint = np.str((i, y, y_hat))
+
+                already_active = [True for i_, y_hat_ in constraints if
+                        i_ == i and (y_hat == y_hat_).all()]
+                if already_active:
+                    print("ASDF")
+                constraint = (i, y_hat)
                 #if loss:
-                if loss and not constraints.count(constraint):
+                if loss and not already_active:
                     constraints.append(constraint)
                     delta_psi = psi(x, y) - psi(x, y_hat)
                     psis.append(delta_psi)
@@ -76,7 +81,7 @@ class StructuredSVM(object):
                     current_loss += loss
                     new_constraints += 1
             if new_constraints == 0:
-                print("no loss on training set")
+                print("no additional constraints")
                 break
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))
@@ -150,6 +155,7 @@ class LatentStructuredSVM(StructuredSVM):
                 break
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))
+            tracer()
             loss_curve.append(current_loss)
             w = self._solve_qp(psis, losses)
 
