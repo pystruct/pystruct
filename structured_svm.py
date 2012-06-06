@@ -139,7 +139,7 @@ class LatentStructuredSVM(StructuredSVM):
                 if already_active:
                     print("ASDF")
 
-                if loss:
+                if loss and not already_active:
                     current_loss += loss
 
                     if not already_active:
@@ -155,7 +155,6 @@ class LatentStructuredSVM(StructuredSVM):
                 break
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))
-            tracer()
             loss_curve.append(current_loss)
             w = self._solve_qp(psis, losses)
 
