@@ -45,12 +45,13 @@ class StructuredSVM(object):
         print("%d support vectors out of %d points" % (np.sum(sv),
             n_constraints))
         print("Coefficients at C: %d" % np.sum(1 - a / self.C < 1e-3))
+        print("primal objective: %f" % solution['primal objective'])
         w = np.zeros(self.problem.size_psi)
         for issv, dpsi, alpha in zip(sv, psis, a):
             if not issv:
                 continue
             w += alpha * dpsi
-        return w
+        return w, solution['primal objective']
 
     def fit(self, X, Y):
         psi = self.problem.psi
@@ -59,6 +60,7 @@ class StructuredSVM(object):
         psis = []
         losses = []
         loss_curve = []
+        objective_curve = []
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             new_constraints = 0
@@ -86,11 +88,15 @@ class StructuredSVM(object):
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))
             loss_curve.append(current_loss / len(X))
-            w = self._solve_qp(psis, losses)
+            w, objective = self._solve_qp(psis, losses)
+            objective_curve.append(objective)
 
             print(w)
         self.w = w
+        plt.subplot(121, title="loss")
         plt.plot(loss_curve)
+        plt.subplot(122, title="objective")
+        plt.plot(objective_curve)
         plt.show()
 
     def predict(self, X):
@@ -123,7 +129,7 @@ class LatentStructuredSVM(StructuredSVM):
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 h = self.problem.latent(x, y, w)
                 h_hat, y_hat = self.problem.loss_augmented_inference(x, y, w)
-                if i < 5:
+                if i < 5 and not iteration % 10:
                     plt.matshow(h.reshape(18, 18))
                     plt.colorbar()
                     plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
@@ -135,7 +141,8 @@ class LatentStructuredSVM(StructuredSVM):
                 loss = self.problem.loss(y, y_hat)
                 constraint = (i, h_hat, y_hat)
                 already_active = [True for i_, h_hat_, y_hat_ in constraints if
-                        i_ == i and (y_hat == y_hat_).all()]
+                        i_ == i and (y_hat == y_hat_).all()
+                        and (h_hat == h_hat_).all()]
                 if already_active:
                     print("ASDF")
 
