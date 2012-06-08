@@ -34,11 +34,17 @@ class StructuredSVM(object):
         tmp1 = np.zeros(n_constraints)
         tmp2 = np.ones(n_constraints) * self.C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
+        # get previous solution as starting point if any
+        initvals = dict()
+        if hasattr(self, "old_solution"):
+            initvals['x'] = self.old_solution['x']
+            initvals['y'] = self.old_solution['y']
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h)
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
+        self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
         sv = a > 1e-5
