@@ -25,6 +25,22 @@ def make_dataset_easy_latent(n_samples=5):
     return X, Y
 
 
+def make_dataset_easy_latent_explicit(n_samples=5):
+    np.random.seed(0)
+    Y = np.zeros((n_samples, 18, 18, 3))
+    for i in xrange(n_samples):
+        for j in xrange(3):
+            t, l = np.random.randint(15, size=2)
+            Y[i, t:t + 3, l:l + 3, 1] = -1
+            Y[i, t + 1, l + 1, 2] = -1
+            Y[i, t + 1, l + 1, 1] = 0
+    tracer()
+    Y[np.sum(Y, axis=3) == 0, 0] = -1
+    X = Y + 0.0 * np.random.normal(size=Y.shape)
+    Y = np.argmin(Y, axis=3)
+    return X, Y
+
+
 def main():
     #X, Y = make_dataset_checker_multinomial()
     #X, Y = make_dataset_big_checker_extended()
@@ -46,9 +62,9 @@ def main():
     graph = graph + graph.T
 
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=1, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
     #clf = LatentStructuredPerceptron(problem=crf, max_iter=500)
-    clf = LatentStructuredSVM(problem=crf, max_iter=100, C=100)
+    clf = LatentStructuredSVM(problem=crf, max_iter=10000, C=100)
     X_flat = [x.reshape(-1, 2) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)

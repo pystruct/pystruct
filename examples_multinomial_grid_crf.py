@@ -8,6 +8,7 @@ from crf import MultinomialFixedGraphCRF
 #from structured_perceptron import StructuredPerceptron
 from structured_svm import StructuredSVM
 from examples_latent_crf import make_dataset_easy_latent
+#from examples_latent_crf import make_dataset_easy_latent_explicit
 
 
 from IPython.core.debugger import Tracer
@@ -43,7 +44,7 @@ def make_dataset_big_checker():
     X = Y + 0.5 * np.random.normal(size=Y.shape)
     Y = (Y > 0).astype(np.int32)
     # make unaries with 4 pseudo-classes
-    X = np.r_['-1, 4,0', X, X, -X, -X].copy("C")
+    X = np.r_['-1, 4,0', X, -X].copy("C")
     return X, Y
 
 
@@ -66,8 +67,9 @@ def make_dataset_big_checker_extended():
 
 
 def main():
-    #X, Y = make_dataset_checker_multinomial()
-    X, Y = make_dataset_easy_latent(n_samples=5)
+    X, Y = make_dataset_checker_multinomial()
+    #X, Y = make_dataset_easy_latent(n_samples=5)
+    #X, Y = make_dataset_easy_latent_explicit(n_samples=5)
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
@@ -87,7 +89,7 @@ def main():
     crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    clf = StructuredSVM(problem=crf, max_iter=100, C=100)
+    clf = StructuredSVM(problem=crf, max_iter=1000, C=1)
     X_flat = [x.reshape(-1, n_labels).copy("C") for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
