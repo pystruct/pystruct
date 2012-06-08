@@ -71,10 +71,7 @@ class StructuredSVM(object):
 
                 already_active = [True for i_, y_hat_ in constraints if
                         i_ == i and (y_hat == y_hat_).all()]
-                if already_active:
-                    print("ASDF")
                 constraint = (i, y_hat)
-                #if loss:
                 if loss and not already_active:
                     constraints.append(constraint)
                     delta_psi = psi(x, y) - psi(x, y_hat)
@@ -90,12 +87,18 @@ class StructuredSVM(object):
             loss_curve.append(current_loss / len(X))
             w, objective = self._solve_qp(psis, losses)
             objective_curve.append(objective)
+            if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
+                print("Dual objective converged.")
+                break
 
             print(w)
         self.w = w
         plt.subplot(121, title="loss")
         plt.plot(loss_curve)
         plt.subplot(122, title="objective")
+        # the objective value should be monotonically decreasing
+        # this is a maximization problem, to which we add more
+        # and more constraints
         plt.plot(objective_curve)
         plt.show()
 
