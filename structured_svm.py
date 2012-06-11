@@ -51,7 +51,7 @@ class StructuredSVM(object):
         print("%d support vectors out of %d points" % (np.sum(sv),
             n_constraints))
         print("Coefficients at C: %d" % np.sum(1 - a / self.C < 1e-3))
-        print("primal objective: %f" % solution['primal objective'])
+        print("dual objective: %f" % solution['primal objective'])
         w = np.zeros(self.problem.size_psi)
         for issv, dpsi, alpha in zip(sv, psis, a):
             if not issv:
@@ -67,12 +67,12 @@ class StructuredSVM(object):
         losses = []
         loss_curve = []
         objective_curve = []
-        real_objective_curve = []
+        primal_objective_curve = []
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            real_objective = np.sum(w ** 2) / self.C
+            primal_objective = np.sum(w ** 2) / self.C
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
@@ -81,7 +81,7 @@ class StructuredSVM(object):
                         i_ == i and (y_hat == y_hat_).all()]
                 constraint = (i, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
-                real_objective -= np.dot(w, delta_psi) - loss
+                primal_objective -= np.dot(w, delta_psi) - loss
                 current_loss += loss
                 if loss and not already_active:
                     constraints.append(constraint)
@@ -89,17 +89,17 @@ class StructuredSVM(object):
                     losses.append(loss)
                     new_constraints += 1
             print("current loss: %f  new constraints: %d, real obj: %f" %
-                    (current_loss, new_constraints, real_objective))
+                    (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
-            real_objective_curve.append(real_objective)
+            primal_objective_curve.append(primal_objective)
             if new_constraints == 0:
                 print("no additional constraints")
                 break
             w, objective = self._solve_qp(psis, losses)
             objective_curve.append(objective)
-            #if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
-                #print("Dual objective converged.")
-                #break
+            if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
+                print("Dual objective converged.")
+                break
 
             print(w)
         self.w = w
@@ -111,7 +111,7 @@ class StructuredSVM(object):
         # and more constraints
         plt.plot(objective_curve)
         plt.subplot(133, title="primal objective")
-        plt.plot(real_objective_curve)
+        plt.plot(primal_objective_curve)
         plt.show()
 
     def predict(self, X):
@@ -167,8 +167,8 @@ class SubgradientStructuredSVM(StructuredSVM):
                 print("no additional constraints")
                 #break
             print("current loss: %f  new constraints: %d, objective: %f" %
-                    (current_loss / len(X), new_constraints, objective))
-            loss_curve.append(current_loss / len(X))
+                    (current_loss, new_constraints, objective))
+            loss_curve.append(current_loss)
             all_psis.extend(psis)
             objective_curve.append(objective)
             w = self._solve_subgradient(psis)
