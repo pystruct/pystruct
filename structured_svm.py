@@ -92,8 +92,8 @@ class StructuredSVM(object):
                 print("no additional constraints")
                 break
             print("current loss: %f  new constraints: %d, real obj: %f" %
-                    (current_loss / len(X), new_constraints, real_objective))
-            loss_curve.append(current_loss / len(X))
+                    (current_loss, new_constraints, real_objective))
+            loss_curve.append(current_loss)
             w, objective = self._solve_qp(psis, losses)
             objective_curve.append(objective)
             real_objective_curve.append(real_objective)
@@ -124,15 +124,15 @@ class StructuredSVM(object):
 class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0):
-        super(self, SubgradientStructuredSVM).__init__(problem, max_iter, C)
+        super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C)
         self.t = 1.
 
     def _solve_subgradient(self, psis):
-        psi_matrix = np.vstack(psis).mean(axis=0)
         if hasattr(self, 'w'):
             w = self.w
         else:
             w = np.zeros(self.problem.size_psi)
+        psi_matrix = np.vstack(psis).mean(axis=0)
         w += .001 * (psi_matrix - w / self.C)
         self.w = w
         self.t += 1.
@@ -157,16 +157,15 @@ class SubgradientStructuredSVM(StructuredSVM):
                 loss = self.problem.loss(y, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 objective -= np.dot(delta_psi, w) - loss
+                psis.append(delta_psi)
 
+                losses.append(loss)
+                current_loss += loss
                 if loss:
-                    #constraints.append(constraint)
-                    psis.append(delta_psi)
-                    losses.append(loss)
-                    current_loss += loss
                     new_constraints += 1
             if new_constraints == 0:
                 print("no additional constraints")
-                break
+                #break
             print("current loss: %f  new constraints: %d" %
                     (current_loss / len(X), new_constraints))
             loss_curve.append(current_loss / len(X))
@@ -182,7 +181,6 @@ class SubgradientStructuredSVM(StructuredSVM):
         plt.subplot(122, title="objective")
         plt.plot(objective_curve)
         plt.show()
-        tracer()
 
 
 class LatentStructuredSVM(StructuredSVM):
