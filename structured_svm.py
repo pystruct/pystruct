@@ -82,11 +82,11 @@ class StructuredSVM(object):
                 constraint = (i, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 real_objective -= np.dot(w, delta_psi) - loss
+                current_loss += loss
                 if loss and not already_active:
                     constraints.append(constraint)
                     psis.append(delta_psi)
                     losses.append(loss)
-                    current_loss += loss
                     new_constraints += 1
             print("current loss: %f  new constraints: %d, real obj: %f" %
                     (current_loss, new_constraints, real_objective))
