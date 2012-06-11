@@ -72,7 +72,7 @@ class StructuredSVM(object):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            real_objective = np.sum(w ** 2)
+            real_objective = np.sum(w ** 2) / self.C
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
