@@ -121,6 +121,70 @@ class StructuredSVM(object):
         return prediction
 
 
+class SubgradientStructuredSVM(StructuredSVM):
+    """Margin rescaled with l1 slack penalty."""
+    def __init__(self, problem, max_iter=100, C=1.0):
+        super(self, SubgradientStructuredSVM).__init__(problem, max_iter, C)
+        self.t = 1.
+
+    def _solve_subgradient(self, psis):
+        psi_matrix = np.vstack(psis).mean(axis=0)
+        if hasattr(self, 'w'):
+            w = self.w
+        else:
+            w = np.zeros(self.problem.size_psi)
+        w += .001 * (psi_matrix - w / self.C)
+        self.w = w
+        self.t += 1.
+        return w
+
+    def fit(self, X, Y):
+        psi = self.problem.psi
+        w = np.zeros(self.problem.size_psi)
+        #constraints = []
+        all_psis = []
+        losses = []
+        loss_curve = []
+        objective_curve = []
+        for iteration in xrange(self.max_iter):
+            print("iteration %d" % iteration)
+            psis = []
+            new_constraints = 0
+            current_loss = 0.
+            objective = np.sum(w ** 2) / self.C
+            for i, x, y in zip(np.arange(len(X)), X, Y):
+                y_hat = self.problem.loss_augmented_inference(x, y, w)
+                loss = self.problem.loss(y, y_hat)
+                delta_psi = psi(x, y) - psi(x, y_hat)
+                objective -= np.dot(delta_psi, w) - loss
+
+                if loss:
+                    #constraints.append(constraint)
+                    psis.append(delta_psi)
+                    losses.append(loss)
+                    current_loss += loss
+                    new_constraints += 1
+            if new_constraints == 0:
+                print("no additional constraints")
+                break
+            print("current loss: %f  new constraints: %d" %
+                    (current_loss / len(X), new_constraints))
+            loss_curve.append(current_loss / len(X))
+            all_psis.extend(psis)
+            objective_curve.append(objective)
+            w = self._solve_subgradient(psis)
+
+            print(w)
+        self.w = w
+        print(objective_curve[-1])
+        plt.subplot(121, title="loss")
+        plt.plot(loss_curve)
+        plt.subplot(122, title="objective")
+        plt.plot(objective_curve)
+        plt.show()
+        tracer()
+
+
 class LatentStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def fit(self, X, Y):
@@ -182,9 +246,3 @@ class LatentStructuredSVM(StructuredSVM):
 
             print(w)
         self.w = w
-
-    def predict(self, X):
-        prediction = []
-        for x in X:
-            prediction.append(self.problem.inference(x, self.w)[0])
-        return prediction
