@@ -54,7 +54,9 @@ def main():
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     i = 0
+    loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
+        loss += np.sum(y != y_pred)
         plt.subplot(221)
         plt.imshow(x[:, :, 0], interpolation='nearest')
         plt.subplot(222)
@@ -68,6 +70,7 @@ def main():
         #break
         plt.close()
         i += 1
+    print("loss: %f" % loss)
 
 if __name__ == "__main__":
     main()
