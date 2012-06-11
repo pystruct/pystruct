@@ -44,7 +44,7 @@ class StructuredSVM(object):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
-        self.old_solution = solution
+        #self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
         sv = a > 1e-5
@@ -88,15 +88,15 @@ class StructuredSVM(object):
                     losses.append(loss)
                     current_loss += loss
                     new_constraints += 1
-            if new_constraints == 0:
-                print("no additional constraints")
-                break
             print("current loss: %f  new constraints: %d, real obj: %f" %
                     (current_loss, new_constraints, real_objective))
             loss_curve.append(current_loss)
+            real_objective_curve.append(real_objective)
+            if new_constraints == 0:
+                print("no additional constraints")
+                break
             w, objective = self._solve_qp(psis, losses)
             objective_curve.append(objective)
-            real_objective_curve.append(real_objective)
             #if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
                 #print("Dual objective converged.")
                 #break
@@ -133,7 +133,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         else:
             w = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
-        w += .001 * (psi_matrix - w / self.C)
+        w += 0.0001 * (psi_matrix - w / self.C)
         self.w = w
         self.t += 1.
         return w
@@ -166,8 +166,8 @@ class SubgradientStructuredSVM(StructuredSVM):
             if new_constraints == 0:
                 print("no additional constraints")
                 #break
-            print("current loss: %f  new constraints: %d" %
-                    (current_loss / len(X), new_constraints))
+            print("current loss: %f  new constraints: %d, objective: %f" %
+                    (current_loss / len(X), new_constraints, objective))
             loss_curve.append(current_loss / len(X))
             all_psis.extend(psis)
             objective_curve.append(objective)
@@ -177,9 +177,9 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.w = w
         print(objective_curve[-1])
         plt.subplot(121, title="loss")
-        plt.plot(loss_curve)
+        plt.plot(loss_curve[10:])
         plt.subplot(122, title="objective")
-        plt.plot(objective_curve)
+        plt.plot(objective_curve[10:])
         plt.show()
 
 
