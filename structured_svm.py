@@ -67,10 +67,12 @@ class StructuredSVM(object):
         losses = []
         loss_curve = []
         objective_curve = []
+        real_objective_curve = []
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
+            real_objective = np.sum(w ** 2)
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
@@ -78,9 +80,10 @@ class StructuredSVM(object):
                 already_active = [True for i_, y_hat_ in constraints if
                         i_ == i and (y_hat == y_hat_).all()]
                 constraint = (i, y_hat)
+                delta_psi = psi(x, y) - psi(x, y_hat)
+                real_objective -= np.dot(w, delta_psi) - loss
                 if loss and not already_active:
                     constraints.append(constraint)
-                    delta_psi = psi(x, y) - psi(x, y_hat)
                     psis.append(delta_psi)
                     losses.append(loss)
                     current_loss += loss
@@ -88,24 +91,27 @@ class StructuredSVM(object):
             if new_constraints == 0:
                 print("no additional constraints")
                 break
-            print("current loss: %f  new constraints: %d" %
-                    (current_loss / len(X), new_constraints))
+            print("current loss: %f  new constraints: %d, real obj: %f" %
+                    (current_loss / len(X), new_constraints, real_objective))
             loss_curve.append(current_loss / len(X))
             w, objective = self._solve_qp(psis, losses)
             objective_curve.append(objective)
-            if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
-                print("Dual objective converged.")
-                break
+            real_objective_curve.append(real_objective)
+            #if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
+                #print("Dual objective converged.")
+                #break
 
             print(w)
         self.w = w
-        plt.subplot(121, title="loss")
+        plt.subplot(131, title="loss")
         plt.plot(loss_curve)
-        plt.subplot(122, title="objective")
+        plt.subplot(132, title="objective")
         # the objective value should be monotonically decreasing
         # this is a maximization problem, to which we add more
         # and more constraints
         plt.plot(objective_curve)
+        plt.subplot(133, title="primal objective")
+        plt.plot(real_objective_curve)
         plt.show()
 
     def predict(self, X):
