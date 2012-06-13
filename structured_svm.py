@@ -13,16 +13,20 @@ import matplotlib.pyplot as plt
 
 from IPython.core.debugger import Tracer
 
-#cvxopt.solvers.options['show_progress'] = False
 tracer = Tracer()
 
 
 class StructuredSVM(object):
     """Margin rescaled with l1 slack penalty."""
-    def __init__(self, problem, max_iter=100, C=1.0):
+    def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
+            verbose=0):
         self.max_iter = max_iter
         self.problem = problem
         self.C = float(C)
+        self.verbose = verbose
+        self.check_constraints = check_constraints
+        if verbose == 0:
+            cvxopt.solvers.options['show_progress'] = False
 
     def _solve_qp(self, psis, losses, n_samples):
         C = self.C / float(n_samples)
@@ -35,11 +39,6 @@ class StructuredSVM(object):
         tmp1 = np.zeros(n_constraints)
         tmp2 = np.ones(n_constraints) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
-        # get previous solution as starting point if any
-        #initvals = dict()
-        #if hasattr(self, "old_solution"):
-            #initvals['x'] = self.old_solution['x']
-            #initvals['y'] = self.old_solution['y']
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h)
 
@@ -77,30 +76,38 @@ class StructuredSVM(object):
             primal_objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
-
                 loss = self.problem.loss(y, y_hat)
 
                 already_active = [True for i_, y_hat_ in constraints if
                         i_ == i and (y_hat == y_hat_).all()]
                 constraint = (i, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
-                cost = np.dot(w, delta_psi) - loss
-                if (cost) > 0:
-                    tracer()
-                primal_objective -= cost
+                slack = loss - np.dot(w, delta_psi)
+                primal_objective += slack
+                if self.verbose > 1:
+                    print("current slack: %f" % slack)
+                if self.check_constraints:
+                    # "smart" but expensive stopping criterion
+                    # check if most violated constraint is more violated
+                    # than previous ones by more then eps.
+                    # If it is less violated, inference was wrong/approximate
+                    for con in constraints:
+                        if con[0] != i:
+                            continue
+                        dpsi_tmp = psi(x, y) - psi(x, con[1])
+                        loss_tmp = self.problem.loss(y, con[1])
+                        slack_tmp = loss_tmp - np.dot(w, dpsi_tmp)
+                        if self.verbose > 1:
+                            print("slack old constraint: %f" % slack_tmp)
+                        if slack < slack_tmp:
+                            print("bad inference!")
+                            already_active = True
+                        if (slack - slack_tmp) < 1e-5:
+                            already_active = True
 
-                print("current cost: %f" % cost)
-                #for con in constraints:
-                    #if con[0] != i:
-                        #continue
-                    #dpsi_tmp = psi(x, y) - psi(x, con[1])
-                    #loss_tmp = self.problem.loss(y, con[1])
-                    #cost_tmp = np.dot(w, dpsi_tmp) - loss_tmp
-                    #print("cost old constraint: %f" % cost_tmp)
-                    #if cost > cost_tmp:
-                        #tracer()
                 current_loss += loss
-                if loss and not already_active:
+                #if loss and not already_active:
+                if not already_active:
                     constraints.append(constraint)
                     psis.append(delta_psi)
                     losses.append(loss)
@@ -177,18 +184,19 @@ class SubgradientStructuredSVM(StructuredSVM):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
-                objective -= np.dot(delta_psi, w) - loss
+                slack = loss - np.dot(delta_psi, w)
+                objective += slack
                 psis.append(delta_psi)
 
                 losses.append(loss)
                 current_loss += loss
-                if loss:
+                if slack > 0:
                     new_constraints += 1
             objective /= len(X)
             objective += np.sum(w ** 2) / self.C / 2.
             if new_constraints == 0:
-                print("no additional constraints")
-                #break
+                print("No additional constraints")
+                break
             print("current loss: %f  new constraints: %d, objective: %f" %
                     (current_loss, new_constraints, objective))
             loss_curve.append(current_loss)

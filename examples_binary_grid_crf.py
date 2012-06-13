@@ -50,7 +50,7 @@ def main():
     X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=100)
+    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=2)
     #clf = SubgradientStructuredSVM(problem=crf, max_iter=2000, C=100)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
@@ -67,8 +67,6 @@ def main():
         plt.subplot(224)
         plt.imshow(y_pred, interpolation='nearest')
         plt.savefig("data_%03d.png" % i)
-        #plt.show()
-        #break
         plt.close()
         i += 1
     print("loss: %f" % loss)
