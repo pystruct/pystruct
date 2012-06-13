@@ -19,7 +19,7 @@ tracer = Tracer()
 class StructuredSVM(object):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-            verbose=0):
+            verbose=1):
         self.max_iter = max_iter
         self.problem = problem
         self.C = float(C)
@@ -127,8 +127,8 @@ class StructuredSVM(object):
                 objective_curve[-1]) < 0.01):
                 print("Dual objective converged.")
                 break
-
-            print(w)
+            if self.verbose > 0:
+                print(w)
         self.w = w
         plt.subplot(131, title="loss")
         plt.plot(loss_curve)
@@ -177,7 +177,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             psis = []
-            new_constraints = 0
+            positive_slacks = 0
             current_loss = 0.
             objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
@@ -191,20 +191,20 @@ class SubgradientStructuredSVM(StructuredSVM):
                 losses.append(loss)
                 current_loss += loss
                 if slack > 0:
-                    new_constraints += 1
+                    positive_slacks += 1
             objective /= len(X)
             objective += np.sum(w ** 2) / self.C / 2.
-            if new_constraints == 0:
+            if positive_slacks == 0:
                 print("No additional constraints")
                 break
-            print("current loss: %f  new constraints: %d, objective: %f" %
-                    (current_loss, new_constraints, objective))
+            print("current loss: %f  positive slacks: %d, objective: %f" %
+                    (current_loss, positive_slacks, objective))
             loss_curve.append(current_loss)
             all_psis.extend(psis)
             objective_curve.append(objective)
             w = self._solve_subgradient(psis)
-
-            print(w)
+            if self.verbose > 2:
+                print(w)
         self.w = w
         print(objective_curve[-1])
         plt.subplot(121, title="loss")
