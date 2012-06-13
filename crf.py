@@ -60,8 +60,8 @@ class BinaryGridCRF(StructuredProblem):
     def inference(self, x, w):
         unary_param = w[0]
         pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
-        unaries = - 10 * unary_param * x
-        pairwise = -10 * pairwise_params
+        unaries = - 1000 * unary_param * x
+        pairwise = -1000 * pairwise_params
         y = binary_grid(unaries.astype(np.int32), pairwise.astype(np.int32))
         return y
 
@@ -118,8 +118,8 @@ class MultinomialGridCRF(StructuredProblem):
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (- 10 * unary_params * x).astype(np.int32)
-        pairwise = (-10 * pairwise_params).astype(np.int32)
+        unaries = (-1000 * unary_params * x).astype(np.int32)
+        pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_grid(unaries, pairwise)
         return y
 
@@ -180,8 +180,8 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (- 10 * unary_params * x).astype(np.int32)
-        pairwise = (-10 * pairwise_params).astype(np.int32)
+        unaries = (-1000 * unary_params * x).astype(np.int32)
+        pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise)
         return y
 
