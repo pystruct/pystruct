@@ -24,7 +24,8 @@ class StructuredSVM(object):
         self.problem = problem
         self.C = float(C)
 
-    def _solve_qp(self, psis, losses):
+    def _solve_qp(self, psis, losses, n_samples):
+        C = self.C / float(n_samples)
         psi_matrix = np.vstack(psis)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
@@ -32,25 +33,25 @@ class StructuredSVM(object):
         idy = np.identity(n_constraints)
         G = cvxopt.matrix(np.vstack((-idy, idy)))
         tmp1 = np.zeros(n_constraints)
-        tmp2 = np.ones(n_constraints) * self.C
+        tmp2 = np.ones(n_constraints) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
         # get previous solution as starting point if any
-        initvals = dict()
-        if hasattr(self, "old_solution"):
-            initvals['x'] = self.old_solution['x']
-            initvals['y'] = self.old_solution['y']
+        #initvals = dict()
+        #if hasattr(self, "old_solution"):
+            #initvals['x'] = self.old_solution['x']
+            #initvals['y'] = self.old_solution['y']
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h)
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
-        #self.old_solution = solution
+        self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
         sv = a > 1e-5
         print("%d support vectors out of %d points" % (np.sum(sv),
             n_constraints))
-        print("Coefficients at C: %d" % np.sum(1 - a / self.C < 1e-3))
+        print("Coefficients at C: %d" % np.sum(1 - a / C < 1e-3))
         print("dual objective: %f" % solution['primal objective'])
         w = np.zeros(self.problem.size_psi)
         for issv, dpsi, alpha in zip(sv, psis, a):
@@ -68,36 +69,55 @@ class StructuredSVM(object):
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
+        n_samples = len(X)
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            primal_objective = np.sum(w ** 2) / self.C
+            primal_objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
+
                 loss = self.problem.loss(y, y_hat)
 
                 already_active = [True for i_, y_hat_ in constraints if
                         i_ == i and (y_hat == y_hat_).all()]
                 constraint = (i, y_hat)
                 delta_psi = psi(x, y) - psi(x, y_hat)
-                primal_objective -= np.dot(w, delta_psi) - loss
+                cost = np.dot(w, delta_psi) - loss
+                if (cost) > 0:
+                    tracer()
+                primal_objective -= cost
+
+                print("current cost: %f" % cost)
+                #for con in constraints:
+                    #if con[0] != i:
+                        #continue
+                    #dpsi_tmp = psi(x, y) - psi(x, con[1])
+                    #loss_tmp = self.problem.loss(y, con[1])
+                    #cost_tmp = np.dot(w, dpsi_tmp) - loss_tmp
+                    #print("cost old constraint: %f" % cost_tmp)
+                    #if cost > cost_tmp:
+                        #tracer()
                 current_loss += loss
                 if loss and not already_active:
                     constraints.append(constraint)
                     psis.append(delta_psi)
                     losses.append(loss)
                     new_constraints += 1
-            print("current loss: %f  new constraints: %d, real obj: %f" %
+            primal_objective /= len(X)
+            primal_objective += np.sum(w ** 2) / self.C / 2.
+            print("current loss: %f  new constraints: %d, primal obj: %f" %
                     (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
             primal_objective_curve.append(primal_objective)
             if new_constraints == 0:
                 print("no additional constraints")
                 break
-            w, objective = self._solve_qp(psis, losses)
+            w, objective = self._solve_qp(psis, losses, n_samples)
             objective_curve.append(objective)
-            if iteration > 1 and np.abs(objective_curve[-2] - objective_curve[-1]) < 0.01:
+            if (iteration > 1 and np.abs(objective_curve[-2] -
+                objective_curve[-1]) < 0.01):
                 print("Dual objective converged.")
                 break
 
@@ -113,6 +133,7 @@ class StructuredSVM(object):
         plt.subplot(133, title="primal objective")
         plt.plot(primal_objective_curve)
         plt.show()
+        tracer()
 
     def predict(self, X):
         prediction = []
@@ -133,7 +154,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         else:
             w = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
-        w += 0.0001 * (psi_matrix - w / self.C)
+        w += 1. / self.t * (psi_matrix - w / self.C / 2)
         self.w = w
         self.t += 1.
         return w
@@ -151,7 +172,7 @@ class SubgradientStructuredSVM(StructuredSVM):
             psis = []
             new_constraints = 0
             current_loss = 0.
-            objective = np.sum(w ** 2) / self.C
+            objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
@@ -163,6 +184,8 @@ class SubgradientStructuredSVM(StructuredSVM):
                 current_loss += loss
                 if loss:
                     new_constraints += 1
+            objective /= len(X)
+            objective += np.sum(w ** 2) / self.C / 2.
             if new_constraints == 0:
                 print("no additional constraints")
                 #break
