@@ -32,6 +32,7 @@ def make_dataset_checker(n_samples=20):
 
 
 def make_dataset_big_checker(n_samples=20):
+    np.random.seed(0)
     Y_small = np.ones((n_samples, 11, 13))
     Y_small[:, ::2, ::2] = -1
     Y_small[:, 1::2, 1::2] = -1

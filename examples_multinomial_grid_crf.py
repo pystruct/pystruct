@@ -67,12 +67,12 @@ def make_dataset_big_checker_extended():
 
 
 def main():
-    X, Y = make_dataset_checker_multinomial()
+    #X, Y = make_dataset_checker_multinomial()
     #X, Y = make_dataset_easy_latent(n_samples=5)
     #X, Y = make_dataset_easy_latent_explicit(n_samples=5)
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
-    #X, Y = make_dataset_blocks_multinomial(n_samples=100)
+    X, Y = make_dataset_blocks_multinomial(n_samples=1)
     size_y = Y[0].size
     shape_y = Y[0].shape
     n_labels = len(np.unique(Y))
@@ -89,8 +89,8 @@ def main():
     crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    #clf = StructuredSVM(problem=crf, max_iter=100, C=100)
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100)
+    clf = StructuredSVM(problem=crf, max_iter=20, C=10)
+    #clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=10)
     X_flat = [x.reshape(-1, n_labels).copy("C") for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
@@ -99,7 +99,11 @@ def main():
     #Y_pred = clf.predict(X)
 
     i = 0
+    loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
+        loss += np.sum(y != y_pred)
+        if i > 4:
+            continue
         plt.subplot(131)
         plt.imshow(y, interpolation='nearest')
         plt.colorbar()
@@ -113,8 +117,7 @@ def main():
         plt.savefig("data_%03d.png" % i)
         plt.close()
         i += 1
-        if i > 4:
-            break
+    print(loss)
 
 if __name__ == "__main__":
     main()
