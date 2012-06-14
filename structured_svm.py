@@ -74,7 +74,7 @@ class StructuredSVM(object):
         psi = self.problem.psi
         w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
-        constraints = [[]] * n_samples
+        constraints = [[] for i in xrange(n_samples)]
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
