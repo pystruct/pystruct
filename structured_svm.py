@@ -45,7 +45,6 @@ class StructuredSVM(object):
         for i, sample in enumerate(constraints):
             blocks[i, first: first + len(sample)] = 1
             first += len(sample)
-        tracer()
         # put together
         G = cvxopt.matrix(np.vstack((-idy, blocks)))
         tmp2 = np.ones(n_samples) * C
@@ -72,7 +71,9 @@ class StructuredSVM(object):
 
     def fit(self, X, Y):
         psi = self.problem.psi
-        w = np.zeros(self.problem.size_psi)
+        # we initialize with a small value so that loss-augmented inference
+        # can give us something meaningful in the first iteration
+        w = np.ones(self.problem.size_psi) * 1e-5
         n_samples = len(X)
         constraints = [[] for i in xrange(n_samples)]
         loss_curve = []
@@ -92,9 +93,10 @@ class StructuredSVM(object):
 
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 slack = loss - np.dot(w, delta_psi)
-                primal_objective += slack
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
+                primal_objective += slack
+
                 if self.check_constraints:
                     # "smart" but expensive stopping criterion
                     # check if most violated constraint is more violated
@@ -107,14 +109,20 @@ class StructuredSVM(object):
                         slack_tmp = loss_tmp - np.dot(w, dpsi_tmp)
                         if self.verbose > 1:
                             print("slack old constraint: %f" % slack_tmp)
+                        # if slack of new constraint is smaller or not
+                        # significantly larger, don't add constraint.
+                        # if smaller, complain about approximate inference.
                         if slack < slack_tmp:
                             print("bad inference!")
                             already_active = True
+                            break
                         if (slack - slack_tmp) < 1e-5:
                             already_active = True
+                            break
 
                 current_loss += loss
-                #if loss and not already_active:
+                # if significant slack and constraint not active
+                # this is a weaker check than the "check_constraints" one.
                 if not already_active and slack > 1e-5:
                     constraints[i].append([y_hat, delta_psi, loss])
                     new_constraints += 1
@@ -131,10 +139,10 @@ class StructuredSVM(object):
                 break
             w, objective = self._solve_qp(constraints, n_samples)
             objective_curve.append(objective)
-            if (iteration > 1 and np.abs(objective_curve[-2] -
-                objective_curve[-1]) < 0.01):
-                print("Dual objective converged.")
-                break
+            #if (iteration > 1 and np.abs(objective_curve[-2] -
+                #objective_curve[-1]) < 0.01):
+                #print("Dual objective converged.")
+                #break
             if self.verbose > 0:
                 print(w)
         self.w = w
@@ -148,7 +156,6 @@ class StructuredSVM(object):
         plt.subplot(133, title="primal objective")
         plt.plot(primal_objective_curve)
         plt.show()
-        tracer()
 
     def predict(self, X):
         prediction = []
@@ -161,7 +168,7 @@ class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C)
-        self.t = 1000.
+        self.t = 10.
 
     def _solve_subgradient(self, psis):
         if hasattr(self, 'w'):
@@ -177,7 +184,9 @@ class SubgradientStructuredSVM(StructuredSVM):
 
     def fit(self, X, Y):
         psi = self.problem.psi
-        w = np.zeros(self.problem.size_psi)
+        # we initialize with a small value so that loss-augmented inference
+        # can give us something meaningful in the first iteration
+        w = 1e-5 * np.ones(self.problem.size_psi)
         #constraints = []
         all_psis = []
         losses = []
