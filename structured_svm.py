@@ -28,16 +28,27 @@ class StructuredSVM(object):
         if verbose == 0:
             cvxopt.solvers.options['show_progress'] = False
 
-    def _solve_qp(self, psis, losses, n_samples):
+    def _solve_qp(self, constraints, n_samples):
         C = self.C / float(n_samples)
+        psis = [c[1] for sample in constraints for c in sample]
+        losses = [c[2] for sample in constraints for c in sample]
         psi_matrix = np.vstack(psis)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
+        # constraints are a bit tricky. first, all alpha must be >zero
         idy = np.identity(n_constraints)
-        G = cvxopt.matrix(np.vstack((-idy, idy)))
         tmp1 = np.zeros(n_constraints)
-        tmp2 = np.ones(n_constraints) * C
+        # box constraint: sum of all alpha for one example must be <= C
+        blocks = np.zeros((n_samples, n_constraints))
+        first = 0
+        for i, sample in enumerate(constraints):
+            blocks[i, first: first + len(sample)] = 1
+            first += len(sample)
+        tracer()
+        # put together
+        G = cvxopt.matrix(np.vstack((-idy, blocks)))
+        tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h)
@@ -62,13 +73,11 @@ class StructuredSVM(object):
     def fit(self, X, Y):
         psi = self.problem.psi
         w = np.zeros(self.problem.size_psi)
-        constraints = []
-        psis = []
-        losses = []
+        n_samples = len(X)
+        constraints = [[]] * n_samples
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
-        n_samples = len(X)
         for iteration in xrange(self.max_iter):
             print("iteration %d" % iteration)
             new_constraints = 0
@@ -78,9 +87,9 @@ class StructuredSVM(object):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
 
-                already_active = [True for i_, y_hat_ in constraints if
-                        i_ == i and (y_hat == y_hat_).all()]
-                constraint = (i, y_hat)
+                already_active = np.any([True for y_hat_, psi_, loss_ in
+                    constraints[i] if (y_hat == y_hat_).all()])
+
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 slack = loss - np.dot(w, delta_psi)
                 primal_objective += slack
@@ -91,11 +100,10 @@ class StructuredSVM(object):
                     # check if most violated constraint is more violated
                     # than previous ones by more then eps.
                     # If it is less violated, inference was wrong/approximate
-                    for con in constraints:
-                        if con[0] != i:
-                            continue
-                        dpsi_tmp = psi(x, y) - psi(x, con[1])
-                        loss_tmp = self.problem.loss(y, con[1])
+                    for con in constraints[i]:
+                        # compute slack for old constraint
+                        dpsi_tmp = psi(x, y) - psi(x, con[0])
+                        loss_tmp = self.problem.loss(y, con[0])
                         slack_tmp = loss_tmp - np.dot(w, dpsi_tmp)
                         if self.verbose > 1:
                             print("slack old constraint: %f" % slack_tmp)
@@ -107,21 +115,21 @@ class StructuredSVM(object):
 
                 current_loss += loss
                 #if loss and not already_active:
-                if not already_active:
-                    constraints.append(constraint)
-                    psis.append(delta_psi)
-                    losses.append(loss)
+                if not already_active and slack > 1e-5:
+                    constraints[i].append([y_hat, delta_psi, loss])
                     new_constraints += 1
             primal_objective /= len(X)
+            current_loss /= len(X)
             primal_objective += np.sum(w ** 2) / self.C / 2.
             print("current loss: %f  new constraints: %d, primal obj: %f" %
                     (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
+
             primal_objective_curve.append(primal_objective)
             if new_constraints == 0:
                 print("no additional constraints")
                 break
-            w, objective = self._solve_qp(psis, losses, n_samples)
+            w, objective = self._solve_qp(constraints, n_samples)
             objective_curve.append(objective)
             if (iteration > 1 and np.abs(objective_curve[-2] -
                 objective_curve[-1]) < 0.01):
@@ -153,7 +161,7 @@ class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C)
-        self.t = 1.
+        self.t = 1000.
 
     def _solve_subgradient(self, psis):
         if hasattr(self, 'w'):
@@ -162,6 +170,7 @@ class SubgradientStructuredSVM(StructuredSVM):
             w = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
         w += 1. / self.t * (psi_matrix - w / self.C / 2)
+        #w += .01 * (psi_matrix - w / self.C / 2)
         self.w = w
         self.t += 1.
         return w
@@ -193,6 +202,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                 if slack > 0:
                     positive_slacks += 1
             objective /= len(X)
+            current_loss /= len(X)
             objective += np.sum(w ** 2) / self.C / 2.
             if positive_slacks == 0:
                 print("No additional constraints")
@@ -268,8 +278,9 @@ class LatentStructuredSVM(StructuredSVM):
                 print("no additional constraints found")
                 tracer()
                 break
+            current_loss /= len(X)
             print("current loss: %f  new constraints: %d" %
-                    (current_loss / len(X), new_constraints))
+                    (current_loss, new_constraints))
             loss_curve.append(current_loss)
             w = self._solve_qp(psis, losses)
 

@@ -34,7 +34,6 @@ def make_dataset_easy_latent_explicit(n_samples=5):
             Y[i, t:t + 3, l:l + 3, 1] = -1
             Y[i, t + 1, l + 1, 2] = -1
             Y[i, t + 1, l + 1, 1] = 0
-    tracer()
     Y[np.sum(Y, axis=3) == 0, 0] = -1
     X = Y + 0.0 * np.random.normal(size=Y.shape)
     Y = np.argmin(Y, axis=3)
