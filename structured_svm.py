@@ -104,9 +104,7 @@ class StructuredSVM(object):
                     # If it is less violated, inference was wrong/approximate
                     for con in constraints[i]:
                         # compute slack for old constraint
-                        dpsi_tmp = psi(x, y) - psi(x, con[0])
-                        loss_tmp = self.problem.loss(y, con[0])
-                        slack_tmp = loss_tmp - np.dot(w, dpsi_tmp)
+                        slack_tmp = con[2] - np.dot(w, con[1])
                         if self.verbose > 1:
                             print("slack old constraint: %f" % slack_tmp)
                         # if slack of new constraint is smaller or not
@@ -155,7 +153,7 @@ class StructuredSVM(object):
         plt.plot(objective_curve)
         plt.subplot(133, title="primal objective")
         plt.plot(primal_objective_curve)
-        plt.show()
+        #plt.show()
 
     def predict(self, X):
         prediction = []
