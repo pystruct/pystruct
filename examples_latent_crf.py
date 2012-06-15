@@ -6,7 +6,7 @@ from scipy import sparse
 
 from latent_crf import LatentFixedGraphCRF
 #from structured_perceptron import LatentStructuredPerceptron
-from structured_svm import LatentStructuredSVM
+from latent_structured_svm import LatentStructuredSVM
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
