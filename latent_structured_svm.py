@@ -14,6 +14,41 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+class StupidLatentSVM(StructuredSVM):
+    def fit(self, X, Y):
+        w = np.ones(self.problem.size_psi) * 1e-5
+        subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
+                self.check_constraints, verbose=0)
+        objectives = []
+        ws = []
+        for iteration in xrange(15):
+            print("LATENT SVM ITERATION %d" % iteration)
+            # find latent variables for ground truth:
+            H = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
+            #X_wide = [np.repeat(x, self.problem.n_states_per_label, axis=1)
+            #for x in X]
+            subsvm.fit(X, H)
+            H_hat = [self.problem.inference(x, subsvm.w) for x in X]
+            inds = np.arange(len(H))
+            for i, h, h_hat in zip(inds, H, H_hat):
+                plt.matshow(h.reshape(18, 18))
+                plt.colorbar()
+                plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
+                plt.close()
+                plt.matshow(h_hat.reshape(18, 18))
+                plt.colorbar()
+                plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
+                plt.close()
+            w = subsvm.w
+            ws.append(w)
+            objectives.append(subsvm.primal_objective_)
+        self.w = w
+        plt.figure()
+        plt.plot(objectives)
+        plt.show()
+        tracer()
+
+
 class LatentStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def fit(self, X, Y):
@@ -45,15 +80,15 @@ class LatentStructuredSVM(StructuredSVM):
 
                 primal_objective += slack
 
-                #if i < 5 and not iteration % 10:
-                    #plt.matshow(h.reshape(18, 18))
-                    #plt.colorbar()
-                    #plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
-                    #plt.close()
-                    #plt.matshow(h_hat.reshape(18, 18))
-                    #plt.colorbar()
-                    #plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
-                    #plt.close()
+                if i < 5 and not iteration % 1:
+                    plt.matshow(h.reshape(18, 18))
+                    plt.colorbar()
+                    plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
+                    plt.close()
+                    plt.matshow(h_hat.reshape(18, 18))
+                    plt.colorbar()
+                    plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
+                    plt.close()
 
                 # recompute psi from previous constraints
                 for j, con in enumerate(constraints[i]):
@@ -62,8 +97,9 @@ class LatentStructuredSVM(StructuredSVM):
                     delta_psi_old = psi(x, h, y) - psi(x, h_hat_old, y_hat_old)
                     constraints[i][j] = (y_hat_old, delta_psi_old, loss_old)
 
-                already_active = np.any([True for y_hat_, psi_, loss_ in
-                    constraints[i] if (y_hat == y_hat_).all()])
+                #already_active = np.any([True for y_hat_, psi_, loss_ in
+                    #constraints[i] if (y_hat == y_hat_).all()])
+                already_active = False
 
                 if self.check_constraints:
                     # "smart" but expensive stopping criterion

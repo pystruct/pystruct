@@ -6,7 +6,7 @@ from scipy import sparse
 
 from latent_crf import LatentFixedGraphCRF
 #from structured_perceptron import LatentStructuredPerceptron
-from latent_structured_svm import LatentStructuredSVM
+from latent_structured_svm import StupidLatentSVM
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -39,10 +39,10 @@ def make_dataset_easy_latent_explicit(n_samples=5):
     for y in Y_flips:
         flips = np.random.randint(18, size=[n_flips, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=n_flips)
-    #Y = (Y != 0).astype(np.int)
-    #Y_flips = (Y_flips != 0).astype(np.int)
-    X = np.zeros((n_samples, 18, 18, 3))
-    #X = np.zeros((n_samples, 18, 18, 2))
+    Y = (Y != 0).astype(np.int)
+    Y_flips = (Y_flips != 0).astype(np.int)
+    #X = np.zeros((n_samples, 18, 18, 3))
+    X = np.zeros((n_samples, 18, 18, 2))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = -1
     return X * 100, Y
@@ -70,9 +70,11 @@ def main():
 
     n_labels = len(np.unique(Y))
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
-    crf = LatentFixedGraphCRF(n_labels=n_labels, n_states_per_label=1, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=n_labels, n_states_per_label=2,
+            graph=graph)
     #clf = LatentStructuredPerceptron(problem=crf, max_iter=500)
-    clf = LatentStructuredSVM(problem=crf, max_iter=10000, C=10000)
+    clf = StupidLatentSVM(problem=crf, max_iter=10000, C=10000, verbose=2,
+            check_constraints=True)
     X_flat = [x.reshape(-1, n_labels) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)

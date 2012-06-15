@@ -144,6 +144,7 @@ class StructuredSVM(object):
             if self.verbose > 0:
                 print(w)
         self.w = w
+        plt.figure()
         plt.subplot(131, title="loss")
         plt.plot(loss_curve)
         plt.subplot(132, title="objective")
@@ -154,6 +155,7 @@ class StructuredSVM(object):
         plt.subplot(133, title="primal objective")
         plt.plot(primal_objective_curve)
         #plt.show()
+        self.primal_objective_ = primal_objective
 
     def predict(self, X):
         prediction = []

@@ -17,10 +17,9 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
         # n_labels unary parameters, upper triangular for pairwise
         self.n_states = n_states
 
-    def psi(self, x, h, y):
+    def psi(self, x, h):
         # x is unaries
         # h is latent labeling
-        # y is a labeling
         ## unary features:
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         return super(LatentFixedGraphCRF, self).psi(x_wide, h)
@@ -30,11 +29,9 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         # do usual inference
         h = super(LatentFixedGraphCRF, self).inference(x_wide, w)
-        # create y from h:
-        y = h / self.n_states_per_label
-        return h, y
+        return h
 
-    def loss_augmented_inference(self, x, y, w):
+    def loss_augmented_inference(self, x, h, w):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         # do usual inference
@@ -45,13 +42,13 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
         for s in np.arange(self.n_states):
             # for each class, decrement unaries
             # for loss-agumention
-            x_wide[y != s / self.n_states_per_label, s] += 1. / unary_params[s]
+            x_wide[h / self.n_states_per_label
+                    != s / self.n_states_per_label, s] += 1. / unary_params[s]
         # augment unary potentials for latent states
         # do usual inference
         h = super(LatentFixedGraphCRF, self).inference(x_wide, w)
         # create y from h:
-        y = h / self.n_states_per_label
-        return h, y
+        return h
 
     def latent(self, x, y, w):
         # augment unary potentials for latent states
@@ -79,3 +76,7 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
             else:
                 h = y * self.n_states_per_label
         return h
+
+    def loss(self, h, h_hat):
+        return np.sum(h / self.n_states_per_label
+                != h_hat / self.n_states_per_label)
