@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from crf import BinaryGridCRF
 #from structured_perceptron import StructuredPerceptron
 from structured_svm import StructuredSVM
-from structured_svm import SubgradientStructuredSVM
+#from structured_svm import SubgradientStructuredSVM
 from examples_latent_crf import make_dataset_easy_latent
 
 from IPython.core.debugger import Tracer
@@ -46,11 +46,12 @@ def make_dataset_big_checker(n_samples=20):
 def main():
     #X, Y = make_dataset_blocks()
     #X, Y = make_dataset_checker()
-    #X, Y = make_dataset_easy_latent(n_samples=10)
-    X, Y = make_dataset_big_checker()
+    X, Y = make_dataset_easy_latent(n_samples=10)
+    #X, Y = make_dataset_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=2)
+    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=0,
+            check_constraints=False)
     #clf = SubgradientStructuredSVM(problem=crf, max_iter=2000, C=100)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)

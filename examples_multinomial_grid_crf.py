@@ -6,9 +6,9 @@ from scipy import sparse
 from crf import MultinomialFixedGraphCRF
 #from crf import MultinomialGridCRF
 #from structured_perceptron import StructuredPerceptron
-from structured_svm import StructuredSVM, SubgradientStructuredSVM
+from structured_svm import StructuredSVM  # ,SubgradientStructuredSVM
 #from examples_latent_crf import make_dataset_easy_latent
-#from examples_latent_crf import make_dataset_easy_latent_explicit
+from examples_latent_crf import make_dataset_easy_latent_explicit
 
 
 from IPython.core.debugger import Tracer
@@ -63,16 +63,16 @@ def make_dataset_big_checker_extended():
     gx, gy, gz = np.mgrid[:Y.shape[0], :Y.shape[1], :Y.shape[2]]
     X[gx, gy, gz, Y] = -1
     X = X + 0.3 * np.random.normal(size=X.shape)
-    return X, Y
+    return X * 100., Y
 
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
-    #X, Y = make_dataset_easy_latent(n_samples=5)
-    #X, Y = make_dataset_easy_latent_explicit(n_samples=5)
-    X, Y = make_dataset_big_checker_extended()
+    X, Y = make_dataset_easy_latent_explicit(n_samples=50)
+    #X, Y = make_dataset_easy_latent(n_samples=20)
+    #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
-    #X, Y = make_dataset_blocks_multinomial(n_samples=1)
+    #X, Y = make_dataset_blocks_multinomial(n_samples=5)
     size_y = Y[0].size
     shape_y = Y[0].shape
     n_labels = len(np.unique(Y))
@@ -89,8 +89,9 @@ def main():
     crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    #clf = StructuredSVM(problem=crf, max_iter=20, C=10, verbose=2)
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=10)
+    clf = StructuredSVM(problem=crf, max_iter=20, C=100000., verbose=2,
+            check_constraints=True)
+    #clf = SubgradientStructuredSVM(problem=crf, max_iter=1000, C=10000)
     X_flat = [x.reshape(-1, n_labels).copy("C") for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
@@ -101,7 +102,9 @@ def main():
     i = 0
     loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
-        loss += np.sum(y != y_pred)
+        y_pred = y_pred.reshape(x.shape[:2])
+        #loss += np.sum(y != y_pred)
+        loss += np.sum(np.logical_xor(y, y_pred))
         if i > 4:
             continue
         plt.subplot(131)
@@ -111,13 +114,12 @@ def main():
         plt.imshow(np.argmin(x, axis=2), interpolation='nearest')
         plt.colorbar()
         plt.subplot(133)
-        plt.imshow(y_pred.reshape(x.shape[0], x.shape[1]),
-                interpolation='nearest')
+        plt.imshow(y_pred, interpolation='nearest')
         plt.colorbar()
         plt.savefig("data_%03d.png" % i)
         plt.close()
         i += 1
-    print(loss)
+    print("loss: %f" % loss)
 
 if __name__ == "__main__":
     main()
