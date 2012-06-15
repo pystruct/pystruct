@@ -52,7 +52,7 @@ def main():
     #X, Y = make_dataset_checker_multinomial()
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker(n_samples=5)
-    X, Y = make_dataset_easy_latent(n_samples=5)
+    X, Y = make_dataset_easy_latent_explicit(n_samples=5)
     #X = X[:, :18, :18]
     #Y = Y[:, :18, :18]
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
@@ -68,11 +68,12 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
+    n_labels = len(np.unique(Y))
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
-    crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
+    crf = LatentFixedGraphCRF(n_labels=n_labels, n_states_per_label=1, graph=graph)
     #clf = LatentStructuredPerceptron(problem=crf, max_iter=500)
-    clf = LatentStructuredSVM(problem=crf, max_iter=10000, C=100)
-    X_flat = [x.reshape(-1, 2) for x in X]
+    clf = LatentStructuredSVM(problem=crf, max_iter=10000, C=10000)
+    X_flat = [x.reshape(-1, n_labels) for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
     #clf.fit(X, Y)
