@@ -140,6 +140,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
     graph is given by scipy sparse adjacency matrix.
     """
     def __init__(self, n_states, graph):
+        self.inference_calls = 0
         self.n_states = n_states
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
@@ -165,15 +166,13 @@ class MultinomialFixedGraphCRF(StructuredProblem):
 
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
-        # normalize potentials
-        pw /= n_nodes
-        unaries_acc /= n_nodes
 
         feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
             dtype=np.bool)]])
         return feature
 
     def inference(self, x, w):
+        self.inference_calls += 1
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
@@ -182,7 +181,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
                 - np.diag(np.diag(pairwise_params))
         unaries = (-1000 * unary_params * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_graph(self.edges, unaries, pairwise)
+        y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=10)
         return y
 
     def loss_augmented_inference(self, x, y, w):

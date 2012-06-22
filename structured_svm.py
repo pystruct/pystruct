@@ -87,15 +87,17 @@ class StructuredSVM(object):
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
-
-                already_active = np.any([True for y_hat_, psi_, loss_ in
-                    constraints[i] if (y_hat == y_hat_).all()])
-
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 slack = loss - np.dot(w, delta_psi)
+
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
                 primal_objective += slack
+
+                already_active = np.any([True for y_hat_, psi_, loss_ in
+                    constraints[i] if (y_hat == y_hat_).all()])
+                if already_active:
+                    continue
 
                 if self.check_constraints:
                     # "smart" but expensive stopping criterion
@@ -144,6 +146,7 @@ class StructuredSVM(object):
             if self.verbose > 0:
                 print(w)
         self.w = w
+        print("calls to inference: %d" % self.problem.inference_calls)
         plt.figure()
         plt.subplot(131, title="loss")
         plt.plot(loss_curve)
@@ -226,6 +229,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                 print(w)
         self.w = w
         print(objective_curve[-1])
+        print("calls to inference: %d" % self.problem.inference_calls)
         plt.subplot(121, title="loss")
         plt.plot(loss_curve[10:])
         plt.subplot(122, title="objective")
