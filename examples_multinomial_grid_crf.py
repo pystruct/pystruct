@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy import sparse
+from pyqpbo import alpha_expansion_graph
 
 #from crf import MultinomialFixedGraphCRFNoBias
 from crf import MultinomialFixedGraphCRFNoBias
@@ -9,8 +10,8 @@ from crf import MultinomialFixedGraphCRFNoBias
 #from structured_perceptron import StructuredPerceptron
 from structured_svm import StructuredSVM
 #SubgradientStructuredSVM
-from examples_latent_crf import make_dataset_easy_latent
-#from examples_latent_crf import make_dataset_easy_latent_explicit
+#from examples_latent_crf import make_dataset_easy_latent
+from examples_latent_crf import make_dataset_easy_latent_explicit
 
 
 from IPython.core.debugger import Tracer
@@ -70,8 +71,8 @@ def make_dataset_big_checker_extended():
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
-    #X, Y = make_dataset_easy_latent_explicit(n_samples=1)
-    X, Y = make_dataset_easy_latent(n_samples=1)
+    X, Y = make_dataset_easy_latent_explicit(n_samples=1)
+    #X, Y = make_dataset_easy_latent(n_samples=1)
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
     #X, Y = make_dataset_blocks_multinomial(n_samples=5)
@@ -111,7 +112,10 @@ def main():
             continue
         fig, plots = plt.subplots(1, 4)
         plots[0].imshow(y, interpolation='nearest')
-        plots[1].imshow(np.argmin(x, axis=2), interpolation='nearest')
+        pw_z = np.zeros((n_labels, n_labels), dtype=np.int32)
+        un = (-1000 * x.reshape(-1, n_labels)).astype(np.int32)
+        unaries = alpha_expansion_graph(edges, un, pw_z)
+        plots[1].imshow(unaries.reshape(y.shape), interpolation='nearest')
         plots[2].imshow(y_pred, interpolation='nearest')
         loss_augmented = clf.problem.loss_augmented_inference(
                 x.reshape(-1, n_labels), y.ravel(), clf.w)

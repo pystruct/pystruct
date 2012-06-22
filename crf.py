@@ -181,7 +181,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
                 - np.diag(np.diag(pairwise_params))
         unaries = (-1000 * unary_params * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=10)
+        y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
         return y
 
     def loss_augmented_inference(self, x, y, w):
@@ -232,7 +232,7 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (1000 * x).astype(np.int32)
+        unaries = (-1000 * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
         return y
