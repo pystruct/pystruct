@@ -39,20 +39,21 @@ def make_dataset_easy_latent_explicit(n_samples=5):
     for y in Y_flips:
         flips = np.random.randint(18, size=[n_flips, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=n_flips)
-    Y = (Y != 0).astype(np.int)
-    Y_flips = (Y_flips != 0).astype(np.int)
-    #X = np.zeros((n_samples, 18, 18, 3))
-    X = np.zeros((n_samples, 18, 18, 2))
+    #Y = (Y != 0).astype(np.int)
+    #Y_flips_2 = (Y_flips != 0).astype(np.int)
+    X = np.zeros((n_samples, 18, 18, 3))
+    #X = np.zeros((n_samples, 18, 18, 2))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    #X[ix, iy, iz, Y_flips_2] = -1
     X[ix, iy, iz, Y_flips] = -1
-    return X * 100, Y
+    return X, Y
 
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker(n_samples=5)
-    X, Y = make_dataset_easy_latent_explicit(n_samples=5)
+    X, Y = make_dataset_easy_latent_explicit(n_samples=50)
     #X = X[:, :18, :18]
     #Y = Y[:, :18, :18]
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
@@ -68,7 +69,8 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    n_labels = len(np.unique(Y))
+    #n_labels = len(np.unique(Y))
+    n_labels = 2
     #crf = LatentFixedGraphCRF(n_labels=2, n_states_per_label=2, graph=graph)
     crf = LatentFixedGraphCRF(n_labels=n_labels, n_states_per_label=2,
             graph=graph)
@@ -83,7 +85,13 @@ def main():
     #Y_pred = clf.predict(X)
 
     i = 0
+    loss = 0
+    tracer()
     for x, y, y_pred in zip(X, Y, Y_pred):
+        y_pred = y_pred.reshape(x.shape[:2])
+        loss += np.sum(y / 2 != y_pred / 2)
+        if i > 20:
+            continue
         plt.subplot(131)
         plt.imshow(y, interpolation='nearest')
         plt.colorbar()
@@ -91,14 +99,12 @@ def main():
         plt.imshow(np.argmin(x, axis=2), interpolation='nearest')
         plt.colorbar()
         plt.subplot(133)
-        plt.imshow(y_pred.reshape(x.shape[0], x.shape[1]),
-                interpolation='nearest')
+        plt.imshow(y_pred, interpolation='nearest')
         plt.colorbar()
         plt.savefig("data_%03d.png" % i)
         plt.close()
         i += 1
-        if i > 20:
-            break
+    print("loss: %f" % loss)
 
 if __name__ == "__main__":
     main()

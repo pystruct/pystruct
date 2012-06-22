@@ -157,7 +157,9 @@ class StructuredSVM(object):
         plt.plot(objective_curve)
         plt.subplot(133, title="primal objective")
         plt.plot(primal_objective_curve)
-        #plt.show()
+        plt.show()
+        plt.close()
+        tracer()
         self.primal_objective_ = primal_objective
 
     def predict(self, X):
@@ -179,8 +181,8 @@ class SubgradientStructuredSVM(StructuredSVM):
         else:
             w = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
-        w += 1. / self.t * (psi_matrix - w / self.C / 2)
-        #w += .01 * (psi_matrix - w / self.C / 2)
+        #w += 1. / self.t * (psi_matrix - w / self.C / 2)
+        w += .001 * (psi_matrix - w / self.C / 2)
         self.w = w
         self.t += 1.
         return w

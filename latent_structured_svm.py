@@ -21,10 +21,17 @@ class StupidLatentSVM(StructuredSVM):
                 self.check_constraints, verbose=0)
         objectives = []
         ws = []
-        for iteration in xrange(15):
+        tracer()
+        H = Y
+        Y = [y / self.problem.n_states_per_label for y in Y]
+
+        for iteration in xrange(1):
             print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
-            H = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
+            if iteration == 0:
+                pass
+            else:
+                H = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
             #X_wide = [np.repeat(x, self.problem.n_states_per_label, axis=1)
             #for x in X]
             subsvm.fit(X, H)
@@ -42,6 +49,7 @@ class StupidLatentSVM(StructuredSVM):
             w = subsvm.w
             ws.append(w)
             objectives.append(subsvm.primal_objective_)
+            tracer()
         self.w = w
         plt.figure()
         plt.plot(objectives)

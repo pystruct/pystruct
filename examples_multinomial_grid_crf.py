@@ -3,12 +3,14 @@ import matplotlib.pyplot as plt
 
 from scipy import sparse
 
-from crf import MultinomialFixedGraphCRF
+#from crf import MultinomialFixedGraphCRFNoBias
+from crf import MultinomialFixedGraphCRFNoBias
 #from crf import MultinomialGridCRF
 #from structured_perceptron import StructuredPerceptron
-from structured_svm import StructuredSVM  # ,SubgradientStructuredSVM
-#from examples_latent_crf import make_dataset_easy_latent
-from examples_latent_crf import make_dataset_easy_latent_explicit
+from structured_svm import StructuredSVM
+#SubgradientStructuredSVM
+from examples_latent_crf import make_dataset_easy_latent
+#from examples_latent_crf import make_dataset_easy_latent_explicit
 
 
 from IPython.core.debugger import Tracer
@@ -68,8 +70,8 @@ def make_dataset_big_checker_extended():
 
 def main():
     #X, Y = make_dataset_checker_multinomial()
-    X, Y = make_dataset_easy_latent_explicit(n_samples=50)
-    #X, Y = make_dataset_easy_latent(n_samples=20)
+    #X, Y = make_dataset_easy_latent_explicit(n_samples=1)
+    X, Y = make_dataset_easy_latent(n_samples=1)
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker()
     #X, Y = make_dataset_blocks_multinomial(n_samples=5)
@@ -86,12 +88,12 @@ def main():
         (edges[:, 0], edges[:, 1])), shape=(size_y, size_y)).tocsr()
     graph = graph + graph.T
 
-    crf = MultinomialFixedGraphCRF(n_states=n_labels, graph=graph)
+    crf = MultinomialFixedGraphCRFNoBias(n_states=n_labels, graph=graph)
     #crf = MultinomialGridCRF(n_labels=4)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    clf = StructuredSVM(problem=crf, max_iter=20, C=100000., verbose=2,
+    clf = StructuredSVM(problem=crf, max_iter=20, C=1000000, verbose=2,
             check_constraints=True)
-    #clf = SubgradientStructuredSVM(problem=crf, max_iter=1000, C=10000)
+    #clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=10000)
     X_flat = [x.reshape(-1, n_labels).copy("C") for x in X]
     Y_flat = [y.ravel() for y in Y]
     clf.fit(X_flat, Y_flat)
@@ -107,17 +109,16 @@ def main():
         loss += np.sum(np.logical_xor(y, y_pred))
         if i > 4:
             continue
-        plt.subplot(131)
-        plt.imshow(y, interpolation='nearest')
-        plt.colorbar()
-        plt.subplot(132)
-        plt.imshow(np.argmin(x, axis=2), interpolation='nearest')
-        plt.colorbar()
-        plt.subplot(133)
-        plt.imshow(y_pred, interpolation='nearest')
-        plt.colorbar()
-        plt.savefig("data_%03d.png" % i)
-        plt.close()
+        fig, plots = plt.subplots(1, 4)
+        plots[0].imshow(y, interpolation='nearest')
+        plots[1].imshow(np.argmin(x, axis=2), interpolation='nearest')
+        plots[2].imshow(y_pred, interpolation='nearest')
+        loss_augmented = clf.problem.loss_augmented_inference(
+                x.reshape(-1, n_labels), y.ravel(), clf.w)
+        loss_augmented = loss_augmented.reshape(y.shape)
+        plots[3].imshow(loss_augmented, interpolation='nearest')
+        fig.savefig("data_%03d.png" % i)
+        plt.close(fig)
         i += 1
     print("loss: %f" % loss)
 

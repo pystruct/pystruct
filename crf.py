@@ -194,3 +194,53 @@ class MultinomialFixedGraphCRF(StructuredProblem):
             # for loss-agumention
             x_[y != l, l] += 1. / unary_params[l]
         return self.inference(x_, w)
+
+
+class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
+    """CRF with general graph that is THE SAME for all examples.
+    graph is given by scipy sparse adjacency matrix.
+    """
+    def __init__(self, n_states, graph):
+        self.inference_calls = 0
+        self.n_states = n_states
+        #upper triangular for pairwise
+        self.size_psi = n_states * (n_states - 1) / 2
+        self.graph = graph
+        self.edges = np.c_[graph.nonzero()].copy("C")
+
+    def psi(self, x, y):
+        # x is unaries
+        # y is a labeling
+        n_nodes = y.shape[0]
+
+        ##accumulated pairwise
+        #make one hot encoding
+        labels = np.zeros((n_nodes, self.n_states), dtype=np.int)
+        gx = np.ogrid[:n_nodes]
+        labels[gx, y] = 1
+
+        neighbors = self.graph * labels
+        pw = np.dot(neighbors.T, labels)
+
+        feature = pw[np.tri(self.n_states, k=-1, dtype=np.bool)]
+        return feature
+
+    def inference(self, x, w):
+        self.inference_calls += 1
+        pairwise_flat = np.asarray(w)
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = pairwise_flat
+        pairwise_params = pairwise_params + pairwise_params.T\
+                - np.diag(np.diag(pairwise_params))
+        unaries = (1000 * x).astype(np.int32)
+        pairwise = (-1000 * pairwise_params).astype(np.int32)
+        y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
+        return y
+
+    def loss_augmented_inference(self, x, y, w):
+        x_ = x.copy()
+        for l in np.arange(self.n_states):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_[y != l, l] += 1.
+        return self.inference(x_, w)
