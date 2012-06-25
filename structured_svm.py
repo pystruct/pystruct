@@ -19,8 +19,9 @@ tracer = Tracer()
 class StructuredSVM(object):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-            verbose=1):
+            verbose=1, positive_constraint=None):
         self.max_iter = max_iter
+        self.positive_constraint = positive_constraint
         self.problem = problem
         self.C = float(C)
         self.verbose = verbose
@@ -45,10 +46,19 @@ class StructuredSVM(object):
         for i, sample in enumerate(constraints):
             blocks[i, first: first + len(sample)] = 1
             first += len(sample)
+        # positivity constraints:
+        if self.positive_constraint is None:
+            #empty constraints
+            zero_constr = np.zeros(0)
+            psis_constr = np.zeros((0, n_constraints))
+        else:
+            psis_constr = psi_matrix.T[self.positive_constraint]
+            zero_constr = np.zeros(len(self.positive_constraint))
+
         # put together
-        G = cvxopt.matrix(np.vstack((-idy, blocks)))
+        G = cvxopt.matrix(np.vstack((-idy, blocks, psis_constr)))
         tmp2 = np.ones(n_samples) * C
-        h = cvxopt.matrix(np.hstack((tmp1, tmp2)))
+        h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
         # solve QP problem
         solution = cvxopt.solvers.qp(P, q, G, h)
 
@@ -62,11 +72,7 @@ class StructuredSVM(object):
             n_constraints))
         print("Coefficients at C: %d" % np.sum(1 - a / C < 1e-3))
         print("dual objective: %f" % solution['primal objective'])
-        w = np.zeros(self.problem.size_psi)
-        for issv, dpsi, alpha in zip(sv, psis, a):
-            if not issv:
-                continue
-            w += alpha * dpsi
+        w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
     def fit(self, X, Y):
@@ -115,6 +121,7 @@ class StructuredSVM(object):
                         if slack < slack_tmp:
                             print("bad inference!")
                             already_active = True
+                            tracer()
                             break
                         if (slack - slack_tmp) < 1e-5:
                             already_active = True
@@ -159,7 +166,6 @@ class StructuredSVM(object):
         plt.plot(primal_objective_curve)
         plt.show()
         plt.close()
-        tracer()
         self.primal_objective_ = primal_objective
 
     def predict(self, X):
