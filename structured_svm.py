@@ -17,7 +17,32 @@ tracer = Tracer()
 
 
 class StructuredSVM(object):
-    """Margin rescaled with l1 slack penalty."""
+    """Structured SVM training with l1 slack penalty.
+
+    Implements slack and margin rescaled structural SVM using
+    the dual formulation and cutting plane method, solved using CVXOPT.
+    The optimization is restarted in each iteration, therefore
+    possibly leading to a large overhead.
+
+    Parameters
+    ----------
+    problem : StructuredProblem
+        Object containing problem formulation. Has to implement
+        `loss`, `inference` and `loss_augmented_inference`.
+    max_iter : int
+        Maximum number of passes over dataset to find constraints.
+    C : float
+        Regularization parameter
+    check_constraints : bool
+        Whether to check if the new "most violated constraint" is
+        more violated than previous constraints. Helpful for stopping
+        and debugging, but costly.
+    verbose : int
+        Verbosity
+    positive_constraint: list of ints
+        Indices of parmeters that are constraint to be positive.
+    """
+
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
             verbose=1, positive_constraint=None):
         self.max_iter = max_iter
@@ -70,9 +95,12 @@ class StructuredSVM(object):
         sv = a > 1e-5
         print("%d support vectors out of %d points" % (np.sum(sv),
             n_constraints))
-        print("Coefficients at C: %d" % np.sum(1 - a / C < 1e-3))
+        # calculate per example box constraint:
+        box = np.dot(blocks, a)
+        print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
         print("dual objective: %f" % solution['primal objective'])
         w = np.dot(a, psi_matrix)
+        tracer()
         return w, solution['primal objective']
 
     def fit(self, X, Y):
@@ -93,6 +121,7 @@ class StructuredSVM(object):
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
+                tracer()
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 slack = loss - np.dot(w, delta_psi)
 
@@ -167,6 +196,7 @@ class StructuredSVM(object):
         plt.show()
         plt.close()
         self.primal_objective_ = primal_objective
+        tracer()
 
     def predict(self, X):
         prediction = []

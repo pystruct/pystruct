@@ -8,45 +8,10 @@ from latent_crf import LatentFixedGraphCRF
 #from structured_perceptron import LatentStructuredPerceptron
 from latent_structured_svm import StupidLatentSVM
 
+from toy_datsets import make_dataset_easy_latent_explicit
+
 from IPython.core.debugger import Tracer
 tracer = Tracer()
-
-
-def make_dataset_easy_latent(n_samples=5):
-    np.random.seed(0)
-    Y = np.ones((n_samples, 18, 18))
-    for i in xrange(n_samples):
-        for j in xrange(3):
-            t, l = np.random.randint(15, size=2)
-            Y[i, t:t + 3, l:l + 3] = -1
-    X = Y + 0.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, X]
-    Y = (Y > 0).astype(np.int32)
-    return X * 10, Y
-
-
-def make_dataset_easy_latent_explicit(n_samples=5):
-    np.random.seed(0)
-    Y = np.zeros((n_samples, 18, 18), dtype=np.int)
-    for i in xrange(n_samples):
-        for j in xrange(3):
-            t, l = np.random.randint(15, size=2)
-            Y[i, t:t + 3, l:l + 3] = 1
-            Y[i, t + 1, l + 1] = 2
-    Y_flips = Y.copy()
-    #flip random bits
-    n_flips = 30
-    for y in Y_flips:
-        flips = np.random.randint(18, size=[n_flips, 2])
-        y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=n_flips)
-    #Y = (Y != 0).astype(np.int)
-    #Y_flips_2 = (Y_flips != 0).astype(np.int)
-    X = np.zeros((n_samples, 18, 18, 3))
-    #X = np.zeros((n_samples, 18, 18, 2))
-    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
-    #X[ix, iy, iz, Y_flips_2] = -1
-    X[ix, iy, iz, Y_flips] = 1
-    return X, Y
 
 
 def main():

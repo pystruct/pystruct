@@ -78,7 +78,7 @@ class BinaryGridCRF(StructuredProblem):
 
 
 class MultinomialGridCRF(StructuredProblem):
-    def __init__(self, n_states):
+    def __init__(self, n_states=2):
         self.n_states = n_states
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
@@ -204,11 +204,19 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         self.inference_calls = 0
         self.n_states = n_states
         #upper triangular for pairwise
-        self.size_psi = n_states * (n_states - 1) / 2
+        # last one gives weights to unary potentials
+        self.size_psi = n_states * (n_states - 1) / 2 + 1
         self.graph = graph
         self.edges = np.c_[graph.nonzero()].copy("C")
 
     def psi(self, x, y):
+        # x is unaries
+        # y is a labeling
+        ## unary features:
+        n_nodes = y.shape[0]
+        gx = np.ogrid[:n_nodes]
+        unaries_acc = x[gx, y].sum()
+
         # x is unaries
         # y is a labeling
         n_nodes = y.shape[0]
@@ -222,19 +230,25 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
 
-        feature = pw[np.tri(self.n_states, k=-1, dtype=np.bool)]
+        pairwise = pw[np.tri(self.n_states, k=-1, dtype=np.bool)]
+        feature = np.hstack([unaries_acc, pairwise])
         return feature
 
     def inference(self, x, w):
         self.inference_calls += 1
-        pairwise_flat = np.asarray(w)
+        pairwise_flat = np.asarray(w[:-1])
+        unary = w[-1]
         pairwise_params = np.zeros((self.n_states, self.n_states))
         pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (-1000 * x).astype(np.int32)
+        unaries = (-1000 * unary * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
+        from pyqpbo import binary_graph
+        y_ = binary_graph(self.edges, unaries, pairwise)
+        if (y_ != y).any():
+            tracer()
         return y
 
     def loss_augmented_inference(self, x, y, w):

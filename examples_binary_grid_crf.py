@@ -5,42 +5,11 @@ from crf import BinaryGridCRF
 #from structured_perceptron import StructuredPerceptron
 from structured_svm import StructuredSVM
 #from structured_svm import SubgradientStructuredSVM
-from examples_latent_crf import make_dataset_easy_latent
+
+from toy_datasets import make_dataset_easy_latent
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
-
-
-def make_dataset_blocks():
-    Y = np.ones((20, 10, 12))
-    Y[:, :, :6] = -1
-    X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', X, -X]
-    Y = (Y > 0).astype(np.int32)
-    return X, Y
-
-
-def make_dataset_checker(n_samples=20):
-    np.random.seed(0)
-    Y = np.ones((n_samples, 11, 13))
-    Y[:, ::2, ::2] = -1
-    Y[:, 1::2, 1::2] = -1
-    X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', X, -X]
-    Y = (Y > 0).astype(np.int32)
-    return X, Y
-
-
-def make_dataset_big_checker(n_samples=20):
-    np.random.seed(0)
-    Y_small = np.ones((n_samples, 11, 13))
-    Y_small[:, ::2, ::2] = -1
-    Y_small[:, 1::2, 1::2] = -1
-    Y = Y_small.repeat(3, axis=1).repeat(3, axis=2)
-    X = Y + 0.5 * np.random.normal(size=Y.shape)
-    Y = (Y > 0).astype(np.int32)
-    X = np.c_['3,4,0', X, -X]
-    return X, Y
 
 
 def main():
