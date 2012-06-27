@@ -15,7 +15,7 @@ tracer = Tracer()
 def main():
     #X, Y = generate_blocks()
     #X, Y = generate_checker()
-    X, Y = generate_easy(n_samples=10)
+    X, Y = generate_easy(n_samples=1)
     #X, Y = generate_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)

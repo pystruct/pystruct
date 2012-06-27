@@ -10,6 +10,7 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 import matplotlib.pyplot as plt
+from scipy.optimize import fmin
 
 from IPython.core.debugger import Tracer
 
@@ -54,7 +55,7 @@ class StructuredSVM(object):
         if verbose == 0:
             cvxopt.solvers.options['show_progress'] = False
 
-    def _solve_qp(self, constraints, n_samples):
+    def _solve_constraints(self, constraints, n_samples):
         C = self.C / float(n_samples)
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
@@ -171,7 +172,7 @@ class StructuredSVM(object):
             if new_constraints == 0:
                 print("no additional constraints")
                 break
-            w, objective = self._solve_qp(constraints, n_samples)
+            w, objective = self._solve_constraints(constraints, n_samples)
             objective_curve.append(objective)
             #if (iteration > 1 and np.abs(objective_curve[-2] -
                 #objective_curve[-1]) < 0.01):
@@ -194,12 +195,39 @@ class StructuredSVM(object):
         plt.show()
         plt.close()
         self.primal_objective_ = primal_objective
+        tracer()
 
     def predict(self, X):
         prediction = []
         for x in X:
             prediction.append(self.problem.inference(x, self.w))
         return prediction
+
+
+class PrimalDSStructuredSVM(StructuredSVM):
+    """Uses downhill simplex for optimizing an unconstraint primal.
+
+    This is basically a sanity check on all other implementations,
+    as this is easier to check for correctness.
+    """
+
+    def fit(self, X, Y):
+        def func(w):
+            objective = 0
+            psi = self.problem.psi
+            for x, y in zip(X, Y):
+                y_hat = self.problem.loss_augmented_inference(x, y, w)
+                loss = self.problem.loss(y, y_hat)
+                delta_psi = psi(x, y) - psi(x, y_hat)
+                objective += loss - np.dot(w, delta_psi)
+            objective /= float(len(X))
+            objective += np.sum(w ** 2) / float(self.C) / 2.
+            return objective
+        w = 1e-5 * np.ones(self.problem.size_psi)
+        res = fmin(func, x0=w, full_output=1)
+        self.w = res[0]
+        tracer()
+        return self
 
 
 class SubgradientStructuredSVM(StructuredSVM):

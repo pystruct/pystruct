@@ -32,8 +32,8 @@ class BinaryGridCRF(StructuredProblem):
     def __init__(self):
         super(BinaryGridCRF, self).__init__()
         self.n_states = 2
-        # three parameter for binary, one for unaries
-        self.size_psi = 4
+        # one parameter for binary, one for unaries
+        self.size_psi = 2
 
     def psi(self, x, y):
         # x is unaries
@@ -57,12 +57,14 @@ class BinaryGridCRF(StructuredProblem):
         pw = vert + horz
         pw[0, 1] += pw[1, 0]
         #pw = np.zeros((2, 2))
-        return np.array([unaries_acc, pw[0, 0], pw[0, 1], pw[1, 1]])
+        return np.array([unaries_acc, pw[0, 1]])
 
     def inference(self, x, w):
         self.inference_calls += 1
         unary_param = w[0]
-        pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
+        pairwise_params = np.array([[0, w[1]], [w[1], 0]])
+        x = x.copy()
+        x[:, :, 1] = 0
         unaries = - 1000 * unary_param * x
         pairwise = -1000 * pairwise_params
         y = binary_grid(unaries.astype(np.int32), pairwise.astype(np.int32))
@@ -143,7 +145,6 @@ class MultinomialFixedGraphCRF(StructuredProblem):
     graph is given by scipy sparse adjacency matrix.
     """
     def __init__(self, n_states, graph):
-        self.inference_calls = 0
         self.n_states = n_states
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
