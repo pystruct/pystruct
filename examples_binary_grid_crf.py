@@ -6,21 +6,21 @@ from crf import BinaryGridCRF
 from structured_svm import StructuredSVM
 #from structured_svm import SubgradientStructuredSVM
 
-from toy_datasets import make_dataset_easy_latent
+from toy_datasets import generate_easy
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
 def main():
-    #X, Y = make_dataset_blocks()
-    #X, Y = make_dataset_checker()
-    X, Y = make_dataset_easy_latent(n_samples=10)
-    #X, Y = make_dataset_big_checker()
+    #X, Y = generate_blocks()
+    #X, Y = generate_checker()
+    X, Y = generate_easy(n_samples=10)
+    #X, Y = generate_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=0,
-            check_constraints=False)
+    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
+            check_constraints=True)
     #clf = SubgradientStructuredSVM(problem=crf, max_iter=2000, C=100)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
@@ -28,16 +28,22 @@ def main():
     loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
         loss += np.sum(y != y_pred)
-        plt.subplot(221)
-        plt.imshow(x[:, :, 0], interpolation='nearest')
-        plt.subplot(222)
-        plt.imshow(y, interpolation='nearest')
-        plt.subplot(223)
-        plt.imshow(x[:, :, 0] > 0, interpolation='nearest')
-        plt.subplot(224)
-        plt.imshow(y_pred, interpolation='nearest')
-        plt.savefig("data_%03d.png" % i)
-        plt.close()
+        fig, plots = plt.subplots(2, 2)
+        plots[0, 0].set_title("x")
+        plots[0, 0].imshow(x[:, :, 0], interpolation='nearest')
+        plots[0, 1].set_title("y")
+        plots[0, 1].imshow(y, interpolation='nearest')
+        plots[1, 0].set_title("unaries")
+        w_unaries = np.zeros(4)
+        w_unaries[0] = 1.
+        y_unaries = crf.inference(x, w_unaries)
+        plots[1, 0].imshow(y_unaries, interpolation='nearest')
+        plots[1, 1].set_title("full crf")
+        plots[1, 1].imshow(y_pred, interpolation='nearest')
+        for plot in plots.ravel():
+            plot.set_axis_off()
+        fig.savefig("data_%03d.png" % i)
+        plt.close(fig)
         i += 1
     print("loss: %f" % loss)
 

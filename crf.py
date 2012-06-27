@@ -11,6 +11,7 @@ tracer = Tracer()
 class StructuredProblem(object):
     def __init__(self):
         self.size_psi = None
+        self.inference_calls = 0
 
     def psi(self, x, y):
         pass
@@ -29,6 +30,7 @@ class StructuredProblem(object):
 
 class BinaryGridCRF(StructuredProblem):
     def __init__(self):
+        super(BinaryGridCRF, self).__init__()
         self.n_states = 2
         # three parameter for binary, one for unaries
         self.size_psi = 4
@@ -58,6 +60,7 @@ class BinaryGridCRF(StructuredProblem):
         return np.array([unaries_acc, pw[0, 0], pw[0, 1], pw[1, 1]])
 
     def inference(self, x, w):
+        self.inference_calls += 1
         unary_param = w[0]
         pairwise_params = np.array([[w[1], w[2]], [w[2], w[3]]])
         unaries = - 1000 * unary_param * x
