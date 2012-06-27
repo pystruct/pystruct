@@ -51,7 +51,7 @@ def test_multinomial_grid_binary():
 
 def test_multinomial_grid():
     # test handling on unaries for multinomial grid CRFs
-    # on binary datasets
+    # on multinomial datasets
     for ds in toy_datasets.multinomial:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]

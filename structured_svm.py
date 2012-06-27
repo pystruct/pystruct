@@ -100,7 +100,6 @@ class StructuredSVM(object):
         print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
         print("dual objective: %f" % solution['primal objective'])
         w = np.dot(a, psi_matrix)
-        tracer()
         return w, solution['primal objective']
 
     def fit(self, X, Y):
@@ -121,7 +120,6 @@ class StructuredSVM(object):
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat = self.problem.loss_augmented_inference(x, y, w)
                 loss = self.problem.loss(y, y_hat)
-                tracer()
                 delta_psi = psi(x, y) - psi(x, y_hat)
                 slack = loss - np.dot(w, delta_psi)
 
@@ -196,7 +194,6 @@ class StructuredSVM(object):
         plt.show()
         plt.close()
         self.primal_objective_ = primal_objective
-        tracer()
 
     def predict(self, X):
         prediction = []
