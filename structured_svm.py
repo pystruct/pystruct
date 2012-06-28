@@ -9,12 +9,24 @@
 import numpy as np
 import cvxopt
 import cvxopt.solvers
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from scipy.optimize import fmin
 
 from IPython.core.debugger import Tracer
-
 tracer = Tracer()
+
+
+def objective_primal(problem, w, X, Y, C):
+    objective = 0
+    psi = problem.psi
+    for x, y in zip(X, Y):
+        y_hat = problem.loss_augmented_inference(x, y, w)
+        loss = problem.loss(y, y_hat)
+        delta_psi = psi(x, y) - psi(x, y_hat)
+        objective += loss - np.dot(w, delta_psi)
+    objective /= float(len(X))
+    objective += np.sum(w ** 2) / float(C) / 2.
+    return objective
 
 
 class StructuredSVM(object):
@@ -103,8 +115,16 @@ class StructuredSVM(object):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
-    def fit(self, X, Y):
+    def _find_constraint(self, x, y, w, y_hat=None):
+        if y_hat is None:
+            y_hat = self.problem.loss_augmented_inference(x, y, w)
         psi = self.problem.psi
+        loss = self.problem.loss(y, y_hat)
+        delta_psi = psi(x, y) - psi(x, y_hat)
+        slack = loss - np.dot(w, delta_psi)
+        return y_hat, delta_psi, slack, loss
+
+    def fit(self, X, Y):
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
         w = np.ones(self.problem.size_psi) * 1e-5
@@ -119,10 +139,7 @@ class StructuredSVM(object):
             current_loss = 0.
             primal_objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
-                y_hat = self.problem.loss_augmented_inference(x, y, w)
-                loss = self.problem.loss(y, y_hat)
-                delta_psi = psi(x, y) - psi(x, y_hat)
-                slack = loss - np.dot(w, delta_psi)
+                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
 
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
@@ -164,6 +181,9 @@ class StructuredSVM(object):
             primal_objective /= len(X)
             current_loss /= len(X)
             primal_objective += np.sum(w ** 2) / self.C / 2.
+            assert(primal_objective == objective_primal(self.problem, w, X, Y,
+                self.C))
+            tracer()
             print("current loss: %f  new constraints: %d, primal obj: %f" %
                     (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
@@ -181,21 +201,21 @@ class StructuredSVM(object):
             if self.verbose > 0:
                 print(w)
         self.w = w
+        self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
-        plt.figure()
-        plt.subplot(131, title="loss")
-        plt.plot(loss_curve)
-        plt.subplot(132, title="objective")
+        #plt.figure()
+        #plt.subplot(131, title="loss")
+        #plt.plot(loss_curve)
+        #plt.subplot(132, title="objective")
         # the objective value should be monotonically decreasing
         # this is a maximization problem, to which we add more
         # and more constraints
-        plt.plot(objective_curve)
-        plt.subplot(133, title="primal objective")
-        plt.plot(primal_objective_curve)
-        plt.show()
-        plt.close()
+        #plt.plot(objective_curve)
+        #plt.subplot(133, title="primal objective")
+        #plt.plot(primal_objective_curve)
+        #plt.show()
+        #plt.close()
         self.primal_objective_ = primal_objective
-        tracer()
 
     def predict(self, X):
         prediction = []
@@ -214,26 +234,25 @@ class PrimalDSStructuredSVM(StructuredSVM):
     def fit(self, X, Y):
         def func(w):
             objective = 0
-            psi = self.problem.psi
             for x, y in zip(X, Y):
-                y_hat = self.problem.loss_augmented_inference(x, y, w)
-                loss = self.problem.loss(y, y_hat)
-                delta_psi = psi(x, y) - psi(x, y_hat)
-                objective += loss - np.dot(w, delta_psi)
+                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+                objective += slack
             objective /= float(len(X))
             objective += np.sum(w ** 2) / float(self.C) / 2.
             return objective
         w = 1e-5 * np.ones(self.problem.size_psi)
-        res = fmin(func, x0=w, full_output=1)
-        self.w = res[0]
+        res = fmin(func, x0=w + 1, full_output=1)
+        res2 = fmin(func, x0=w, full_output=1)
+        self.w = res[0] if res[1] < res2[1] else res2[0]
         tracer()
         return self
 
 
 class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
-    def __init__(self, problem, max_iter=100, C=1.0):
-        super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C)
+    def __init__(self, problem, max_iter=100, C=1.0, verbose=0):
+        super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
+                verbose=verbose)
         self.t = 10.
 
     def _solve_subgradient(self, psis):
@@ -249,7 +268,6 @@ class SubgradientStructuredSVM(StructuredSVM):
         return w
 
     def fit(self, X, Y):
-        psi = self.problem.psi
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
         w = 1e-5 * np.ones(self.problem.size_psi)
@@ -265,10 +283,7 @@ class SubgradientStructuredSVM(StructuredSVM):
             current_loss = 0.
             objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
-                y_hat = self.problem.loss_augmented_inference(x, y, w)
-                loss = self.problem.loss(y, y_hat)
-                delta_psi = psi(x, y) - psi(x, y_hat)
-                slack = loss - np.dot(delta_psi, w)
+                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
                 objective += slack
                 psis.append(delta_psi)
 
@@ -293,8 +308,8 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.w = w
         print(objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
-        plt.subplot(121, title="loss")
-        plt.plot(loss_curve[10:])
-        plt.subplot(122, title="objective")
-        plt.plot(objective_curve[10:])
-        plt.show()
+        #plt.subplot(121, title="loss")
+        #plt.plot(loss_curve[10:])
+        #plt.subplot(122, title="objective")
+        #plt.plot(objective_curve[10:])
+        #plt.show()
