@@ -6,16 +6,16 @@ from crf import BinaryGridCRF
 from structured_svm import StructuredSVM
 #from structured_svm import SubgradientStructuredSVM
 
-from toy_datasets import generate_easy
+from toy_datasets import generate_blocks
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
 def main():
-    #X, Y = generate_blocks()
+    X, Y = generate_blocks(n_samples=1)
     #X, Y = generate_checker()
-    X, Y = generate_easy(n_samples=1)
+    #X, Y = generate_easy(n_samples=1)
     #X, Y = generate_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)

@@ -3,10 +3,11 @@ import numpy as np
 
 #### binary
 def generate_blocks(n_samples=10):
+    np.random.seed(0)
     Y = np.ones((n_samples, 10, 12))
     Y[:, :, :6] = -1
     X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', X, -X]
+    X = np.c_['3,4,0', -X, X]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
@@ -17,12 +18,13 @@ def generate_checker(n_samples=20):
     Y[:, ::2, ::2] = -1
     Y[:, 1::2, 1::2] = -1
     X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', X, -X]
+    X = np.c_['3,4,0', -X, X]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
 
 def generate_big_checker(n_samples=10):
+    np.random.seed(0)
     y_small = np.ones((11, 13), dtype=np.int32)
     y_small[::2, ::2] = -1
     y_small[1::2, 1::2] = -1

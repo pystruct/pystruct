@@ -5,16 +5,20 @@ import toy_datasets
 from crf import BinaryGridCRF, MultinomialGridCRF
 from pyqpbo import binary_grid, alpha_expansion_grid
 
+import itertools
+
+from IPython.core.debugger import Tracer
+tracer = Tracer()
 # why have binary and multinomial different numbers of parameters?
 
 
-def test_binary_grid():
+def test_binary_grid_unaries():
     # test handling on unaries for binary grid CRFs
     for ds in toy_datasets.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         crf = BinaryGridCRF()
-        w_unaries_only = np.zeros(4)
+        w_unaries_only = np.zeros(2)
         w_unaries_only[0] = 1.
         # test that inference with unaries only is the
         # same as argmax
@@ -26,6 +30,10 @@ def test_binary_grid():
         unaries = binary_grid(un, pw_z)
         assert_array_equal(inf_unaries, unaries)
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+        try:
+            assert(np.mean(inf_unaries == y) > 0.5)
+        except:
+            print(ds)
 
 
 def test_multinomial_grid_binary():
@@ -49,7 +57,7 @@ def test_multinomial_grid_binary():
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))
 
 
-def test_multinomial_grid():
+def test_multinomial_grid_unaries():
     # test handling on unaries for multinomial grid CRFs
     # on multinomial datasets
     for ds in toy_datasets.multinomial:
@@ -69,3 +77,39 @@ def test_multinomial_grid():
         unaries = alpha_expansion_grid(un, pw_z)
         assert_array_equal(inf_unaries, unaries)
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+
+
+def exhausive_inference_binary(problem, x, w):
+    size = np.prod(x.shape[:-1])
+    best_y = None
+    best_energy = np.inf
+    for y_hat in itertools.product([0, 1], repeat=size):
+        y_hat = np.array(y_hat).reshape(x.shape[:-1])
+        psi = problem.psi(x, y_hat)
+        energy = -np.dot(w, psi)
+        if energy < best_energy:
+            best_energy = energy
+            best_y = y_hat
+    return best_y
+
+
+def test_binary_crf_exhaustive():
+    # tests graph cut inference against brute force
+    # on random data / weights
+    np.random.seed(0)
+    for i in xrange(5):
+        #y = np.random.randint(2, size=(3, 3))
+        #y_hat_agumented = crf.loss_augmented_inference(x, y, w)
+        x = np.random.uniform(-1, 1, size=(3, 3))
+        x = np.dstack([-x, x])
+        crf = BinaryGridCRF()
+        w = np.random.uniform(-1, 1, size=2)
+        # check map inference
+        y_hat = crf.inference(x, w)
+        y_ex = exhausive_inference_binary(crf, x, w)
+        print(y_hat)
+        print(y_ex)
+        print("++++++++++++++++++++++")
+        assert_array_equal(y_hat, y_ex)
+
+test_binary_crf_exhaustive()
