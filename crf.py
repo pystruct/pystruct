@@ -60,6 +60,9 @@ class BinaryGridCRF(StructuredProblem):
         return np.array([unaries_acc, pw[0, 1]])
 
     def inference(self, x, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         self.inference_calls += 1
         unary_param = w[0]
         pairwise_params = np.array([[0, w[1]], [w[1], 0]])
@@ -71,6 +74,9 @@ class BinaryGridCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         unary_param = w[0]
         if unary_param == 0:
             # avoid division by zero
@@ -117,6 +123,9 @@ class MultinomialGridCRF(StructuredProblem):
         return feature
 
     def inference(self, x, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
@@ -129,6 +138,9 @@ class MultinomialGridCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         unary_params = w[:self.n_states]
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
@@ -176,6 +188,9 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         return feature
 
     def inference(self, x, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         self.inference_calls += 1
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
@@ -189,6 +204,9 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         return y
 
     def loss_augmented_inference(self, x, y, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         unary_params = w[:self.n_states].copy()
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
@@ -239,6 +257,9 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         return feature
 
     def inference(self, x, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         self.inference_calls += 1
         pairwise_flat = np.asarray(w[:-1])
         unary = w[-1]
@@ -256,6 +277,9 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         return y
 
     def loss_augmented_inference(self, x, y, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                    (self.size_psi, w.shape))
         x_ = x.copy()
         for l in np.arange(self.n_states):
             # for each class, decrement unaries
