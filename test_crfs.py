@@ -93,15 +93,27 @@ def exhausive_inference_binary(problem, x, w):
     return best_y
 
 
+def exhausive_loss_augmented_inference_binary(problem, x, y, w):
+    size = np.prod(x.shape[:-1])
+    best_y = None
+    best_energy = np.inf
+    for y_hat in itertools.product([0, 1], repeat=size):
+        y_hat = np.array(y_hat).reshape(x.shape[:-1])
+        psi = problem.psi(x, y_hat)
+        energy = -problem.loss(y, y_hat) - np.dot(w, psi)
+        if energy < best_energy:
+            best_energy = energy
+            best_y = y_hat
+    return best_y
+
+
 def test_binary_crf_exhaustive():
     # tests graph cut inference against brute force
     # on random data / weights
     np.random.seed(0)
-    for i in xrange(5):
-        #y = np.random.randint(2, size=(3, 3))
-        #y_hat_agumented = crf.loss_augmented_inference(x, y, w)
+    for i in xrange(50):
         x = np.random.uniform(-1, 1, size=(3, 3))
-        x = np.dstack([-x, x])
+        x = np.dstack([-x, np.zeros_like(x)])
         crf = BinaryGridCRF()
         w = np.random.uniform(-1, 1, size=2)
         # check map inference
@@ -112,4 +124,29 @@ def test_binary_crf_exhaustive():
         print("++++++++++++++++++++++")
         assert_array_equal(y_hat, y_ex)
 
-test_binary_crf_exhaustive()
+
+def test_binary_crf_exhaustive_loss_augmented():
+    # tests graph cut inference against brute force
+    # on random data / weights
+    np.random.seed(0)
+    for i in xrange(50):
+        # generate data and weights
+        y = np.random.randint(2, size=(3, 3))
+        x = np.random.uniform(-1, 1, size=(3, 3))
+        x = np.dstack([-x, np.zeros_like(x)])
+        w = np.random.uniform(-1, 1, size=2)
+        crf = BinaryGridCRF()
+        # check loss augmented map inference
+        y_hat = crf.loss_augmented_inference(x, y, w)
+        y_ex = exhausive_loss_augmented_inference_binary(crf, x, y, w)
+        print(y_hat)
+        print(y_ex)
+        print("++++++++++++++++++++++")
+        assert_array_equal(y_hat, y_ex)
+
+
+#test_binary_crf_exhaustive()
+test_binary_crf_exhaustive_loss_augmented()
+#test_binary_grid_unaries()
+#test_multinomial_grid_binary()
+#test_multinomial_grid_unaries()

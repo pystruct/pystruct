@@ -84,7 +84,8 @@ class BinaryGridCRF(StructuredProblem):
         # do loss augmentation
         gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
         x_ = x.copy()
-        x_[gx, gy, 1 - y] += 1. / unary_param
+        x_[y == 0, 0] -= 1. / unary_param
+        x_[y != 0, 0] += 1. / unary_param
         return self.inference(x_, w)
 
 
