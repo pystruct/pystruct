@@ -6,22 +6,21 @@ from crf import BinaryGridCRF
 from structured_svm import StructuredSVM
 #from structured_svm import SubgradientStructuredSVM
 
-from toy_datasets import generate_blocks
+from toy_datasets import generate_easy
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
 def main():
-    X, Y = generate_blocks(n_samples=1)
+    #X, Y = generate_blocks(n_samples=10)
     #X, Y = generate_checker()
-    #X, Y = generate_easy(n_samples=1)
+    X, Y = generate_easy(n_samples=10)
     #X, Y = generate_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
     clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
             check_constraints=True)
-    #clf = SubgradientStructuredSVM(problem=crf, max_iter=2000, C=100)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     i = 0
@@ -34,7 +33,7 @@ def main():
         plots[0, 1].set_title("y")
         plots[0, 1].imshow(y, interpolation='nearest')
         plots[1, 0].set_title("unaries")
-        w_unaries = np.zeros(4)
+        w_unaries = np.zeros(2)
         w_unaries[0] = 1.
         y_unaries = crf.inference(x, w_unaries)
         plots[1, 0].imshow(y_unaries, interpolation='nearest')

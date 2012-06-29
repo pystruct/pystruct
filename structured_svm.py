@@ -247,7 +247,6 @@ class PrimalDSStructuredSVM(StructuredSVM):
         res = fmin(func, x0=w + 1, full_output=1)
         res2 = fmin(func, x0=w, full_output=1)
         self.w = res[0] if res[1] < res2[1] else res2[0]
-        tracer()
         return self
 
 
