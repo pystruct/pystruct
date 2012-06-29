@@ -145,8 +145,8 @@ def test_binary_crf_exhaustive_loss_augmented():
         assert_array_equal(y_hat, y_ex)
 
 
-#test_binary_crf_exhaustive()
+test_binary_crf_exhaustive()
 test_binary_crf_exhaustive_loss_augmented()
-#test_binary_grid_unaries()
-#test_multinomial_grid_binary()
-#test_multinomial_grid_unaries()
+test_binary_grid_unaries()
+test_multinomial_grid_binary()
+test_multinomial_grid_unaries()

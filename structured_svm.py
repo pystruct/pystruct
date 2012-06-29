@@ -106,16 +106,20 @@ class StructuredSVM(object):
 
         # Support vectors have non zero lagrange multipliers
         sv = a > 1e-5
-        print("%d support vectors out of %d points" % (np.sum(sv),
-            n_constraints))
-        # calculate per example box constraint:
         box = np.dot(blocks, a)
-        print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
-        print("dual objective: %f" % solution['primal objective'])
+        if self.verbose > 1:
+            print("%d support vectors out of %d points" % (np.sum(sv),
+                n_constraints))
+            # calculate per example box constraint:
+            print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
+            print("dual objective: %f" % solution['primal objective'])
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
     def _find_constraint(self, x, y, w, y_hat=None):
+        """Find most violated constraint, or, given y_hat,
+        find slack and dpsi for this constraing."""
+
         if y_hat is None:
             y_hat = self.problem.loss_augmented_inference(x, y, w)
         psi = self.problem.psi
@@ -125,6 +129,7 @@ class StructuredSVM(object):
         return y_hat, delta_psi, slack, loss
 
     def fit(self, X, Y):
+        print("Training dual structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
         w = np.ones(self.problem.size_psi) * 1e-5
@@ -134,7 +139,8 @@ class StructuredSVM(object):
         objective_curve = []
         primal_objective_curve = []
         for iteration in xrange(self.max_iter):
-            print("iteration %d" % iteration)
+            if self.verbose > 0:
+                print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
             primal_objective = 0.
@@ -183,9 +189,9 @@ class StructuredSVM(object):
             primal_objective += np.sum(w ** 2) / self.C / 2.
             assert(primal_objective == objective_primal(self.problem, w, X, Y,
                 self.C))
-            tracer()
-            print("current loss: %f  new constraints: %d, primal obj: %f" %
-                    (current_loss, new_constraints, primal_objective))
+            if self.verbose > 0:
+                print("current loss: %f  new constraints: %d, primal obj: %f" %
+                        (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
 
             primal_objective_curve.append(primal_objective)
@@ -268,6 +274,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         return w
 
     def fit(self, X, Y):
+        print("Training primal subgradient structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
         w = 1e-5 * np.ones(self.problem.size_psi)
@@ -277,7 +284,6 @@ class SubgradientStructuredSVM(StructuredSVM):
         loss_curve = []
         objective_curve = []
         for iteration in xrange(self.max_iter):
-            print("iteration %d" % iteration)
             psis = []
             positive_slacks = 0
             current_loss = 0.
@@ -297,8 +303,10 @@ class SubgradientStructuredSVM(StructuredSVM):
             if positive_slacks == 0:
                 print("No additional constraints")
                 break
-            print("current loss: %f  positive slacks: %d, objective: %f" %
-                    (current_loss, positive_slacks, objective))
+            if self.verbose > 0:
+                print("iteration %d" % iteration)
+                print("current loss: %f  positive slacks: %d, objective: %f" %
+                        (current_loss, positive_slacks, objective))
             loss_curve.append(current_loss)
             all_psis.extend(psis)
             objective_curve.append(objective)
@@ -306,7 +314,7 @@ class SubgradientStructuredSVM(StructuredSVM):
             if self.verbose > 2:
                 print(w)
         self.w = w
-        print(objective_curve[-1])
+        print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         #plt.subplot(121, title="loss")
         #plt.plot(loss_curve[10:])

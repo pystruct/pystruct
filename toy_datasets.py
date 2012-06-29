@@ -7,7 +7,7 @@ def generate_blocks(n_samples=10):
     Y = np.ones((n_samples, 10, 12))
     Y[:, :, :6] = -1
     X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, X]
+    X = np.c_['3,4,0', -X, np.zeros_like(X)]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
@@ -18,7 +18,7 @@ def generate_checker(n_samples=20):
     Y[:, ::2, ::2] = -1
     Y[:, 1::2, 1::2] = -1
     X = Y + 1.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, X]
+    X = np.c_['3,4,0', -X, np.zeros_like(X)]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
@@ -33,7 +33,7 @@ def generate_big_checker(n_samples=10):
     X = Y + 0.5 * np.random.normal(size=Y.shape)
     Y = (Y < 0).astype(np.int32)
     # make unaries with 4 pseudo-classes
-    X = np.r_['-1, 4,0', X, -X].copy("C")
+    X = np.r_['-1, 4,0', X, np.zeros_like(X)].copy("C")
     return X, Y
 
 
@@ -45,7 +45,7 @@ def generate_easy(n_samples=5):
             t, l = np.random.randint(15, size=2)
             Y[i, t:t + 3, l:l + 3] = -1
     X = Y + 0.5 * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, X]
+    X = np.c_['3,4,0', -X, np.zeros_like(X)]
     Y = (Y > 0).astype(np.int32)
     return X * 10, Y
 
