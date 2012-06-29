@@ -169,12 +169,9 @@ class StructuredSVM(object):
                         # if slack of new constraint is smaller or not
                         # significantly larger, don't add constraint.
                         # if smaller, complain about approximate inference.
-                        if slack < slack_tmp:
+                        if (slack - slack_tmp) < -1e-5:
                             print("bad inference!")
-                            already_active = True
                             tracer()
-                            break
-                        if (slack - slack_tmp) < 1e-5:
                             already_active = True
                             break
 
