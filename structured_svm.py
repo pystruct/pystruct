@@ -76,10 +76,10 @@ class StructuredSVM(object):
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
-        # constraints are a bit tricky. first, all alpha must be >zero
+        # constraints are a bit tricky. first, all learningrate must be >zero
         idy = np.identity(n_constraints)
         tmp1 = np.zeros(n_constraints)
-        # box constraint: sum of all alpha for one example must be <= C
+        # box constraint: sum of all learningrate for one example must be <= C
         blocks = np.zeros((n_samples, n_constraints))
         first = 0
         for i, sample in enumerate(constraints):
@@ -255,12 +255,13 @@ class PrimalDSStructuredSVM(StructuredSVM):
 class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-            alpha=0.001):
+            learningrate=0.001, plot=False):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
                 verbose=verbose)
         self.momentum = momentum
-        self.alpha = alpha
+        self.learningrate = learningrate
         self.t = 0
+        self.plot = plot
 
     def _solve_subgradient(self, psis):
         if hasattr(self, 'w'):
@@ -270,7 +271,9 @@ class SubgradientStructuredSVM(StructuredSVM):
             self.grad_old = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
-        grad = self.alpha / (self.t + 1.) ** 2 * (psi_matrix - w / self.C / 2)
+        #grad = (self.learningrate / (self.t + 1.) ** 2
+                #* (psi_matrix - w / self.C / 2))
+        grad = self.learningrate * (psi_matrix - w / self.C / 2)
         w += grad + self.momentum * self.grad_old
         self.grad_old = grad
         self.w = w
@@ -321,8 +324,9 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.w = w
         print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
-        plt.subplot(121, title="loss")
-        plt.plot(loss_curve)
-        plt.subplot(122, title="objective")
-        plt.plot(objective_curve)
-        plt.show()
+        if self.plot:
+            plt.subplot(121, title="loss")
+            plt.plot(loss_curve)
+            plt.subplot(122, title="objective")
+            plt.plot(objective_curve)
+            plt.show()
