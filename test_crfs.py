@@ -35,26 +35,10 @@ def test_binary_grid_unaries():
         except:
             print(ds)
 
-
-def test_multinomial_grid_binary():
-    # test handling on unaries for multinomial grid CRFs
-    # on binary datasets
-    for ds in toy_datasets.binary:
-        X, Y = ds(n_samples=1)
-        x, y = X[0], Y[0]
-        crf = MultinomialGridCRF()
-        w_unaries_only = np.zeros(5)
-        w_unaries_only[:2] = 1.
-        # test that inference with unaries only is the
-        # same as argmax
-        inf_unaries = crf.inference(x, w_unaries_only)
-
-        pw_z = np.zeros((2, 2), dtype=np.int32)
-        un = np.ascontiguousarray(
-                -1000 * x).astype(np.int32)
-        unaries = binary_grid(un, pw_z)
-        assert_array_equal(inf_unaries, unaries)
-        assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+        # check that the right thing happens on noise-free data
+        X, Y = ds(n_samples=1, noise=0)
+        inf_unaries = crf.inference(X[0], w_unaries_only)
+        assert_array_equal(inf_unaries, Y[0])
 
 
 def test_multinomial_grid_unaries():
@@ -77,6 +61,10 @@ def test_multinomial_grid_unaries():
         unaries = alpha_expansion_grid(un, pw_z)
         assert_array_equal(inf_unaries, unaries)
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+        # check that the right thing happens on noise-free data
+        X, Y = ds(n_samples=1, noise=0)
+        inf_unaries = crf.inference(X[0], w_unaries_only)
+        assert_array_equal(inf_unaries, Y[0])
 
 
 def exhausive_inference_binary(problem, x, w):
@@ -119,9 +107,9 @@ def test_binary_crf_exhaustive():
         # check map inference
         y_hat = crf.inference(x, w)
         y_ex = exhausive_inference_binary(crf, x, w)
-        print(y_hat)
-        print(y_ex)
-        print("++++++++++++++++++++++")
+        #print(y_hat)
+        #print(y_ex)
+        #print("++++++++++++++++++++++")
         assert_array_equal(y_hat, y_ex)
 
 
@@ -139,14 +127,13 @@ def test_binary_crf_exhaustive_loss_augmented():
         # check loss augmented map inference
         y_hat = crf.loss_augmented_inference(x, y, w)
         y_ex = exhausive_loss_augmented_inference_binary(crf, x, y, w)
-        print(y_hat)
-        print(y_ex)
-        print("++++++++++++++++++++++")
+        #print(y_hat)
+        #print(y_ex)
+        #print("++++++++++++++++++++++")
         assert_array_equal(y_hat, y_ex)
 
-
-test_binary_crf_exhaustive()
-test_binary_crf_exhaustive_loss_augmented()
-test_binary_grid_unaries()
-test_multinomial_grid_binary()
-test_multinomial_grid_unaries()
+if __name__ == "__main__":
+    test_binary_crf_exhaustive()
+    test_binary_crf_exhaustive_loss_augmented()
+    test_binary_grid_unaries()
+    test_multinomial_grid_unaries()
