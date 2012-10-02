@@ -3,13 +3,14 @@
 # License: BSD 3-clause
 #
 # Implements structured SVM as described in Tsochantaridis et. al.
-# Support Vector Machines Learning for Interdependend
+# Support Vector Machines Learning for Interdependent
 # and Structures Output Spaces
 
 import numpy as np
+#from numpy.testing import assert_almost_equal
 import cvxopt
 import cvxopt.solvers
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from scipy.optimize import fmin
 
 from IPython.core.debugger import Tracer
@@ -184,8 +185,8 @@ class StructuredSVM(object):
             primal_objective /= len(X)
             current_loss /= len(X)
             primal_objective += np.sum(w ** 2) / self.C / 2.
-            assert(primal_objective == objective_primal(self.problem, w, X, Y,
-                self.C))
+            #assert_almost_equal(primal_objective,
+                    #objective_primal(self.problem, w, X, Y, self.C))
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, primal obj: %f" %
                         (current_loss, new_constraints, primal_objective))
@@ -253,19 +254,25 @@ class PrimalDSStructuredSVM(StructuredSVM):
 
 class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
-    def __init__(self, problem, max_iter=100, C=1.0, verbose=0):
+    def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
+            alpha=0.001):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
                 verbose=verbose)
-        self.t = 10.
+        self.momentum = momentum
+        self.alpha = alpha
+        self.t = 0
 
     def _solve_subgradient(self, psis):
         if hasattr(self, 'w'):
             w = self.w
         else:
             w = np.zeros(self.problem.size_psi)
+            self.grad_old = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
-        w += .001 * (psi_matrix - w / self.C / 2)
+        grad = self.alpha / (self.t + 1.) ** 2 * (psi_matrix - w / self.C / 2)
+        w += grad + self.momentum * self.grad_old
+        self.grad_old = grad
         self.w = w
         self.t += 1.
         return w
@@ -308,13 +315,14 @@ class SubgradientStructuredSVM(StructuredSVM):
             all_psis.extend(psis)
             objective_curve.append(objective)
             w = self._solve_subgradient(psis)
+
             if self.verbose > 2:
                 print(w)
         self.w = w
         print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
-        #plt.subplot(121, title="loss")
-        #plt.plot(loss_curve[10:])
-        #plt.subplot(122, title="objective")
-        #plt.plot(objective_curve[10:])
-        #plt.show()
+        plt.subplot(121, title="loss")
+        plt.plot(loss_curve)
+        plt.subplot(122, title="objective")
+        plt.plot(objective_curve)
+        plt.show()
