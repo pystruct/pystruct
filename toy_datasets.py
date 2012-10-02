@@ -12,7 +12,7 @@ def generate_blocks(n_samples=10, noise=1.5):
     return X, Y
 
 
-def generate_checker(n_samples=20, noise=1.5):
+def generate_checker(n_samples=10, noise=1.5):
     np.random.seed(0)
     Y = np.ones((n_samples, 11, 13))
     Y[:, ::2, ::2] = -1

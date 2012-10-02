@@ -67,7 +67,7 @@ class BinaryGridCRF(StructuredProblem):
         unary_param = w[0]
         pairwise_params = np.array([[0, w[1]], [w[1], 0]])
         if (x[:, :, 1] != 0).any():
-            raise ValueError("For simplicty, in binary CRFS,"
+            raise ValueError("For simplicity, in binary CRFS,"
                     "all entries in the second feature should be 0.")
 
         unaries = - 1000 * unary_param * x.copy()
