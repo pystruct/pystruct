@@ -1,6 +1,5 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-#from crf import BinaryGridCRF, MultinomialGridCRF
 from crf import BinaryGridCRF
 from structured_svm import StructuredSVM, SubgradientStructuredSVM
 import toy_datasets
@@ -20,6 +19,17 @@ def test_binary_blocks_cutting_plane():
 def test_binary_blocks_subgradient():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy_datasets.generate_blocks(n_samples=10)
+    crf = BinaryGridCRF()
+    clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100,
+            verbose=0, momentum=.9, learningrate=0.1)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+
+
+def test_binary_checker_subgradient():
+    #testing subgradient ssvm on non-submodular binary dataset
+    X, Y = toy_datasets.generate_checker(n_samples=10)
     crf = BinaryGridCRF()
     clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100,
             verbose=0, momentum=.9, learningrate=0.1)
