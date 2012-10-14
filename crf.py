@@ -67,7 +67,7 @@ class BinaryGridCRF(StructuredProblem):
         unary_param = w[0]
         pairwise_params = np.array([[0, w[1]], [w[1], 0]])
         if (x[:, :, 1] != 0).any():
-            raise ValueError("For simplicty, in binary CRFS,"
+            raise ValueError("For simplicity, in binary CRFS,"
                     "all entries in the second feature should be 0.")
 
         unaries = - 1000 * unary_param * x.copy()
@@ -93,6 +93,7 @@ class BinaryGridCRF(StructuredProblem):
 
 class MultinomialGridCRF(StructuredProblem):
     def __init__(self, n_states=2):
+        super(MultinomialGridCRF, self).__init__()
         self.n_states = n_states
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
@@ -126,6 +127,7 @@ class MultinomialGridCRF(StructuredProblem):
         return feature
 
     def inference(self, x, w):
+        self.inference_calls += 1
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                     (self.size_psi, w.shape))
@@ -267,7 +269,8 @@ class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
         pairwise_flat = np.asarray(w[:-1])
         unary = w[-1]
         pairwise_params = np.zeros((self.n_states, self.n_states))
-        pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = pairwise_flat
+        pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = \
+                pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
         unaries = (-1000 * unary * x).astype(np.int32)
