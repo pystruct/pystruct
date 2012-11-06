@@ -51,7 +51,9 @@ def generate_easy(n_samples=5, noise=0.5):
 
 
 #### Multinomial
-def generate_blocks_multinomial(n_samples=20, noise=0.5):
+def generate_blocks_multinomial(n_samples=20, noise=0.5, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     Y = np.zeros((n_samples, 10, 12, 3))
     Y[:, :, :4, 0] = 1
     Y[:, :, 4:8, 1] = 1

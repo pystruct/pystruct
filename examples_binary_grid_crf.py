@@ -7,6 +7,7 @@ from structured_svm import StructuredSVM
 #from structured_svm import SubgradientStructuredSVM
 
 from toy_datasets import generate_blocks
+#from toy_datasets import generate_checker
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -20,10 +21,11 @@ def main():
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
     clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
-            check_constraints=True)
-    #clf = SubgradientStructuredSVM(problem=crf, max_iter=2000, C=100,
-            #verbose=10, momentum=.9)
+            check_constraints=True, positive_constraint=[1])
+    #clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100,
+            #verbose=10, momentum=.9, learningrate=0.1, plot=True)
     clf.fit(X, Y)
+    print(clf.w)
     Y_pred = clf.predict(X)
     i = 0
     loss = 0
