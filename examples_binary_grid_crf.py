@@ -3,10 +3,9 @@ import matplotlib.pyplot as plt
 
 from crf import BinaryGridCRF
 #from structured_perceptron import StructuredPerceptron
-from structured_svm import StructuredSVM
-#from structured_svm import SubgradientStructuredSVM
+import structured_svm as ssvm
 
-from toy_datasets import generate_blocks
+from toy_datasets import generate_easy
 #from toy_datasets import generate_checker
 
 from IPython.core.debugger import Tracer
@@ -14,16 +13,18 @@ tracer = Tracer()
 
 
 def main():
-    X, Y = generate_blocks(n_samples=10)
+    #X, Y = generate_blocks(n_samples=10)
     #X, Y = generate_checker()
-    #X, Y = generate_easy(n_samples=1)
+    X, Y = generate_easy(n_samples=20, noise=30)
     #X, Y = generate_big_checker()
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
-    clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
-            check_constraints=True, positive_constraint=[1])
-    #clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100,
-            #verbose=10, momentum=.9, learningrate=0.1, plot=True)
+    #clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
+            #check_constraints=True, positive_constraint=[1])
+    #clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
+            #check_constraints=True)
+    clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
+            verbose=10, momentum=.98, learningrate=0.1, plot=True)
     clf.fit(X, Y)
     print(clf.w)
     Y_pred = clf.predict(X)
@@ -46,7 +47,7 @@ def main():
         for plot in plots.ravel():
             plot.set_axis_off()
         fig.savefig("data_%03d.png" % i)
-        plt.close(fig)
+        #plt.close(fig)
         i += 1
     print("loss: %f" % loss)
 
