@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-import toy_datasets
+import toy_datasets as toy
 from crf import BinaryGridCRF, MultinomialGridCRF
 from pyqpbo import binary_grid, alpha_expansion_grid
 
@@ -12,9 +12,18 @@ tracer = Tracer()
 # why have binary and multinomial different numbers of parameters?
 
 
+def test_blocks_crf():
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, -2])
+    crf = BinaryGridCRF()
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
 def test_binary_grid_unaries():
     # test handling on unaries for binary grid CRFs
-    for ds in toy_datasets.binary:
+    for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         crf = BinaryGridCRF()
@@ -44,7 +53,7 @@ def test_binary_grid_unaries():
 def test_multinomial_grid_unaries():
     # test handling on unaries for multinomial grid CRFs
     # on multinomial datasets
-    for ds in toy_datasets.multinomial:
+    for ds in toy.multinomial:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
