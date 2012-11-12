@@ -25,7 +25,7 @@ def test_multinomial_blocks_subgradient():
     n_labels = len(np.unique(Y))
     crf = MultinomialGridCRF(n_states=n_labels)
     clf = SubgradientStructuredSVM(problem=crf, max_iter=50, C=10,
-            verbose=0, momentum=.98, learningrate=0.01, plot=False)
+            verbose=0, momentum=.98, learningrate=0.001, plot=False)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
