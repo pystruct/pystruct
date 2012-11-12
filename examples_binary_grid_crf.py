@@ -6,7 +6,6 @@ from crf import BinaryGridCRF
 import structured_svm as ssvm
 
 from toy_datasets import generate_easy
-#from toy_datasets import generate_checker
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
