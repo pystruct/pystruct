@@ -17,15 +17,15 @@ tracer = Tracer()
 
 def main():
     #X, Y = generate_checker_multinomial(n_samples=10, noise=0.8)
-    X, Y = toy.generate_easy_explicit(n_samples=20, noise=30)
+    X, Y = toy.generate_crosses_explicit(n_samples=20, noise=30)
     #X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3)
     n_labels = len(np.unique(Y))
     crf = MultinomialGridCRF(n_states=n_labels)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
     clf = ssvm.StructuredSVM(problem=crf, max_iter=20, C=100, verbose=20,
             check_constraints=True)
-    #clf = SubgradientStructuredSVM(problem=crf, max_iter=50, C=10000,
-            #verbose=10, momentum=.98, learningrate=0.001, plot=True)
+    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=500, C=1000000,
+            #verbose=10, momentum=.0, learningrate=0.01, plot=True)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
     print(clf.w)

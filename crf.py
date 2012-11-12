@@ -154,7 +154,7 @@ class MultinomialGridCRF(StructuredProblem):
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        # build graph
+        #build graph
         inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
         horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]

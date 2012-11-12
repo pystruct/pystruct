@@ -282,8 +282,10 @@ class SubgradientStructuredSVM(StructuredSVM):
             print("effective lr %f" % (self.learningrate /
                                        np.mean(1. + np.sqrt(self.grad_old))))
         else:
-            grad_old = grad + self.momentum * self.grad_old
-            w += grad_old
+            grad_old = ((1 - self.momentum) * grad
+                        + self.momentum * self.grad_old)
+            #w += self.learningrate / (self.t + 1) * grad_old
+            w += self.learningrate * grad_old
 
         self.w = w
         self.t += 1.
