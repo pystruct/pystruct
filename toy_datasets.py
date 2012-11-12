@@ -119,19 +119,20 @@ def generate_easy_explicit(n_samples=5, noise=30):
 
 def generate_crosses_explicit(n_samples=5, noise=30):
     np.random.seed(0)
-    Y = np.zeros((n_samples, 18, 18), dtype=np.int)
+    size = 8
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
     for i in xrange(n_samples):
-        for j in xrange(3):
-            t, l = np.random.randint(15, size=2)
+        for j in xrange(2):
+            t, l = np.random.randint(size - 2, size=2)
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 2
     Y_flips = Y.copy()
     #flip random bits
     for y in Y_flips:
-        flips = np.random.randint(18, size=[noise, 2])
+        flips = np.random.randint(size, size=[noise, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=noise)
-    X = np.zeros((n_samples, 18, 18, 3))
+    X = np.zeros((n_samples, size, size, 3))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
     return X, Y
