@@ -7,6 +7,23 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def get_rank_mask(mat):
+    """find a subset of rows that has full rank, return mask"""
+    ranks = [1]
+    mask = np.ones(mat.shape[0], dtype=np.bool)
+    for i in xrange(1, mat.shape[0]):
+        svd = np.linalg.svd(mat[:i])[1]
+        rank = (svd > 0.001).sum()
+        #rank = np.linalg.matrix_rank(mat[:i])
+        if rank == ranks[-1]:
+            # linear dependent to rest
+            mask[i] = 0
+        ranks.append(rank)
+    #print(ranks)
+    #print(mask)
+    return mask
+
+
 def grid_linear_programming(x, weights):
     # create LP formulation for cvxopt
     # one variable per node and edge
@@ -106,26 +123,24 @@ def grid_linear_programming(x, weights):
                 for other_state in xrange(n_states):
                     constraints[i, edge_ind + other_state * n_states + state] = +1
                 i += 1
-    tracer()
 
-
-
-    edge_consistency = np.eye(n_nodes * n_states)
     # subtract node state from sum of pairwise states
-    Apw = sp.hstack([node_states, edge_consistency])
-    bpw = np.zeros(n_nodes * n_states)
+    Apw = constraints
+    bpw = np.zeros(n_edges * n_states * 2)
 
     A = sp.vstack([Aun, Apw])
+    A = A.toarray()
+    # we need to remove the last row to make A full rank
+    mask = get_rank_mask(A)
     b = np.hstack([bun, bpw])
+    A = A[mask]
+    b = b[mask]
     #A = Aun
     #b = bun
     c_ = matrix(c)
     G_ = matrix(G)
     h_ = matrix(h)
-    # we need to remove the last row to make A full rank
-    #A_ = matrix(A.toarray()[:-1, :])
-    #b_ = matrix(b[:-1])
-    A_ = matrix(A.toarray())
+    A_ = matrix(A)
     b_ = matrix(b)
     solvers.options['feastol'] = 1e-3
     #sol = solvers.lp(c_, G_, h_, A_, b_)
