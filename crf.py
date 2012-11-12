@@ -137,8 +137,8 @@ class MultinomialGridCRF(StructuredProblem):
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
-        unaries = (-1000 * unary_params * x).astype(np.int32)
-        pairwise = (-1000 * pairwise_params).astype(np.int32)
+        unaries = (-10000 * unary_params * x).astype(np.int32)
+        pairwise = (-10000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_grid(unaries, pairwise)
         return y
 

@@ -261,20 +261,24 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.learningrate = learningrate
         self.t = 0
         self.plot = plot
+        self.grad_old = np.zeros(self.problem.size_psi)
 
     def _solve_subgradient(self, psis):
         if hasattr(self, 'w'):
             w = self.w
         else:
             w = np.zeros(self.problem.size_psi)
-            self.grad_old = np.zeros(self.problem.size_psi)
         psi_matrix = np.vstack(psis).mean(axis=0)
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learningrate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
-        grad = self.learningrate * (psi_matrix - w / self.C / 2)
-        w += grad + self.momentum * self.grad_old
-        self.grad_old = grad
+        grad =  (psi_matrix - w / self.C / 2.)
+        #w += grad + self.momentum * self.grad_old
+        self.grad_old += grad ** 2
+        w += self.learningrate * grad / (1. + np.sqrt(self.grad_old))
+        print("grad old %f" % np.mean(self.grad_old))
+        print("effective lr %f" % (self.learningrate / np.mean(1. + np.sqrt(self.grad_old))))
+
         self.w = w
         self.t += 1.
         return w

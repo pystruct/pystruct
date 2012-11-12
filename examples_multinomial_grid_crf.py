@@ -5,11 +5,8 @@ import matplotlib.pyplot as plt
 #from crf import MultinomialFixedGraphCRFNoBias
 from crf import MultinomialGridCRF
 #from structured_perceptron import StructuredPerceptron
-#from structured_svm import StructuredSVM
-from structured_svm import SubgradientStructuredSVM
-#from toy_datasets import generate_big_checker
-from toy_datasets import generate_easy_explicit
-#from toy_datasets import generate_blocks_multinomial
+import structured_svm as ssvm
+import toy_datasets as ds
 
 
 from IPython.core.debugger import Tracer
@@ -18,16 +15,15 @@ tracer = Tracer()
 
 def main():
     #X, Y = generate_checker_multinomial(n_samples=10, noise=0.8)
-    X, Y = generate_easy_explicit(n_samples=20, noise=30)
+    X, Y = ds.generate_crosses_explicit(n_samples=10, noise=10)
     #X, Y = generate_blocks_multinomial(n_samples=10, noise=0.5)
     n_labels = len(np.unique(Y))
     crf = MultinomialGridCRF(n_states=n_labels)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    #clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=20,
+    #clf = ssvm.StructuredSVM(problem=crf, max_iter=50, C=100, verbose=20,
             #check_constraints=True)
-            #positive_constraint=np.arange(crf.n_states, crf.size_psi))
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=1500, C=100,
-            verbose=10, momentum=.98, learningrate=0.01, plot=True)
+    clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=5000, C=1,
+            verbose=10, momentum=0.9, learningrate=0.05, plot=True)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
     print(clf.w)
