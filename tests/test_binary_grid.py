@@ -65,7 +65,7 @@ def test_binary_ssvm_attractive_potentials():
     X, Y = toy_datasets.generate_blocks(n_samples=10)
     crf = GridCRF()
     submodular_clf = StructuredSVM(problem=crf, max_iter=200, C=100,
-            verbose=0, check_constraints=True, positive_constraint=[1])
+            verbose=1, check_constraints=True, positive_constraint=[3])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
