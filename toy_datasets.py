@@ -41,20 +41,40 @@ def generate_big_checker(n_samples=10, noise=0.5):
 
 
 def generate_easy(n_samples=5, noise=5):
+    size = 10
     np.random.seed(0)
-    Y = np.ones((n_samples, 18, 18))
+    Y = np.ones((n_samples, size, size))
     for i in xrange(n_samples):
-        for j in xrange(3):
-            t, l = np.random.randint(15, size=2)
+        for j in xrange(2):
+            t, l = np.random.randint(size - 3, size=2)
             Y[i, t:t + 3, l:l + 3] = -1
     X = Y  # + noise * np.random.normal(size=Y.shape)
     X = np.c_['3,4,0', -X, np.zeros_like(X)]
     for x in X:
-        flips = np.random.randint(18, size=[noise, 2])
+        flips = np.random.randint(size, size=[noise, 2])
         x[flips[:, 0], flips[:, 1], 0] = 1 - 2 * np.random.randint(2,
                                                                    size=noise)
     Y = (Y > 0).astype(np.int32)
     return X * 10, Y
+
+
+def generate_crosses(n_samples=5, noise=30):
+    np.random.seed(0)
+    size = 8
+    Y = np.ones((n_samples, size, size), dtype=np.int)
+    for i in xrange(n_samples):
+        for j in xrange(2):
+            t, l = np.random.randint(size - 2, size=2)
+            Y[i, t + 1, l:l + 3] = -1
+            Y[i, t:t + 3, l + 1] = -1
+    X = np.c_['3,4,0', -Y, np.zeros_like(Y)].astype(np.float)
+    #flip random bits
+    for x in X:
+        flips = np.random.randint(size, size=[noise, 2])
+        x[flips[:, 0], flips[:, 1], 0] = 1 - 2 * np.random.randint(2,
+                                                                   size=noise)
+    Y = (Y > 0).astype(np.int32)
+    return X, Y
 
 
 #### Multinomial
