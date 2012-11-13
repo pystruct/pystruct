@@ -1,6 +1,5 @@
 import numpy as np
 
-from pyqpbo import binary_grid
 from pyqpbo import alpha_expansion_grid
 from pyqpbo import alpha_expansion_graph
 #from daimrf import mrf
@@ -28,91 +27,6 @@ class StructuredProblem(object):
     def loss_augmented_inference(self, x, y, w):
         print("FALLBACK no loss augmented inference found")
         return self.inference(x, w)
-
-
-class BinaryGridCRF(StructuredProblem):
-    def __init__(self):
-        super(BinaryGridCRF, self).__init__()
-        self.n_states = 2
-        # one parameter for binary, one for unaries
-        self.size_psi = 2
-
-    def psi(self, x, y):
-        # x is unaries
-        # y is a labeling
-        ## unary features:
-        gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-        unaries_acc = np.sum(x[gx, gy, y])
-
-        ##accumulated pairwise
-        #make one hot encoding
-        labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                dtype=np.int)
-        gx, gy = np.ogrid[:y.shape[0], :y.shape[1]]
-        labels[gx, gy, y] = 1
-        # vertical edges
-        vert = np.dot(labels[1:, :, :].reshape(-1, 2).T, labels[:-1, :,
-           :].reshape(-1, 2))
-        # horizontal edges
-        horz = np.dot(labels[:, 1:, :].reshape(-1, 2).T, labels[:, :-1,
-           :].reshape(-1, 2))
-        pw = vert + horz
-        pw[0, 1] += pw[1, 0]
-        #pw = np.zeros((2, 2))
-        return np.array([unaries_acc, pw[0, 1]])
-
-
-    #def inference(self, x, w):
-        #self.inference_calls += 1
-        #if w.shape != (self.size_psi,):
-            #raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    #(self.size_psi, w.shape))
-        #unary_param = w[0]
-        #pairwise_params = np.array([[0, w[1]], [w[1], 0]])
-        #if (x[:, :, 1] != 0).any():
-            #raise ValueError("For simplicity, in binary CRFS,"
-                    #"all entries in the second feature should be 0.")
-        #### build graph
-        #inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
-        #horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-        #vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-        #edges = np.vstack([horz, vert])
-        #x = np.minimum(x, 100)
-        #unaries = np.exp(unary_param * x.reshape(-1, self.n_states))
-        #y = mrf(unaries, edges, np.exp(pairwise_params))
-        #y = y.reshape(x.shape[0], x.shape[1])
-        #return y
-
-    def inference(self, x, w):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
-        self.inference_calls += 1
-        unary_param = w[0]
-        pairwise_params = np.array([[0, w[1]], [w[1], 0]])
-        if (x[:, :, 1] != 0).any():
-            raise ValueError("For simplicity, in binary CRFS,"
-                    "all entries in the second feature should be 0.")
-
-        unaries = - 1000 * unary_param * x.copy()
-        pairwise = -1000 * pairwise_params
-        y = binary_grid(unaries.astype(np.int32), pairwise.astype(np.int32))
-        return y
-
-    def loss_augmented_inference(self, x, y, w):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
-        unary_param = w[0]
-        if unary_param == 0:
-            # avoid division by zero
-            unary_param = 1e-10
-        # do loss augmentation
-        gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-        x_ = x.copy()
-        x_[y == 0, 0] -= 1. / unary_param
-        x_[y != 0, 0] += 1. / unary_param
-        return self.inference(x_, w)
 
 
 class MultinomialGridCRF(StructuredProblem):

@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 import toy_datasets as toy
-from crf import BinaryGridCRF, MultinomialGridCRF
+from crf import MultinomialGridCRF
 from pyqpbo import binary_grid, alpha_expansion_grid
 
 import itertools
@@ -12,16 +12,7 @@ tracer = Tracer()
 # why have binary and multinomial different numbers of parameters?
 
 
-def test_blocks_crf():
-    X, Y = toy.generate_blocks(n_samples=1)
-    x, y = X[0], Y[0]
-    w = np.array([1, -2])
-    crf = BinaryGridCRF()
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y, y_hat)
-
-
-def test_binary_blocks_multinomial_crf():
+def test_binary_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     w = np.array([1, 1, 0, -2, 0])
@@ -44,9 +35,9 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        crf = BinaryGridCRF()
-        w_unaries_only = np.zeros(2)
-        w_unaries_only[0] = 1.
+        crf = MultinomialGridCRF()
+        w_unaries_only = np.zeros(5)
+        w_unaries_only[:2] = 1.
         # test that inference with unaries only is the
         # same as argmax
         inf_unaries = crf.inference(x, w_unaries_only)
@@ -128,9 +119,9 @@ def test_binary_crf_exhaustive():
     np.random.seed(0)
     for i in xrange(50):
         x = np.random.uniform(-1, 1, size=(3, 3))
-        x = np.dstack([-x, np.zeros_like(x)])
-        crf = BinaryGridCRF()
-        w = np.random.uniform(-1, 1, size=2)
+        x = np.dstack([-x, np.zeros_like(x)]).copy()
+        crf = MultinomialGridCRF()
+        w = np.random.uniform(-1, 1, size=5)
         # check map inference
         y_hat = crf.inference(x, w)
         y_ex = exhausive_inference_binary(crf, x, w)
@@ -149,8 +140,8 @@ def test_binary_crf_exhaustive_loss_augmented():
         y = np.random.randint(2, size=(3, 3))
         x = np.random.uniform(-1, 1, size=(3, 3))
         x = np.dstack([-x, np.zeros_like(x)])
-        w = np.random.uniform(-1, 1, size=2)
-        crf = BinaryGridCRF()
+        w = np.random.uniform(-1, 1, size=5)
+        crf = MultinomialGridCRF()
         # check loss augmented map inference
         y_hat = crf.loss_augmented_inference(x, y, w)
         y_ex = exhausive_loss_augmented_inference_binary(crf, x, y, w)
