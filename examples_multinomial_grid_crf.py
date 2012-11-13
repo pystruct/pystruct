@@ -17,12 +17,12 @@ tracer = Tracer()
 
 def main():
     #X, Y = generate_checker_multinomial(n_samples=10, noise=0.8)
-    X, Y = toy.generate_crosses_explicit(n_samples=20, noise=30)
-    #X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3)
+    #X, Y = toy.generate_crosses_explicit(n_samples=20, noise=10)
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3)
     n_labels = len(np.unique(Y))
     crf = MultinomialGridCRF(n_states=n_labels)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    clf = ssvm.StructuredSVM(problem=crf, max_iter=20, C=100, verbose=20,
+    clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=1000000, verbose=1,
             check_constraints=True)
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=500, C=1000000,
             #verbose=10, momentum=.0, learningrate=0.01, plot=True)
@@ -36,8 +36,8 @@ def main():
         y_pred = y_pred.reshape(x.shape[:2])
         #loss += np.sum(y != y_pred)
         loss += np.sum(np.logical_xor(y, y_pred))
-        if i > 10:
-            continue
+        #if i > 10:
+            #continue
         fig, plots = plt.subplots(1, 4)
         plots[0].matshow(y)
         plots[0].set_title("gt")

@@ -5,25 +5,22 @@ from crf import BinaryGridCRF
 #from structured_perceptron import StructuredPerceptron
 import structured_svm as ssvm
 
-from toy_datasets import generate_easy
+import toy_datasets as toy
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
 def main():
-    #X, Y = generate_blocks(n_samples=10)
-    #X, Y = generate_checker()
-    X, Y = generate_easy(n_samples=20, noise=30)
-    #X, Y = generate_big_checker()
+    X, Y = toy.generate_crosses(n_samples=20, noise=10)
     crf = BinaryGridCRF()
     #clf = StructuredPerceptron(problem=crf, max_iter=100)
     #clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
             #check_constraints=True, positive_constraint=[1])
-    #clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=10,
-            #check_constraints=True)
-    clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
-            verbose=10, momentum=.98, learningrate=0.1, plot=True)
+    clf = ssvm.StructuredSVM(problem=crf, max_iter=200, C=1000000, verbose=10,
+            check_constraints=True)
+    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
+            #verbose=10, momentum=.98, learningrate=0.1, plot=True)
     clf.fit(X, Y)
     print(clf.w)
     Y_pred = clf.predict(X)

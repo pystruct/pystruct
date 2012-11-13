@@ -19,8 +19,6 @@ def main():
     #X, Y = make_dataset_big_checker_extended()
     #X, Y = make_dataset_big_checker(n_samples=5)
     X, Y = make_dataset_easy_latent_explicit(n_samples=50)
-    #X = X[:, :18, :18]
-    #Y = Y[:, :18, :18]
     #X, Y = make_dataset_blocks_multinomial(n_samples=100)
     size_y = Y[0].size
     shape_y = Y[0].shape

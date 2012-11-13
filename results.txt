@@ -1,0 +1,10 @@
+with multinomial teacher:
+generate_crosses_explicit(n_samples=20, noise=10)
+loss: 21.000000
+complete loss: 26.000000
+(training set)
+
+without binary teacher:
+loss: 69.000000
+complete loss: 69.000000
+(training set)
