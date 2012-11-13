@@ -125,7 +125,7 @@ class LatentGridCRF(GridCRF):
 
     def latent(self, x, y, w):
         # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
@@ -137,14 +137,14 @@ class LatentGridCRF(GridCRF):
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
-                y[:, np.newaxis])
+                y[:, :, np.newaxis])
         unaries[other_states] = +1000000
         pairwise = (-10 * pairwise_params).astype(np.int32)
-        h = alpha_expansion_grid(self.edges, unaries, pairwise)
+        h = alpha_expansion_grid(unaries, pairwise)
         if (h / self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
-                #tracer()
+                tracer()
                 h = y * self.n_states_per_label
             else:
                 h = y * self.n_states_per_label

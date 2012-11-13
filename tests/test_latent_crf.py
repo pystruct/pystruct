@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
+from nose.tools import assert_equal
 
 import toy_datasets as toy
 from latent_crf import LatentGridCRF
@@ -21,20 +22,30 @@ def test_blocks_crf_unaries():
                   0,  0,  0,
                   0,  0,  0, 0])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y_hat / 2, np.argmax(x, axis=-1))
+    h_hat = crf.inference(x, w)
+    assert_array_equal(h_hat / 2, np.argmax(x, axis=-1))
 
 
 def test_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    # original:
-    # w = np.array([1, 1, 0, -2, 0])
     w = np.array([1,  1,  1,  1,
                   0,
                   0,   0,
                   -4, -4,  0,
                   -4, -4,  0, 0])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y, y_hat / 2)
+    h_hat = crf.inference(x, w)
+    assert_array_equal(y, h_hat / 2)
+
+    h = crf.latent(x, y, w)
+    assert_equal(crf.loss(h, h_hat), 0)
+
+def test_latent_consistency():
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    for i in xrange(10):
+        w = np.random.normal(size=14)
+        y = np.random.randint(2, size=(4, 4))
+        x = np.random.normal(size=(4, 4, 2))
+        h = crf.latent(x, y, w)
+        assert_array_equal(h / 2, y)
