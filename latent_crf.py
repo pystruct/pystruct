@@ -95,21 +95,20 @@ class LatentGridCRF(GridCRF):
         # x is unaries
         # h is latent labeling
         ## unary features:
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         return super(LatentGridCRF, self).psi(x_wide, h)
 
     def inference(self, x, w):
         # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
         h = super(LatentGridCRF, self).inference(x_wide, w)
         return h
 
     def loss_augmented_inference(self, x, h, w):
         # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         unary_params = w[:self.n_states].copy()
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
