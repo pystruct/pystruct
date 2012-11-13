@@ -182,8 +182,8 @@ class MultinomialGridCRF(StructuredProblem):
         horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
-        x = np.minimum(x, 100)
-        unaries = np.exp(unary_params * x.reshape(-1, self.n_states))
+        log_unaries = np.minimum(unary_params * x.reshape(-1, self.n_states), 100)
+        unaries = np.exp(log_unaries)
 
         y = mrf(unaries, edges, np.exp(pairwise_params))
         y = y.reshape(x.shape[0], x.shape[1])
