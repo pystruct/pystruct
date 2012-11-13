@@ -147,15 +147,19 @@ def generate_crosses_explicit(n_samples=5, noise=30):
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 2
-    Y_flips = Y.copy()
+    # don't distinguish between 1 an 2 in X
+    Y_flips = (Y.copy() != 0).astype(np.int)
     #flip random bits
     for y in Y_flips:
         flips = np.random.randint(size, size=[noise, 2])
-        y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=noise)
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
     X = np.zeros((n_samples, size, size, 3))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
-    return X, Y
+    X[ix, iy, iz, 2 * Y_flips] = 1
+    Y = (Y != 0).astype(np.int)
+    tracer()
+    return X[:, :, :, :2], Y
 
 
 binary = [generate_blocks, generate_checker, generate_big_checker,
