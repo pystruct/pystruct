@@ -21,6 +21,24 @@ def test_blocks_crf():
     assert_array_equal(y, y_hat)
 
 
+def test_binary_blocks_multinomial_crf():
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, 1, 0, -2, 0])
+    crf = MultinomialGridCRF()
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
+def test_blocks_multinomial_crf():
+    X, Y = toy.generate_blocks_multinomial(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1., 1., 1., .4, -.3, .3, -.5, -.1, .3])
+    crf = MultinomialGridCRF(n_states=3)
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
 def test_binary_grid_unaries():
     # test handling on unaries for binary grid CRFs
     for ds in toy.binary:
