@@ -10,7 +10,7 @@ def generate_blocks(n_samples=10, noise=1.5):
     Y = np.ones((n_samples, 10, 12))
     Y[:, :, :6] = -1
     X = Y + noise * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, np.zeros_like(X)]
+    X = np.c_['3,4,0', -X, X]
     Y = (Y > 0).astype(np.int32)
     return X, Y
 
