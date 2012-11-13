@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-#from crf import MultinomialFixedGraphCRFNoBias
-#from crf import MultinomialFixedGraphCRFNoBias
-from crf import MultinomialGridCRF
+#from crf import FixedGraphCRFNoBias
+#from crf import FixedGraphCRFNoBias
+from crf import GridCRF
 #from structured_perceptron import StructuredPerceptron
 #from structured_svm import StructuredSVM
 import structured_svm as ssvm
@@ -20,7 +20,7 @@ def main():
     #X, Y = toy.generate_crosses_explicit(n_samples=20, noise=10)
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3)
     n_labels = len(np.unique(Y))
-    crf = MultinomialGridCRF(n_states=n_labels)
+    crf = GridCRF(n_states=n_labels)
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
     clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=1000000, verbose=1,
             check_constraints=True)

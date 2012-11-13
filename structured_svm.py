@@ -147,6 +147,9 @@ class StructuredSVM(object):
             primal_objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
                 y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+                if np.all(y == y_hat):
+                    if self.verbose > 1:
+                        print("found ground truth loss-augmented inference, slack = 0")
 
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
@@ -195,6 +198,7 @@ class StructuredSVM(object):
             primal_objective_curve.append(primal_objective)
             if new_constraints == 0:
                 print("no additional constraints")
+                #tracer()
                 break
             w, objective = self._solve_constraints(constraints, n_samples)
             objective_curve.append(objective)

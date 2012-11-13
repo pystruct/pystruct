@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 import toy_datasets as toy
-from crf import MultinomialGridCRF
+from crf import GridCRF
 from pyqpbo import binary_grid, alpha_expansion_grid
 
 import itertools
@@ -16,7 +16,7 @@ def test_binary_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     w = np.array([1, 1, 0, -2, 0])
-    crf = MultinomialGridCRF()
+    crf = GridCRF()
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 
@@ -25,7 +25,7 @@ def test_blocks_multinomial_crf():
     X, Y = toy.generate_blocks_multinomial(n_samples=1)
     x, y = X[0], Y[0]
     w = np.array([1., 1., 1., .4, -.3, .3, -.5, -.1, .3])
-    crf = MultinomialGridCRF(n_states=3)
+    crf = GridCRF(n_states=3)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 
@@ -35,7 +35,7 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        crf = MultinomialGridCRF()
+        crf = GridCRF()
         w_unaries_only = np.zeros(5)
         w_unaries_only[:2] = 1.
         # test that inference with unaries only is the
@@ -66,7 +66,7 @@ def test_multinomial_grid_unaries():
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
-        crf = MultinomialGridCRF(n_states=n_labels)
+        crf = GridCRF(n_states=n_labels)
         w_unaries_only = np.zeros(crf.size_psi)
         w_unaries_only[:n_labels] = 1.
         # test that inference with unaries only is the
@@ -120,7 +120,7 @@ def test_binary_crf_exhaustive():
     for i in xrange(50):
         x = np.random.uniform(-1, 1, size=(3, 3))
         x = np.dstack([-x, np.zeros_like(x)]).copy()
-        crf = MultinomialGridCRF()
+        crf = GridCRF()
         w = np.random.uniform(-1, 1, size=5)
         # check map inference
         y_hat = crf.inference(x, w)
@@ -141,7 +141,7 @@ def test_binary_crf_exhaustive_loss_augmented():
         x = np.random.uniform(-1, 1, size=(3, 3))
         x = np.dstack([-x, np.zeros_like(x)])
         w = np.random.uniform(-1, 1, size=5)
-        crf = MultinomialGridCRF()
+        crf = GridCRF()
         # check loss augmented map inference
         y_hat = crf.loss_augmented_inference(x, y, w)
         y_ex = exhausive_loss_augmented_inference_binary(crf, x, y, w)

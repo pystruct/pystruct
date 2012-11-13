@@ -1,12 +1,12 @@
 import numpy as np
-from crf import MultinomialFixedGraphCRF, MultinomialGridCRF
+from crf import FixedGraphCRF, GridCRF
 from pyqpbo import alpha_expansion_graph, alpha_expansion_grid
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
+class LatentFixedGraphCRF(FixedGraphCRF):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
@@ -83,7 +83,7 @@ class LatentFixedGraphCRF(MultinomialFixedGraphCRF):
 
 
 
-class LatentGridCRF(MultinomialGridCRF):
+class LatentGridCRF(GridCRF):
     """Latent variable CRF with 2d grid graph
     """
     def __init__(self, n_labels, n_states_per_label=2):

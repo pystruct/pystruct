@@ -29,9 +29,9 @@ class StructuredProblem(object):
         return self.inference(x, w)
 
 
-class MultinomialGridCRF(StructuredProblem):
+class GridCRF(StructuredProblem):
     def __init__(self, n_states=2):
-        super(MultinomialGridCRF, self).__init__()
+        super(GridCRF, self).__init__()
         self.n_states = n_states
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
@@ -119,7 +119,7 @@ class MultinomialGridCRF(StructuredProblem):
         return self.inference(x_, w)
 
 
-class MultinomialFixedGraphCRF(StructuredProblem):
+class FixedGraphCRF(StructuredProblem):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
@@ -185,7 +185,7 @@ class MultinomialFixedGraphCRF(StructuredProblem):
         return self.inference(x_, w)
 
 
-class MultinomialFixedGraphCRFNoBias(MultinomialGridCRF):
+class FixedGraphCRFNoBias(GridCRF):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
