@@ -157,9 +157,33 @@ def generate_crosses_explicit(n_samples=5, noise=30):
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
     X[ix, iy, iz, 2 * Y_flips] = 1
-    Y = (Y != 0).astype(np.int)
-    tracer()
-    return X[:, :, :, :2], Y
+    #Y = (Y != 0).astype(np.int)
+    #X = X[:, :, :, :2]
+    return X, Y
+
+
+def generate_crosses_latent(n_samples=5, noise=30):
+    # X knows two states, Y knows four.
+    np.random.seed(0)
+    size = 8
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
+    for i in xrange(n_samples):
+        for j in xrange(2):
+            t, l = np.random.randint(size - 2, size=2)
+            Y[i, t + 1, l:l + 3] = 2
+            Y[i, t:t + 3, l + 1] = 2
+            Y[i, t + 1, l + 1] = 3
+    # don't distinguish between 1 an 2 in X
+    Y_flips = (Y.copy() != 0).astype(np.int)
+    #flip random bits
+    for y in Y_flips:
+        flips = np.random.randint(size, size=[noise, 2])
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, size, size, 2))
+    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    X[ix, iy, iz, Y_flips] = 1
+    X = X
+    return X, Y
 
 
 binary = [generate_blocks, generate_checker, generate_big_checker,
