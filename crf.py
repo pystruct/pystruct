@@ -97,10 +97,11 @@ class GridCRF(StructuredProblem):
         horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
-        log_unaries = np.minimum(unary_params * x.reshape(-1, self.n_states), 100)
-        unaries = np.exp(log_unaries)
+        log_unaries = unary_params * x.reshape(-1, self.n_states)
+        max_entry = max(np.max(log_unaries), 1)
+        unaries = np.exp(log_unaries / max_entry)
 
-        y = mrf(unaries, edges, np.exp(pairwise_params))
+        y = mrf(unaries, edges, np.exp(pairwise_params / max_entry), alg='jt')
         y = y.reshape(x.shape[0], x.shape[1])
 
         return y
