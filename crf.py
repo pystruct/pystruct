@@ -1,8 +1,9 @@
+import itertools
 import numpy as np
 
 from pyqpbo import alpha_expansion_grid
 from pyqpbo import alpha_expansion_graph
-#from daimrf import mrf
+from daimrf import mrf
 
 
 from IPython.core.debugger import Tracer
@@ -30,9 +31,10 @@ class StructuredProblem(object):
 
 
 class GridCRF(StructuredProblem):
-    def __init__(self, n_states=2):
+    def __init__(self, n_states=2, inference_method='qpbo'):
         super(GridCRF, self).__init__()
         self.n_states = n_states
+        self.inference_method = inference_method
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
 
@@ -75,34 +77,33 @@ class GridCRF(StructuredProblem):
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = pairwise_params + pairwise_params.T\
                 - np.diag(np.diag(pairwise_params))
+        if self.inference_method == "qpbo":
+            return self._inference_qpbo(x, unary_params, pairwise_params)
+        elif  self.inference_method == "dai":
+            return self._inference_dai(x, unary_params, pairwise_params)
+        else:
+            raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
+                             % self.inference_method)
+
+    def _inference_qpbo(self, x, unary_params, pairwise_params):
         unaries = (-1000 * unary_params * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_grid(unaries, pairwise)
         return y
 
-    #def inference(self, x, w):
-        #self.inference_calls += 1
-        #if w.shape != (self.size_psi,):
-            #raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    #(self.size_psi, w.shape))
-        #unary_params = w[:self.n_states]
-        #pairwise_flat = np.asarray(w[self.n_states:])
-        #pairwise_params = np.zeros((self.n_states, self.n_states))
-        #pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        #pairwise_params = pairwise_params + pairwise_params.T\
-                #- np.diag(np.diag(pairwise_params))
-        ### build graph
-        #inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
-        #horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-        #vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-        #edges = np.vstack([horz, vert])
-        #log_unaries = np.minimum(unary_params * x.reshape(-1, self.n_states), 100)
-        #unaries = np.exp(log_unaries)
+    def _inference_dai(self, x, unary_params, pairwise_params):
+        ## build graph
+        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
+        horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+        vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+        edges = np.vstack([horz, vert])
+        log_unaries = np.minimum(unary_params * x.reshape(-1, self.n_states), 100)
+        unaries = np.exp(log_unaries)
 
-        #y = mrf(unaries, edges, np.exp(pairwise_params))
-        #y = y.reshape(x.shape[0], x.shape[1])
+        y = mrf(unaries, edges, np.exp(pairwise_params))
+        y = y.reshape(x.shape[0], x.shape[1])
 
-        #return y
+        return y
 
     def loss_augmented_inference(self, x, y, w):
         if w.shape != (self.size_psi,):
