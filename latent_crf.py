@@ -86,10 +86,10 @@ class LatentFixedGraphCRF(FixedGraphCRF):
 class LatentGridCRF(GridCRF):
     """Latent variable CRF with 2d grid graph
     """
-    def __init__(self, n_labels, n_states_per_label=2):
+    def __init__(self, n_labels, n_states_per_label=2, inference_method='qpbo'):
         self.n_states_per_label = n_states_per_label
         n_states = n_labels * n_states_per_label
-        super(LatentGridCRF, self).__init__(n_states)
+        super(LatentGridCRF, self).__init__(n_states, inference_method=inference_method)
 
     def psi(self, x, h):
         # x is unaries
@@ -137,7 +137,7 @@ class LatentGridCRF(GridCRF):
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
-                y[:, :, np.newaxis])
+                        y[:, :, np.newaxis])
         unaries[other_states] = +1000000
         pairwise = (-10 * pairwise_params).astype(np.int32)
         h = alpha_expansion_grid(unaries, pairwise)
