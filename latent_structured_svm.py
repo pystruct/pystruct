@@ -18,38 +18,40 @@ class StupidLatentSVM(StructuredSVM):
     def fit(self, X, Y):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
-                self.check_constraints, verbose=0)
+                self.check_constraints, verbose=self.verbose - 1)
         objectives = []
         ws = []
-        tracer()
         H = Y
         Y = [y / self.problem.n_states_per_label for y in Y]
 
-        for iteration in xrange(1):
+        for iteration in xrange(10):
             print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
             if iteration == 0:
                 pass
             else:
-                H = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
+                H_new = np.array([self.problem.latent(x, y, w) for x, y in zip(X, Y)])
+                if np.all(H_new == H):
+                    print("no changes in latent variables of ground truth. stopping.")
+                    break
+                H = H_new
             #X_wide = [np.repeat(x, self.problem.n_states_per_label, axis=1)
             #for x in X]
             subsvm.fit(X, H)
             H_hat = [self.problem.inference(x, subsvm.w) for x in X]
             inds = np.arange(len(H))
             for i, h, h_hat in zip(inds, H, H_hat):
-                plt.matshow(h.reshape(18, 18))
+                plt.matshow(h.reshape(x.shape[:-1]))
                 plt.colorbar()
                 plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
                 plt.close()
-                plt.matshow(h_hat.reshape(18, 18))
+                plt.matshow(h_hat.reshape(x.shape[:-1]))
                 plt.colorbar()
                 plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
                 plt.close()
             w = subsvm.w
             ws.append(w)
             objectives.append(subsvm.primal_objective_)
-            tracer()
         self.w = w
         plt.figure()
         plt.plot(objectives)
