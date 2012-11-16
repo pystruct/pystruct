@@ -13,9 +13,22 @@ import cvxopt.solvers
 import matplotlib.pyplot as plt
 from scipy.optimize import fmin
 
+from joblib import Parallel, delayed
+
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
+def find_constraint(problem, x, y, w, y_hat=None):
+    """Find most violated constraint, or, given y_hat,
+    find slack and dpsi for this constraing."""
+
+    if y_hat is None:
+        y_hat = problem.loss_augmented_inference(x, y, w)
+    psi = problem.psi
+    loss = problem.loss(y, y_hat)
+    delta_psi = psi(x, y) - psi(x, y_hat)
+    slack = loss - np.dot(w, delta_psi)
+    return y_hat, delta_psi, slack, loss
 
 def objective_primal(problem, w, X, Y, C):
     objective = 0
@@ -58,17 +71,18 @@ class StructuredSVM(object):
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-            verbose=1, positive_constraint=None):
+            verbose=1, positive_constraint=None, n_jobs=1):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
         self.C = float(C)
         self.verbose = verbose
         self.check_constraints = check_constraints
+        self.n_jobs = n_jobs
         if verbose == 0:
             cvxopt.solvers.options['show_progress'] = False
 
-    def _solve_constraints(self, constraints, n_samples):
+    def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C / float(n_samples)
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
@@ -76,10 +90,10 @@ class StructuredSVM(object):
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
-        # constraints are a bit tricky. first, all learningrate must be >zero
+        # constraints are a bit tricky. first, all alpha must be >zero
         idy = np.identity(n_constraints)
         tmp1 = np.zeros(n_constraints)
-        # box constraint: sum of all learningrate for one example must be <= C
+        # box constraint: sum of all alpha for one example must be <= C
         blocks = np.zeros((n_samples, n_constraints))
         first = 0
         for i, sample in enumerate(constraints):
@@ -98,8 +112,19 @@ class StructuredSVM(object):
         G = cvxopt.matrix(np.vstack((-idy, blocks, psis_constr)))
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
+        #maximum_entry = max(P)
+        #if maximum_entry > 100:
+        #    # rescale problem
+        #    P /= maximum_entry
+        #    sqrt = np.sqrt(maximum_entry)
+        #    q *= sqrt
+        #    G *= sqrt
+
         # solve QP problem
+        cvxopt.solvers.options['feastol']=1e-5
         solution = cvxopt.solvers.qp(P, q, G, h)
+        if solution['status'] != "optimal":
+            tracer()
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
@@ -117,17 +142,6 @@ class StructuredSVM(object):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
-    def _find_constraint(self, x, y, w, y_hat=None):
-        """Find most violated constraint, or, given y_hat,
-        find slack and dpsi for this constraing."""
-
-        if y_hat is None:
-            y_hat = self.problem.loss_augmented_inference(x, y, w)
-        psi = self.problem.psi
-        loss = self.problem.loss(y, y_hat)
-        delta_psi = psi(x, y) - psi(x, y_hat)
-        slack = loss - np.dot(w, delta_psi)
-        return y_hat, delta_psi, slack, loss
 
     def fit(self, X, Y):
         print("Training dual structural SVM")
@@ -145,8 +159,13 @@ class StructuredSVM(object):
             new_constraints = 0
             current_loss = 0.
             primal_objective = 0.
-            for i, x, y in zip(np.arange(len(X)), X, Y):
-                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+            #for i, x, y in zip(np.arange(len(X)), X, Y):
+                #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+            candidate_constraints = Parallel(n_jobs=self.n_jobs)(
+                    delayed(find_constraint)(self.problem, x, y, w) for x, y in zip(X, Y))
+            for i, x, y, constraint in zip(np.arange(len(X)), X, Y, candidate_constraints):
+                y_hat, delta_psi, slack, loss = constraint
+
                 if np.all(y == y_hat):
                     if self.verbose > 1:
                         print("found ground truth loss-augmented inference, slack = 0")
@@ -175,7 +194,7 @@ class StructuredSVM(object):
                         # if smaller, complain about approximate inference.
                         if (slack - slack_tmp) < -1e-5:
                             print("bad inference!")
-                            #tracer()
+                            tracer()
                             already_active = True
                             break
 
@@ -200,7 +219,7 @@ class StructuredSVM(object):
                 print("no additional constraints")
                 #tracer()
                 break
-            w, objective = self._solve_constraints(constraints, n_samples)
+            w, objective = self._solve_n_slack_qp(constraints, n_samples)
             objective_curve.append(objective)
             #if (iteration > 1 and np.abs(objective_curve[-2] -
                 #objective_curve[-1]) < 0.01):
