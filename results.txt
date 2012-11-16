@@ -4,7 +4,22 @@ loss: 21.000000
 complete loss: 26.000000
 (training set)
 
-without binary teacher:
+binary teacher:
 loss: 69.000000
 complete loss: 69.000000
 (training set)
+
+loss with latent svm, starting with correct init
+loss: 26.000000
+
+
+n_samples=5, noise=10
+binary teacher: loss 21
+explicit teacher: loss 10
+latent variable, inizialized to all the same: loss 10
+
+n_samples = 50
+binary
+complete loss: 205.000000
+latent:
+loss: 86.000000
