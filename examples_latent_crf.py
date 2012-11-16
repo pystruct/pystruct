@@ -11,12 +11,12 @@ tracer = Tracer()
 
 
 def main():
-    X, Y = toy.generate_crosses_latent(n_samples=5, noise=10)
+    X, Y = toy.generate_crosses_latent(n_samples=50, noise=10)
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='dai')
-    clf = StupidLatentSVM(problem=crf, max_iter=100, C=10 ** 8, verbose=20,
-            check_constraints=True)
+    clf = StupidLatentSVM(problem=crf, max_iter=100, C=10 ** 8, verbose=2,
+            check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
 
@@ -32,7 +32,13 @@ def main():
         plt.imshow(y, interpolation='nearest')
         plt.colorbar()
         plt.subplot(132)
-        plt.imshow(np.argmin(x, axis=2), interpolation='nearest')
+        w_unaries_only = np.array([1, 1, 1, 1,
+                                   0,
+                                   0, 0,
+                                   0, 0, 0,
+                                   0, 0, 0, 0])
+        unary_pred = crf.inference(x, w_unaries_only)
+        plt.imshow(unary_pred, interpolation='nearest')
         plt.colorbar()
         plt.subplot(133)
         plt.imshow(y_pred, interpolation='nearest')
