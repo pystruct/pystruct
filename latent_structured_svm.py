@@ -18,11 +18,13 @@ class StupidLatentSVM(StructuredSVM):
     def fit(self, X, Y):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
-                self.check_constraints, verbose=self.verbose - 1)
+                self.check_constraints, verbose=self.verbose - 1, n_jobs=self.n_jobs)
         objectives = []
         ws = []
         H = Y
-        Y = [y / self.problem.n_states_per_label for y in Y]
+        Y = Y / self.problem.n_states_per_label
+        # forget assignment of latent variables
+        H = Y * self.problem.n_states_per_label
 
         for iteration in xrange(10):
             print("LATENT SVM ITERATION %d" % iteration)
