@@ -163,7 +163,6 @@ class StructuredSVM(object):
                 print("iteration %d" % iteration)
             new_constraints = 0
             current_loss = 0.
-            primal_objective = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
             candidate_constraints = Parallel(n_jobs=self.n_jobs)(
@@ -172,13 +171,8 @@ class StructuredSVM(object):
                 y_hat, delta_psi, slack, loss = constraint
                 current_loss += loss
 
-                if np.all(y == y_hat):
-                    if self.verbose > 1:
-                        print("found ground truth loss-augmented inference, slack = 0")
-
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
-                primal_objective += slack
 
                 already_active = np.any([True for y_hat_, psi_, loss_ in
                     constraints[i] if (y_hat == y_hat_).all()])
@@ -209,11 +203,7 @@ class StructuredSVM(object):
                 if not already_active and slack > 1e-5:
                     constraints[i].append([y_hat, delta_psi, loss])
                     new_constraints += 1
-            primal_objective /= len(X)
             current_loss /= len(X)
-            primal_objective += np.sum(w ** 2) / self.C / 2.
-            #assert_almost_equal(primal_objective,
-                    #objective_primal(self.problem, w, X, Y, self.C))
             loss_curve.append(current_loss)
 
 
@@ -227,17 +217,17 @@ class StructuredSVM(object):
             primal_objective_curve.append(sum_of_slacks / len(X) + np.sum(w ** 2) / self.C / 2.)
             if (len(primal_objective_curve) > 2
                     and primal_objective_curve[-1] > primal_objective_curve[-2] + 1e8):
-                print("whoops")
+                print("primal loss became smaller. that shouldn't happen.")
                 tracer()
             objective_curve.append(objective)
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, primal objective: %f "
                       "dual objective: %f" %
-                        (current_loss, new_constraints, primal_objective, objective))
+                        (current_loss, new_constraints, primal_objective_curve[-1], objective))
             if (iteration > 1 and objective_curve[-2] -
                 objective_curve[-1] < 0.01):
                 print("Dual objective converged.")
-                #break
+                break
             self.ws.append(w)
             if self.verbose > 0:
                 print(w)
@@ -249,15 +239,12 @@ class StructuredSVM(object):
             plt.subplot(131, title="loss")
             plt.plot(loss_curve)
             plt.subplot(132, title="objective")
-            # the objective value should be monotonically decreasing
-            # this is a maximization problem, to which we add more
-            # and more constraints
             plt.plot(objective_curve)
             plt.subplot(133, title="primal objective")
             plt.plot(primal_objective_curve)
             plt.show()
             plt.close()
-        self.primal_objective_ = primal_objective
+        self.primal_objective_ = primal_objective_curve[-1]
 
     def predict(self, X):
         prediction = []
