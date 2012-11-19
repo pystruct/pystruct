@@ -30,6 +30,9 @@ def find_constraint(problem, x, y, w, y_hat=None):
     slack = loss - np.dot(w, delta_psi)
     return y_hat, delta_psi, slack, loss
 
+def inference(problem, x, w):
+    return problem.inference(x, w)
+
 def objective_primal(problem, w, X, Y, C):
     objective = 0
     psi = problem.psi
@@ -71,7 +74,7 @@ class StructuredSVM(object):
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-            verbose=1, positive_constraint=None, n_jobs=1):
+            verbose=1, positive_constraint=None, n_jobs=1, plot=False):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
@@ -79,7 +82,8 @@ class StructuredSVM(object):
         self.verbose = verbose
         self.check_constraints = check_constraints
         self.n_jobs = n_jobs
-        if verbose == 0:
+        self.plot = plot
+        if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
 
     def _solve_n_slack_qp(self, constraints, n_samples):
@@ -165,6 +169,7 @@ class StructuredSVM(object):
                     delayed(find_constraint)(self.problem, x, y, w) for x, y in zip(X, Y))
             for i, x, y, constraint in zip(np.arange(len(X)), X, Y, candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
+                current_loss += loss
 
                 if np.all(y == y_hat):
                     if self.verbose > 1:
@@ -198,7 +203,6 @@ class StructuredSVM(object):
                             already_active = True
                             break
 
-                current_loss += loss
                 # if significant slack and constraint not active
                 # this is a weaker check than the "check_constraints" one.
                 if not already_active and slack > 1e-5:
@@ -209,9 +213,6 @@ class StructuredSVM(object):
             primal_objective += np.sum(w ** 2) / self.C / 2.
             #assert_almost_equal(primal_objective,
                     #objective_primal(self.problem, w, X, Y, self.C))
-            if self.verbose > 0:
-                print("current loss: %f  new constraints: %d, primal obj: %f" %
-                        (current_loss, new_constraints, primal_objective))
             loss_curve.append(current_loss)
 
             primal_objective_curve.append(primal_objective)
@@ -221,27 +222,32 @@ class StructuredSVM(object):
                 break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
             objective_curve.append(objective)
-            #if (iteration > 1 and np.abs(objective_curve[-2] -
-                #objective_curve[-1]) < 0.01):
-                #print("Dual objective converged.")
-                #break
+            if self.verbose > 0:
+                print("current loss: %f  new constraints: %d, primal objective: %f "
+                      "dual objective: %f" %
+                        (current_loss, new_constraints, primal_objective, objective))
+            if (iteration > 1 and objective_curve[-2] -
+                objective_curve[-1] < 0.01):
+                print("Dual objective converged.")
+                break
             if self.verbose > 0:
                 print(w)
         self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
-        #plt.figure()
-        #plt.subplot(131, title="loss")
-        #plt.plot(loss_curve)
-        #plt.subplot(132, title="objective")
-        # the objective value should be monotonically decreasing
-        # this is a maximization problem, to which we add more
-        # and more constraints
-        #plt.plot(objective_curve)
-        #plt.subplot(133, title="primal objective")
-        #plt.plot(primal_objective_curve)
-        #plt.show()
-        #plt.close()
+        if self.plot:
+            plt.figure()
+            plt.subplot(131, title="loss")
+            plt.plot(loss_curve)
+            plt.subplot(132, title="objective")
+            # the objective value should be monotonically decreasing
+            # this is a maximization problem, to which we add more
+            # and more constraints
+            plt.plot(objective_curve)
+            plt.subplot(133, title="primal objective")
+            plt.plot(primal_objective_curve)
+            plt.show()
+            plt.close()
         self.primal_objective_ = primal_objective
 
     def predict(self, X):
