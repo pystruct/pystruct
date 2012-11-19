@@ -93,6 +93,7 @@ class StructuredSVM(object):
         psi_matrix = np.vstack(psis)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
+        # q contains loss from margin-rescaling
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
         # constraints are a bit tricky. first, all alpha must be >zero
         idy = np.identity(n_constraints)
@@ -129,6 +130,7 @@ class StructuredSVM(object):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
+        self.alphas.append(a)
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
@@ -154,6 +156,8 @@ class StructuredSVM(object):
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
+        self.ws = []
+        self.alphas = []  # dual solutions
         for iteration in xrange(self.max_iter):
             if self.verbose > 0:
                 print("iteration %d" % iteration)
@@ -182,13 +186,13 @@ class StructuredSVM(object):
                     continue
 
                 if self.check_constraints:
-                    # "smart" but expensive stopping criterion
+                    # "smart" stopping criterion
                     # check if most violated constraint is more violated
                     # than previous ones by more then eps.
                     # If it is less violated, inference was wrong/approximate
                     for con in constraints[i]:
                         # compute slack for old constraint
-                        slack_tmp = con[2] - np.dot(w, con[1])
+                        slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
                         if self.verbose > 1:
                             print("slack old constraint: %f" % slack_tmp)
                         # if slack of new constraint is smaller or not
@@ -212,12 +216,19 @@ class StructuredSVM(object):
                     #objective_primal(self.problem, w, X, Y, self.C))
             loss_curve.append(current_loss)
 
-            primal_objective_curve.append(primal_objective)
+
             if new_constraints == 0:
                 print("no additional constraints")
                 #tracer()
                 break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
+            sum_of_slacks = np.sum([max(np.max([-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]), 0)
+                                    for sample in constraints])
+            primal_objective_curve.append(sum_of_slacks / len(X) + np.sum(w ** 2) / self.C / 2.)
+            if (len(primal_objective_curve) > 2
+                    and primal_objective_curve[-1] > primal_objective_curve[-2] + 1e8):
+                print("whoops")
+                tracer()
             objective_curve.append(objective)
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, primal objective: %f "
@@ -226,7 +237,8 @@ class StructuredSVM(object):
             if (iteration > 1 and objective_curve[-2] -
                 objective_curve[-1] < 0.01):
                 print("Dual objective converged.")
-                break
+                #break
+            self.ws.append(w)
             if self.verbose > 0:
                 print(w)
         self.w = w
