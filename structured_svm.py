@@ -116,19 +116,16 @@ class StructuredSVM(object):
         G = cvxopt.matrix(np.vstack((-idy, blocks, psis_constr)))
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
-        #maximum_entry = max(P)
-        #if maximum_entry > 100:
-        #    # rescale problem
-        #    P /= maximum_entry
-        #    sqrt = np.sqrt(maximum_entry)
-        #    q *= sqrt
-        #    G *= sqrt
 
         # solve QP problem
         cvxopt.solvers.options['feastol']=1e-5
         solution = cvxopt.solvers.qp(P, q, G, h)
         if solution['status'] != "optimal":
-            tracer()
+            print("regularizing QP!")
+            P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T) + 1e-8 * np.eye(psi_matrix.shape[0]))
+            solution = cvxopt.solvers.qp(P, q, G, h)
+            if solution['status'] != "optimal":
+                tracer()
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
