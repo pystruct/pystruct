@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 from sklearn.cluster import KMeans
 
-from structured_svm import StructuredSVM, inference  # , find_constraint
+from structured_svm import StructuredSVM, inference  , find_constraint
 
 from IPython.core.debugger import Tracer
 
@@ -59,7 +59,7 @@ class StupidLatentSVM(StructuredSVM):
                 self.check_constraints, verbose=self.verbose - 1,
                 n_jobs=self.n_jobs)
         objectives = []
-        #constraints = [[] for i in xrange(len(X))]
+        constraints = None
         ws = []
         H = Y
         Y = Y / self.problem.n_states_per_label
@@ -69,11 +69,6 @@ class StupidLatentSVM(StructuredSVM):
         H = kmeans_init(X, Y, self.problem.n_states_per_label)
         #H += np.random.randint(2, size=H.shape)
         inds = np.arange(len(H))
-        for i, h in zip(inds, H):
-            plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
-            plt.colorbar()
-            plt.savefig("figures/h_0000_init_%03d.png" % (i))
-            plt.close()
 
         for iteration in xrange(10):
             print("LATENT SVM ITERATION %d" % iteration)
@@ -86,23 +81,23 @@ class StupidLatentSVM(StructuredSVM):
                     print("no changes in latent variables of ground truth. stopping.")
                     break
                 print("changes in H: %d" % np.sum(H_new != H))
+
+                # update constraints:
+                constraints = [[] for i in xrange(len(X))]
+                for sample, h, i in zip(subsvm.constraints_, H_new, np.arange(len(X))):
+                    for constraint in sample:
+                        y_hat, delta_psi, slack, loss = find_constraint(self.problem, X[i], h, w, constraint[0])
+                        constraints[i].append([y_hat, delta_psi, loss])
                 H = H_new
+            #if initialization weak?
             #if iteration == 0:
                 #subsvm.max_iter = 10
 
-            # update constraints:
-            #new_constraints = [[] for i in xrange(len(X))]
-            #for sample, h, i in zip(constraints, H, np.arange(len(X))):
-                #for constraint in sample:
-                    #y_hat, delta_psi, slack, loss = find_constraint(self.problem, X[i], h, w, constraint[0])
-                    #new_constraints[i].append([y_hat, delta_psi, loss])
-            #tracer()
-
             #subsvm.fit(X, H, constraints=new_constraints)
             #constraints = subsvm.constraints_
-            subsvm.fit(X, H, constraints=None)
-            if iteration == 0:
-                subsvm.max_iter = self.max_iter
+            subsvm.fit(X, H, constraints=constraints)
+            #if iteration == 0:
+                #subsvm.max_iter = self.max_iter
             H_hat = Parallel(n_jobs=self.n_jobs)(delayed(inference)(self.problem, x, subsvm.w) for x in X)
             inds = np.arange(len(H))
             for i, h, h_hat in zip(inds, H, H_hat):
