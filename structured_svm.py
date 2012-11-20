@@ -146,13 +146,14 @@ class StructuredSVM(object):
         return w, solution['primal objective']
 
 
-    def fit(self, X, Y):
+    def fit(self, X, Y, constraints=None):
         print("Training dual structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
         w = np.ones(self.problem.size_psi) * 1e-5
         n_samples = len(X)
-        constraints = [[] for i in xrange(n_samples)]
+        if constraints is None:
+            constraints = [[] for i in xrange(n_samples)]
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
@@ -214,7 +215,7 @@ class StructuredSVM(object):
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
             sum_of_slacks = np.sum([max(np.max([-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]), 0)
                                     for sample in constraints])
-            primal_objective_curve.append(sum_of_slacks / len(X) + np.sum(w ** 2) / self.C / 2.)
+            primal_objective_curve.append(self.C * sum_of_slacks / len(X) + np.sum(w ** 2) / 2.)
             if (len(primal_objective_curve) > 2
                     and primal_objective_curve[-1] > primal_objective_curve[-2] + 1e8):
                 print("primal loss became smaller. that shouldn't happen.")
@@ -224,12 +225,12 @@ class StructuredSVM(object):
                 print("current loss: %f  new constraints: %d, primal objective: %f "
                       "dual objective: %f" %
                         (current_loss, new_constraints, primal_objective_curve[-1], objective))
-            if (iteration > 1 and objective_curve[-2] -
-                objective_curve[-1] < 0.01):
-                print("Dual objective converged.")
-                break
+            if (iteration > 1 and primal_objective_curve[-1] -
+                primal_objective_curve[-2] < 0.0001):
+                print("objective converged.")
+                #break
             self.ws.append(w)
-            if self.verbose > 0:
+            if self.verbose > 1:
                 print(w)
         self.w = w
         self.constraints_ = constraints
@@ -244,7 +245,7 @@ class StructuredSVM(object):
             plt.plot(primal_objective_curve)
             plt.show()
             plt.close()
-        self.primal_objective_ = primal_objective_curve[-1]
+        #self.primal_objective_ = primal_objective_curve[-1]
 
     def predict(self, X):
         prediction = []
