@@ -23,3 +23,8 @@ binary
 complete loss: 205.000000
 latent:
 loss: 86.000000
+
+kmeans init, 25 examples:
+loss: 17.000000
+50 examples:
+loss: 89.000000
