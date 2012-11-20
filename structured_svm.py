@@ -211,7 +211,8 @@ class StructuredSVM(object):
             if new_constraints == 0:
                 print("no additional constraints")
                 #tracer()
-                break
+                if iteration > 0:
+                    break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
             sum_of_slacks = np.sum([max(np.max([-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]), 0)
                                     for sample in constraints])
