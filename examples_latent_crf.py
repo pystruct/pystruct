@@ -11,18 +11,19 @@ tracer = Tracer()
 
 
 def main():
-    X, Y = toy.generate_crosses_latent(n_samples=50, noise=10)
+    X, Y = toy.generate_crosses_latent(n_samples=25, noise=10)
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='dai')
-    clf = StupidLatentSVM(problem=crf, max_iter=100, C=10 ** 8, verbose=2,
+    clf = StupidLatentSVM(problem=crf, max_iter=50, C=10000, verbose=2,
             check_constraints=True, n_jobs=12)
+    #clf = StupidLatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
+            #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
 
     i = 0
     loss = 0
-    tracer()
     for x, y, y_pred in zip(X, Y, Y_pred):
         y_pred = y_pred.reshape(x.shape[:2])
         loss += np.sum(y / 2 != y_pred / 2)
