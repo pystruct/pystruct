@@ -7,13 +7,49 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
 
-from structured_svm import StructuredSVM, inference
+from joblib import Parallel, delayed
+from sklearn.cluster import KMeans
+
+from structured_svm import StructuredSVM, inference  # , find_constraint
 
 from IPython.core.debugger import Tracer
 
 tracer = Tracer()
+
+def kmeans_init(X, Y, n_states_per_label=2):
+    n_labels = X[0].shape[-1]
+    shape = Y[0].shape
+    gx, gy = np.ogrid[:shape[0], :shape[1]]
+    all_feats = []
+    # iterate over samples
+    for x, y in zip(X, Y):
+        # first, get neighbor counts from nodes
+        labels = np.zeros((shape[0], shape[1], n_labels),
+                dtype=np.int)
+        labels[gx, gy, y] = 1
+        neighbors = np.zeros((y.shape[0], y.shape[1], n_labels))
+        neighbors[1:, :, :] += labels[:-1, :, :]
+        neighbors[:-1, :, :] += labels[1:, :, :]
+        neighbors[:, 1:, :] += labels[:, :-1, :]
+        neighbors[:, :-1, :] += labels[:, 1:, :]
+        # normalize (for borders)
+        neighbors /=neighbors.sum(axis=-1)[:,:, np.newaxis]
+        # add unaries
+        features = np.dstack([x, neighbors])
+        all_feats.append(features.reshape(-1, features.shape[-1]))
+    all_feats = np.vstack(all_feats)
+    # states (=clusters) will be saved in H
+    H = np.zeros_like(Y, dtype=np.int)
+    km = KMeans(n_clusters=n_states_per_label)
+    # for each state, run k-means over whole dataset
+    for label in np.arange(n_labels):
+        indicator = Y.ravel() == label
+        f = all_feats[indicator]
+        states = km.fit_predict(f)
+        H.ravel()[indicator] = states + label * n_states_per_label
+    return H
+
 
 
 class StupidLatentSVM(StructuredSVM):
@@ -23,13 +59,15 @@ class StupidLatentSVM(StructuredSVM):
                 self.check_constraints, verbose=self.verbose - 1,
                 n_jobs=self.n_jobs)
         objectives = []
+        #constraints = [[] for i in xrange(len(X))]
         ws = []
         H = Y
         Y = Y / self.problem.n_states_per_label
         # forget assignment of latent variables
-        H = Y * self.problem.n_states_per_label
+        #H = Y * self.problem.n_states_per_label
         # randomize!
-        H += np.random.randint(2, size=H.shape)
+        H = kmeans_init(X, Y, self.problem.n_states_per_label)
+        #H += np.random.randint(2, size=H.shape)
         inds = np.arange(len(H))
         for i, h in zip(inds, H):
             plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
@@ -47,10 +85,24 @@ class StupidLatentSVM(StructuredSVM):
                 if np.all(H_new == H):
                     print("no changes in latent variables of ground truth. stopping.")
                     break
+                print("changes in H: %d" % np.sum(H_new != H))
                 H = H_new
-            #X_wide = [np.repeat(x, self.problem.n_states_per_label, axis=1)
-            #for x in X]
-            subsvm.fit(X, H)
+            #if iteration == 0:
+                #subsvm.max_iter = 10
+
+            # update constraints:
+            #new_constraints = [[] for i in xrange(len(X))]
+            #for sample, h, i in zip(constraints, H, np.arange(len(X))):
+                #for constraint in sample:
+                    #y_hat, delta_psi, slack, loss = find_constraint(self.problem, X[i], h, w, constraint[0])
+                    #new_constraints[i].append([y_hat, delta_psi, loss])
+            #tracer()
+
+            #subsvm.fit(X, H, constraints=new_constraints)
+            #constraints = subsvm.constraints_
+            subsvm.fit(X, H, constraints=None)
+            if iteration == 0:
+                subsvm.max_iter = self.max_iter
             H_hat = Parallel(n_jobs=self.n_jobs)(delayed(inference)(self.problem, x, subsvm.w) for x in X)
             inds = np.arange(len(H))
             for i, h, h_hat in zip(inds, H, H_hat):
@@ -64,7 +116,7 @@ class StupidLatentSVM(StructuredSVM):
                 plt.close()
             w = subsvm.w
             ws.append(w)
-            objectives.append(subsvm.primal_objective_)
+            #objectives.append(subsvm.primal_objective_)
         self.w = w
         plt.figure()
         plt.plot(objectives)
