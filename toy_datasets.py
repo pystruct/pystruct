@@ -7,8 +7,10 @@ tracer = Tracer()
 #### binary
 def generate_blocks(n_samples=10, noise=1.5):
     np.random.seed(0)
-    Y = np.ones((n_samples, 10, 12))
-    Y[:, :, :6] = -1
+    #Y = np.ones((n_samples, 10, 12))
+    #Y[:, :, :6] = -1
+    Y = np.ones((n_samples, 3, 4))
+    Y[:, :, :2] = -1
     X = Y + noise * np.random.normal(size=Y.shape)
     X = np.c_['3,4,0', -X, X]
     Y = (Y > 0).astype(np.int32)
