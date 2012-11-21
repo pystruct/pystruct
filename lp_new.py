@@ -98,9 +98,9 @@ def main():
     # create mrf problem:
     # two nodes, binary problem
     # potts potential
-    pairwise = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    pairwise = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
     import toy_datasets as toy
-    X, Y = toy.generate_blocks_multinomial(n_samples=1, noise=.0)
+    X, Y = toy.generate_blocks_multinomial(n_samples=1, noise=.5)
     x, y = X[0], Y[0]
     inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
     inds = inds.astype(np.int64)
@@ -108,7 +108,7 @@ def main():
     vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
     edges = np.vstack([horz, vert])
     x = x.reshape(-1, x.shape[-1])
-    unary_assignment = solve_lp(x, pairwise, edges)
+    unary_assignment = solve_lp(-x, pairwise, edges)
     plt.matshow(np.argmax(unary_assignment, axis=1).reshape(y.shape))
     plt.show()
     tracer()
