@@ -1,8 +1,15 @@
 import numpy as np
 import glpk            # Import the GLPK module
 
+from IPython.core.debugger import Tracer
+
+tracer = Tracer()
 
 def solve_lp(unaries, pairwise, edges):
+    lp = glpk.LPX()        # Create empty problem instance
+    lp.name = 'sample'     # Assign symbolic name to problem
+    lp.obj.maximize = False # Set this as a maximization problem
+
     n_nodes = len(unaries)
     n_edges = len(edges)
 
@@ -47,7 +54,7 @@ def solve_lp(unaries, pairwise, edges):
         #print("vertex: %d" % vertex)
         r.name = "marginalization edge %d[%d] state %d" % (edge, vertex, state)
         # for one vertex iterate over all states of the other vertex
-        matrix.append((row_idx, vertex * n_states + state, -1))
+        matrix.append((row_idx, int(vertex) * n_states + state, -1))
         edge_var_index = edges_offset + edge * n_states ** 2
         if vertex_in_edge == 0:
             # first vertex in edge
@@ -60,21 +67,23 @@ def solve_lp(unaries, pairwise, edges):
 
         r.bounds = 0
 
-    c = np.ravel(unaries)
+    coef = np.ravel(unaries)
     # pairwise:
     repeated_pairwise = np.repeat(np.hstack(pairwise)[np.newaxis, :], n_edges, axis=0).ravel()
-    c = np.hstack([c, repeated_pairwise])
-    lp.obj[:] = c.tolist()   # Set objective coefficients
+    coef = np.hstack([coef, repeated_pairwise])
+    lp.obj[:] = coef.tolist()   # Set objective coefficients
     lp.matrix = matrix
     lp.simplex()           # Solve this LP with the simplex method
     print 'Z = %g;' % lp.obj.value,  # Retrieve and print obj func value
     print '; '.join('%s = %g' % (c.name, c.primal) for c in lp.cols)
+    res = np.array([c.primal for c in lp.cols])
+    unary_variables = res[:n_nodes * n_states].reshape(n_nodes, n_states)
+    pairwise_variables = res[n_nodes * n_states:].reshape(n_edges, n_states ** 2)
+    assert(np.all(unary_variables.sum(axis=1) == 1))
+    assert(np.all(pairwise_variables.sum(axis=1) == 1))
+    return unary_variables
 
 if __name__ == "__main__":
-    lp = glpk.LPX()        # Create empty problem instance
-    lp.name = 'sample'     # Assign symbolic name to problem
-    lp.obj.maximize = False # Set this as a maximization problem
-
     # create mrf problem:
     # two nodes, binary problem
     n_states = 2
@@ -82,4 +91,16 @@ if __name__ == "__main__":
     unaries = [[1, 0], [0, 2]]
     # potts potential
     pairwise = [[0, 2], [2, 0]]
+    unary_assignment = solve_lp(unaries, pairwise, edges)
+    print(unary_assignment)
+    from toy_datasets import generate_blocks
+    X, Y = generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    x = x.reshape(-1, 2)
+    inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
+    horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+    vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+    edges = np.vstack([horz, vert])
+    unary_assignment = solve_lp(x, pairwise, edges)
+    tracer()
 
