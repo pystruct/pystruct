@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 from sklearn.cluster import KMeans
 
-from structured_svm import StructuredSVM, inference  , find_constraint
+from structured_svm import StructuredSVM, inference, find_constraint
 
 from IPython.core.debugger import Tracer
 
 tracer = Tracer()
+
 
 def kmeans_init(X, Y, n_states_per_label=2):
     n_labels = X[0].shape[-1]
@@ -26,7 +27,7 @@ def kmeans_init(X, Y, n_states_per_label=2):
     for x, y in zip(X, Y):
         # first, get neighbor counts from nodes
         labels = np.zeros((shape[0], shape[1], n_labels),
-                dtype=np.int)
+                          dtype=np.int)
         labels[gx, gy, y] = 1
         neighbors = np.zeros((y.shape[0], y.shape[1], n_labels))
         neighbors[1:, :, :] += labels[:-1, :, :]
@@ -34,7 +35,7 @@ def kmeans_init(X, Y, n_states_per_label=2):
         neighbors[:, 1:, :] += labels[:, :-1, :]
         neighbors[:, :-1, :] += labels[:, 1:, :]
         # normalize (for borders)
-        neighbors /=neighbors.sum(axis=-1)[:,:, np.newaxis]
+        neighbors /= neighbors.sum(axis=-1)[:, :, np.newaxis]
         # add unaries
         features = np.dstack([x, neighbors])
         all_feats.append(features.reshape(-1, features.shape[-1]))
@@ -51,24 +52,29 @@ def kmeans_init(X, Y, n_states_per_label=2):
     return H
 
 
-
 class StupidLatentSVM(StructuredSVM):
     def fit(self, X, Y):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
-                self.check_constraints, verbose=self.verbose - 1,
-                n_jobs=self.n_jobs)
+                               self.check_constraints,
+                               verbose=self.verbose - 1,
+                               n_jobs=self.n_jobs)
         objectives = []
         constraints = None
         ws = []
-        H = Y
-        Y = Y / self.problem.n_states_per_label
+        #H = Y
+        #Y = Y / self.problem.n_states_per_label
         # forget assignment of latent variables
         #H = Y * self.problem.n_states_per_label
-        # randomize!
         H = kmeans_init(X, Y, self.problem.n_states_per_label)
+        # randomize!
         #H += np.random.randint(2, size=H.shape)
         inds = np.arange(len(H))
+        for i, h in zip(inds, H):
+            plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
+            plt.colorbar()
+            plt.savefig("figures/h_init_%03d.png" % i)
+            plt.close()
 
         for iteration in xrange(10):
             print("LATENT SVM ITERATION %d" % iteration)
@@ -76,18 +82,22 @@ class StupidLatentSVM(StructuredSVM):
             if iteration == 0:
                 pass
             else:
-                H_new = np.array([self.problem.latent(x, y, w) for x, y in zip(X, Y)])
+                H_new = np.array([self.problem.latent(x, y, w)
+                                  for x, y in zip(X, Y)])
                 if np.all(H_new == H):
-                    print("no changes in latent variables of ground truth. stopping.")
+                    print("no changes in latent variables of ground truth."
+                          " stopping.")
                     break
                 print("changes in H: %d" % np.sum(H_new != H))
 
                 # update constraints:
                 constraints = [[] for i in xrange(len(X))]
-                for sample, h, i in zip(subsvm.constraints_, H_new, np.arange(len(X))):
+                for sample, h, i in zip(subsvm.constraints_, H_new,
+                                        np.arange(len(X))):
                     for constraint in sample:
-                        y_hat, delta_psi, slack, loss = find_constraint(self.problem, X[i], h, w, constraint[0])
-                        constraints[i].append([y_hat, delta_psi, loss])
+                        new_constr = find_constraint(self.problem, X[i], h, w,
+                                                     constraint[0])
+                        constraints[i].append(new_constr)
                 H = H_new
             #if initialization weak?
             #if iteration == 0:
@@ -98,7 +108,9 @@ class StupidLatentSVM(StructuredSVM):
             subsvm.fit(X, H, constraints=constraints)
             #if iteration == 0:
                 #subsvm.max_iter = self.max_iter
-            H_hat = Parallel(n_jobs=self.n_jobs)(delayed(inference)(self.problem, x, subsvm.w) for x in X)
+            H_hat = Parallel(n_jobs=self.n_jobs)(delayed(inference)
+                                                 (self.problem, x, subsvm.w)
+                                                 for x in X)
             inds = np.arange(len(H))
             for i, h, h_hat in zip(inds, H, H_hat):
                 plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
