@@ -7,7 +7,11 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def solve_lp(unaries, pairwise, edges):
+def solve_lp(unaries, edges, pairwise):
+    if unaries.shape[1] != pairwise.shape[0]:
+        raise ValueError("incompatible shapes of unaries"
+                         " and pairwise potentials.")
+
     lp = glpk.LPX()          # Create empty problem instance
     lp.name = 'sample'       # Assign symbolic name to problem
     lp.obj.maximize = False  # Set this as a maximization problem
@@ -66,12 +70,12 @@ def solve_lp(unaries, pairwise, edges):
             # first vertex in edge
             for j in xrange(n_states):
                 matrix.append((row_idx, edge_var_index
-                                        + state * n_states + j, 1))
+                               + state * n_states + j, 1))
         else:
             # second vertex in edge
             for j in xrange(n_states):
                 matrix.append((row_idx, edge_var_index
-                                        + j * n_states + state, 1))
+                               + j * n_states + state, 1))
 
         r.bounds = 0
 
@@ -89,8 +93,8 @@ def solve_lp(unaries, pairwise, edges):
     unary_variables = res[:n_nodes * n_states].reshape(n_nodes, n_states)
     pairwise_variables = res[n_nodes * n_states:].reshape(n_edges,
                                                           n_states ** 2)
-    assert(np.all(unary_variables.sum(axis=1) == 1))
-    assert(np.all(pairwise_variables.sum(axis=1) == 1))
+    assert((np.abs(unary_variables.sum(axis=1) - 1) < 1e-4).all())
+    assert((np.abs(pairwise_variables.sum(axis=1) - 1) < 1e-4).all())
     return unary_variables
 
 
