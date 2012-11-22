@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-import toy_datasets as toy
-from crf import GridCRF
+import pystruct.toy_datasets as toy
+from pystruct.crf import GridCRF
 from pyqpbo import binary_grid, alpha_expansion_grid
 
 import itertools
@@ -19,6 +19,17 @@ def test_binary_blocks_crf():
                   0,
                   -4, 0])
     crf = GridCRF()
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
+def test_binary_blocks_crf_lp():
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, 1,
+                  0,
+                  -4, 0])
+    crf = GridCRF(inference_method="lp")
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 
@@ -40,7 +51,7 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        crf = GridCRF()
+        crf = GridCRF(inference_method="lp")
         w_unaries_only = np.zeros(5)
         w_unaries_only[:2] = 1.
         # test that inference with unaries only is the
@@ -48,8 +59,7 @@ def test_binary_grid_unaries():
         inf_unaries = crf.inference(x, w_unaries_only)
 
         pw_z = np.zeros((2, 2), dtype=np.int32)
-        un = np.ascontiguousarray(
-                -1000 * x).astype(np.int32)
+        un = np.ascontiguousarray(-1000 * x).astype(np.int32)
         unaries = binary_grid(un, pw_z)
         assert_array_equal(inf_unaries, unaries)
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))
@@ -79,8 +89,7 @@ def test_multinomial_grid_unaries():
         inf_unaries = crf.inference(x, w_unaries_only)
 
         pw_z = np.zeros((n_labels, n_labels), dtype=np.int32)
-        un = np.ascontiguousarray(
-                -1000 * x).astype(np.int32)
+        un = np.ascontiguousarray(-1000 * x).astype(np.int32)
         unaries = alpha_expansion_grid(un, pw_z)
         assert_array_equal(inf_unaries, unaries)
         assert_array_equal(inf_unaries, np.argmax(x, axis=2))

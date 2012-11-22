@@ -7,10 +7,10 @@ tracer = Tracer()
 #### binary
 def generate_blocks(n_samples=10, noise=1.5):
     np.random.seed(0)
-    #Y = np.ones((n_samples, 10, 12))
-    #Y[:, :, :6] = -1
-    Y = np.ones((n_samples, 3, 4))
-    Y[:, :, :2] = -1
+    Y = np.ones((n_samples, 10, 12))
+    Y[:, :, :6] = -1
+    #Y = np.ones((n_samples, 3, 4))
+    #Y[:, :, :2] = -1
     X = Y + noise * np.random.normal(size=Y.shape)
     X = np.c_['3,4,0', -X, X]
     Y = (Y > 0).astype(np.int32)
@@ -30,15 +30,15 @@ def generate_checker(n_samples=10, noise=1.5):
 
 def generate_big_checker(n_samples=10, noise=0.5):
     np.random.seed(0)
-    y_small = np.ones((11, 13), dtype=np.int32)
+    y_small = np.ones((5, 5), dtype=np.int32)
     y_small[::2, ::2] = -1
     y_small[1::2, 1::2] = -1
     y = y_small.repeat(3, axis=0).repeat(3, axis=1)
     Y = np.repeat(y[np.newaxis, :, :], n_samples, axis=0)
     X = Y + noise * np.random.normal(size=Y.shape)
     Y = (Y < 0).astype(np.int32)
-    # make unaries with 4 pseudo-classes
-    X = np.r_['-1, 4,0', X, np.zeros_like(X)].copy("C")
+    # make unaries
+    X = np.r_['-1, 4,0', X, -X].copy("C")
     return X, Y
 
 
@@ -189,7 +189,7 @@ def generate_crosses_latent(n_samples=5, noise=30):
 
 
 binary = [generate_blocks, generate_checker, generate_big_checker,
-        generate_easy]
+          generate_easy]
 
 multinomial = [generate_blocks_multinomial, generate_checker_multinomial,
-        generate_big_checker_extended, generate_easy_explicit]
+               generate_big_checker_extended, generate_easy_explicit]
