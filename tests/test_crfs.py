@@ -1,15 +1,43 @@
+import itertools
+
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
+from nose.tools import assert_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.crf import GridCRF
+from pystruct.structured_svm import find_constraint
 from pyqpbo import binary_grid, alpha_expansion_grid
 
-import itertools
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
-# why have binary and multinomial different numbers of parameters?
+
+
+def test_continuous_y():
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, 1,
+                  0,
+                  -4, 0])
+
+    crf = GridCRF(inference_method="lp")
+    psi = crf.psi(x, y)
+    y_cont = np.zeros_like(x)
+    gx, gy = np.indices(x.shape[:-1])
+    y_cont[gx, gy, y] = 1
+    psi_cont = crf.psi(x, y_cont)
+    assert_array_almost_equal(psi, psi_cont)
+
+    const = find_constraint(crf, x, y, w, relaxed=False)
+    const_cont = find_constraint(crf, x, y, w, relaxed=True)
+
+    # dpsi and loss are equal:
+    assert_array_almost_equal(const[1], const_cont[1])
+    assert_equal(const[2], const_cont[2])
+
+    # returned y_hat is one-hot version of other
+    assert_array_equal(const[0], np.argmax(const_cont[0], axis=-1))
 
 
 def test_binary_blocks_crf():

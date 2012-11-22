@@ -86,7 +86,8 @@ def solve_lp(unaries, edges, pairwise):
     coef = np.hstack([coef, repeated_pairwise])
     lp.obj[:] = coef.tolist()   # Set objective coefficients
     lp.matrix = matrix
-    lp.simplex()           # Solve this LP with the simplex method
+    #lp.simplex()           # Solve this LP with the simplex method
+    lp.exact()           # Solve this LP with the simplex method
     #print 'Z = %g;' % lp.obj.value,  # Retrieve and print obj func value
     #print '; '.join('%s = %g' % (c.name, c.primal) for c in lp.cols)
     res = np.array([c.primal for c in lp.cols])

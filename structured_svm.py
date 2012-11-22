@@ -19,16 +19,21 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def find_constraint(problem, x, y, w, y_hat=None):
+## global functions for easy parallelization
+def find_constraint(problem, x, y, w, y_hat=None, relaxed=True):
     """Find most violated constraint, or, given y_hat,
     find slack and dpsi for this constraing."""
 
     if y_hat is None:
-        y_hat = problem.loss_augmented_inference(x, y, w, return_relaxed=True)
+        y_hat = problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
     psi = problem.psi
-    loss = problem.loss(y, y_hat)
     delta_psi = psi(x, y) - psi(x, y_hat)
-    slack = loss - np.dot(w, delta_psi)
+    if y_hat.shape == y.shape:
+        loss = problem.loss(y, y_hat)
+    else:
+        # continuous label
+        loss = problem.loss(y, np.argmax(y_hat, axis=-1))
+    slack = max(loss - np.dot(w, delta_psi), 0)
     return y_hat, delta_psi, slack, loss
 
 
@@ -36,6 +41,7 @@ def inference(problem, x, w):
     return problem.inference(x, w)
 
 
+# easy debugging
 def objective_primal(problem, w, X, Y, C):
     objective = 0
     psi = problem.psi
@@ -52,10 +58,9 @@ def objective_primal(problem, w, X, Y, C):
 class StructuredSVM(object):
     """Structured SVM training with l1 slack penalty.
 
-    Implements slack and margin rescaled structural SVM using
-    the dual formulation and cutting plane method, solved using CVXOPT.
-    The optimization is restarted in each iteration, therefore
-    possibly leading to a large overhead.
+    Implements margin rescaled structural SVM using
+    the n-slack formulation and cutting plane method, solved using CVXOPT.
+    The optimization is restarted in each iteration.
 
     Parameters
     ----------
@@ -202,7 +207,7 @@ class StructuredSVM(object):
                         # if smaller, complain about approximate inference.
                         if (slack - slack_tmp) < -1e-5:
                             print("bad inference!")
-                            #tracer()
+                            tracer()
                             already_active = True
                             break
 

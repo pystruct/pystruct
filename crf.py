@@ -42,19 +42,25 @@ class GridCRF(StructuredProblem):
     def psi(self, x, y):
         # x is unaries
         # y is a labeling
-        ## unary features:
-        gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-        selected_unaries = x[gx, gy, y]
-        unaries_acc = np.sum(x[gx, gy, y])
-        unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                                  minlength=self.n_states)
+        ## y can also be continuous (from lp)
+        if x.shape == y.shape:
+            x_flat = x.reshape(-1, x.shape[-1])
+            y_flat = y.reshape(-1, y.shape[-1])
+            unaries_acc = np.sum(x_flat * y_flat, axis=0)
+            labels = y
+        else:
+            ## unary features:
+            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
+            selected_unaries = x[gx, gy, y]
+            unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
+                                      minlength=self.n_states)
 
-        ##accumulated pairwise
-        #make one hot encoding
-        labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                          dtype=np.int)
-        gx, gy = np.ogrid[:y.shape[0], :y.shape[1]]
-        labels[gx, gy, y] = 1
+            ##accumulated pairwise
+            #make one hot encoding
+            labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
+                              dtype=np.int)
+            labels[gx, gy, y] = 1
+
         # vertical edges
         vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
                       labels[:-1, :, :].reshape(-1, self.n_states))
@@ -67,7 +73,7 @@ class GridCRF(StructuredProblem):
                              pw[np.tri(self.n_states, dtype=np.bool)]])
         return feature
 
-    def inference(self, x, w):
+    def inference(self, x, w, relaxed=False):
         self.inference_calls += 1
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
@@ -83,7 +89,8 @@ class GridCRF(StructuredProblem):
         elif  self.inference_method == "dai":
             return self._inference_dai(x, unary_params, pairwise_params)
         elif  self.inference_method == "lp":
-            return self._inference_lp(x, unary_params, pairwise_params)
+            return self._inference_lp(x, unary_params, pairwise_params,
+                                      relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
@@ -110,7 +117,7 @@ class GridCRF(StructuredProblem):
 
         return y
 
-    def _inference_lp(self, x, unary_params, pairwise_params):
+    def _inference_lp(self, x, unary_params, pairwise_params, relaxed=False):
         ## build graph
         inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
         inds = inds.astype(np.int64)
@@ -119,11 +126,16 @@ class GridCRF(StructuredProblem):
         edges = np.vstack([horz, vert])
         unaries = unary_params * x.reshape(-1, self.n_states)
         y = solve_lp(-unaries, edges, -pairwise_params)
+        n_fractional = np.sum(y.max(axis=-1) < .9)
+        if n_fractional:
+            print("fractional solutions found: %d" % n_fractional)
+        if relaxed:
+            return y.reshape(x.shape)
         y = np.argmax(y, axis=-1)
         y = y.reshape(x.shape[0], x.shape[1])
         return y
 
-    def loss_augmented_inference(self, x, y, w):
+    def loss_augmented_inference(self, x, y, w, relaxed=False):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
@@ -135,7 +147,7 @@ class GridCRF(StructuredProblem):
             # for each class, decrement unaries
             # for loss-agumention
             x_[y != l, l] += 1. / unary_params[l]
-        return self.inference(x_, w)
+        return self.inference(x_, w, relaxed)
 
 
 class FixedGraphCRF(StructuredProblem):
