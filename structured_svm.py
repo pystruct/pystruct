@@ -18,20 +18,23 @@ from joblib import Parallel, delayed
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
+
 def find_constraint(problem, x, y, w, y_hat=None):
     """Find most violated constraint, or, given y_hat,
     find slack and dpsi for this constraing."""
 
     if y_hat is None:
-        y_hat = problem.loss_augmented_inference(x, y, w)
+        y_hat = problem.loss_augmented_inference(x, y, w, return_relaxed=True)
     psi = problem.psi
     loss = problem.loss(y, y_hat)
     delta_psi = psi(x, y) - psi(x, y_hat)
     slack = loss - np.dot(w, delta_psi)
     return y_hat, delta_psi, slack, loss
 
+
 def inference(problem, x, w):
     return problem.inference(x, w)
+
 
 def objective_primal(problem, w, X, Y, C):
     objective = 0
@@ -74,7 +77,7 @@ class StructuredSVM(object):
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-            verbose=1, positive_constraint=None, n_jobs=1, plot=False):
+                 verbose=1, positive_constraint=None, n_jobs=1, plot=False):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
@@ -119,11 +122,12 @@ class StructuredSVM(object):
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
 
         # solve QP problem
-        cvxopt.solvers.options['feastol']=1e-5
+        cvxopt.solvers.options['feastol'] = 1e-5
         solution = cvxopt.solvers.qp(P, q, G, h)
         if solution['status'] != "optimal":
             print("regularizing QP!")
-            P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T) + 1e-8 * np.eye(psi_matrix.shape[0]))
+            P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T)
+                              + 1e-8 * np.eye(psi_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h)
             if solution['status'] != "optimal":
                 tracer()
@@ -138,13 +142,12 @@ class StructuredSVM(object):
         box = np.dot(blocks, a)
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
-                n_constraints))
+                                                           n_constraints))
             # calculate per example box constraint:
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
             print("dual objective: %f" % solution['primal objective'])
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
-
 
     def fit(self, X, Y, constraints=None):
         print("Training dual structural SVM")
@@ -166,9 +169,12 @@ class StructuredSVM(object):
             current_loss = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
-            candidate_constraints = Parallel(n_jobs=self.n_jobs)(
-                    delayed(find_constraint)(self.problem, x, y, w) for x, y in zip(X, Y))
-            for i, x, y, constraint in zip(np.arange(len(X)), X, Y, candidate_constraints):
+            candidate_constraints = (Parallel(n_jobs=self.n_jobs)
+                                     (delayed(find_constraint)
+                                      (self.problem, x, y, w)
+                                      for x, y in zip(X, Y)))
+            for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
+                                           candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
                 current_loss += loss
 
@@ -176,7 +182,8 @@ class StructuredSVM(object):
                     print("current slack: %f" % slack)
 
                 already_active = np.any([True for y_hat_, psi_, loss_ in
-                    constraints[i] if (y_hat == y_hat_).all()])
+                                         constraints[i]
+                                         if (y_hat == y_hat_).all()])
                 if already_active:
                     continue
 
@@ -207,27 +214,30 @@ class StructuredSVM(object):
             current_loss /= len(X)
             loss_curve.append(current_loss)
 
-
             if new_constraints == 0:
                 print("no additional constraints")
                 #tracer()
                 if iteration > 0:
                     break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
-            sum_of_slacks = np.sum([max(np.max([-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]), 0)
-                                    for sample in constraints])
-            primal_objective_curve.append(self.C * sum_of_slacks / len(X) + np.sum(w ** 2) / 2.)
+            slacks = [max(np.max([-np.dot(w, psi_) + loss_
+                                  for _, psi_, loss_ in sample]), 0)
+                      for sample in constraints]
+            sum_of_slacks = np.sum(slacks)
+            objective_p = self.C * sum_of_slacks / len(X) + np.sum(w ** 2) / 2.
+            primal_objective_curve.append(objective_p)
             if (len(primal_objective_curve) > 2
-                    and primal_objective_curve[-1] > primal_objective_curve[-2] + 1e8):
+                    and objective_p > primal_objective_curve[-2] + 1e8):
                 print("primal loss became smaller. that shouldn't happen.")
                 tracer()
             objective_curve.append(objective)
             if self.verbose > 0:
-                print("current loss: %f  new constraints: %d, primal objective: %f "
-                      "dual objective: %f" %
-                        (current_loss, new_constraints, primal_objective_curve[-1], objective))
+                print("current loss: %f  new constraints: %d, "
+                      "primal objective: %f dual objective: %f" %
+                      (current_loss, new_constraints,
+                       primal_objective_curve[-1], objective))
             if (iteration > 1 and primal_objective_curve[-1] -
-                primal_objective_curve[-2] < 0.0001):
+                    primal_objective_curve[-2] < 0.0001):
                 print("objective converged.")
                 #break
             self.ws.append(w)
@@ -281,9 +291,9 @@ class PrimalDSStructuredSVM(StructuredSVM):
 class SubgradientStructuredSVM(StructuredSVM):
     """Margin rescaled with l1 slack penalty."""
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-            learningrate=0.001, plot=False, adagrad=False):
+                 learningrate=0.001, plot=False, adagrad=False):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
-                verbose=verbose)
+                                                       verbose=verbose)
         self.momentum = momentum
         self.learningrate = learningrate
         self.t = 0
@@ -351,7 +361,7 @@ class SubgradientStructuredSVM(StructuredSVM):
             if self.verbose > 0:
                 print("iteration %d" % iteration)
                 print("current loss: %f  positive slacks: %d, objective: %f" %
-                        (current_loss, positive_slacks, objective))
+                      (current_loss, positive_slacks, objective))
             loss_curve.append(current_loss)
             all_psis.extend(psis)
             objective_curve.append(objective)
