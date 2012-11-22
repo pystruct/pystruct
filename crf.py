@@ -4,6 +4,7 @@ import numpy as np
 from pyqpbo import alpha_expansion_grid
 from pyqpbo import alpha_expansion_graph
 from daimrf import mrf
+from lp_new import solve_lp
 
 
 from IPython.core.debugger import Tracer
@@ -46,41 +47,43 @@ class GridCRF(StructuredProblem):
         selected_unaries = x[gx, gy, y]
         unaries_acc = np.sum(x[gx, gy, y])
         unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                minlength=self.n_states)
+                                  minlength=self.n_states)
 
         ##accumulated pairwise
         #make one hot encoding
         labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                dtype=np.int)
+                          dtype=np.int)
         gx, gy = np.ogrid[:y.shape[0], :y.shape[1]]
         labels[gx, gy, y] = 1
         # vertical edges
         vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
-                labels[:-1, :, :].reshape(-1, self.n_states))
+                      labels[:-1, :, :].reshape(-1, self.n_states))
         # horizontal edges
-        horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T, labels[:,
-            :-1, :].reshape(-1, self.n_states))
+        horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
+                      labels[:, :-1, :].reshape(-1, self.n_states))
         pw = vert + horz
         pw = pw + pw.T - np.diag(np.diag(pw))
-        feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
-            dtype=np.bool)]])
+        feature = np.hstack([unaries_acc,
+                             pw[np.tri(self.n_states, dtype=np.bool)]])
         return feature
 
     def inference(self, x, w):
         self.inference_calls += 1
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        pairwise_params = pairwise_params + pairwise_params.T\
-                - np.diag(np.diag(pairwise_params))
+        pairwise_params = (pairwise_params + pairwise_params.T
+                           - np.diag(np.diag(pairwise_params)))
         if self.inference_method == "qpbo":
             return self._inference_qpbo(x, unary_params, pairwise_params)
         elif  self.inference_method == "dai":
             return self._inference_dai(x, unary_params, pairwise_params)
+        elif  self.inference_method == "lp":
+            return self._inference_lp(x, unary_params, pairwise_params)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
@@ -93,7 +96,8 @@ class GridCRF(StructuredProblem):
 
     def _inference_dai(self, x, unary_params, pairwise_params):
         ## build graph
-        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2]).astype(np.int64)
+        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
+        inds = inds.astype(np.int64)
         horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
@@ -106,10 +110,25 @@ class GridCRF(StructuredProblem):
 
         return y
 
+    def _inference_lp(self, x, unary_params, pairwise_params):
+        ## build graph
+        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
+        inds = inds.astype(np.int64)
+        horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+        vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+        edges = np.vstack([horz, vert])
+        unaries = unary_params * x.reshape(-1, self.n_states)
+
+        y = solve_lp(unaries, edges, pairwise_params)
+        y = np.argmax(y, axis=-1)
+        y = y.reshape(x.shape[0], x.shape[1])
+
+        return y
+
     def loss_augmented_inference(self, x, y, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         unary_params = w[:self.n_states]
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
@@ -140,33 +159,33 @@ class FixedGraphCRF(StructuredProblem):
         gx = np.ogrid[:n_nodes]
         selected_unaries = x[gx, y]
         unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                minlength=self.n_states)
+                                  minlength=self.n_states)
 
         ##accumulated pairwise
         #make one hot encoding
         labels = np.zeros((n_nodes, self.n_states),
-                dtype=np.int)
+                          dtype=np.int)
         gx = np.ogrid[:n_nodes]
         labels[gx, y] = 1
 
         neighbors = self.graph * labels
         pw = np.dot(neighbors.T, labels)
 
-        feature = np.hstack([unaries_acc, pw[np.tri(self.n_states,
-            dtype=np.bool)]])
+        feature = np.hstack([unaries_acc,
+                             pw[np.tri(self.n_states, dtype=np.bool)]])
         return feature
 
     def inference(self, x, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         self.inference_calls += 1
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        pairwise_params = pairwise_params + pairwise_params.T\
-                - np.diag(np.diag(pairwise_params))
+        pairwise_params = (pairwise_params + pairwise_params.T
+                           - np.diag(np.diag(pairwise_params)))
         unaries = (-1000 * unary_params * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
@@ -175,7 +194,7 @@ class FixedGraphCRF(StructuredProblem):
     def loss_augmented_inference(self, x, y, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         unary_params = w[:self.n_states].copy()
         # avoid division by zero:
         unary_params[unary_params == 0] = 1e-10
@@ -228,15 +247,15 @@ class FixedGraphCRFNoBias(GridCRF):
     def inference(self, x, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         self.inference_calls += 1
         pairwise_flat = np.asarray(w[:-1])
         unary = w[-1]
         pairwise_params = np.zeros((self.n_states, self.n_states))
-        pairwise_params[np.tri(self.n_states, k=-1, dtype=np.bool)] = \
-                pairwise_flat
-        pairwise_params = pairwise_params + pairwise_params.T\
-                - np.diag(np.diag(pairwise_params))
+        upper_tri = np.tri(self.n_states, k=-1, dtype=np.bool)
+        pairwise_params[upper_tri] = pairwise_flat
+        pairwise_params = (pairwise_params + pairwise_params.T
+                           - np.diag(np.diag(pairwise_params)))
         unaries = (-1000 * unary * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
@@ -249,7 +268,7 @@ class FixedGraphCRFNoBias(GridCRF):
     def loss_augmented_inference(self, x, y, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                    (self.size_psi, w.shape))
+                             (self.size_psi, w.shape))
         x_ = x.copy()
         for l in np.arange(self.n_states):
             # for each class, decrement unaries
