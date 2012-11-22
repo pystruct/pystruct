@@ -195,7 +195,7 @@ class StructuredSVM(object):
                         # if smaller, complain about approximate inference.
                         if (slack - slack_tmp) < -1e-5:
                             print("bad inference!")
-                            tracer()
+                            #tracer()
                             already_active = True
                             break
 

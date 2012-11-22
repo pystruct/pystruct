@@ -118,11 +118,9 @@ class GridCRF(StructuredProblem):
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
         unaries = unary_params * x.reshape(-1, self.n_states)
-
-        y = solve_lp(unaries, edges, pairwise_params)
+        y = solve_lp(-unaries, edges, -pairwise_params)
         y = np.argmax(y, axis=-1)
         y = y.reshape(x.shape[0], x.shape[1])
-
         return y
 
     def loss_augmented_inference(self, x, y, w):
