@@ -19,8 +19,8 @@ def main():
                         inference_method='dai')
     #crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         #inference_method='lp')
-    clf = StupidLatentSVM(problem=crf, max_iter=50, C=10000, verbose=2,
-                          check_constraints=True, n_jobs=5)
+    clf = StupidLatentSVM(problem=crf, max_iter=1, C=10000, verbose=2,
+                          check_constraints=True, n_jobs=12)
     #clf = StupidLatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
             #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
@@ -28,27 +28,33 @@ def main():
 
     i = 0
     loss = 0
-    for x, y, y_pred in zip(X, Y, Y_pred):
+    for x, y, h_init, y_pred in zip(X, Y, clf.H_init_, Y_pred):
         y_pred = y_pred.reshape(x.shape[:2])
         loss += np.sum(y != y_pred / 2)
         if i > 20:
             continue
-        fig, ax = plt.subplots(4)
-        ax[0].matshow(y)
-        plt.colorbar()
+        fig, ax = plt.subplots(1, 5)
+        ax = ax.ravel()
+        ax[0].matshow(y, vmin=0, vmax=crf.n_states - 1)
+        ax[0].set_title("ground truth")
         w_unaries_only = np.array([1, 1, 1, 1,
                                    0,
                                    0, 0,
                                    0, 0, 0,
                                    0, 0, 0, 0])
         unary_pred = crf.inference(x, w_unaries_only)
-        ax[1].matshow(unary_pred)
-        plt.colorbar()
-        ax[2].matshow(y_pred)
-        plt.colorbar()
-        plt.tight_layout()
-        plt.savefig("data_%03d.png" % i)
-        plt.close()
+        ax[1].matshow(unary_pred, vmin=0, vmax=crf.n_states - 1)
+        ax[1].set_title("unaries only")
+        ax[2].matshow(h_init, vmin=0, vmax=crf.n_states - 1)
+        ax[2].set_title("latent initial")
+        ax[3].matshow(crf.latent(x, y, clf.w), vmin=0, vmax=crf.n_states - 1)
+        ax[3].set_title("latent final")
+        ax[4].matshow(y_pred, vmin=0, vmax=crf.n_states - 1)
+        ax[4].set_title("prediction")
+        for a in ax:
+            a.set_xticks(())
+            a.set_yticks(())
+        fig.savefig("data_%03d.png" % i, bbox_inches="tight")
         i += 1
     print("loss: %f" % loss)
 

@@ -65,6 +65,7 @@ class StupidLatentSVM(StructuredSVM):
         ws = []
         #Y = Y / self.problem.n_states_per_label
         H = kmeans_init(X, Y, self.problem.n_states_per_label)
+        self.H_init_ = H
         inds = np.arange(len(H))
         for i, h in zip(inds, H):
             plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
