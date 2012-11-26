@@ -2,9 +2,9 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal
 
-import toy_datasets as toy
-from crf import exhaustive_loss_augmented_inference
-from latent_crf import LatentGridCRF
+import pystruct.toy_datasets as toy
+from pystruct.crf import exhaustive_loss_augmented_inference
+from pystruct.latent_crf import LatentGridCRF
 #from pyqpbo import binary_grid, alpha_expansion_grid
 
 #import itertools

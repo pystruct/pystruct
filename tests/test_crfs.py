@@ -62,6 +62,17 @@ def test_binary_blocks_crf_lp():
     assert_array_equal(y, y_hat)
 
 
+#def test_binary_blocks_crf_ad3():
+    #X, Y = toy.generate_blocks(n_samples=1)
+    #x, y = X[0], Y[0]
+    #w = np.array([1, 1,
+                  #0,
+                  #-4, 0])
+    #crf = GridCRF(inference_method="ad3")
+    #y_hat = crf.inference(x, w)
+    #assert_array_equal(y, y_hat)
+
+
 def test_blocks_multinomial_crf():
     X, Y = toy.generate_blocks_multinomial(n_samples=1)
     x, y = X[0], Y[0]
