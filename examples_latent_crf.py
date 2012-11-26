@@ -11,15 +11,16 @@ tracer = Tracer()
 
 
 def main():
-    X, Y = toy.generate_crosses_latent(n_samples=25, noise=10)
-    #X, Y = toy.generate_big_checker(n_samples=25, noise=.5)
+    #X, Y = toy.generate_crosses_latent(n_samples=25, noise=10)
+    X, Y = toy.generate_crosses(n_samples=5, noise=10)
+    #X, Y = toy.generate_easy(n_samples=50, noise=5)
     n_labels = 2
-    #crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
-                        #inference_method='dai')
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
-                        inference_method='lp')
+                        inference_method='dai')
+    #crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
+                        #inference_method='lp')
     clf = StupidLatentSVM(problem=crf, max_iter=50, C=10000, verbose=2,
-                          check_constraints=True, n_jobs=12)
+                          check_constraints=True, n_jobs=5)
     #clf = StupidLatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
             #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
@@ -29,24 +30,23 @@ def main():
     loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
         y_pred = y_pred.reshape(x.shape[:2])
-        loss += np.sum(y / 2 != y_pred / 2)
+        loss += np.sum(y != y_pred / 2)
         if i > 20:
             continue
-        plt.subplot(131)
-        plt.imshow(y, interpolation='nearest')
+        fig, ax = plt.subplots(4)
+        ax[0].matshow(y)
         plt.colorbar()
-        plt.subplot(132)
         w_unaries_only = np.array([1, 1, 1, 1,
                                    0,
                                    0, 0,
                                    0, 0, 0,
                                    0, 0, 0, 0])
         unary_pred = crf.inference(x, w_unaries_only)
-        plt.imshow(unary_pred, interpolation='nearest')
+        ax[1].matshow(unary_pred)
         plt.colorbar()
-        plt.subplot(133)
-        plt.imshow(y_pred, interpolation='nearest')
+        ax[2].matshow(y_pred)
         plt.colorbar()
+        plt.tight_layout()
         plt.savefig("data_%03d.png" % i)
         plt.close()
         i += 1
