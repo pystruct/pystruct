@@ -7,7 +7,6 @@ from crf import GridCRF
 #from structured_perceptron import StructuredPerceptron
 #from structured_svm import StructuredSVM
 import structured_svm as ssvm
-#from toy_datasets import generate_big_checker
 import toy_datasets as toy
 
 
@@ -16,13 +15,14 @@ tracer = Tracer()
 
 
 def main():
-    X, Y = toy.generate_crosses_explicit(n_samples=20, noise=10)
+    #X, Y = toy.generate_big_checker(n_samples=20, noise=0.8)
+    X, Y = toy.generate_easy(n_samples=20, noise=5)
     #X, Y = toy.generate_checker_multinomial(n_samples=20)
     n_labels = len(np.unique(Y))
     #crf = GridCRF(n_states=n_labels, inference_method="dai")
     crf = GridCRF(n_states=n_labels, inference_method="lp")
     #clf = StructuredPerceptron(problem=crf, max_iter=50)
-    clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=10000, verbose=3,
+    clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=10000, verbose=1,
                              check_constraints=True, n_jobs=12, plot=True)
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=500, C=1000000,
             #verbose=10, momentum=.0, learningrate=0.01, plot=True)
