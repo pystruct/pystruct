@@ -281,7 +281,8 @@ class PrimalDSStructuredSVM(StructuredSVM):
         def func(w):
             objective = 0
             for x, y in zip(X, Y):
-                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+                y_hat, delta_psi, slack, loss = find_constraint(self.problem,
+                                                                x, y, w)
                 objective += slack
             objective /= float(len(X))
             objective += np.sum(w ** 2) / float(self.C) / 2.
@@ -349,7 +350,8 @@ class SubgradientStructuredSVM(StructuredSVM):
             current_loss = 0.
             objective = 0.
             for i, x, y in zip(np.arange(len(X)), X, Y):
-                y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+                y_hat, delta_psi, slack, loss = find_constraint(self.problem,
+                                                                x, y, w)
                 objective += slack
                 psis.append(delta_psi)
 
