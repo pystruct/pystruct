@@ -5,7 +5,7 @@ from pyqpbo import alpha_expansion_grid
 from pyqpbo import alpha_expansion_graph
 from daimrf import mrf
 from lp_new import solve_lp
-
+import AD3
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -86,11 +86,14 @@ class GridCRF(StructuredProblem):
                            - np.diag(np.diag(pairwise_params)))
         if self.inference_method == "qpbo":
             return self._inference_qpbo(x, unary_params, pairwise_params)
-        elif  self.inference_method == "dai":
+        elif self.inference_method == "dai":
             return self._inference_dai(x, unary_params, pairwise_params)
-        elif  self.inference_method == "lp":
+        elif self.inference_method == "lp":
             return self._inference_lp(x, unary_params, pairwise_params,
                                       relaxed)
+        elif self.inference_method == "ad3":
+            return self._inference_ad3(x, unary_params, pairwise_params,
+                                       relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
@@ -125,12 +128,24 @@ class GridCRF(StructuredProblem):
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
         unaries = unary_params * x.reshape(-1, self.n_states)
-        y = solve_lp(-unaries, edges, -pairwise_params, exact=False)
+        y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
         n_fractional = np.sum(y.max(axis=-1) < .9)
         #if n_fractional:
             #print("got fractional solution. trying again, this time exactly")
             #y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
             #n_fractional = np.sum(y.max(axis=-1) < .9)
+        if n_fractional:
+            print("fractional solutions found: %d" % n_fractional)
+        if relaxed:
+            return y.reshape(x.shape)
+        y = np.argmax(y, axis=-1)
+        y = y.reshape(x.shape[0], x.shape[1])
+        return y
+
+    def _inference_ad3(self, x, unary_params, pairwise_params, relaxed=False):
+        ## build graph
+        y = AD3.simple_grid(unary_params * x, pairwise_params)
+        n_fractional = np.sum(y.max(axis=-1) < .9)
         if n_fractional:
             print("fractional solutions found: %d" % n_fractional)
         if relaxed:
