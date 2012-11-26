@@ -125,8 +125,12 @@ class GridCRF(StructuredProblem):
         vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
         edges = np.vstack([horz, vert])
         unaries = unary_params * x.reshape(-1, self.n_states)
-        y = solve_lp(-unaries, edges, -pairwise_params)
+        y = solve_lp(-unaries, edges, -pairwise_params, exact=False)
         n_fractional = np.sum(y.max(axis=-1) < .9)
+        #if n_fractional:
+            #print("got fractional solution. trying again, this time exactly")
+            #y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
+            #n_fractional = np.sum(y.max(axis=-1) < .9)
         if n_fractional:
             print("fractional solutions found: %d" % n_fractional)
         if relaxed:
