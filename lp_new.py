@@ -7,7 +7,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def solve_lp(unaries, edges, pairwise):
+def solve_lp(unaries, edges, pairwise, exact=False):
     if unaries.shape[1] != pairwise.shape[0]:
         raise ValueError("incompatible shapes of unaries"
                          " and pairwise potentials.")
@@ -86,8 +86,11 @@ def solve_lp(unaries, edges, pairwise):
     coef = np.hstack([coef, repeated_pairwise])
     lp.obj[:] = coef.tolist()   # Set objective coefficients
     lp.matrix = matrix
-    #lp.simplex()           # Solve this LP with the simplex method
-    lp.exact()           # Solve this LP with the simplex method
+    glpk.env.term_on = False
+    if exact:
+        lp.exact()           # Solve this LP with the simplex method
+    else:
+        lp.simplex()           # Solve this LP with the simplex method
     #print 'Z = %g;' % lp.obj.value,  # Retrieve and print obj func value
     #print '; '.join('%s = %g' % (c.name, c.primal) for c in lp.cols)
     res = np.array([c.primal for c in lp.cols])
