@@ -30,7 +30,7 @@ def generate_checker(n_samples=10, noise=1.5):
 
 def generate_big_checker(n_samples=10, noise=0.5):
     np.random.seed(0)
-    y_small = np.ones((5, 5), dtype=np.int32)
+    y_small = np.ones((4, 4), dtype=np.int32)
     y_small[::2, ::2] = -1
     y_small[1::2, 1::2] = -1
     y = y_small.repeat(3, axis=0).repeat(3, axis=1)
@@ -63,19 +63,22 @@ def generate_easy(n_samples=5, noise=5):
 def generate_crosses(n_samples=5, noise=30):
     np.random.seed(0)
     size = 8
-    Y = np.ones((n_samples, size, size), dtype=np.int)
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
     for i in xrange(n_samples):
         for j in xrange(2):
             t, l = np.random.randint(size - 2, size=2)
-            Y[i, t + 1, l:l + 3] = -1
-            Y[i, t:t + 3, l + 1] = -1
-    X = np.c_['3,4,0', -Y, np.zeros_like(Y)].astype(np.float)
+            Y[i, t + 1, l:l + 3] = 1
+            Y[i, t:t + 3, l + 1] = 1
+            Y[i, t + 1, l + 1] = 1
+    Y_flips = Y.copy()
     #flip random bits
-    for x in X:
+    for y in Y_flips:
         flips = np.random.randint(size, size=[noise, 2])
-        x[flips[:, 0], flips[:, 1], 0] = 1 - 2 * np.random.randint(2,
-                                                                   size=noise)
-    Y = (Y > 0).astype(np.int32)
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, size, size, 2))
+    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    X[ix, iy, iz, Y_flips] = 1
+    X = X
     return X, Y
 
 
@@ -149,7 +152,7 @@ def generate_crosses_explicit(n_samples=5, noise=30):
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 2
-    # don't distinguish between 1 an 2 in X
+    # don't distinguish between 2 and 3 in X
     Y_flips = (Y.copy() != 0).astype(np.int)
     #flip random bits
     for y in Y_flips:
