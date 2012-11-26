@@ -37,7 +37,8 @@ def kmeans_init(X, Y, n_states_per_label=2):
         # normalize (for borders)
         neighbors /= neighbors.sum(axis=-1)[:, :, np.newaxis]
         # add unaries
-        features = np.dstack([x, neighbors])
+        #features = np.dstack([x, neighbors])
+        features = neighbors
         all_feats.append(features.reshape(-1, features.shape[-1]))
     all_feats = np.vstack(all_feats)
     # states (=clusters) will be saved in H
@@ -62,13 +63,8 @@ class StupidLatentSVM(StructuredSVM):
         objectives = []
         constraints = None
         ws = []
-        #H = Y
         #Y = Y / self.problem.n_states_per_label
-        # forget assignment of latent variables
-        #H = Y * self.problem.n_states_per_label
         H = kmeans_init(X, Y, self.problem.n_states_per_label)
-        # randomize!
-        #H += np.random.randint(2, size=H.shape)
         inds = np.arange(len(H))
         for i, h in zip(inds, H):
             plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
@@ -76,7 +72,7 @@ class StupidLatentSVM(StructuredSVM):
             plt.savefig("figures/h_init_%03d.png" % i)
             plt.close()
 
-        for iteration in xrange(10):
+        for iteration in xrange(3):
             print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
             if iteration == 0:
@@ -95,9 +91,10 @@ class StupidLatentSVM(StructuredSVM):
                 for sample, h, i in zip(subsvm.constraints_, H_new,
                                         np.arange(len(X))):
                     for constraint in sample:
-                        new_constr = find_constraint(self.problem, X[i], h, w,
-                                                     constraint[0])
-                        constraints[i].append(new_constr)
+                        const = find_constraint(self.problem, X[i], h, w,
+                                                constraint[0])
+                        y_hat, dpsi, _, loss = const
+                        constraints[i].append([y_hat, dpsi, loss])
                 H = H_new
             #if initialization weak?
             #if iteration == 0:
