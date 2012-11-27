@@ -62,23 +62,28 @@ def generate_easy(n_samples=5, noise=5):
 
 def generate_crosses(n_samples=5, noise=30):
     np.random.seed(0)
-    size = 8
+    size = 9
     Y = np.zeros((n_samples, size, size), dtype=np.int)
+    t_old, l_old = -3, -3
     for i in xrange(n_samples):
         for j in xrange(2):
-            t, l = np.random.randint(size - 2, size=2)
+            while True:
+                t, l = np.random.randint(1, size - 3, size=2)
+                if np.abs(t - t_old) > 2 and np.abs(l - l_old):
+                    break
+            t_old = t
+            l_old = l
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 1
     Y_flips = Y.copy()
     #flip random bits
     for y in Y_flips:
-        flips = np.random.randint(size, size=[noise, 2])
+        flips = np.random.randint(1, size - 1, size=[noise, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
     X = np.zeros((n_samples, size, size, 2))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
-    X = X
     return X, Y
 
 
@@ -144,11 +149,17 @@ def generate_easy_explicit(n_samples=5, noise=30):
 
 def generate_crosses_explicit(n_samples=5, noise=30):
     np.random.seed(0)
-    size = 8
+    size = 9
     Y = np.zeros((n_samples, size, size), dtype=np.int)
+    t_old, l_old = -3, -3
     for i in xrange(n_samples):
         for j in xrange(2):
-            t, l = np.random.randint(size - 2, size=2)
+            while True:
+                t, l = np.random.randint(1, size - 3, size=2)
+                if np.abs(t - t_old) > 2 and np.abs(l - l_old):
+                    break
+            t_old = t
+            l_old = l
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 2
@@ -156,7 +167,7 @@ def generate_crosses_explicit(n_samples=5, noise=30):
     Y_flips = (Y.copy() != 0).astype(np.int)
     #flip random bits
     for y in Y_flips:
-        flips = np.random.randint(size, size=[noise, 2])
+        flips = np.random.randint(1, size - 1, size=[noise, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
     X = np.zeros((n_samples, size, size, 3))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]

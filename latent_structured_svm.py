@@ -73,7 +73,7 @@ class StupidLatentSVM(StructuredSVM):
             plt.savefig("figures/h_init_%03d.png" % i)
             plt.close()
 
-        for iteration in xrange(3):
+        for iteration in xrange(10):
             print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
             if iteration == 0:
