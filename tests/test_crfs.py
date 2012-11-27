@@ -39,6 +39,9 @@ def test_continuous_y():
     # returned y_hat is one-hot version of other
     assert_array_equal(const[0], np.argmax(const_cont[0], axis=-1))
 
+    # test loss:
+    assert_equal(crf.loss(y, const[0]), crf.continuous_loss(y, const_cont[0]))
+
 
 def test_binary_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)

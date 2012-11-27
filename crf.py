@@ -26,12 +26,41 @@ class StructuredProblem(object):
         # hamming loss:
         return np.sum(y != y_hat)
 
+    def continuous_loss(self, y, y_hat):
+        # continuous version of the loss
+        # y is the result of linear programming
+        y_one_hot = np.zeros_like(y_hat)
+        gx, gy = np.indices(y.shape)
+        y_one_hot[gx, gy, y] = 1
+        # all entries minus correct ones
+        return np.prod(y.shape) - np.sum(y_one_hot * y_hat)
+
     def loss_augmented_inference(self, x, y, w):
         print("FALLBACK no loss augmented inference found")
         return self.inference(x, w)
 
 
-class GridCRF(StructuredProblem):
+class CRF(StructuredProblem):
+    def loss_augment(self, x, y, w):
+        unary_params = w[:self.n_states]
+        # avoid division by zero:
+        unary_params[unary_params == 0] = 1e-10
+        x_ = x.copy()
+        for l in np.arange(self.n_states):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_[y != l, l] += 1. / unary_params[l]
+        return x_
+
+    def loss_augmented_inference(self, x, y, w, relaxed=False):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+        x_ = self.loss_augment(x, y, w)
+        return self.inference(x_, w, relaxed)
+
+
+class GridCRF(CRF):
     def __init__(self, n_states=2, inference_method='qpbo'):
         super(GridCRF, self).__init__()
         self.n_states = n_states
@@ -81,6 +110,8 @@ class GridCRF(StructuredProblem):
         unary_params = w[:self.n_states]
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
+        # set lower triangle of matrix, then make symmetric
+        # we could try to redo this using ``scipy.spatial.distance`` somehow
         pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
         pairwise_params = (pairwise_params + pairwise_params.T
                            - np.diag(np.diag(pairwise_params)))
@@ -154,22 +185,8 @@ class GridCRF(StructuredProblem):
         y = y.reshape(x.shape[0], x.shape[1])
         return y
 
-    def loss_augmented_inference(self, x, y, w, relaxed=False):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        unary_params = w[:self.n_states]
-        # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
-        x_ = x.copy()
-        for l in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_[y != l, l] += 1. / unary_params[l]
-        return self.inference(x_, w, relaxed)
 
-
-class FixedGraphCRF(StructuredProblem):
+class FixedGraphCRF(CRF):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
@@ -219,20 +236,6 @@ class FixedGraphCRF(StructuredProblem):
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
         return y
-
-    def loss_augmented_inference(self, x, y, w):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        unary_params = w[:self.n_states].copy()
-        # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
-        x_ = x.copy()
-        for l in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_[y != l, l] += 1. / unary_params[l]
-        return self.inference(x_, w)
 
 
 class FixedGraphCRFNoBias(GridCRF):
@@ -294,17 +297,6 @@ class FixedGraphCRFNoBias(GridCRF):
             tracer()
         return y
 
-    def loss_augmented_inference(self, x, y, w):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        x_ = x.copy()
-        for l in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_[y != l, l] += 1.
-        return self.inference(x_, w)
-
 
 def exhaustive_loss_augmented_inference(problem, x, y, w):
     size = np.prod(x.shape[:-1])
@@ -312,7 +304,7 @@ def exhaustive_loss_augmented_inference(problem, x, y, w):
     best_energy = np.inf
     for y_hat in itertools.product(range(problem.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(x.shape[:-1])
-        print("trying %s" % repr(y_hat))
+        #print("trying %s" % repr(y_hat))
         psi = problem.psi(x, y_hat)
         energy = -problem.loss(y, y_hat) - np.dot(w, psi)
         if energy < best_energy:

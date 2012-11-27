@@ -15,6 +15,8 @@ from scipy.optimize import fmin
 
 from joblib import Parallel, delayed
 
+from crf import GridCRF
+
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
@@ -32,7 +34,7 @@ def find_constraint(problem, x, y, w, y_hat=None, relaxed=True):
         loss = problem.loss(y, y_hat)
     else:
         # continuous label
-        loss = problem.loss(y, np.argmax(y_hat, axis=-1))
+        loss = problem.continuous_loss(y, y_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return y_hat, delta_psi, slack, loss
 
@@ -181,6 +183,14 @@ class StructuredSVM(object):
             for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
                                            candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
+
+                # check that the slack fits the loss-augmented inference
+                x_loss_augmented = self.problem.loss_augment(x, y, w)
+                dpsi_ = (GridCRF.psi(self.problem, x_loss_augmented, y)
+                         - GridCRF.psi(self.problem, x_loss_augmented, y_hat))
+                if np.abs(slack + np.dot(w, dpsi_)) > 0.01:
+                    tracer()
+
                 current_loss += loss
 
                 if self.verbose > 1:
@@ -205,9 +215,9 @@ class StructuredSVM(object):
                         # if slack of new constraint is smaller or not
                         # significantly larger, don't add constraint.
                         # if smaller, complain about approximate inference.
-                        if (slack - slack_tmp) < -1e-5:
-                            print("bad inference!")
-                            #tracer()
+                        if slack - slack_tmp < -1e-5:
+                            print("bad inference: %f" % (slack_tmp - slack))
+                            tracer()
                             already_active = True
                             break
 

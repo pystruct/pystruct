@@ -1,12 +1,27 @@
 import numpy as np
-from crf import FixedGraphCRF, GridCRF
+from crf import FixedGraphCRF, GridCRF, CRF
 from pyqpbo import alpha_expansion_graph, alpha_expansion_grid
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-class LatentFixedGraphCRF(FixedGraphCRF):
+class LatentCRF(CRF):
+    def loss_augment(self, x, h, w):
+        # augment unary potentials for latent states
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
+        unary_params = w[:self.n_states].copy()
+        # avoid division by zero:
+        unary_params[unary_params == 0] = 1e-10
+        for s in np.arange(self.n_states):
+            # for each class, decrement unaries
+            # for loss-agumention
+            x_wide[h / self.n_states_per_label
+                   != s / self.n_states_per_label, s] += 1. / unary_params[s]
+        return x_wide
+
+
+class LatentFixedGraphCRF(LatentCRF, FixedGraphCRF):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.
     """
@@ -33,21 +48,9 @@ class LatentFixedGraphCRF(FixedGraphCRF):
 
     def loss_augmented_inference(self, x, h, w, relaxed=False):
         # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
-        # do usual inference
-        x_wide = np.repeat(x, self.n_states_per_label, axis=1)
-        unary_params = w[:self.n_states].copy()
-        # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
-        for s in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_wide[h / self.n_states_per_label
-                   != s / self.n_states_per_label, s] += 1. / unary_params[s]
-        # augment unary potentials for latent states
+        x_wide = self.loss_augment(x, h, w)
         # do usual inference
         h = super(LatentFixedGraphCRF, self).inference(x_wide, w, relaxed)
-        # create y from h:
         return h
 
     def latent(self, x, y, w):
@@ -82,12 +85,14 @@ class LatentFixedGraphCRF(FixedGraphCRF):
                       != h_hat / self.n_states_per_label)
 
 
-class LatentGridCRF(GridCRF):
+class LatentGridCRF(LatentCRF, GridCRF):
     """Latent variable CRF with 2d grid graph
     """
     def __init__(self, n_labels, n_states_per_label=2,
                  inference_method='qpbo'):
         self.n_states_per_label = n_states_per_label
+        self.n_labels = n_labels
+
         n_states = n_labels * n_states_per_label
         super(LatentGridCRF, self).__init__(n_states,
                                             inference_method=inference_method)
@@ -108,20 +113,9 @@ class LatentGridCRF(GridCRF):
 
     def loss_augmented_inference(self, x, h, w, relaxed=False):
         # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        # do usual inference
-        unary_params = w[:self.n_states].copy()
-        # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
-        for s in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_wide[h / self.n_states_per_label
-                   != s / self.n_states_per_label, s] += 1. / unary_params[s]
-        # augment unary potentials for latent states
+        x_wide = self.loss_augment(x, h, w)
         # do usual inference
         h = super(LatentGridCRF, self).inference(x_wide, w, relaxed=relaxed)
-        # create y from h:
         return h
 
     def latent(self, x, y, w):
@@ -154,3 +148,12 @@ class LatentGridCRF(GridCRF):
     def loss(self, h, h_hat):
         return np.sum(h / self.n_states_per_label
                       != h_hat / self.n_states_per_label)
+
+    def continuous_loss(self, y, y_hat):
+        # continuous version of the loss
+        # y is the result of linear programming
+        y_hat_org = y_hat.reshape(y.shape[0], y.shape[1],
+                                  self.n_labels,
+                                  self.n_states_per_label).sum(axis=-1)
+        y_org = y / 2
+        return super(LatentGridCRF, self).continuous_loss(y_org, y_hat_org)

@@ -28,3 +28,10 @@ kmeans init, 25 examples:
 loss: 17.000000
 50 examples:
 loss: 89.000000
+
+
+non-touching, border free, noise=10
+latent:
+loss: 92.000000
+
+binary: 246.000000
