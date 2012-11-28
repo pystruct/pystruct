@@ -24,10 +24,10 @@ class StructuredPerceptron(object):
                     current_loss = self.problem.loss(y, y_hat)
                     losses += current_loss
                     if current_loss:
-                        w += alpha * (self.problem.psi(x, y)
-                                - self.problem.psi(x, y_hat))
-                print("avg loss: %f w: %s" %
-                        (float(losses) / n_samples, str(w)))
+                        w += alpha * (self.problem.psi(x, y) -
+                                      self.problem.psi(x, y_hat))
+                print("avg loss: %f w: %s" % (float(losses) / n_samples,
+                                              str(w)))
         except KeyboardInterrupt:
             pass
         self.w = w
@@ -66,11 +66,10 @@ class LatentStructuredPerceptron(StructuredPerceptron):
                 current_loss = self.problem.loss(y, y_hat)
                 losses += current_loss
                 if current_loss:
-                    w += alpha * (self.problem.psi(x, h, y)
-                            - self.problem.psi(x, h_hat, y_hat))
+                    w += alpha * (self.problem.psi(x, h, y) -
+                                  self.problem.psi(x, h_hat, y_hat))
                 i += 1
-            print("avg loss: %f w: %s" %
-                    (float(losses) / n_samples, str(w)))
+            print("avg loss: %f w: %s" % (float(losses) / n_samples, str(w)))
         #except KeyboardInterrupt:
             #pass
         self.w = w
