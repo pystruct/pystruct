@@ -11,6 +11,68 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def _inference_qpbo(x, unary_params, pairwise_params):
+    unaries = (-1000 * unary_params * x).astype(np.int32)
+    pairwise = (-1000 * pairwise_params).astype(np.int32)
+    y = alpha_expansion_grid(unaries, pairwise)
+    return y
+
+
+def _inference_dai(x, unary_params, pairwise_params):
+    ## build graph
+    n_states = x.shape[-1]
+    inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
+    inds = inds.astype(np.int64)
+    horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+    vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+    edges = np.vstack([horz, vert])
+    log_unaries = unary_params * x.reshape(-1, n_states)
+    max_entry = max(np.max(log_unaries), 1)
+    unaries = np.exp(log_unaries / max_entry)
+
+    y = mrf(unaries, edges, np.exp(pairwise_params / max_entry), alg='jt')
+    y = y.reshape(x.shape[0], x.shape[1])
+
+    return y
+
+
+def _inference_lp(x, unary_params, pairwise_params, relaxed=False):
+    n_states = x.shape[-1]
+    ## build graph
+    inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
+    inds = inds.astype(np.int64)
+    horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+    vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+    edges = np.vstack([horz, vert])
+    unaries = unary_params * x.reshape(-1, n_states)
+    y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
+    n_fractional = np.sum(y.max(axis=-1) < .9)
+    #if n_fractional:
+        #print("got fractional solution. trying again, this time exactly")
+        #y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
+        #n_fractional = np.sum(y.max(axis=-1) < .9)
+    if n_fractional:
+        print("fractional solutions found: %d" % n_fractional)
+    if relaxed:
+        return y.reshape(x.shape)
+    y = np.argmax(y, axis=-1)
+    y = y.reshape(x.shape[0], x.shape[1])
+    return y
+
+
+def _inference_ad3(x, unary_params, pairwise_params, relaxed=False):
+    ## build graph
+    y = AD3.simple_grid(unary_params * x, pairwise_params)
+    n_fractional = np.sum(y.max(axis=-1) < .9)
+    if n_fractional:
+        print("fractional solutions found: %d" % n_fractional)
+    if relaxed:
+        return y.reshape(x.shape)
+    y = np.argmax(y, axis=-1)
+    y = y.reshape(x.shape[0], x.shape[1])
+    return y
+
+
 class StructuredProblem(object):
     def __init__(self):
         self.size_psi = None
@@ -116,74 +178,18 @@ class GridCRF(CRF):
         pairwise_params = (pairwise_params + pairwise_params.T
                            - np.diag(np.diag(pairwise_params)))
         if self.inference_method == "qpbo":
-            return self._inference_qpbo(x, unary_params, pairwise_params)
+            return _inference_qpbo(x, unary_params, pairwise_params)
         elif self.inference_method == "dai":
-            return self._inference_dai(x, unary_params, pairwise_params)
+            return _inference_dai(x, unary_params, pairwise_params)
         elif self.inference_method == "lp":
-            return self._inference_lp(x, unary_params, pairwise_params,
-                                      relaxed)
+            return _inference_lp(x, unary_params, pairwise_params,
+                                 relaxed)
         elif self.inference_method == "ad3":
-            return self._inference_ad3(x, unary_params, pairwise_params,
-                                       relaxed)
+            return _inference_ad3(x, unary_params, pairwise_params,
+                                  relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
-
-    def _inference_qpbo(self, x, unary_params, pairwise_params):
-        unaries = (-1000 * unary_params * x).astype(np.int32)
-        pairwise = (-1000 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_grid(unaries, pairwise)
-        return y
-
-    def _inference_dai(self, x, unary_params, pairwise_params):
-        ## build graph
-        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
-        inds = inds.astype(np.int64)
-        horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-        vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-        edges = np.vstack([horz, vert])
-        log_unaries = unary_params * x.reshape(-1, self.n_states)
-        max_entry = max(np.max(log_unaries), 1)
-        unaries = np.exp(log_unaries / max_entry)
-
-        y = mrf(unaries, edges, np.exp(pairwise_params / max_entry), alg='jt')
-        y = y.reshape(x.shape[0], x.shape[1])
-
-        return y
-
-    def _inference_lp(self, x, unary_params, pairwise_params, relaxed=False):
-        ## build graph
-        inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
-        inds = inds.astype(np.int64)
-        horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-        vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-        edges = np.vstack([horz, vert])
-        unaries = unary_params * x.reshape(-1, self.n_states)
-        y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
-        n_fractional = np.sum(y.max(axis=-1) < .9)
-        #if n_fractional:
-            #print("got fractional solution. trying again, this time exactly")
-            #y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
-            #n_fractional = np.sum(y.max(axis=-1) < .9)
-        if n_fractional:
-            print("fractional solutions found: %d" % n_fractional)
-        if relaxed:
-            return y.reshape(x.shape)
-        y = np.argmax(y, axis=-1)
-        y = y.reshape(x.shape[0], x.shape[1])
-        return y
-
-    def _inference_ad3(self, x, unary_params, pairwise_params, relaxed=False):
-        ## build graph
-        y = AD3.simple_grid(unary_params * x, pairwise_params)
-        n_fractional = np.sum(y.max(axis=-1) < .9)
-        if n_fractional:
-            print("fractional solutions found: %d" % n_fractional)
-        if relaxed:
-            return y.reshape(x.shape)
-        y = np.argmax(y, axis=-1)
-        y = y.reshape(x.shape[0], x.shape[1])
-        return y
 
 
 class FixedGraphCRF(CRF):
