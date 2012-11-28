@@ -188,7 +188,7 @@ class StructuredSVM(object):
                 x_loss_augmented = self.problem.loss_augment(x, y, w)
                 dpsi_ = (GridCRF.psi(self.problem, x_loss_augmented, y)
                          - GridCRF.psi(self.problem, x_loss_augmented, y_hat))
-                if np.abs(slack + np.dot(w, dpsi_)) > 0.01:
+                if np.abs(slack + min(0, np.dot(w, dpsi_))) > 0.01:
                     tracer()
 
                 current_loss += loss
