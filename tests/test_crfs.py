@@ -2,11 +2,11 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.crf import GridCRF
-from pystruct.structured_svm import find_constraint
+from pystruct.crf import GridCRF, _inference_lp
+from pystruct.structured_svm import find_constraint, compute_energy
 from pyqpbo import binary_grid, alpha_expansion_grid
 
 
@@ -41,6 +41,25 @@ def test_continuous_y():
 
     # test loss:
     assert_equal(crf.loss(y, const[0]), crf.continuous_loss(y, const_cont[0]))
+
+
+def test_energy():
+    # make sure that energy as computed by ssvm is the same as by lp
+    np.random.seed(0)
+    found_fractional = False
+    while not found_fractional:
+        x = np.random.normal(size=(2, 2, 3))
+        unary_params = np.ones(3)
+        pairwise_params = np.random.normal() * np.eye(3)
+        # check map inference
+        inf_res, energy_lp = _inference_lp(x, unary_params,
+                                           pairwise_params, relaxed=True,
+                                           return_energy=True, exact=True)
+        found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
+        energy_svm = compute_energy(x, inf_res, unary_params,
+                                    pairwise_params)
+
+        assert_almost_equal(energy_lp, -energy_svm)
 
 
 def test_binary_blocks_crf():
