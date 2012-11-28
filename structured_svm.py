@@ -141,6 +141,7 @@ class StructuredSVM(object):
         self.check_constraints = check_constraints
         self.n_jobs = n_jobs
         self.plot = plot
+        self.break_on_bad = break_on_bad
         if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
 
@@ -265,7 +266,8 @@ class StructuredSVM(object):
                         # if smaller, complain about approximate inference.
                         if slack - slack_tmp < -1e-5:
                             print("bad inference: %f" % (slack_tmp - slack))
-                            tracer()
+                            if self.break_on_bad:
+                                tracer()
                             already_active = True
                             break
 

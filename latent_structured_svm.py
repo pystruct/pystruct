@@ -57,10 +57,10 @@ class StupidLatentSVM(StructuredSVM):
     def fit(self, X, Y):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
-                               self.check_constraints,
-                               verbose=self.verbose - 1,
-                               n_jobs=self.n_jobs)
-        objectives = []
+                               self.check_constraints, verbose=self.verbose -
+                               1, n_jobs=self.n_jobs,
+                               break_on_bad=self.break_on_bad)
+        #objectives = []
         constraints = None
         ws = []
         #Y = Y / self.problem.n_states_per_label
@@ -123,6 +123,6 @@ class StupidLatentSVM(StructuredSVM):
             ws.append(w)
             #objectives.append(subsvm.primal_objective_)
         self.w = w
-        plt.figure()
-        plt.plot(objectives)
-        plt.show()
+        #plt.figure()
+        #plt.plot(objectives)
+        #plt.show()

@@ -20,7 +20,8 @@ def main():
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
     clf = StupidLatentSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                          check_constraints=True, n_jobs=12)
+                          check_constraints=True, n_jobs=12,
+                          break_on_bad=True)
     #clf = StupidLatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
             #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
@@ -63,7 +64,6 @@ def main():
         i += 1
     print("loss: %f" % loss)
     print(clf.w)
-    tracer()
 
 if __name__ == "__main__":
     main()
