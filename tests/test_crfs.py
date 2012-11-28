@@ -15,32 +15,42 @@ tracer = Tracer()
 
 
 def test_continuous_y():
-    X, Y = toy.generate_blocks(n_samples=1)
-    x, y = X[0], Y[0]
-    w = np.array([1, 1,
-                  0,
-                  -4, 0])
+    for inference_method in ["lp", "ad3"]:
+        X, Y = toy.generate_blocks(n_samples=1)
+        x, y = X[0], Y[0]
+        w = np.array([1, 1,
+                      0,
+                      -4, 0])
 
-    crf = GridCRF(inference_method="lp")
-    psi = crf.psi(x, y)
-    y_cont = np.zeros_like(x)
-    gx, gy = np.indices(x.shape[:-1])
-    y_cont[gx, gy, y] = 1
-    psi_cont = crf.psi(x, y_cont)
-    assert_array_almost_equal(psi, psi_cont)
+        crf = GridCRF(inference_method=inference_method)
+        psi = crf.psi(x, y)
+        y_cont = np.zeros_like(x)
+        gx, gy = np.indices(x.shape[:-1])
+        y_cont[gx, gy, y] = 1
+        # need to generate edge marginals
+        vert = np.dot(y_cont[1:, :, :].reshape(-1, 2).T,
+                      y_cont[:-1, :, :].reshape(-1, 2))
+        # horizontal edges
+        horz = np.dot(y_cont[:, 1:, :].reshape(-1, 2).T,
+                      y_cont[:, :-1, :].reshape(-1, 2))
+        pw = vert + horz
 
-    const = find_constraint(crf, x, y, w, relaxed=False)
-    const_cont = find_constraint(crf, x, y, w, relaxed=True)
+        psi_cont = crf.psi(x, (y_cont, pw))
+        assert_array_almost_equal(psi, psi_cont)
 
-    # dpsi and loss are equal:
-    assert_array_almost_equal(const[1], const_cont[1])
-    assert_equal(const[2], const_cont[2])
+        const = find_constraint(crf, x, y, w, relaxed=False)
+        const_cont = find_constraint(crf, x, y, w, relaxed=True)
 
-    # returned y_hat is one-hot version of other
-    assert_array_equal(const[0], np.argmax(const_cont[0], axis=-1))
+        # dpsi and loss are equal:
+        assert_array_almost_equal(const[1], const_cont[1])
+        assert_almost_equal(const[2], const_cont[2])
 
-    # test loss:
-    assert_equal(crf.loss(y, const[0]), crf.continuous_loss(y, const_cont[0]))
+        # returned y_hat is one-hot version of other
+        assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
+
+        # test loss:
+        assert_equal(crf.loss(y, const[0]),
+                     crf.continuous_loss(y, const_cont[0][0]))
 
 
 def test_energy():

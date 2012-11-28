@@ -66,11 +66,11 @@ def find_constraint(problem, x, y, w, y_hat=None, relaxed=True):
         y_hat = problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
     psi = problem.psi
     delta_psi = psi(x, y) - psi(x, y_hat)
-    if y_hat.shape == y.shape:
-        loss = problem.loss(y, y_hat)
-    else:
+    if isinstance(y_hat, tuple):
         # continuous label
-        loss = problem.continuous_loss(y, y_hat)
+        loss = problem.continuous_loss(y, y_hat[0])
+    else:
+        loss = problem.loss(y, y_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return y_hat, delta_psi, slack, loss
 

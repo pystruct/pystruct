@@ -56,12 +56,7 @@ def _inference_lp(x, unary_params, pairwise_params, relaxed=False,
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
-        #horz_marginals = pairwise_marginals[:x.shape[0] * (x.shape[1] - 1), :]
-        #vert_marginals = pairwise_marginals[x.shape[0] * (x.shape[1] - 1):, :]
-        #horz_marginals = horz_marginals.reshape(x.shape[0], x.shape[1] - 1,
-                                                #x.shape[-1] ** 2)
-        #vert_marginals = vert_marginals.reshape(x.shape[0] - 1, x.shape[1],
-                                                #x.shape[-1] ** 2)
+        unary_marginals = unary_marginals.reshape(x.shape)
         pairwise_accumulated = pairwise_marginals.sum(axis=0)
         pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
                                                             x.shape[-1])
@@ -75,15 +70,24 @@ def _inference_lp(x, unary_params, pairwise_params, relaxed=False,
 
 
 def _inference_ad3(x, unary_params, pairwise_params, relaxed=False, verbose=0):
-    ## build graph
-    y = AD3.simple_grid(unary_params * x, pairwise_params, verbose=verbose)
-    n_fractional = np.sum(y.max(axis=-1) < .9)
+    res = AD3.simple_grid(unary_params * x, pairwise_params, verbose=verbose)
+    unary_marginals, pairwise_marginals, energy = res
+    n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
+    #if n_fractional:
+        #print("got fractional solution. trying again, this time exactly")
+        #y = solve_lp(-unaries, edges, -pairwise_params, exact=True)
+        #n_fractional = np.sum(y.max(axis=-1) < .9)
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
-        return y.reshape(x.shape)
-    y = np.argmax(y, axis=-1)
-    y = y.reshape(x.shape[0], x.shape[1])
+        unary_marginals = unary_marginals.reshape(x.shape)
+        pairwise_accumulated = pairwise_marginals.sum(axis=0)
+        pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
+                                                            x.shape[-1])
+        y = (unary_marginals, pairwise_accumulated)
+    else:
+        y = np.argmax(unary_marginals, axis=-1)
+        y = y.reshape(x.shape[0], x.shape[1])
     return y
 
 
@@ -147,9 +151,10 @@ class GridCRF(CRF):
     def psi(self, x, y):
         # x is unaries
         # y is a labeling
-        ## y can also be continuous (from lp)
-        tracer()
-        if x.shape == y.shape:
+        if isinstance(y, tuple):
+            # y can also be continuous (from lp)
+            # in this case, it comes with accumulated edge marginals
+            y, pw = y
             x_flat = x.reshape(-1, x.shape[-1])
             y_flat = y.reshape(-1, y.shape[-1])
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
@@ -167,13 +172,13 @@ class GridCRF(CRF):
                               dtype=np.int)
             labels[gx, gy, y] = 1
 
-        # vertical edges
-        vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
-                      labels[:-1, :, :].reshape(-1, self.n_states))
-        # horizontal edges
-        horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
-                      labels[:, :-1, :].reshape(-1, self.n_states))
-        pw = vert + horz
+            # vertical edges
+            vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
+                          labels[:-1, :, :].reshape(-1, self.n_states))
+            # horizontal edges
+            horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
+                          labels[:, :-1, :].reshape(-1, self.n_states))
+            pw = vert + horz
         pw = pw + pw.T - np.diag(np.diag(pw))
         feature = np.hstack([unaries_acc,
                              pw[np.tri(self.n_states, dtype=np.bool)]])
