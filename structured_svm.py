@@ -14,7 +14,7 @@ from scipy.optimize import fmin
 
 from joblib import Parallel, delayed
 
-from crf import GridCRF
+from crf import GridCRF, unwrap_pairwise
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -105,22 +105,34 @@ class StructuredSVM(object):
     problem : StructuredProblem
         Object containing problem formulation. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
+
     max_iter : int
         Maximum number of passes over dataset to find constraints.
+
     C : float
         Regularization parameter
+
     check_constraints : bool
         Whether to check if the new "most violated constraint" is
         more violated than previous constraints. Helpful for stopping
         and debugging, but costly.
+
     verbose : int
         Verbosity
+
     positive_constraint: list of ints
         Indices of parmeters that are constraint to be positive.
+
+    plot : bool (default=Fale)
+        Whether to plot a learning curve in the end.
+
+    break_on_bad: bool (default=True)
+        Whether to break (start debug mode) when inference was approximate.
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-                 verbose=1, positive_constraint=None, n_jobs=1, plot=False):
+                 verbose=1, positive_constraint=None, n_jobs=1, plot=False,
+                 break_on_bad=True):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
@@ -231,10 +243,10 @@ class StructuredSVM(object):
 
                 if self.verbose > 1:
                     print("current slack: %f" % slack)
-
-                already_active = np.any([True for y_hat_, psi_, loss_ in
-                                         constraints[i]
-                                         if (y_hat == y_hat_).all()])
+                y_hat_plain = unwrap_pairwise(y_hat)
+                already_active = np.any([True for y__, _, _ in constraints[i]
+                                         if (y_hat_plain ==
+                                             unwrap_pairwise(y__)).all()])
                 if already_active:
                     continue
 

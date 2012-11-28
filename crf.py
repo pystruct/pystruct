@@ -11,6 +11,13 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def unwrap_pairwise(y):
+    """given a y that may contain pairwise marginals, yield plain y."""
+    if isinstance(y, tuple):
+        return y[0]
+    return y
+
+
 def _inference_qpbo(x, unary_params, pairwise_params):
     unaries = (-1000 * unary_params * x).astype(np.int32)
     pairwise = (-1000 * pairwise_params).astype(np.int32)
