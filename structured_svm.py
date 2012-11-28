@@ -7,7 +7,6 @@
 # and Structures Output Spaces
 
 import numpy as np
-#from numpy.testing import assert_almost_equal
 import cvxopt
 import cvxopt.solvers
 import matplotlib.pyplot as plt
@@ -19,6 +18,43 @@ from crf import GridCRF
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
+
+
+def compute_energy(x, y, unary_params, pairwise_params):
+    # x is unaries
+    # y is a labeling
+    n_states = x.shape[-1]
+    if isinstance(y, tuple):
+        # y can also be continuous (from lp)
+        # in this case, it comes with accumulated edge marginals
+        y, pw = y
+        x_flat = x.reshape(-1, x.shape[-1])
+        y_flat = y.reshape(-1, y.shape[-1])
+        unaries_acc = np.sum(x_flat * y_flat, axis=0)
+    else:
+        ## unary features:
+        gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
+        selected_unaries = x[gx, gy, y]
+        unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
+                                  minlength=n_states)
+
+        ##accumulated pairwise
+        #make one hot encoding
+        labels = np.zeros((y.shape[0], y.shape[1], n_states),
+                          dtype=np.int)
+        labels[gx, gy, y] = 1
+
+        # vertical edges
+        vert = np.dot(labels[1:, :, :].reshape(-1, n_states).T,
+                      labels[:-1, :, :].reshape(-1, n_states))
+        # horizontal edges
+        horz = np.dot(labels[:, 1:, :].reshape(-1, n_states).T,
+                      labels[:, :-1, :].reshape(-1, n_states))
+        pw = vert + horz
+    pw = pw + pw.T - np.diag(np.diag(pw))
+    energy = (np.dot(unaries_acc, unary_params)
+              + np.dot(np.tril(pw).ravel(), pairwise_params.ravel()))
+    return energy
 
 
 ## global functions for easy parallelization

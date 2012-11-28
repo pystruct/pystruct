@@ -99,7 +99,7 @@ def solve_lp(unaries, edges, pairwise, exact=False):
                                                           n_states ** 2)
     assert((np.abs(unary_variables.sum(axis=1) - 1) < 1e-4).all())
     assert((np.abs(pairwise_variables.sum(axis=1) - 1) < 1e-4).all())
-    return unary_variables
+    return unary_variables, pairwise_variables, lp.obj.value
 
 
 def main():
