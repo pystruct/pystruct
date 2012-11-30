@@ -374,7 +374,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         if hasattr(self, 'w'):
             w = self.w
         else:
-            w = np.zeros(self.problem.size_psi)
+            w = np.ones(self.problem.size_psi) * 1e-10
         psi_matrix = np.vstack(psis).mean(axis=0)
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learningrate / (self.t + 1.) ** 2
