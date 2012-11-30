@@ -45,19 +45,20 @@ def generate_big_checker(n_samples=10, noise=0.5):
 def generate_easy(n_samples=5, noise=5):
     size = 10
     np.random.seed(0)
-    Y = np.ones((n_samples, size, size))
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
     for i in xrange(n_samples):
         for j in xrange(2):
             t, l = np.random.randint(size - 3, size=2)
-            Y[i, t:t + 3, l:l + 3] = -1
-    X = Y  # + noise * np.random.normal(size=Y.shape)
-    X = np.c_['3,4,0', -X, np.zeros_like(X)]
-    for x in X:
+            Y[i, t:t + 3, l:l + 3] = 1
+
+    Y_flips = Y.copy()
+    for y in Y_flips:
         flips = np.random.randint(size, size=[noise, 2])
-        x[flips[:, 0], flips[:, 1], 0] = 1 - 2 * np.random.randint(2,
-                                                                   size=noise)
-    Y = (Y > 0).astype(np.int32)
-    return X * 10, Y
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, size, size, 2))
+    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    X[ix, iy, iz, Y_flips] = 1
+    return X, Y
 
 
 def generate_crosses(n_samples=5, noise=30):
