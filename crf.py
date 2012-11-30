@@ -129,9 +129,11 @@ class StructuredProblem(object):
 
 class CRF(StructuredProblem):
     def loss_augment(self, x, y, w):
-        unary_params = w[:self.n_states]
+        unary_params = w[:self.n_states].copy()
         # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
+        if (unary_params == 0).any():
+            raise ValueError("Unary params are exactly zero, can not do"
+                             " loss-augmentation!")
         x_ = x.copy()
         for l in np.arange(self.n_states):
             # for each class, decrement unaries

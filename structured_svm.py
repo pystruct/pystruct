@@ -285,6 +285,9 @@ class StructuredSVM(object):
                 if iteration > 0:
                     break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
+
+            # hack to make loss-augmented prediction working:
+            w[:self.problem.n_states][w[:self.problem.n_states] == 0] = 1e-10
             slacks = [max(np.max([-np.dot(w, psi_) + loss_
                                   for _, psi_, loss_ in sample]), 0)
                       for sample in constraints]
