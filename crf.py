@@ -148,6 +148,10 @@ class CRF(StructuredProblem):
 
 
 class GridCRF(CRF):
+    def __repr__(self):
+        return ("GridCRF, n_states: %d, inference_method: %s"
+                % (self.n_states, self.inference_method))
+
     def __init__(self, n_states=2, inference_method='qpbo'):
         super(GridCRF, self).__init__()
         self.n_states = n_states

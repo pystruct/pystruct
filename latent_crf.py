@@ -7,6 +7,10 @@ tracer = Tracer()
 
 
 class LatentCRF(CRF):
+    def __repr__(self):
+        return ("LatentCRF, n_labels : %d, n_states: %d, inference_method: %s"
+                % (self.n_states, self.n_labels, self.inference_method))
+
     def loss_augment(self, x, h, w):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
@@ -155,5 +159,5 @@ class LatentGridCRF(LatentCRF, GridCRF):
         y_hat_org = y_hat.reshape(y.shape[0], y.shape[1],
                                   self.n_labels,
                                   self.n_states_per_label).sum(axis=-1)
-        y_org = y / 2
+        y_org = y / self.n_states_per_label
         return super(LatentGridCRF, self).continuous_loss(y_org, y_hat_org)
