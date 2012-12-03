@@ -1,16 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from joblib import Parallel, delayed
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def inference(problem, x, w):
+    return problem.inference(x, w)
+
+
 class StructuredPerceptron(object):
-    def __init__(self, problem, max_iter=100, verbose=0, plot=False):
+    def __init__(self, problem, max_iter=100, verbose=0, plot=False,
+                 batch=False):
         self.max_iter = max_iter
         self.problem = problem
         self.verbose = verbose
         self.plot = plot
+        self.batch = batch
 
     def fit(self, X, Y):
         n_samples = len(X)
@@ -23,13 +30,25 @@ class StructuredPerceptron(object):
                 losses = 0
                 if self.verbose:
                     print("iteration %d" % iteration)
-                for x, y in zip(X, Y):
-                    y_hat = self.problem.inference(x, w)
-                    current_loss = self.problem.loss(y, y_hat)
-                    losses += current_loss
-                    if current_loss:
-                        w += alpha * (self.problem.psi(x, y) -
-                                      self.problem.psi(x, y_hat))
+                if self.batch:
+                    Y_hat = (Parallel(n_jobs=self.n_jobs)(
+                        delayed(inference)(self.problem, x, w) for x, y in
+                        zip(X, Y)))
+                    for x, y, y_hat in zip(X, Y, Y_hat):
+                        current_loss = self.problem.loss(y, y_hat)
+                        losses += current_loss
+                        if current_loss:
+                            w += alpha * (self.problem.psi(x, y) -
+                                          self.problem.psi(x, y_hat))
+                else:
+                    # standard online update
+                    for x, y in zip(X, Y):
+                        y_hat = self.problem.inference(x, w)
+                        current_loss = self.problem.loss(y, y_hat)
+                        losses += current_loss
+                        if current_loss:
+                            w += alpha * (self.problem.psi(x, y) -
+                                          self.problem.psi(x, y_hat))
                 loss_curve.append(float(losses) / n_samples)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (loss_curve[-1], str(w)))
