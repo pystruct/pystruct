@@ -6,19 +6,23 @@ tracer = Tracer()
 
 
 class StructuredPerceptron(object):
-    def __init__(self, problem, max_iter=100):
+    def __init__(self, problem, max_iter=100, verbose=0, plot=False):
         self.max_iter = max_iter
         self.problem = problem
+        self.verbose = verbose
+        self.plot = plot
 
     def fit(self, X, Y):
         n_samples = len(X)
         size_psi = self.problem.size_psi
         w = np.zeros(size_psi)
+        loss_curve = []
         try:
             for iteration in xrange(self.max_iter):
                 alpha = 1. / (1 + iteration)
                 losses = 0
-                print("iteration %d" % iteration)
+                if self.verbose:
+                    print("iteration %d" % iteration)
                 for x, y in zip(X, Y):
                     y_hat = self.problem.inference(x, w)
                     current_loss = self.problem.loss(y, y_hat)
@@ -26,10 +30,16 @@ class StructuredPerceptron(object):
                     if current_loss:
                         w += alpha * (self.problem.psi(x, y) -
                                       self.problem.psi(x, y_hat))
-                print("avg loss: %f w: %s" % (float(losses) / n_samples,
-                                              str(w)))
+                loss_curve.append(float(losses) / n_samples)
+                if self.verbose:
+                    print("avg loss: %f w: %s" % (loss_curve[-1], str(w)))
+                    print("alpha: %f" % alpha)
         except KeyboardInterrupt:
             pass
+        if self.plot:
+            plt.plot(loss_curve)
+            plt.show()
+        self.loss_curve_ = loss_curve
         self.w = w
 
     def predict(self, X):
