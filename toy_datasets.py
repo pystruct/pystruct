@@ -263,4 +263,4 @@ binary = [generate_blocks, generate_checker, generate_big_checker,
           generate_easy]
 
 multinomial = [generate_blocks_multinomial, generate_checker_multinomial,
-               generate_big_checker_extended, generate_easy_explicit]
+               generate_big_checker_extended]
