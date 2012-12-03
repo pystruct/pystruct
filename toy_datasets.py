@@ -43,13 +43,24 @@ def generate_big_checker(n_samples=10, noise=0.5):
 
 
 def generate_easy(n_samples=5, noise=5):
-    size = 10
+    size = 9
     np.random.seed(0)
     Y = np.zeros((n_samples, size, size), dtype=np.int)
     for i in xrange(n_samples):
-        for j in xrange(2):
-            t, l = np.random.randint(size - 3, size=2)
-            Y[i, t:t + 3, l:l + 3] = 1
+        t_old, l_old = -4, -4
+        for j in xrange(1):
+            #while True:
+                #t, l = np.random.randint(1, size - 3, size=2)
+                #if (t, l) in [(4, 4)]:
+                    #continue
+                #if np.abs(t - t_old) > 3 or np.abs(l - l_old) > 3:
+                    #break
+                #print(t, l, t_old, l_old)
+            t, l = np.random.randint(1, size - 3, size=2)
+            if np.abs(t - t_old) > 3 or np.abs(l - l_old) > 3:
+                t_old = t
+                l_old = l
+                Y[i, t:t + 3, l:l + 3] = 1
 
     Y_flips = Y.copy()
     for y in Y_flips:
@@ -63,20 +74,49 @@ def generate_easy(n_samples=5, noise=5):
 
 def generate_crosses(n_samples=5, noise=30):
     np.random.seed(0)
-    size = 9
+    size = 10
     Y = np.zeros((n_samples, size, size), dtype=np.int)
     t_old, l_old = -3, -3
     for i in xrange(n_samples):
         for j in xrange(2):
             while True:
                 t, l = np.random.randint(1, size - 3, size=2)
-                if np.abs(t - t_old) > 2 and np.abs(l - l_old):
+                if np.abs(t - t_old) > 2 or np.abs(l - l_old) > 2:
                     break
             t_old = t
             l_old = l
             Y[i, t + 1, l:l + 3] = 1
             Y[i, t:t + 3, l + 1] = 1
             Y[i, t + 1, l + 1] = 1
+    Y_flips = Y.copy()
+    #flip random bits
+    for y in Y_flips:
+        flips = np.random.randint(1, size - 1, size=[noise, 2])
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, size, size, 2))
+    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    X[ix, iy, iz, Y_flips] = 1
+    return X, Y
+
+
+def generate_xs(n_samples=5, noise=30):
+    np.random.seed(0)
+    size = 8
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
+    t_old, l_old = -3, -3
+    for i in xrange(n_samples):
+        for j in xrange(1):
+            while True:
+                t, l = np.random.randint(1, size - 3, size=2)
+                if np.abs(t - t_old) > 2 and np.abs(l - l_old):
+                    break
+            t_old = t
+            l_old = l
+            Y[i, t + 1, l + 1] = 1
+            Y[i, t + 2, l + 2] = 1
+            Y[i, t + 3, l + 3] = 1
+            Y[i, t + 1, l + 3] = 1
+            Y[i, t + 3, l + 1] = 1
     Y_flips = Y.copy()
     #flip random bits
     for y in Y_flips:
@@ -129,22 +169,38 @@ def generate_big_checker_extended(n_samples=20, noise=.3):
     return X * 100., Y
 
 
-def generate_easy_explicit(n_samples=5, noise=30):
+def generate_easy_explicit(n_samples=5, noise=5):
+    size = 9
     np.random.seed(0)
-    Y = np.zeros((n_samples, 18, 18), dtype=np.int)
+    Y = np.zeros((n_samples, size, size), dtype=np.int)
     for i in xrange(n_samples):
-        for j in xrange(3):
-            t, l = np.random.randint(15, size=2)
-            Y[i, t:t + 3, l:l + 3] = 1
-            Y[i, t + 1, l + 1] = 2
-    Y_flips = Y.copy()
-    #flip random bits
+        t_old, l_old = -4, -4
+        for j in xrange(1):
+            #while True:
+                #t, l = np.random.randint(1, size - 3, size=2)
+                #if (t, l) in [(4, 4)]:
+                    #continue
+                #if np.abs(t - t_old) > 3 or np.abs(l - l_old) > 3:
+                    #break
+                #print(t, l, t_old, l_old)
+            t, l = np.random.randint(1, size - 3, size=2)
+            if np.abs(t - t_old) > 3 or np.abs(l - l_old) > 3:
+                t_old = t
+                l_old = l
+                Y[i, t:t + 3, l:l + 3] = 1
+                Y[i, t + 1, l:l + 3] = 2
+                Y[i, t:t + 3, l + 1] = 2
+                Y[i, t + 1, l + 1] = 3
+
+    Y_flips = (Y.copy() != 0).astype(np.int)
     for y in Y_flips:
-        flips = np.random.randint(18, size=[noise, 2])
-        y[flips[:, 0], flips[:, 1]] = np.random.randint(3, size=noise)
-    X = np.zeros((n_samples, 18, 18, 3))
+        flips = np.random.randint(size, size=[noise, 2])
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, size, size, 4))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
+    X[ix, iy, iz, Y_flips * 2] = 1
+    X[ix, iy, iz, Y_flips * 3] = 1
     return X, Y
 
 
