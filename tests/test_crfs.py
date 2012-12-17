@@ -62,12 +62,12 @@ def test_energy():
         unary_params = np.ones(3)
         pairwise_params = np.random.normal() * np.eye(3)
         # check map inference
-        inf_res, energy_lp = _inference_lp(x, unary_params,
-                                           pairwise_params, relaxed=True,
+        inf_res, energy_lp = _inference_lp(x, unary_params, pairwise_params,
+                                           neighborhood=4, relaxed=True,
                                            return_energy=True, exact=True)
         found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
         energy_svm = compute_energy(x, inf_res, unary_params,
-                                    pairwise_params)
+                                    pairwise_params, neighborhood=4)
 
         assert_almost_equal(energy_lp, -energy_svm)
 
@@ -119,6 +119,17 @@ def test_binary_blocks_crf_lp():
                   0,
                   -4, 0])
     crf = GridCRF(inference_method="lp")
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
+def test_binary_blocks_crf_n8_lp():
+    X, Y = toy.generate_blocks(n_samples=1, noise=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, 1,
+                  1,
+                  -1.4, 1])
+    crf = GridCRF(inference_method="lp", neighborhood=8)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 

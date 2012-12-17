@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 
@@ -12,12 +11,23 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def _make_grid_edges(x):
+def _make_grid_edges(x, neighborhood):
     inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
     inds = inds.astype(np.int64)
-    horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-    vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-    return np.vstack([horz, vert])
+    if neighborhood == 4:
+        horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+        vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+        edges = np.vstack([horz, vert])
+    elif neighborhood == 8:
+        right = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
+        down = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
+        upright = np.c_[inds[1:, :-1].ravel(), inds[:-1, 1:].ravel()]
+        downright = np.c_[inds[:-1, :-1].ravel(), inds[1:, 1:].ravel()]
+        edges = np.vstack([right, down, upright, downright])
+    else:
+        raise ValueError("neighborhood can only be '4' or '8', got %s" %
+                         repr(neighborhood))
+    return edges
 
 
 def unwrap_pairwise(y):
@@ -27,18 +37,18 @@ def unwrap_pairwise(y):
     return y
 
 
-def _inference_qpbo(x, unary_params, pairwise_params):
+def _inference_qpbo(x, unary_params, pairwise_params, neighborhood):
     unaries = (-1000 * unary_params * x).astype(np.int32)
     unaries = unaries.reshape(-1, x.shape[-1])
     pairwise = (-1000 * pairwise_params).astype(np.int32)
-    edges = _make_grid_edges(x).astype(np.int32)
+    edges = _make_grid_edges(x, neighborhood=neighborhood).astype(np.int32)
     y = alpha_expansion_graph(edges, unaries, pairwise, random_seed=1)
     return y.reshape(x.shape[:2])
 
 
-def _inference_dai(x, unary_params, pairwise_params):
+def _inference_dai(x, unary_params, pairwise_params, neighborhood):
     ## build graph
-    edges = _make_grid_edges(x)
+    edges = _make_grid_edges(x, neighborhood=neighborhood)
     n_states = x.shape[-1]
     log_unaries = unary_params * x.reshape(-1, n_states)
     max_entry = max(np.max(log_unaries), 1)
@@ -50,11 +60,11 @@ def _inference_dai(x, unary_params, pairwise_params):
     return y
 
 
-def _inference_lp(x, unary_params, pairwise_params, relaxed=False,
-                  return_energy=False, exact=False):
+def _inference_lp(x, unary_params, pairwise_params, neighborhood,
+                  relaxed=False, return_energy=False, exact=False):
     n_states = x.shape[-1]
     ## build graph
-    edges = _make_grid_edges(x)
+    edges = _make_grid_edges(x, neighborhood=neighborhood)
     unaries = unary_params * x.reshape(-1, n_states)
     res = solve_lp(-unaries, edges, -pairwise_params, exact=exact)
     unary_marginals, pairwise_marginals, energy = res
@@ -79,8 +89,10 @@ def _inference_lp(x, unary_params, pairwise_params, relaxed=False,
     return y
 
 
-def _inference_ad3(x, unary_params, pairwise_params, relaxed=False, verbose=0):
-    warnings.warn("AD3 doesn't work on graphs yet!")
+def _inference_ad3(x, unary_params, pairwise_params, neighborhood,
+                   relaxed=False, verbose=0):
+    if neighborhood != 4:
+        raise ValueError("AD3 doesn't work on graphs yet!")
     res = AD3.simple_grid(unary_params * x, pairwise_params, verbose=verbose)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
@@ -154,8 +166,9 @@ class GridCRF(CRF):
         return ("GridCRF, n_states: %d, inference_method: %s"
                 % (self.n_states, self.inference_method))
 
-    def __init__(self, n_states=2, inference_method='qpbo'):
+    def __init__(self, n_states=2, inference_method='qpbo', neighborhood=4):
         super(GridCRF, self).__init__()
+        self.neighborhood = neighborhood
         self.n_states = n_states
         self.inference_method = inference_method
         # n_states unary parameters, upper triangular for pairwise
@@ -184,14 +197,30 @@ class GridCRF(CRF):
             labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
                               dtype=np.int)
             labels[gx, gy, y] = 1
+            if self.neighborhood == 4:
+                # vertical edges
+                vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
+                              labels[:-1, :, :].reshape(-1, self.n_states))
+                # horizontal edges
+                horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
+                              labels[:, :-1, :].reshape(-1, self.n_states))
+                pw = vert + horz
+            elif self.neighborhood == 8:
+                # vertical edges
+                vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
+                              labels[:-1, :, :].reshape(-1, self.n_states))
+                # horizontal edges
+                horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
+                              labels[:, :-1, :].reshape(-1, self.n_states))
+                diag1 = np.dot(labels[1:, 1:, :].reshape(-1, self.n_states).T,
+                               labels[1:, :-1, :].reshape(-1, self.n_states))
+                diag2 = np.dot(labels[1:, 1:, :].reshape(-1, self.n_states).T,
+                               labels[:-1, :-1, :].reshape(-1, self.n_states))
+                pw = vert + horz + diag1 + diag2
+            else:
+                raise ValueError("neighborhood can only be '4' or '8', got %s"
+                                 % repr(self.neighborhood))
 
-            # vertical edges
-            vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
-                          labels[:-1, :, :].reshape(-1, self.n_states))
-            # horizontal edges
-            horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
-                          labels[:, :-1, :].reshape(-1, self.n_states))
-            pw = vert + horz
         pw = pw + pw.T - np.diag(np.diag(pw))
         feature = np.hstack([unaries_acc,
                              pw[np.tri(self.n_states, dtype=np.bool)]])
@@ -211,15 +240,17 @@ class GridCRF(CRF):
         pairwise_params = (pairwise_params + pairwise_params.T
                            - np.diag(np.diag(pairwise_params)))
         if self.inference_method == "qpbo":
-            return _inference_qpbo(x, unary_params, pairwise_params)
+            return _inference_qpbo(x, unary_params, pairwise_params,
+                                   self.neighborhood)
         elif self.inference_method == "dai":
-            return _inference_dai(x, unary_params, pairwise_params)
+            return _inference_dai(x, unary_params, pairwise_params,
+                                  self.neighborhood)
         elif self.inference_method == "lp":
             return _inference_lp(x, unary_params, pairwise_params,
-                                 relaxed)
+                                 self.neighborhood, relaxed)
         elif self.inference_method == "ad3":
             return _inference_ad3(x, unary_params, pairwise_params,
-                                  relaxed)
+                                  self.neighborhood, relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)

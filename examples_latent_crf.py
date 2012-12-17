@@ -13,12 +13,12 @@ tracer = Tracer()
 def main():
     #X, Y = toy.generate_crosses_latent(n_samples=25, noise=10)
     #X, Y = toy.generate_crosses(n_samples=50, noise=10)
-    #X, Y = toy.generate_easy(n_samples=50, noise=5)
-    X, Y = toy.generate_xs(n_samples=25, noise=5)
+    X, Y = toy.generate_easy(n_samples=50, noise=5)
+    #X, Y = toy.generate_xs(n_samples=25, noise=5)
     n_labels = 2
     #crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         #inference_method='dai')
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=3,
                         inference_method='lp')
     clf = StupidLatentSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
                           check_constraints=True, n_jobs=12, break_on_bad=True)

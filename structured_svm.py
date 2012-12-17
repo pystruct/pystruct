@@ -20,7 +20,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def compute_energy(x, y, unary_params, pairwise_params):
+def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
     # x is unaries
     # y is a labeling
     n_states = x.shape[-1]
@@ -44,13 +44,27 @@ def compute_energy(x, y, unary_params, pairwise_params):
                           dtype=np.int)
         labels[gx, gy, y] = 1
 
-        # vertical edges
-        vert = np.dot(labels[1:, :, :].reshape(-1, n_states).T,
-                      labels[:-1, :, :].reshape(-1, n_states))
-        # horizontal edges
-        horz = np.dot(labels[:, 1:, :].reshape(-1, n_states).T,
-                      labels[:, :-1, :].reshape(-1, n_states))
-        pw = vert + horz
+        if neighborhood == 4:
+            # vertical edges
+            vert = np.dot(labels[1:, :, :].reshape(-1, n_states).T,
+                          labels[:-1, :, :].reshape(-1, n_states))
+            # horizontal edges
+            horz = np.dot(labels[:, 1:, :].reshape(-1, n_states).T,
+                          labels[:, :-1, :].reshape(-1, n_states))
+            pw = vert + horz
+        elif neighborhood == 8:
+            # vertical edges
+            vert = np.dot(labels[1:, :, :].reshape(-1, n_states).T,
+                          labels[:-1, :, :].reshape(-1, n_states))
+            # horizontal edges
+            horz = np.dot(labels[:, 1:, :].reshape(-1, n_states).T,
+                          labels[:, :-1, :].reshape(-1, n_states))
+            diag1 = np.dot(labels[1:, 1:, :].reshape(-1, n_states).T,
+                           labels[1:, :-1, :].reshape(-1, n_states))
+            diag2 = np.dot(labels[1:, 1:, :].reshape(-1, n_states).T,
+                           labels[:-1, :-1, :].reshape(-1, n_states))
+            tracer()
+            pw = vert + horz + diag1 + diag2
     pw = pw + pw.T - np.diag(np.diag(pw))
     energy = (np.dot(unaries_acc, unary_params)
               + np.dot(np.tril(pw).ravel(), pairwise_params.ravel()))
@@ -307,7 +321,7 @@ class StructuredSVM(object):
             if (iteration > 1 and primal_objective_curve[-1] -
                     primal_objective_curve[-2] < 0.0001):
                 print("objective converged.")
-                #break
+                break
             self.ws.append(w)
             if self.verbose > 1:
                 print(w)
