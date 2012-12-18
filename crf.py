@@ -1,7 +1,6 @@
 import itertools
 
 import numpy as np
-
 from pyqpbo import alpha_expansion_graph
 
 from inference_methods import (_inference_qpbo, _inference_dai, _inference_lp,
@@ -11,6 +10,27 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def pairwise_grid_features(grid_labels, neighborhood=4):
+    if neighborhood not in [4, 8]:
+        raise ValueError("neighborhood has to be 4 or 8.")
+    n_states = grid_labels.shape[-1]
+    features = []
+    # horizontal edges
+    right = np.dot(grid_labels[:, 1:, :].reshape(-1, n_states).T,
+                   grid_labels[:, :-1, :].reshape(-1, n_states))
+    features.append(right)
+    # vertical edges
+    down = np.dot(grid_labels[1:, :, :].reshape(-1, n_states).T,
+                  grid_labels[:-1, :, :].reshape(-1, n_states))
+    features.append(down)
+    if neighborhood == 8:
+        upright = np.dot(grid_labels[1:, :-1, :].reshape(-1, n_states).T,
+                         grid_labels[:-1, 1:, :].reshape(-1, n_states))
+        features.append(upright)
+        downright = np.dot(grid_labels[:-1, :-1, :].reshape(-1, n_states).T,
+                           grid_labels[1:, 1:, :].reshape(-1, n_states))
+        features.append(downright)
+    return features
 
 
 def unwrap_pairwise(y):
@@ -50,6 +70,10 @@ class StructuredProblem(object):
 
 
 class CRF(StructuredProblem):
+    def __repr__(self):
+        return ("GridCRF, n_states: %d, inference_method: %s"
+                % (self.n_states, self.inference_method))
+
     def loss_augment(self, x, y, w):
         unary_params = w[:self.n_states].copy()
         # avoid division by zero:
@@ -72,10 +96,30 @@ class CRF(StructuredProblem):
 
 
 class GridCRF(CRF):
-    def __repr__(self):
-        return ("GridCRF, n_states: %d, inference_method: %s"
-                % (self.n_states, self.inference_method))
+    """Pairwise CRF on a 2d grid.
 
+    Pairwise potentials are symmetric and the same for all edges.
+    This leads to n_classes parameters for unary potentials and
+    n_classes * (n_classes + 1) / 2 parameters for edge potentials.
+
+    Parameters
+    ----------
+    n_states : int, default=2
+        Number of states for all variables.
+
+    inference_method : string, default="qpbo"
+        Function to call do do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+
+    neighborhood: int, default=4
+        Neighborhood defining connection for each variable in the grid.
+        Possible choices are 4 and 8.
+    """
     def __init__(self, n_states=2, inference_method='qpbo', neighborhood=4):
         super(GridCRF, self).__init__()
         self.neighborhood = neighborhood
@@ -83,6 +127,24 @@ class GridCRF(CRF):
         self.inference_method = inference_method
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
+
+    def get_pairwise_weights(self, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        # set lower triangle of matrix, then make symmetric
+        # we could try to redo this using ``scipy.spatial.distance`` somehow
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
+        return (pairwise_params + pairwise_params.T -
+                np.diag(np.diag(pairwise_params)))
+
+    def get_unary_weights(self, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+        return w[:self.n_states]
 
     def psi(self, x, y):
         # x is unaries
@@ -107,29 +169,8 @@ class GridCRF(CRF):
             labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
                               dtype=np.int)
             labels[gx, gy, y] = 1
-            if self.neighborhood == 4:
-                # vertical edges
-                vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
-                              labels[:-1, :, :].reshape(-1, self.n_states))
-                # horizontal edges
-                horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
-                              labels[:, :-1, :].reshape(-1, self.n_states))
-                pw = vert + horz
-            elif self.neighborhood == 8:
-                # vertical edges
-                vert = np.dot(labels[1:, :, :].reshape(-1, self.n_states).T,
-                              labels[:-1, :, :].reshape(-1, self.n_states))
-                # horizontal edges
-                horz = np.dot(labels[:, 1:, :].reshape(-1, self.n_states).T,
-                              labels[:, :-1, :].reshape(-1, self.n_states))
-                diag1 = np.dot(labels[1:, 1:, :].reshape(-1, self.n_states).T,
-                               labels[1:, :-1, :].reshape(-1, self.n_states))
-                diag2 = np.dot(labels[1:, 1:, :].reshape(-1, self.n_states).T,
-                               labels[:-1, :-1, :].reshape(-1, self.n_states))
-                pw = vert + horz + diag1 + diag2
-            else:
-                raise ValueError("neighborhood can only be '4' or '8', got %s"
-                                 % repr(self.neighborhood))
+            pw = np.sum(pairwise_grid_features(labels, self.neighborhood),
+                        axis=0)
 
         pw = pw + pw.T - np.diag(np.diag(pw))
         feature = np.hstack([unaries_acc,
@@ -137,18 +178,9 @@ class GridCRF(CRF):
         return feature
 
     def inference(self, x, w, relaxed=False):
+        unary_params = self.get_unary_weights(w)
+        pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        unary_params = w[:self.n_states]
-        pairwise_flat = np.asarray(w[self.n_states:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        pairwise_params = (pairwise_params + pairwise_params.T
-                           - np.diag(np.diag(pairwise_params)))
         if self.inference_method == "qpbo":
             return _inference_qpbo(x, unary_params, pairwise_params,
                                    self.neighborhood)
