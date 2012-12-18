@@ -156,7 +156,6 @@ class GridCRF(CRF):
             x_flat = x.reshape(-1, x.shape[-1])
             y_flat = y.reshape(-1, y.shape[-1])
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
-            labels = y
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
@@ -260,7 +259,6 @@ class DirectionalGridCRF(CRF):
             x_flat = x.reshape(-1, x.shape[-1])
             y_flat = y.reshape(-1, y.shape[-1])
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
-            labels = y
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
