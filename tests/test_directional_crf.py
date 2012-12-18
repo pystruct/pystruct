@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-#from nose.tools import assert_almost_equal
+from nose.tools import assert_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.lp_new import lp_general_graph
@@ -48,3 +48,26 @@ def test_inference():
     assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
     assert_array_almost_equal(res[1], y_pred[1])
     assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
+
+
+def test_psi_discrete():
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    x, y = X[0], Y[0]
+    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
+    psi_y = crf.psi(x, y)
+    assert_equal(psi_y.shape, (crf.size_psi,))
+    # first unary, then horizontal, then vertical
+    unary_psi = crf.get_unary_weights(psi_y)
+    pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+    xx, yy = np.indices(y.shape)
+    assert_array_almost_equal(unary_psi,
+                              np.bincount(y.ravel(), x[xx, yy, y].ravel()))
+    assert_array_equal(pw_psi_vert, np.diag([9 * 4, 9 * 4, 9 * 4]))
+    vert_psi = np.diag([10 * 3, 10 * 3, 10 * 3])
+    vert_psi[1, 0] = 10
+    vert_psi[2, 1] = 10
+    assert_array_equal(pw_psi_horz, vert_psi)
+
+
+def test_psi_continuous():
+    pass

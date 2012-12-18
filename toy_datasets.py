@@ -5,8 +5,8 @@ tracer = Tracer()
 
 
 #### binary
-def generate_blocks(n_samples=10, noise=1.5):
-    np.random.seed(0)
+def generate_blocks(n_samples=10, noise=1.5, seed=0):
+    np.random.seed(seed)
     Y = np.ones((n_samples, 10, 12))
     Y[:, :, :6] = -1
     #Y = np.ones((n_samples, 3, 4))

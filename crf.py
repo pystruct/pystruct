@@ -273,10 +273,9 @@ class DirectionalGridCRF(CRF):
             labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
                               dtype=np.int)
             labels[gx, gy, y] = 1
-            pw = np.sum(pairwise_grid_features(labels, self.neighborhood),
-                        axis=0)
+            pw = np.vstack(pairwise_grid_features(labels, self.neighborhood))
 
-        feature = np.hstack([unaries_acc, pw])
+        feature = np.hstack([unaries_acc, pw.ravel()])
         return feature
 
     def inference(self, x, w, relaxed=False):
