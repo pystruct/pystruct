@@ -1,7 +1,7 @@
 import numpy as np
 from pyqpbo import alpha_expansion_graph
 from daimrf import mrf
-from lp_new import solve_lp
+from lp_new import lp_general_graph
 import AD3
 
 from IPython.core.debugger import Tracer
@@ -52,12 +52,24 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
                   relaxed=False, return_energy=False, exact=False):
     n_states = x.shape[-1]
     unaries = unary_params * x.reshape(-1, n_states)
-    res = solve_lp(-unaries, edges, -pairwise_params, exact=exact)
+    if pairwise_params.shape == (n_states, n_states):
+        # only one matrix given
+        edge_weights = np.repeat(pairwise_params[np.newaxis, :, :],
+                                 edges.shape[0], axis=0)
+    else:
+        tracer()
+        if pairwise_params.shape != (edges.shape[0], n_states, n_states):
+            raise ValueError("Expected pairwise_params either to "
+                             "be of shape n_states x n_states "
+                             "or n_edges x n_states x n_states, but"
+                             " got shape %s" % repr(pairwise_params.shape))
+    res = lp_general_graph(-unaries, edges, -edge_weights, exact=exact)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
     if n_fractional:
         print("got fractional solution. trying again, this time exactly")
-        res = solve_lp(-unaries, edges, -pairwise_params, exact=True)
+        res = lp_general_graph(-unaries, edges, -edge_weights, exact=True)
+        unary_marginals, pairwise_marginals, energy = res
         n_fractional = np.sum(unary_marginals.max(axis=-1) < .9)
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
