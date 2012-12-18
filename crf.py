@@ -205,6 +205,9 @@ class DirectionalGridCRF(CRF):
     Pairwise potentials are not symmetric and are independend for each kind of
     edges.  This leads to n_classes parameters for unary potentials and
     n_edge_types * n_classes ** 2 parameters for edge potentials.
+    The number of edge-types is two for a 4-connected neighborhood
+    (horizontal and vertical) or 4 for a 8 connected neighborhood (additionally
+    two diagonals).
 
     Parameters
     ----------
@@ -219,26 +222,31 @@ class DirectionalGridCRF(CRF):
             - 'dai' for LibDAI bindings (which has another parameter).
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
+
+    neighborhood : int, default=4
+        Neighborhood defining connection for each variable in the grid.
+        Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, edge_types=2, inference_method='lp'):
+    def __init__(self, n_states=2, inference_method='lp', neighborhood=4):
         super(DirectionalGridCRF, self).__init__()
         self.n_states = n_states
         self.inference_method = inference_method
-        self.edge_types = edge_types
+        self.edge_types = 2 if neighborhood == 4 else 4
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states + n_states * n_states * edge_types
+        self.size_psi = n_states + n_states * n_states * self.edge_types
+        self.neighborhood = neighborhood
 
     def get_pairwise_weights(self, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
-        return w[:self.n_states]
+        return w[self.n_states:].reshape(self.n_states, self.n_states)
 
     def get_unary_weights(self, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
-        return w[self.n_states:].reshape(self.n_states, self.n_states)
+        return w[:self.n_states]
 
     # TODO
     def psi(self, x, y):

@@ -15,7 +15,7 @@ tracer = Tracer()
 
 def main():
     #X, Y = toy.generate_big_checker(n_samples=20, noise=0.8)
-    X, Y = toy.generate_blocks_multinomial(noise=1)
+    X, Y = toy.generate_blocks_multinomial(noise=2)
     #X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
     #X, Y = toy.generate_easy(n_samples=50, noise=10)
     #X, Y = toy.generate_easy_explicit(n_samples=25, noise=10)
