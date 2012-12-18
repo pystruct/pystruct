@@ -248,7 +248,6 @@ class DirectionalGridCRF(CRF):
                              (self.size_psi, w.shape))
         return w[:self.n_states]
 
-    # TODO
     def psi(self, x, y):
         # x is unaries
         # y is a labeling
@@ -259,6 +258,17 @@ class DirectionalGridCRF(CRF):
             x_flat = x.reshape(-1, x.shape[-1])
             y_flat = y.reshape(-1, y.shape[-1])
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
+            # pw contains separate entries for all edges
+            # we need to find out which belong to which kind
+            edges = _make_grid_edges(x, neighborhood=self.neighborhood,
+                                     return_lists=True)
+            n_edges = [len(e) for e in edges]
+            n_edges.insert(0, 0)
+            edge_boundaries = np.cumsum(n_edges)
+            pw_accumulated = []
+            for i, j in zip(edge_boundaries[:-1], edge_boundaries[1:]):
+                pw_accumulated.append(pw[i:j].sum(axis=0))
+            pw = np.hstack(pw_accumulated)
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]

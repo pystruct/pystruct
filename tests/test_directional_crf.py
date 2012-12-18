@@ -41,7 +41,7 @@ def test_inference():
     res = lp_general_graph(-x.reshape(-1, n_states), edges, edge_weights,
                            exact=False)
 
-    # sam inference through CRF inferface
+    # same inference through CRF inferface
     crf = DirectionalGridCRF(n_states=3, inference_method='lp')
     w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
     y_pred = crf.inference(x, w, relaxed=True)
@@ -70,4 +70,34 @@ def test_psi_discrete():
 
 
 def test_psi_continuous():
-    pass
+    # first make perfect prediction, including pairwise part
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    x, y = X[0], Y[0]
+    n_states = x.shape[-1]
+
+    pw_horz = -1 * np.eye(n_states)
+    xx, yy = np.indices(pw_horz.shape)
+    # linear ordering constraint horizontally
+    pw_horz[xx > yy] = 1
+
+    # high cost for unequal labels vertically
+    pw_vert = -1 * np.eye(n_states)
+    pw_vert[xx != yy] = 1
+    pw_vert *= 10
+
+    # create crf, assemble weight, make prediction
+    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
+    w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
+    y_pred = crf.inference(x, w, relaxed=True)
+
+    # compute psi for prediction
+    psi_y = crf.psi(x, y_pred)
+    assert_equal(psi_y.shape, (crf.size_psi,))
+    # first unary, then horizontal, then vertical
+    unary_psi = crf.get_unary_weights(psi_y)
+    pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+
+    # test unary
+    xx, yy = np.indices(y.shape)
+    assert_array_almost_equal(unary_psi,
+                              np.bincount(y.ravel(), x[xx, yy, y].ravel()))
