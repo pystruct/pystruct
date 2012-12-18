@@ -57,12 +57,12 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
         edge_weights = np.repeat(pairwise_params[np.newaxis, :, :],
                                  edges.shape[0], axis=0)
     else:
-        tracer()
         if pairwise_params.shape != (edges.shape[0], n_states, n_states):
             raise ValueError("Expected pairwise_params either to "
                              "be of shape n_states x n_states "
                              "or n_edges x n_states x n_states, but"
                              " got shape %s" % repr(pairwise_params.shape))
+        edge_weights = pairwise_params
     res = lp_general_graph(-unaries, edges, -edge_weights, exact=exact)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
@@ -82,10 +82,10 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
         ##vert = vert.reshape(height - 1, width, n_states ** 2)
         #pairwise_accumulated = horz.sum(axis=0) + vert.sum(axis=0)
 
-        pairwise_accumulated = pairwise_marginals.sum(axis=0)
-        pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
-                                                            x.shape[-1])
-        y = (unary_marginals, pairwise_accumulated)
+        #pairwise_accumulated = pairwise_marginals.sum(axis=0)
+        #pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
+                                                            #x.shape[-1])
+        y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
         y = y.reshape(x.shape[0], x.shape[1])

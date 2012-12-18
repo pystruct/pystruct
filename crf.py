@@ -231,16 +231,17 @@ class DirectionalGridCRF(CRF):
         super(DirectionalGridCRF, self).__init__()
         self.n_states = n_states
         self.inference_method = inference_method
-        self.edge_types = 2 if neighborhood == 4 else 4
+        self.n_edge_types = 2 if neighborhood == 4 else 4
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states + n_states * n_states * self.edge_types
+        self.size_psi = n_states + n_states * n_states * self.n_edge_types
         self.neighborhood = neighborhood
 
     def get_pairwise_weights(self, w):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
-        return w[self.n_states:].reshape(self.n_states, self.n_states)
+        return w[self.n_states:].reshape(self.n_edge_types, self.n_states,
+                                         self.n_states)
 
     def get_unary_weights(self, w):
         if w.shape != (self.size_psi,):
@@ -280,8 +281,18 @@ class DirectionalGridCRF(CRF):
 
     def inference(self, x, w, relaxed=False):
         self.inference_calls += 1
+        # extract unary weights
         unary_params = self.get_unary_weights(w)
+        # extract pairwise weights of shape n_edge_types x n_states x n_states
         pairwise_params = self.get_pairwise_weights(w)
+        edges = _make_grid_edges(x, neighborhood=self.neighborhood,
+                                 return_lists=True)
+        n_edges = [len(e) for e in edges]
+        # replicate pairwise weights for edges of certain type
+        edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
+                        for pw, n in zip(pairwise_params, n_edges)]
+        edge_weights = np.vstack(edge_weights)
+        edges = np.vstack(edges)
 
         #if self.inference_method == "qpbo":
             #return _inference_qpbo(x, unary_params, pairwise_params,
@@ -290,8 +301,8 @@ class DirectionalGridCRF(CRF):
             #return _inference_dai(x, unary_params, pairwise_params,
                                   #self.neighborhood)
         if self.inference_method == "lp":
-            return _inference_lp(x, unary_params, pairwise_params,
-                                 self.neighborhood, relaxed)
+            return _inference_lp(x, unary_params, edge_weights,
+                                 edges, relaxed)
         #elif self.inference_method == "ad3":
             #return _inference_ad3(x, unary_params, pairwise_params,
                                   #self.neighborhood, relaxed)
