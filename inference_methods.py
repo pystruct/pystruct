@@ -8,7 +8,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def _make_grid_edges(x, neighborhood, return_lists=False):
+def _make_grid_edges(x, neighborhood=4, return_lists=False):
     if neighborhood not in [4, 8]:
         raise ValueError("neighborhood can only be '4' or '8', got %s" %
                          repr(neighborhood))
@@ -26,18 +26,17 @@ def _make_grid_edges(x, neighborhood, return_lists=False):
     return np.vstack(edges)
 
 
-def _inference_qpbo(x, unary_params, pairwise_params, neighborhood):
+def _inference_qpbo(x, unary_params, pairwise_params, edges):
     unaries = (-1000 * unary_params * x).astype(np.int32)
     unaries = unaries.reshape(-1, x.shape[-1])
     pairwise = (-1000 * pairwise_params).astype(np.int32)
-    edges = _make_grid_edges(x, neighborhood=neighborhood).astype(np.int32)
+    edges = edges.astype(np.int32)
     y = alpha_expansion_graph(edges, unaries, pairwise, random_seed=1)
     return y.reshape(x.shape[:2])
 
 
-def _inference_dai(x, unary_params, pairwise_params, neighborhood):
+def _inference_dai(x, unary_params, pairwise_params, edges):
     ## build graph
-    edges = _make_grid_edges(x, neighborhood=neighborhood)
     n_states = x.shape[-1]
     log_unaries = unary_params * x.reshape(-1, n_states)
     max_entry = max(np.max(log_unaries), 1)
@@ -49,11 +48,9 @@ def _inference_dai(x, unary_params, pairwise_params, neighborhood):
     return y
 
 
-def _inference_lp(x, unary_params, pairwise_params, neighborhood,
+def _inference_lp(x, unary_params, pairwise_params, edges,
                   relaxed=False, return_energy=False, exact=False):
     n_states = x.shape[-1]
-    ## build graph
-    edges = _make_grid_edges(x, neighborhood=neighborhood)
     unaries = unary_params * x.reshape(-1, n_states)
     res = solve_lp(-unaries, edges, -pairwise_params, exact=exact)
     unary_marginals, pairwise_marginals, energy = res
@@ -85,10 +82,9 @@ def _inference_lp(x, unary_params, pairwise_params, neighborhood,
     return y
 
 
-def _inference_ad3(x, unary_params, pairwise_params, neighborhood,
+def _inference_ad3(x, unary_params, pairwise_params, edges,
                    relaxed=False, verbose=0):
-    if neighborhood != 4:
-        raise ValueError("AD3 doesn't work on graphs yet!")
+    raise NotImplementedError("AD3 doesn't work on graphs yet!")
     res = AD3.simple_grid(unary_params * x, pairwise_params, verbose=verbose)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)

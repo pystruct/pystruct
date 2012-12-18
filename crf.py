@@ -4,7 +4,7 @@ import numpy as np
 from pyqpbo import alpha_expansion_graph
 
 from inference_methods import (_inference_qpbo, _inference_dai, _inference_lp,
-                               _inference_ad3)
+                               _inference_ad3, _make_grid_edges)
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -181,18 +181,19 @@ class GridCRF(CRF):
         unary_params = self.get_unary_weights(w)
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
+        edges = _make_grid_edges(x, neighborhood=self.neighborhood)
         if self.inference_method == "qpbo":
             return _inference_qpbo(x, unary_params, pairwise_params,
-                                   self.neighborhood)
+                                   edges)
         elif self.inference_method == "dai":
             return _inference_dai(x, unary_params, pairwise_params,
-                                  self.neighborhood)
+                                  edges)
         elif self.inference_method == "lp":
             return _inference_lp(x, unary_params, pairwise_params,
-                                 self.neighborhood, relaxed)
+                                 edges, relaxed)
         elif self.inference_method == "ad3":
             return _inference_ad3(x, unary_params, pairwise_params,
-                                  self.neighborhood, relaxed)
+                                  edges, relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
