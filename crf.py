@@ -198,6 +198,99 @@ class GridCRF(CRF):
                              % self.inference_method)
 
 
+class DirectionalGridCRF(CRF):
+    """CRF with different kind of edges, each having their own parameters.
+
+    Pairwise potentials are not symmetric and are independend for each kind of
+    edges.  This leads to n_classes parameters for unary potentials and
+    n_edge_types * n_classes ** 2 parameters for edge potentials.
+
+    Parameters
+    ----------
+    n_states : int, default=2
+        Number of states for all variables.
+
+    inference_method : string, default="qpbo"
+        Function to call do do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+    """
+    def __init__(self, n_states=2, edge_types=2, inference_method='lp'):
+        super(DirectionalGridCRF, self).__init__()
+        self.n_states = n_states
+        self.inference_method = inference_method
+        self.edge_types = edge_types
+        # n_states unary parameters, upper triangular for pairwise
+        self.size_psi = n_states + n_states * n_states * edge_types
+
+    def get_pairwise_weights(self, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+        return w[:self.n_states]
+
+    def get_unary_weights(self, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+        return w[self.n_states:].reshape(self.n_states, self.n_states)
+
+    # TODO
+    def psi(self, x, y):
+        # x is unaries
+        # y is a labeling
+        if isinstance(y, tuple):
+            # y can also be continuous (from lp)
+            # in this case, it comes with accumulated edge marginals
+            y, pw = y
+            x_flat = x.reshape(-1, x.shape[-1])
+            y_flat = y.reshape(-1, y.shape[-1])
+            unaries_acc = np.sum(x_flat * y_flat, axis=0)
+            labels = y
+        else:
+            ## unary features:
+            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
+            selected_unaries = x[gx, gy, y]
+            unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
+                                      minlength=self.n_states)
+
+            ##accumulated pairwise
+            #make one hot encoding
+            labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
+                              dtype=np.int)
+            labels[gx, gy, y] = 1
+            pw = np.sum(pairwise_grid_features(labels, self.neighborhood),
+                        axis=0)
+
+        feature = np.hstack([unaries_acc, pw])
+        return feature
+
+    def inference(self, x, w, relaxed=False):
+        self.inference_calls += 1
+        unary_params = self.get_unary_weights(w)
+        pairwise_params = self.get_pairwise_weights(w)
+
+        #if self.inference_method == "qpbo":
+            #return _inference_qpbo(x, unary_params, pairwise_params,
+                                   #self.neighborhood)
+        #elif self.inference_method == "dai":
+            #return _inference_dai(x, unary_params, pairwise_params,
+                                  #self.neighborhood)
+        if self.inference_method == "lp":
+            return _inference_lp(x, unary_params, pairwise_params,
+                                 self.neighborhood, relaxed)
+        #elif self.inference_method == "ad3":
+            #return _inference_ad3(x, unary_params, pairwise_params,
+                                  #self.neighborhood, relaxed)
+        else:
+            raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
+                             % self.inference_method)
+
+
 class FixedGraphCRF(CRF):
     """CRF with general graph that is THE SAME for all examples.
     graph is given by scipy sparse adjacency matrix.

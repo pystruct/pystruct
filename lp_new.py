@@ -7,10 +7,15 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def solve_lp(unaries, edges, pairwise, exact=False):
-    if unaries.shape[1] != pairwise.shape[0]:
+def lp_general_graph(unaries, edges, edge_weights, exact=False):
+    if unaries.shape[1] != edge_weights.shape[1]:
         raise ValueError("incompatible shapes of unaries"
-                         " and pairwise potentials.")
+                         " and edge_weights.")
+    if edge_weights.shape[1] != edge_weights.shape[2]:
+        raise ValueError("Edge weights not square!")
+    if edge_weights.shape[0] != edges.shape[0]:
+        raise ValueError("Number of edge weights different from number of"
+                         "edges")
 
     lp = glpk.LPX()          # Create empty problem instance
     lp.name = 'sample'       # Assign symbolic name to problem
@@ -26,9 +31,11 @@ def solve_lp(unaries, edges, pairwise, exact=False):
     n_variables = n_nodes * n_states + n_edges * n_states ** 2
     lp.cols.add(n_variables)         # Append columns to this instance
 
+    # variables for unary marginals
     for i, col in enumerate(lp.cols[:n_nodes * n_states]):
         col.name = "mu_%d=%d" % (i // n_states, i % n_states)
 
+    # variables for pairwise marginals
     for i, col in enumerate(lp.cols[n_nodes * n_states:]):
         edge = edges[i // n_states ** 2]
         state_pair = i % n_states ** 2
@@ -81,8 +88,7 @@ def solve_lp(unaries, edges, pairwise, exact=False):
 
     coef = np.ravel(unaries)
     # pairwise:
-    repeated_pairwise = np.repeat(np.hstack(pairwise)[np.newaxis, :],
-                                  n_edges, axis=0).ravel()
+    repeated_pairwise = edge_weights.ravel()
     coef = np.hstack([coef, repeated_pairwise])
     lp.obj[:] = coef.tolist()   # Set objective coefficients
     lp.matrix = matrix
@@ -100,6 +106,16 @@ def solve_lp(unaries, edges, pairwise, exact=False):
     assert((np.abs(unary_variables.sum(axis=1) - 1) < 1e-4).all())
     assert((np.abs(pairwise_variables.sum(axis=1) - 1) < 1e-4).all())
     return unary_variables, pairwise_variables, lp.obj.value
+
+
+def solve_lp(unaries, edges, pairwise, exact=False):
+    if unaries.shape[1] != pairwise.shape[0]:
+        raise ValueError("incompatible shapes of unaries"
+                         " and pairwise potentials.")
+
+    n_edges = len(edges)
+    edge_weights = np.repeat(pairwise[np.newaxis, :, :], n_edges, axis=0)
+    return lp_general_graph(unaries, edges, edge_weights, exact=exact)
 
 
 def main():
