@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.lp_new import lp_general_graph
@@ -101,3 +101,23 @@ def test_psi_continuous():
     xx, yy = np.indices(y.shape)
     assert_array_almost_equal(unary_psi,
                               np.bincount(y.ravel(), x[xx, yy, y].ravel()))
+
+
+def test_energy():
+    # make sure that energy as computed by ssvm is the same as by lp
+    np.random.seed(0)
+    found_fractional = False
+    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
+    while not found_fractional:
+        x = np.random.normal(size=(2, 2, 3))
+        unary_params = np.ones(3)
+        pw1 = np.random.normal() * np.eye(3)
+        pw2 = np.random.normal() * np.eye(3)
+        w = np.hstack([unary_params, pw1.ravel(), pw2.ravel()])
+        res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
+        found_fractional = np.any(np.max(res[0], axis=-1) != 1)
+
+        psi = crf.psi(x, res)
+        energy_svm = np.dot(psi, w)
+
+        assert_almost_equal(energy, -energy_svm)

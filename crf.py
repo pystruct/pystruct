@@ -286,7 +286,7 @@ class DirectionalGridCRF(CRF):
         feature = np.hstack([unaries_acc, pw.ravel()])
         return feature
 
-    def inference(self, x, w, relaxed=False):
+    def inference(self, x, w, relaxed=False, return_energy=False):
         self.inference_calls += 1
         # extract unary weights
         unary_params = self.get_unary_weights(w)
@@ -308,8 +308,8 @@ class DirectionalGridCRF(CRF):
             #return _inference_dai(x, unary_params, pairwise_params,
                                   #self.neighborhood)
         if self.inference_method == "lp":
-            return _inference_lp(x, unary_params, edge_weights,
-                                 edges, relaxed)
+            return _inference_lp(x, unary_params, edge_weights, edges, relaxed,
+                                 return_energy=return_energy)
         #elif self.inference_method == "ad3":
             #return _inference_ad3(x, unary_params, pairwise_params,
                                   #self.neighborhood, relaxed)
