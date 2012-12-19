@@ -121,20 +121,12 @@ def test_energy():
         energy_svm = np.dot(psi, w)
 
         assert_almost_equal(energy, -energy_svm)
-        print(energy + energy_svm)
-        print(crf.get_pairwise_weights(psi))
-        print(crf.get_pairwise_weights(w))
         if not found_fractional:
             # exact discrete labels, test non-relaxed version
             print("non-relaxed!")
             res, energy = crf.inference(x, w, relaxed=False,
                                         return_energy=True)
-            found_fractional = np.any(np.max(res[0], axis=-1) != 1)
-
             psi = crf.psi(x, res)
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, -energy_svm)
-            print(energy + energy_svm)
-            print(crf.get_pairwise_weights(psi))
-            print(crf.get_pairwise_weights(w))

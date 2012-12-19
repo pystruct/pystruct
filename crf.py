@@ -16,12 +16,12 @@ def pairwise_grid_features(grid_labels, neighborhood=4):
     n_states = grid_labels.shape[-1]
     features = []
     # horizontal edges
-    right = np.dot(grid_labels[:, 1:, :].reshape(-1, n_states).T,
-                   grid_labels[:, :-1, :].reshape(-1, n_states))
+    right = np.dot(grid_labels[:, :-1, :].reshape(-1, n_states).T,
+                   grid_labels[:, 1:, :].reshape(-1, n_states))
     features.append(right)
     # vertical edges
-    down = np.dot(grid_labels[1:, :, :].reshape(-1, n_states).T,
-                  grid_labels[:-1, :, :].reshape(-1, n_states))
+    down = np.dot(grid_labels[:-1, :, :].reshape(-1, n_states).T,
+                  grid_labels[1:, :, :].reshape(-1, n_states))
     features.append(down)
     if neighborhood == 8:
         upright = np.dot(grid_labels[1:, :-1, :].reshape(-1, n_states).T,
