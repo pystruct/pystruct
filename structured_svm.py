@@ -14,7 +14,7 @@ from scipy.optimize import fmin
 
 from joblib import Parallel, delayed
 
-from crf import GridCRF, unwrap_pairwise
+from crf import unwrap_pairwise
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
