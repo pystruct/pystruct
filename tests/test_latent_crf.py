@@ -5,13 +5,46 @@ from nose.tools import assert_equal
 import pystruct.toy_datasets as toy
 from pystruct.crf import exhaustive_loss_augmented_inference
 from pystruct.latent_crf import LatentGridCRF
-#from pyqpbo import binary_grid, alpha_expansion_grid
-
-#import itertools
+from pystruct.latent_crf import kmeans_init
+from pystruct.inference_methods import _make_grid_edges
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
-# why have binary and multinomial different numbers of parameters?
+
+
+def test_k_means_initialization():
+    X, Y = toy.generate_big_checker(n_samples=10)
+    edges = _make_grid_edges(X[0], return_lists=True)
+
+    # sanity check for one state
+    H = kmeans_init(X, Y, edges, n_states_per_label=1)
+    assert_array_equal(Y, H)
+
+    # check number of states
+    H = kmeans_init(X, Y, edges, n_states_per_label=3)
+    assert_array_equal(np.unique(H), np.arange(6))
+    assert_array_equal(Y, H / 3)
+
+    # for dataset with more than two states
+    X, Y = toy.generate_blocks_multinomial(n_samples=10)
+    edges = _make_grid_edges(X[0], return_lists=True)
+
+    # sanity check for one state
+    H = kmeans_init(X, Y, edges, n_states_per_label=1)
+    assert_array_equal(Y, H)
+
+    # check number of states
+    H = kmeans_init(X, Y, edges, n_states_per_label=2)
+    assert_array_equal(np.unique(H), np.arange(6))
+    assert_array_equal(Y, H / 2)
+
+
+def test_k_means_initialization_crf():
+    X, Y = toy.generate_big_checker(n_samples=10)
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
+                        inference_method='lp')
+    H = crf.init_latent(X, Y)
+    assert_array_equal(Y, H)
 
 
 def test_blocks_crf_unaries():

@@ -75,7 +75,8 @@ class LatentCRF(CRF):
 
 class LatentFixedGraphCRF(LatentCRF, FixedGraphCRF):
     """CRF with general graph that is THE SAME for all examples.
-    graph is given by scipy sparse adjacency matrix.
+
+    Graph is given by scipy sparse adjacency matrix.
     """
     def __init__(self, n_labels, n_states_per_label, graph):
         self.n_states_per_label = n_states_per_label
@@ -138,7 +139,7 @@ class LatentFixedGraphCRF(LatentCRF, FixedGraphCRF):
 
 
 class LatentGridCRF(LatentCRF, GridCRF):
-    """Latent variable CRF with 2d grid graph
+    """Latent variable CRF with 2d grid graph.
     """
     def __init__(self, n_labels, n_states_per_label=2,
                  inference_method='qpbo'):
