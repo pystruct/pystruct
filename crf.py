@@ -199,10 +199,10 @@ class GridCRF(CRF):
 
 
 class DirectionalGridCRF(CRF):
-    """CRF with different kind of edges, each having their own parameters.
+    """CRF in which each direction of edges has their own set of parameters.
 
     Pairwise potentials are not symmetric and are independend for each kind of
-    edges.  This leads to n_classes parameters for unary potentials and
+    edges. This leads to n_classes parameters for unary potentials and
     n_edge_types * n_classes ** 2 parameters for edge potentials.
     The number of edge-types is two for a 4-connected neighborhood
     (horizontal and vertical) or 4 for a 8 connected neighborhood (additionally
