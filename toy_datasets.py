@@ -28,12 +28,12 @@ def generate_checker(n_samples=10, noise=1.5):
     return X, Y
 
 
-def generate_big_checker(n_samples=10, noise=0.5):
+def generate_big_checker(n_samples=20, noise=.5, n_fields=3, field_size=3):
     np.random.seed(0)
-    y_small = np.ones((4, 4), dtype=np.int32)
+    y_small = np.ones((n_fields, n_fields), dtype=np.int32)
     y_small[::2, ::2] = -1
     y_small[1::2, 1::2] = -1
-    y = y_small.repeat(3, axis=0).repeat(3, axis=1)
+    y = y_small.repeat(field_size, axis=0).repeat(field_size, axis=1)
     Y = np.repeat(y[np.newaxis, :, :], n_samples, axis=0)
     X = Y + noise * np.random.normal(size=Y.shape)
     Y = (Y < 0).astype(np.int32)
@@ -150,11 +150,12 @@ def generate_checker_multinomial(n_samples=20, noise=1.5):
     return X, Y
 
 
-def generate_big_checker_extended(n_samples=20, noise=.3):
-    y_small = np.zeros((6, 6), dtype=np.int32)
+def generate_big_checker_extended(n_samples=20, noise=.3, n_fields=6,
+                                  field_size=3):
+    y_small = np.zeros((n_fields, n_fields), dtype=np.int32)
     y_small[::2, ::2] = 2
     y_small[1::2, 1::2] = 2
-    y = y_small.repeat(3, axis=0).repeat(3, axis=1)
+    y = y_small.repeat(field_size, axis=0).repeat(field_size, axis=1)
     y[1::3, 1::3] = 1
     y[1::6, 1::6] = 3
     y[4::6, 4::6] = 3
