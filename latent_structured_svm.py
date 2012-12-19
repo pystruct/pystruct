@@ -77,15 +77,16 @@ class LatentSSVM(StructuredSVM):
                                                  (self.problem, x, subsvm.w)
                                                  for x in X)
             inds = np.arange(len(H))
-            for i, h, h_hat in zip(inds, H, H_hat):
-                plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
-                plt.colorbar()
-                plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
-                plt.close()
-                plt.matshow(h_hat, vmin=0, vmax=self.problem.n_states - 1)
-                plt.colorbar()
-                plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
-                plt.close()
+            if self.plot:
+                for i, h, h_hat in zip(inds, H, H_hat):
+                    plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
+                    plt.colorbar()
+                    plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
+                    plt.close()
+                    plt.matshow(h_hat, vmin=0, vmax=self.problem.n_states - 1)
+                    plt.colorbar()
+                    plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
+                    plt.close()
             w = subsvm.w
             ws.append(w)
             #objectives.append(subsvm.primal_objective_)
