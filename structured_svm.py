@@ -393,7 +393,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learningrate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
-        grad = (psi_matrix - w / self.C / 2.)
+        grad = (psi_matrix - w / self.C)
 
         if self.adagrad:
             self.grad_old += grad ** 2
