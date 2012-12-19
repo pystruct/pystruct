@@ -48,6 +48,12 @@ class StructuredProblem(object):
     def psi(self, x, y):
         pass
 
+    def _loss_augmented_dpsi(self, x, y, y_hat, w):
+        # debugging only!
+        x_loss_augmented = self.loss_augment(x, y, w)
+        return (self.psi(x_loss_augmented, y)
+                - self.psi(x_loss_augmented, y_hat))
+
     def inference(self, x, w):
         pass
 

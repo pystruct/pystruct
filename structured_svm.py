@@ -248,9 +248,7 @@ class StructuredSVM(object):
                 y_hat, delta_psi, slack, loss = constraint
 
                 # check that the slack fits the loss-augmented inference
-                x_loss_augmented = self.problem.loss_augment(x, y, w)
-                dpsi_ = (GridCRF.psi(self.problem, x_loss_augmented, y)
-                         - GridCRF.psi(self.problem, x_loss_augmented, y_hat))
+                dpsi_ = self.problem._loss_augmented_dpsi(x, y, y_hat, w)
                 if np.abs(slack + min(0, np.dot(w, dpsi_))) > 0.01:
                     tracer()
 

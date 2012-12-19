@@ -151,10 +151,18 @@ class LatentGridCRF(LatentCRF, GridCRF):
                                             inference_method=inference_method)
 
     def init_latent(self, X, Y):
+        # treat all edges the same
         edges = _make_grid_edges(X[0], neighborhood=self.neighborhood,
-                                 return_lists=True)
-        return kmeans_init(X, Y, edges,
+                                 return_lists=False)
+        return kmeans_init(X, Y, [edges],
                            n_states_per_label=self.n_states_per_label)
+
+    def _loss_augmented_dpsi(self, x, h, h_hat, w):
+        # debugging only!
+        x_loss_augmented = self.loss_augment(x, h, w)
+        psi1 = super(LatentGridCRF, self).psi(x_loss_augmented, h)
+        psi2 = super(LatentGridCRF, self).psi(x_loss_augmented, h_hat)
+        return psi1 - psi2
 
     def psi(self, x, h):
         # x is unaries
@@ -174,7 +182,7 @@ class LatentGridCRF(LatentCRF, GridCRF):
         # augment unary potentials for latent states
         x_wide = self.loss_augment(x, h, w)
         # do usual inference
-        h = super(LatentGridCRF, self).inference(x_wide, w, relaxed=relaxed)
+        h = GridCRF.inference(self, x_wide, w, relaxed=relaxed)
         return h
 
     def latent(self, x, y, w):
