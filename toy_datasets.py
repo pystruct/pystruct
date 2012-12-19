@@ -71,15 +71,14 @@ def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8):
     return X, Y
 
 
-def generate_crosses(n_samples=5, noise=30):
+def generate_crosses(n_samples=5, noise=30, total_size=10, n_crosses=2):
     np.random.seed(0)
-    size = 10
-    Y = np.zeros((n_samples, size, size), dtype=np.int)
-    t_old, l_old = -3, -3
+    Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
     for i in xrange(n_samples):
-        for j in xrange(2):
+        t_old, l_old = -3, -3
+        for j in xrange(n_crosses):
             while True:
-                t, l = np.random.randint(1, size - 3, size=2)
+                t, l = np.random.randint(1, total_size - 3, size=2)
                 if np.abs(t - t_old) > 2 or np.abs(l - l_old) > 2:
                     break
             t_old = t
@@ -90,9 +89,9 @@ def generate_crosses(n_samples=5, noise=30):
     Y_flips = Y.copy()
     #flip random bits
     for y in Y_flips:
-        flips = np.random.randint(1, size - 1, size=[noise, 2])
+        flips = np.random.randint(1, total_size - 1, size=[noise, 2])
         y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
-    X = np.zeros((n_samples, size, size, 2))
+    X = np.zeros((n_samples, total_size, total_size, 2))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
     return X, Y
@@ -102,8 +101,8 @@ def generate_xs(n_samples=5, noise=30):
     np.random.seed(0)
     size = 8
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    t_old, l_old = -3, -3
     for i in xrange(n_samples):
+        t_old, l_old = -3, -3
         for j in xrange(1):
             while True:
                 t, l = np.random.randint(1, size - 3, size=2)
