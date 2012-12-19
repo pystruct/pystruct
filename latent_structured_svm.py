@@ -6,6 +6,7 @@
 #
 
 import numpy as np
+from scipy import sparse
 import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
@@ -18,7 +19,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def kmeans_init(X, Y, n_states_per_label=2):
+def kmeans_init(X, Y, edges, n_states_per_label=2):
     n_labels = X[0].shape[-1]
     shape = Y[0].shape
     gx, gy = np.ogrid[:shape[0], :shape[1]]
@@ -29,17 +30,18 @@ def kmeans_init(X, Y, n_states_per_label=2):
         labels = np.zeros((shape[0], shape[1], n_labels),
                           dtype=np.int)
         labels[gx, gy, y] = 1
-        neighbors = np.zeros((y.shape[0], y.shape[1], n_labels))
-        neighbors[1:, :, :] += labels[:-1, :, :]
-        neighbors[:-1, :, :] += labels[1:, :, :]
-        neighbors[:, 1:, :] += labels[:, :-1, :]
-        neighbors[:, :-1, :] += labels[:, 1:, :]
+        size = np.prod(y.shape)
+        graphs = [sparse.coo_matrix((np.ones(e.shape[0]), e.T), (size, size))
+                  for e in edges]
+        directions = [T for g in graphs for T in [g, g.T]]
+        features = [s * labels.reshape(size, -1) for s in directions]
+        features = np.hstack(features)
         # normalize (for borders)
-        neighbors /= neighbors.sum(axis=-1)[:, :, np.newaxis]
+        features /= features.sum(axis=1)[:, np.newaxis]
+
         # add unaries
         #features = np.dstack([x, neighbors])
-        features = neighbors
-        all_feats.append(features.reshape(-1, features.shape[-1]))
+        all_feats.append(features)
     all_feats = np.vstack(all_feats)
     # states (=clusters) will be saved in H
     H = np.zeros_like(Y, dtype=np.int)
