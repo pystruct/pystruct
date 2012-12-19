@@ -18,7 +18,7 @@ tracer = Tracer()
 
 
 class LatentSSVM(StructuredSVM):
-    def fit(self, X, Y):
+    def fit(self, X, Y, H_init=None):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
                                self.check_constraints, verbose=self.verbose -
@@ -28,9 +28,11 @@ class LatentSSVM(StructuredSVM):
         constraints = None
         ws = []
         #Y = Y / self.problem.n_states_per_label
-        H = self.problem.init_latent(X, Y)
+        if H_init is None:
+            H_init = self.problem.init_latent(X, Y)
         #kmeans_init(X, Y, edges, self.problem.n_states_per_label)
-        self.H_init_ = H
+        self.H_init_ = H_init
+        H = H_init
         inds = np.arange(len(H))
         for i, h in zip(inds, H):
             plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
