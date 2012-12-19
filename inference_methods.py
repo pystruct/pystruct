@@ -1,7 +1,7 @@
 import numpy as np
 from pyqpbo import alpha_expansion_graph
 from daimrf import mrf
-from lp_new import lp_general_graph
+from linear_programming import lp_general_graph
 import AD3
 
 from IPython.core.debugger import Tracer

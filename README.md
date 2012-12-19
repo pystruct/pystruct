@@ -52,3 +52,5 @@ For updates, read my blog at http://peekaboo-vision.blogspot.com
 
 There are not publications yet that you can cite for this, I'm hoping there
 will be some in the future.
+
+Btw: this is research with unit tests!

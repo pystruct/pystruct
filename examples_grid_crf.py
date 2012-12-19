@@ -31,6 +31,8 @@ def main():
             #verbose=10, momentum=.0, learningrate=0.01, plot=True)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
+
+    np.set_printoptions(suppress=True)  # suppress scientific notation
     print(crf.get_pairwise_weights(clf.w))
     print(crf.get_unary_weights(clf.w))
 

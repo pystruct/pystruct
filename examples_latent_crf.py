@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from latent_crf import LatentGridCRF
-from latent_structured_svm import StupidLatentSVM
+from latent_structured_svm import LatentSSVM
 
 import toy_datasets as toy
 
@@ -20,9 +20,9 @@ def main():
                         #inference_method='dai')
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=3,
                         inference_method='lp')
-    clf = StupidLatentSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                          check_constraints=True, n_jobs=12, break_on_bad=True)
-    #clf = StupidLatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
+    clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
+                     check_constraints=True, n_jobs=12, break_on_bad=True)
+    #clf = LatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
             #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
