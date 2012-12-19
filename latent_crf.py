@@ -1,9 +1,57 @@
+######################
+# (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
+# ALL RIGHTS RESERVED.
+#
+# DON'T USE WITHOUT AUTHOR CONSENT!
+#
+
 import numpy as np
+from scipy import sparse
+
+from sklearn.cluster import KMeans
+
 from crf import FixedGraphCRF, GridCRF, CRF
+from inference_methods import _make_grid_edges
 from pyqpbo import alpha_expansion_graph, alpha_expansion_grid
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
+
+
+def kmeans_init(X, Y, edges, n_states_per_label=2):
+    n_labels = X[0].shape[-1]
+    shape = Y[0].shape
+    gx, gy = np.ogrid[:shape[0], :shape[1]]
+    all_feats = []
+    # iterate over samples
+    for x, y in zip(X, Y):
+        # first, get neighbor counts from nodes
+        labels = np.zeros((shape[0], shape[1], n_labels),
+                          dtype=np.int)
+        labels[gx, gy, y] = 1
+        size = np.prod(y.shape)
+        graphs = [sparse.coo_matrix((np.ones(e.shape[0]), e.T), (size, size))
+                  for e in edges]
+        directions = [T for g in graphs for T in [g, g.T]]
+        features = [s * labels.reshape(size, -1) for s in directions]
+        features = np.hstack(features)
+        # normalize (for borders)
+        features /= features.sum(axis=1)[:, np.newaxis]
+
+        # add unaries
+        #features = np.dstack([x, neighbors])
+        all_feats.append(features)
+    all_feats = np.vstack(all_feats)
+    # states (=clusters) will be saved in H
+    H = np.zeros_like(Y, dtype=np.int)
+    km = KMeans(n_clusters=n_states_per_label)
+    # for each state, run k-means over whole dataset
+    for label in np.arange(n_labels):
+        indicator = Y.ravel() == label
+        f = all_feats[indicator]
+        states = km.fit_predict(f)
+        H.ravel()[indicator] = states + label * n_states_per_label
+    return H
 
 
 class LatentCRF(CRF):
@@ -100,6 +148,12 @@ class LatentGridCRF(LatentCRF, GridCRF):
         n_states = n_labels * n_states_per_label
         super(LatentGridCRF, self).__init__(n_states,
                                             inference_method=inference_method)
+
+    def init_latent(self, X, Y):
+        edges = _make_grid_edges(X[0], neighborhood=self.neighborhood,
+                                 return_lists=True)
+        return kmeans_init(X, Y, edges,
+                           n_states_per_label=self.n_states_per_label)
 
     def psi(self, x, h):
         # x is unaries

@@ -2,15 +2,13 @@
 # (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
 # ALL RIGHTS RESERVED.
 #
-# THIS IS UNPUBLISHED RESEARCH. DON'T USE WITHOUT AUTHOR CONSENT!
+# DON'T USE WITHOUT AUTHOR CONSENT!
 #
 
 import numpy as np
-from scipy import sparse
 import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
-from sklearn.cluster import KMeans
 
 from structured_svm import StructuredSVM, inference, find_constraint
 
@@ -19,43 +17,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def kmeans_init(X, Y, edges, n_states_per_label=2):
-    n_labels = X[0].shape[-1]
-    shape = Y[0].shape
-    gx, gy = np.ogrid[:shape[0], :shape[1]]
-    all_feats = []
-    # iterate over samples
-    for x, y in zip(X, Y):
-        # first, get neighbor counts from nodes
-        labels = np.zeros((shape[0], shape[1], n_labels),
-                          dtype=np.int)
-        labels[gx, gy, y] = 1
-        size = np.prod(y.shape)
-        graphs = [sparse.coo_matrix((np.ones(e.shape[0]), e.T), (size, size))
-                  for e in edges]
-        directions = [T for g in graphs for T in [g, g.T]]
-        features = [s * labels.reshape(size, -1) for s in directions]
-        features = np.hstack(features)
-        # normalize (for borders)
-        features /= features.sum(axis=1)[:, np.newaxis]
-
-        # add unaries
-        #features = np.dstack([x, neighbors])
-        all_feats.append(features)
-    all_feats = np.vstack(all_feats)
-    # states (=clusters) will be saved in H
-    H = np.zeros_like(Y, dtype=np.int)
-    km = KMeans(n_clusters=n_states_per_label)
-    # for each state, run k-means over whole dataset
-    for label in np.arange(n_labels):
-        indicator = Y.ravel() == label
-        f = all_feats[indicator]
-        states = km.fit_predict(f)
-        H.ravel()[indicator] = states + label * n_states_per_label
-    return H
-
-
-class StupidLatentSVM(StructuredSVM):
+class LatentSSVM(StructuredSVM):
     def fit(self, X, Y):
         w = np.ones(self.problem.size_psi) * 1e-5
         subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
@@ -66,7 +28,8 @@ class StupidLatentSVM(StructuredSVM):
         constraints = None
         ws = []
         #Y = Y / self.problem.n_states_per_label
-        H = kmeans_init(X, Y, self.problem.n_states_per_label)
+        H = self.problem.init_latent(X, Y)
+        #kmeans_init(X, Y, edges, self.problem.n_states_per_label)
         self.H_init_ = H
         inds = np.arange(len(H))
         for i, h in zip(inds, H):
