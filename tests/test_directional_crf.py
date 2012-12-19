@@ -109,10 +109,10 @@ def test_energy():
     found_fractional = False
     crf = DirectionalGridCRF(n_states=3, inference_method='lp')
     while not found_fractional:
-        x = np.random.normal(size=(2, 2, 3))
+        x = np.random.normal(size=(4, 4, 3))
         unary_params = np.ones(3)
-        pw1 = np.random.normal() * np.eye(3)
-        pw2 = np.random.normal() * np.eye(3)
+        pw1 = np.random.normal(size=(3, 3))
+        pw2 = np.random.normal(size=(3, 3))
         w = np.hstack([unary_params, pw1.ravel(), pw2.ravel()])
         res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
         found_fractional = np.any(np.max(res[0], axis=-1) != 1)
@@ -121,3 +121,20 @@ def test_energy():
         energy_svm = np.dot(psi, w)
 
         assert_almost_equal(energy, -energy_svm)
+        print(energy + energy_svm)
+        print(crf.get_pairwise_weights(psi))
+        print(crf.get_pairwise_weights(w))
+        if not found_fractional:
+            # exact discrete labels, test non-relaxed version
+            print("non-relaxed!")
+            res, energy = crf.inference(x, w, relaxed=False,
+                                        return_energy=True)
+            found_fractional = np.any(np.max(res[0], axis=-1) != 1)
+
+            psi = crf.psi(x, res)
+            energy_svm = np.dot(psi, w)
+
+            assert_almost_equal(energy, -energy_svm)
+            print(energy + energy_svm)
+            print(crf.get_pairwise_weights(psi))
+            print(crf.get_pairwise_weights(w))
