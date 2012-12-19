@@ -18,7 +18,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def kmeans_init(X, Y, edges, n_states_per_label=2):
+def kmeans_init(X, Y, edges, n_states_per_label=2, symmetric=True):
     n_labels = X[0].shape[-1]
     shape = Y[0].shape
     gx, gy = np.ogrid[:shape[0], :shape[1]]
@@ -32,7 +32,10 @@ def kmeans_init(X, Y, edges, n_states_per_label=2):
         size = np.prod(y.shape)
         graphs = [sparse.coo_matrix((np.ones(e.shape[0]), e.T), (size, size))
                   for e in edges]
-        directions = [T for g in graphs for T in [g, g.T]]
+        if symmetric:
+            directions = [g + g.T for g in graphs]
+        else:
+            directions = [T for g in graphs for T in [g, g.T]]
         features = [s * labels.reshape(size, -1) for s in directions]
         features = np.hstack(features)
         # normalize (for borders)
