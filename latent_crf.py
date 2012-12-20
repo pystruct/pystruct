@@ -234,8 +234,8 @@ class LatentDirectionalGridCRF(LatentCRF, DirectionalGridCRF):
     def init_latent(self, X, Y):
         # treat all edges the same
         edges = _make_grid_edges(X[0], neighborhood=self.neighborhood,
-                                 return_lists=False)
-        return kmeans_init(X, Y, [edges],
+                                 return_lists=True)
+        return kmeans_init(X, Y, edges,
                            n_states_per_label=self.n_states_per_label,
                            symmetric=False)
 
