@@ -113,12 +113,8 @@ class LatentFixedGraphCRF(LatentCRF, FixedGraphCRF):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         # do usual inference
-        unary_params = w[:self.n_states]
-        pairwise_flat = np.asarray(w[self.n_states:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        pairwise_params = (pairwise_params + pairwise_params.T
-                           - np.diag(np.diag(pairwise_params)))
+        unary_params = self.get_unary_weights(w)
+        pairwise_params = self.get_pairwise_weights(w)
         unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         # forbid h that is incompoatible with y
         # by modifying unary params
@@ -163,8 +159,8 @@ class LatentGridCRF(LatentCRF, GridCRF):
     def _loss_augmented_dpsi(self, x, h, h_hat, w):
         # debugging only!
         x_loss_augmented = self.loss_augment(x, h, w)
-        psi1 = super(LatentGridCRF, self).psi(x_loss_augmented, h)
-        psi2 = super(LatentGridCRF, self).psi(x_loss_augmented, h_hat)
+        psi1 = GridCRF.psi(self, x_loss_augmented, h)
+        psi2 = GridCRF.psi(self, x_loss_augmented, h_hat)
         return psi1 - psi2
 
     def psi(self, x, h):
@@ -172,13 +168,13 @@ class LatentGridCRF(LatentCRF, GridCRF):
         # h is latent labeling
         ## unary features:
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        return super(LatentGridCRF, self).psi(x_wide, h)
+        return GridCRF.psi(self, x_wide, h)
 
     def inference(self, x, w):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
-        h = super(LatentGridCRF, self).inference(x_wide, w)
+        h = GridCRF.inference(self, x_wide, w)
         return h
 
     def loss_augmented_inference(self, x, h, w, relaxed=False):
@@ -192,12 +188,8 @@ class LatentGridCRF(LatentCRF, GridCRF):
         # augment unary potentials for latent states
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
-        unary_params = w[:self.n_states]
-        pairwise_flat = np.asarray(w[self.n_states:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        pairwise_params = (pairwise_params + pairwise_params.T
-                           - np.diag(np.diag(pairwise_params)))
+        unary_params = self.get_unary_weights(w)
+        pairwise_params = self.get_pairwise_weights(w)
         unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         # forbid h that is incompoatible with y
         # by modifying unary params
