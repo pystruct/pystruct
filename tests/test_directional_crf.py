@@ -4,7 +4,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.lp_new import lp_general_graph
+from pystruct.linear_programming import lp_general_graph
 from pystruct.inference_methods import _make_grid_edges
 from pystruct.crf import DirectionalGridCRF
 
@@ -41,32 +41,34 @@ def test_inference():
     res = lp_general_graph(-x.reshape(-1, n_states), edges, edge_weights,
                            exact=False)
 
-    # same inference through CRF inferface
-    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
-    w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
-    y_pred = crf.inference(x, w, relaxed=True)
-    assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
-    assert_array_almost_equal(res[1], y_pred[1])
-    assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
+    for inference_method in ["lp", "ad3"]:
+        # same inference through CRF inferface
+        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
+        y_pred = crf.inference(x, w, relaxed=True)
+        assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
+        assert_array_almost_equal(res[1], y_pred[1])
+        assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
 
 def test_psi_discrete():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
-    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
-    psi_y = crf.psi(x, y)
-    assert_equal(psi_y.shape, (crf.size_psi,))
-    # first unary, then horizontal, then vertical
-    unary_psi = crf.get_unary_weights(psi_y)
-    pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
-    xx, yy = np.indices(y.shape)
-    assert_array_almost_equal(unary_psi,
-                              np.bincount(y.ravel(), x[xx, yy, y].ravel()))
-    assert_array_equal(pw_psi_vert, np.diag([9 * 4, 9 * 4, 9 * 4]))
-    vert_psi = np.diag([10 * 3, 10 * 3, 10 * 3])
-    vert_psi[1, 0] = 10
-    vert_psi[2, 1] = 10
-    assert_array_equal(pw_psi_horz, vert_psi)
+    for inference_method in ["lp", "ad3"]:
+        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        psi_y = crf.psi(x, y)
+        assert_equal(psi_y.shape, (crf.size_psi,))
+        # first unary, then horizontal, then vertical
+        unary_psi = crf.get_unary_weights(psi_y)
+        pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+        xx, yy = np.indices(y.shape)
+        assert_array_almost_equal(unary_psi,
+                                  np.bincount(y.ravel(), x[xx, yy, y].ravel()))
+        assert_array_equal(pw_psi_vert, np.diag([9 * 4, 9 * 4, 9 * 4]))
+        vert_psi = np.diag([10 * 3, 10 * 3, 10 * 3])
+        vert_psi[0, 1] = 10
+        vert_psi[1, 2] = 10
+        assert_array_equal(pw_psi_horz, vert_psi)
 
 
 def test_psi_continuous():
@@ -86,47 +88,48 @@ def test_psi_continuous():
     pw_vert *= 10
 
     # create crf, assemble weight, make prediction
-    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
-    w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
-    y_pred = crf.inference(x, w, relaxed=True)
+    for inference_method in ["lp", "ad3"]:
+        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
+        y_pred = crf.inference(x, w, relaxed=True)
 
-    # compute psi for prediction
-    psi_y = crf.psi(x, y_pred)
-    assert_equal(psi_y.shape, (crf.size_psi,))
-    # first unary, then horizontal, then vertical
-    unary_psi = crf.get_unary_weights(psi_y)
-    pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+        # compute psi for prediction
+        psi_y = crf.psi(x, y_pred)
+        assert_equal(psi_y.shape, (crf.size_psi,))
+        # first unary, then horizontal, then vertical
+        unary_psi = crf.get_unary_weights(psi_y)
+        pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
 
-    # test unary
-    xx, yy = np.indices(y.shape)
-    assert_array_almost_equal(unary_psi,
-                              np.bincount(y.ravel(), x[xx, yy, y].ravel()))
+        # test unary
+        xx, yy = np.indices(y.shape)
+        assert_array_almost_equal(unary_psi,
+                                  np.bincount(y.ravel(), x[xx, yy, y].ravel()))
 
 
 def test_energy():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
     found_fractional = False
-    crf = DirectionalGridCRF(n_states=3, inference_method='lp')
-    while not found_fractional:
-        x = np.random.normal(size=(4, 4, 3))
-        unary_params = np.ones(3)
-        pw1 = np.random.normal(size=(3, 3))
-        pw2 = np.random.normal(size=(3, 3))
-        w = np.hstack([unary_params, pw1.ravel(), pw2.ravel()])
-        res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
-        found_fractional = np.any(np.max(res[0], axis=-1) != 1)
+    for inference_method in ["lp", "ad3"]:
+        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        while not found_fractional:
+            x = np.random.normal(size=(4, 4, 3))
+            unary_params = np.ones(3)
+            pw1 = np.random.normal(size=(3, 3))
+            pw2 = np.random.normal(size=(3, 3))
+            w = np.hstack([unary_params, pw1.ravel(), pw2.ravel()])
+            res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
+            found_fractional = np.any(np.max(res[0], axis=-1) != 1)
 
-        psi = crf.psi(x, res)
-        energy_svm = np.dot(psi, w)
-
-        assert_almost_equal(energy, -energy_svm)
-        if not found_fractional:
-            # exact discrete labels, test non-relaxed version
-            print("non-relaxed!")
-            res, energy = crf.inference(x, w, relaxed=False,
-                                        return_energy=True)
             psi = crf.psi(x, res)
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, -energy_svm)
+            if not found_fractional:
+                # exact discrete labels, test non-relaxed version
+                res, energy = crf.inference(x, w, relaxed=False,
+                                            return_energy=True)
+                psi = crf.psi(x, res)
+                energy_svm = np.dot(psi, w)
+
+                assert_almost_equal(energy, -energy_svm)
