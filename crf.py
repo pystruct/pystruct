@@ -41,6 +41,12 @@ def unwrap_pairwise(y):
 
 
 class StructuredProblem(object):
+    """Interface definition for Structured Learners.
+
+    This class defines what is necessary to use the structured svm.
+    You have to implement at least psi and inference.
+    """
+
     def __init__(self):
         self.size_psi = None
         self.inference_calls = 0
