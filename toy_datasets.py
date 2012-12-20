@@ -71,8 +71,9 @@ def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8):
     return X, Y
 
 
-def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8):
-    np.random.seed(0)
+def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8,
+                  random_seed=0):
+    np.random.seed(random_seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
     for i in xrange(n_samples):
         t_old, l_old = -10, -10
@@ -89,13 +90,17 @@ def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8):
                 t_old = t
                 l_old = l
                 #Y[i, t:t + box_size, l:l + box_size] = 1
-                Y[i, t:t + bars_size, l] = 1
+                if np.random.uniform() > .5:
+                    Y[i, t:t + bars_size, l] = 2
+                else:
+                    Y[i, t, l:l + bars_size] = 1
 
     Y_flips = Y.copy()
+    n_classes = len(np.unique(Y))
     for y in Y_flips:
         flips = np.random.randint(total_size, size=[noise, 2])
-        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
-    X = np.zeros((n_samples, total_size, total_size, 2))
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(n_classes, size=noise)
+    X = np.zeros((n_samples, total_size, total_size, n_classes))
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
     return X, Y
