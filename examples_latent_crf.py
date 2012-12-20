@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from latent_crf import LatentGridCRF
+from latent_crf import LatentDirectionalGridCRF
 from latent_structured_svm import LatentSSVM
 
 import toy_datasets as toy
@@ -12,16 +12,19 @@ tracer = Tracer()
 
 def main():
     #X, Y = toy.generate_crosses_latent(n_samples=25, noise=10)
-    #X, Y = toy.generate_crosses(n_samples=50, noise=10)
-    X, Y = toy.generate_easy(n_samples=50, noise=5)
+    #X, Y = toy.generate_crosses(n_samples=20, noise=10)
+    #X, Y = toy.generate_crosses(n_samples=2, noise=5, n_crosses=1,
+                                #total_size=8)
+    X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2)
     #X, Y = toy.generate_xs(n_samples=25, noise=5)
     n_labels = 2
     #crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         #inference_method='dai')
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=3,
-                        inference_method='lp')
+    crf = LatentDirectionalGridCRF(n_labels=n_labels, n_states_per_label=4,
+                                   inference_method='lp')
     clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                     check_constraints=True, n_jobs=12, break_on_bad=True)
+                     check_constraints=True, n_jobs=12, break_on_bad=True,
+                     plot=True)
     #clf = LatentSVM(problem=crf, max_iter=50, C=1, verbose=2,
             #check_constraints=True, n_jobs=12)
     clf.fit(X, Y)
@@ -30,7 +33,6 @@ def main():
     i = 0
     loss = 0
     for x, y, h_init, y_pred in zip(X, Y, clf.H_init_, Y_pred):
-        y_pred = y_pred.reshape(x.shape[:2])
         loss += np.sum(y != y_pred / 2)
         if i > 100:
             continue
@@ -38,11 +40,14 @@ def main():
         ax[0, 0].matshow(y * crf.n_states_per_label,
                          vmin=0, vmax=crf.n_states - 1)
         ax[0, 0].set_title("ground truth")
-        w_unaries_only = np.array([1, 1, 1, 1,
-                                   0,
-                                   0, 0,
-                                   0, 0, 0,
-                                   0, 0, 0, 0])
+        #w_unaries_only = np.array([1, 1, 1, 1,
+                                   #0,
+                                   #0, 0,
+                                   #0, 0, 0,
+                                   #0, 0, 0, 0])
+        w_unaries_only = np.zeros_like(clf.w)
+        size_unaries = len(crf.get_unary_weights(clf.w))
+        w_unaries_only[:size_unaries] = 1
         unary_pred = crf.inference(x, w_unaries_only)
         ax[0, 1].matshow(unary_pred, vmin=0, vmax=crf.n_states - 1)
         ax[0, 1].set_title("unaries only")
