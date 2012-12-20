@@ -75,13 +75,6 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
         unary_marginals = unary_marginals.reshape(x.shape)
-        #height, width = x.shape[:-1]
-        #horz = pairwise_marginals[:(width - 1) * height]
-        ##horz = horz.reshape(height, width - 1, n_states ** 2)
-        #vert = pairwise_marginals[(width - 1) * height:]
-        ##vert = vert.reshape(height - 1, width, n_states ** 2)
-        #pairwise_accumulated = horz.sum(axis=0) + vert.sum(axis=0)
-
         if pairwise_params.shape == (n_states, n_states):
             pairwise_accumulated = pairwise_marginals.sum(axis=0)
             pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
@@ -119,10 +112,13 @@ def _inference_ad3(x, unary_params, pairwise_params, edges,
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
         unary_marginals = unary_marginals.reshape(x.shape)
-        pairwise_accumulated = pairwise_marginals.sum(axis=0)
-        pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
-                                                            x.shape[-1])
-        y = (unary_marginals, pairwise_accumulated)
+        if pairwise_params.shape == (n_states, n_states):
+            pairwise_accumulated = pairwise_marginals.sum(axis=0)
+            pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
+                                                                x.shape[-1])
+            y = (unary_marginals, pairwise_accumulated)
+        else:
+            y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
         y = y.reshape(x.shape[0], x.shape[1])

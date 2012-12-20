@@ -314,20 +314,18 @@ class DirectionalGridCRF(CRF):
         edges = np.vstack(edges)
 
         #if self.inference_method == "qpbo":
-            #return _inference_qpbo(x, unary_params, pairwise_params,
-                                   #self.neighborhood)
+            #return _inference_qpbo(x, unary_params, pairwise_params, edges)
         #elif self.inference_method == "dai":
-            #return _inference_dai(x, unary_params, pairwise_params,
-                                  #self.neighborhood)
+            #return _inference_dai(x, unary_params, pairwise_params, edges)
         if self.inference_method == "lp":
             return _inference_lp(x, unary_params, edge_weights, edges, relaxed,
                                  return_energy=return_energy)
-        #elif self.inference_method == "ad3":
-            #return _inference_ad3(x, unary_params, pairwise_params,
-                                  #self.neighborhood, relaxed)
+        elif self.inference_method == "ad3":
+            return _inference_ad3(x, unary_params, edge_weights, edges,
+                                  relaxed)
         else:
-            raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
-                             % self.inference_method)
+            raise ValueError("inference_method must be 'lp' or"
+                             " 'ad3', got %s" % self.inference_method)
 
 
 class FixedGraphCRF(CRF):
