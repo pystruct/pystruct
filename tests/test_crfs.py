@@ -8,7 +8,6 @@ import pystruct.toy_datasets as toy
 from pystruct.crf import GridCRF, _inference_lp
 from pystruct.structured_svm import find_constraint, compute_energy
 from pystruct.inference_methods import _make_grid_edges
-from pyqpbo import binary_grid, alpha_expansion_grid
 
 
 from IPython.core.debugger import Tracer
@@ -16,8 +15,7 @@ tracer = Tracer()
 
 
 def test_continuous_y():
-    #for inference_method in ["lp", "ad3"]:
-    for inference_method in ["lp"]:
+    for inference_method in ["lp", "ad3"]:
         X, Y = toy.generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
         w = np.array([1, 1,
@@ -55,7 +53,7 @@ def test_continuous_y():
                      crf.continuous_loss(y, const_cont[0][0]))
 
 
-def test_energy():
+def test_energy_lp():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
     found_fractional = False
@@ -110,20 +108,10 @@ def test_binary_blocks_crf():
     w = np.array([1, 1,
                   0,
                   -4, 0])
-    crf = GridCRF()
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y, y_hat)
-
-
-def test_binary_blocks_crf_lp():
-    X, Y = toy.generate_blocks(n_samples=1)
-    x, y = X[0], Y[0]
-    w = np.array([1, 1,
-                  0,
-                  -4, 0])
-    crf = GridCRF(inference_method="lp")
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y, y_hat)
+    for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
+        crf = GridCRF(inference_method=inference_method)
+        y_hat = crf.inference(x, w)
+        assert_array_equal(y, y_hat)
 
 
 def test_binary_blocks_crf_n8_lp():
@@ -137,17 +125,6 @@ def test_binary_blocks_crf_n8_lp():
     assert_array_equal(y, y_hat)
 
 
-#def test_binary_blocks_crf_ad3():
-    #X, Y = toy.generate_blocks(n_samples=1)
-    #x, y = X[0], Y[0]
-    #w = np.array([1, 1,
-                  #0,
-                  #-4, 0])
-    #crf = GridCRF(inference_method="ad3")
-    #y_hat = crf.inference(x, w)
-    #assert_array_equal(y, y_hat)
-
-
 def test_blocks_multinomial_crf():
     X, Y = toy.generate_blocks_multinomial(n_samples=1)
     x, y = X[0], Y[0]
@@ -155,9 +132,10 @@ def test_blocks_multinomial_crf():
                  .4,
                  -.3, .3,
                  -.5, -.1, .3])
-    crf = GridCRF(n_states=3)
-    y_hat = crf.inference(x, w)
-    assert_array_equal(y, y_hat)
+    for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
+        crf = GridCRF(n_states=3, inference_method=inference_method)
+        y_hat = crf.inference(x, w)
+        assert_array_equal(y, y_hat)
 
 
 def test_binary_grid_unaries():
@@ -165,27 +143,28 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        crf = GridCRF(inference_method="lp")
-        w_unaries_only = np.zeros(5)
-        w_unaries_only[:2] = 1.
-        # test that inference with unaries only is the
-        # same as argmax
-        inf_unaries = crf.inference(x, w_unaries_only)
+        for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
+            crf = GridCRF(inference_method=inference_method)
+            w_unaries_only = np.zeros(5)
+            w_unaries_only[:2] = 1.
+            # test that inference with unaries only is the
+            # same as argmax
+            inf_unaries = crf.inference(x, w_unaries_only)
 
-        pw_z = np.zeros((2, 2), dtype=np.int32)
-        un = np.ascontiguousarray(-1000 * x).astype(np.int32)
-        unaries = binary_grid(un, pw_z)
-        assert_array_equal(inf_unaries, unaries)
-        assert_array_equal(inf_unaries, np.argmax(x, axis=2))
-        try:
-            assert(np.mean(inf_unaries == y) > 0.5)
-        except:
-            print(ds)
+            assert_array_equal(inf_unaries, np.argmax(x, axis=2),
+                               "Wrong unary inference for %s"
+                               % inference_method)
+            try:
+                assert(np.mean(inf_unaries == y) > 0.5)
+            except:
+                print(ds)
 
-        # check that the right thing happens on noise-free data
-        X, Y = ds(n_samples=1, noise=0)
-        inf_unaries = crf.inference(X[0], w_unaries_only)
-        assert_array_equal(inf_unaries, Y[0])
+            # check that the right thing happens on noise-free data
+            X, Y = ds(n_samples=1, noise=0)
+            inf_unaries = crf.inference(X[0], w_unaries_only)
+            assert_array_equal(inf_unaries, Y[0],
+                               "Wrong unary result for %s"
+                               % inference_method)
 
 
 def test_multinomial_grid_unaries():
@@ -195,22 +174,19 @@ def test_multinomial_grid_unaries():
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
-        crf = GridCRF(n_states=n_labels)
-        w_unaries_only = np.zeros(crf.size_psi)
-        w_unaries_only[:n_labels] = 1.
-        # test that inference with unaries only is the
-        # same as argmax
-        inf_unaries = crf.inference(x, w_unaries_only)
+        for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
+            crf = GridCRF(n_states=n_labels, inference_method=inference_method)
+            w_unaries_only = np.zeros(crf.size_psi)
+            w_unaries_only[:n_labels] = 1.
+            # test that inference with unaries only is the
+            # same as argmax
+            inf_unaries = crf.inference(x, w_unaries_only)
 
-        pw_z = np.zeros((n_labels, n_labels), dtype=np.int32)
-        un = np.ascontiguousarray(-1000 * x).astype(np.int32)
-        unaries = alpha_expansion_grid(un, pw_z)
-        assert_array_equal(inf_unaries, unaries)
-        assert_array_equal(inf_unaries, np.argmax(x, axis=2))
-        # check that the right thing happens on noise-free data
-        X, Y = ds(n_samples=1, noise=0)
-        inf_unaries = crf.inference(X[0], w_unaries_only)
-        assert_array_equal(inf_unaries, Y[0])
+            assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+            # check that the right thing happens on noise-free data
+            X, Y = ds(n_samples=1, noise=0)
+            inf_unaries = crf.inference(X[0], w_unaries_only)
+            assert_array_equal(inf_unaries, Y[0])
 
 
 def exhausive_inference_binary(problem, x, w):
