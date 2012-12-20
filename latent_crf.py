@@ -12,7 +12,6 @@ from sklearn.cluster import KMeans
 
 from crf import FixedGraphCRF, GridCRF, CRF, DirectionalGridCRF
 from inference_methods import _make_grid_edges
-from pyqpbo import alpha_expansion_graph, alpha_expansion_grid
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -114,15 +113,14 @@ class LatentFixedGraphCRF(LatentCRF, FixedGraphCRF):
         x_wide = np.repeat(x, self.n_states_per_label, axis=1)
         # do usual inference
         unary_params = self.get_unary_weights(w)
-        pairwise_params = self.get_pairwise_weights(w)
-        unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
                         y[:, np.newaxis])
-        unaries[other_states] = +1000000
-        pairwise = (-10 * pairwise_params).astype(np.int32)
-        h = alpha_expansion_graph(self.edges, unaries, pairwise)
+        # work around the inference interface... why oh why?
+        x_wide[other_states] = (-1000 * np.sign(unary_params)
+                                * np.ones(x_wide.shape))[other_states]
+        h = FixedGraphCRF.inference(self, x_wide, w, relaxed=False)
         if (h / self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
@@ -189,15 +187,15 @@ class LatentGridCRF(LatentCRF, GridCRF):
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
         unary_params = self.get_unary_weights(w)
-        pairwise_params = self.get_pairwise_weights(w)
-        unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
                         y[:, :, np.newaxis])
-        unaries[other_states] = +1000000
-        pairwise = (-10 * pairwise_params).astype(np.int32)
-        h = alpha_expansion_grid(unaries, pairwise)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
+        # work around the inference interface... why oh why?
+        x_wide[other_states] = (-1000 * np.sign(unary_params)
+                                * np.ones(x_wide.shape))[other_states]
+        h = GridCRF.inference(self, x_wide, w, relaxed=False)
         if (h / self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
@@ -274,15 +272,15 @@ class LatentDirectionalGridCRF(LatentCRF, DirectionalGridCRF):
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # do usual inference
         unary_params = self.get_unary_weights(w)
-        pairwise_params = self.get_pairwise_weights(w)
-        unaries = (- 10 * unary_params * x_wide).astype(np.int32)
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
                         y[:, :, np.newaxis])
-        unaries[other_states] = +1000000
-        pairwise = (-10 * pairwise_params).astype(np.int32)
-        h = alpha_expansion_grid(unaries, pairwise)
+        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
+        # work around the inference interface... why oh why?
+        x_wide[other_states] = (-1000 * np.sign(unary_params)
+                                * np.ones(x_wide.shape))[other_states]
+        h = DirectionalGridCRF.inference(self, x_wide, w, relaxed=False)
         if (h / self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")

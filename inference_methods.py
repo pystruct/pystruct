@@ -27,9 +27,9 @@ def _make_grid_edges(x, neighborhood=4, return_lists=False):
 
 
 def _inference_qpbo(x, unary_params, pairwise_params, edges):
-    unaries = (-1000 * unary_params * x).astype(np.int32)
+    unaries = (-100 * unary_params * x).astype(np.int32)
     unaries = unaries.reshape(-1, x.shape[-1])
-    pairwise = (-1000 * pairwise_params).astype(np.int32)
+    pairwise = (-100 * pairwise_params).astype(np.int32)
     edges = edges.astype(np.int32)
     y = alpha_expansion_graph(edges, unaries, pairwise, random_seed=1)
     return y.reshape(x.shape[:2])

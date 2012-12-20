@@ -4,7 +4,7 @@ from nose.tools import assert_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.crf import exhaustive_loss_augmented_inference
-from pystruct.latent_crf import LatentGridCRF
+from pystruct.latent_crf import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.latent_crf import kmeans_init
 from pystruct.inference_methods import _make_grid_edges
 
@@ -47,6 +47,14 @@ def test_k_means_initialization_crf():
     assert_array_equal(Y, H)
 
 
+def test_k_means_initialization_directional_crf():
+    X, Y = toy.generate_big_checker(n_samples=10)
+    crf = LatentDirectionalGridCRF(n_labels=2, n_states_per_label=1,
+                                   inference_method='lp')
+    H = crf.init_latent(X, Y)
+    assert_array_equal(Y, H)
+
+
 def test_blocks_crf_unaries():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
@@ -74,6 +82,17 @@ def test_blocks_crf():
 
     h = crf.latent(x, y, w)
     assert_equal(crf.loss(h, h_hat), 0)
+
+
+def test_latent_consistency_zero_pw():
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    for i in xrange(10):
+        w = np.zeros(14)
+        w[:4] = np.random.normal(size=4)
+        y = np.random.randint(2, size=(5, 5))
+        x = np.random.normal(size=(5, 5, 2))
+        h = crf.latent(x, y, w)
+        assert_array_equal(h / 2, y)
 
 
 def test_latent_consistency():
