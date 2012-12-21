@@ -50,7 +50,7 @@ def test_multinomial_blocks_subgradient():
 
 
 def test_multinomial_checker_cutting_plane():
-    X, Y = toy.generate_checker_multinomial(n_samples=10, noise=0.0)
+    X, Y = toy.generate_checker_multinomial(n_samples=10, noise=.1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = StructuredSVM(problem=crf, max_iter=20, C=100000, verbose=20,
