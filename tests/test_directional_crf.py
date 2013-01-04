@@ -50,11 +50,18 @@ def test_inference():
         assert_array_almost_equal(res[1], y_pred[1])
         assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
+    for inference_method in ["lp", "ad3", "qpbo"]:
+        # again, this time discrete predictions only
+        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        w = np.hstack([np.ones(3), -pw_horz.ravel(), -pw_vert.ravel()])
+        y_pred = crf.inference(x, w, relaxed=False)
+        assert_array_equal(y, y_pred)
+
 
 def test_psi_discrete():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in ["lp", "ad3", "qpbo"]:
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         psi_y = crf.psi(x, y)
         assert_equal(psi_y.shape, (crf.size_psi,))

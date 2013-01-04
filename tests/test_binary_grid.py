@@ -9,7 +9,6 @@ import pystruct.toy_datasets as toy
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
     for inference_method in ["dai", "lp", "qpbo", "ad3"]:
-    #for inference_method in ["dai", "lp", "qpbo"]:
         X, Y = toy.generate_blocks(n_samples=5)
         crf = GridCRF(inference_method=inference_method)
         clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,

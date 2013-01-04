@@ -106,6 +106,26 @@ def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8,
     return X, Y
 
 
+def generate_square_with_hole(n_samples=5, noise=5, total_size=8):
+    box_size = 3
+    np.random.seed(0)
+    Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
+    for i in xrange(n_samples):
+        t_old, l_old = -10, -10
+        t, l = np.random.randint(1, total_size - box_size, size=2)
+        Y[i, t:t + box_size, l:l + box_size] = 1
+        Y[i, t + 1, l + 1] = 0
+
+    Y_flips = Y.copy()
+    for y in Y_flips:
+        flips = np.random.randint(total_size, size=[noise, 2])
+        y[flips[:, 0], flips[:, 1]] = np.random.randint(2, size=noise)
+    X = np.zeros((n_samples, total_size, total_size, 2))
+    ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
+    X[ix, iy, iz, Y_flips] = 1
+    return X, Y
+
+
 def generate_crosses(n_samples=5, noise=30, total_size=10, n_crosses=2):
     np.random.seed(0)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)

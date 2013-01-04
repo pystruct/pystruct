@@ -1,5 +1,5 @@
 import numpy as np
-from pyqpbo import alpha_expansion_graph
+from pyqpbo import alpha_expansion_general_graph
 from daimrf import mrf
 from linear_programming import lp_general_graph
 import AD3
@@ -27,11 +27,24 @@ def _make_grid_edges(x, neighborhood=4, return_lists=False):
 
 
 def _inference_qpbo(x, unary_params, pairwise_params, edges):
+    n_states = x.shape[-1]
     unaries = (-1000 * unary_params * x).astype(np.int32)
-    unaries = unaries.reshape(-1, x.shape[-1])
+    unaries = unaries.reshape(-1, n_states)
     pairwise = (-1000 * pairwise_params).astype(np.int32)
     edges = edges.astype(np.int32)
-    y = alpha_expansion_graph(edges, unaries, pairwise, random_seed=1)
+    if pairwise_params.shape == (n_states, n_states):
+        # only one matrix given
+        edge_weights = np.repeat(pairwise[np.newaxis, :, :],
+                                 edges.shape[0], axis=0)
+    else:
+        if pairwise_params.shape != (edges.shape[0], n_states, n_states):
+            raise ValueError("Expected pairwise_params either to "
+                             "be of shape n_states x n_states "
+                             "or n_edges x n_states x n_states, but"
+                             " got shape %s" % repr(pairwise_params.shape))
+        edge_weights = pairwise
+    y = alpha_expansion_general_graph(edges, unaries, edge_weights,
+                                      random_seed=1)
     return y.reshape(x.shape[:2])
 
 
@@ -66,11 +79,11 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
     res = lp_general_graph(-unaries, edges, -edge_weights, exact=exact)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
-    if n_fractional:
-        print("got fractional solution. trying again, this time exactly")
-        res = lp_general_graph(-unaries, edges, -edge_weights, exact=True)
-        unary_marginals, pairwise_marginals, energy = res
-        n_fractional = np.sum(unary_marginals.max(axis=-1) < .9)
+    #if n_fractional:
+        #print("got fractional solution. trying again, this time exactly")
+        #res = lp_general_graph(-unaries, edges, -edge_weights, exact=True)
+        #unary_marginals, pairwise_marginals, energy = res
+        #n_fractional = np.sum(unary_marginals.max(axis=-1) < .9)
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:

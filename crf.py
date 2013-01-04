@@ -313,11 +313,11 @@ class DirectionalGridCRF(CRF):
         edge_weights = np.vstack(edge_weights)
         edges = np.vstack(edges)
 
-        #if self.inference_method == "qpbo":
-            #return _inference_qpbo(x, unary_params, pairwise_params, edges)
+        if self.inference_method == "qpbo":
+            return _inference_qpbo(x, unary_params, edge_weights, edges)
         #elif self.inference_method == "dai":
-            #return _inference_dai(x, unary_params, pairwise_params, edges)
-        if self.inference_method == "lp":
+            #return _inference_dai(x, unary_params, edge_weights, edges)
+        elif self.inference_method == "lp":
             return _inference_lp(x, unary_params, edge_weights, edges, relaxed,
                                  return_energy=return_energy)
         elif self.inference_method == "ad3":
