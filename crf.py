@@ -82,6 +82,7 @@ class StructuredProblem(object):
 
 
 class CRF(StructuredProblem):
+    """Abstract base class"""
     def __repr__(self):
         return ("GridCRF, n_states: %d, inference_method: %s"
                 % (self.n_states, self.inference_method))
@@ -114,6 +115,10 @@ class GridCRF(CRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
+    Unary evidence ``x`` is given as array of shape (width, height, n_states),
+    labels ``y`` are given as array of shape (width, height). Grid sizes do not
+    need to be constant over the dataset.
+
     Parameters
     ----------
     n_states : int, default=2
@@ -141,6 +146,18 @@ class GridCRF(CRF):
         self.size_psi = n_states + n_states * (n_states + 1) / 2
 
     def get_pairwise_weights(self, w):
+        """Extracts the pairwise part of the weight vector.
+
+        Parameters
+        ----------
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        pairwise : ndarray, shape=(n_states, n_states)
+            Pairwise weights.
+        """
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
@@ -153,12 +170,49 @@ class GridCRF(CRF):
                 np.diag(np.diag(pairwise_params)))
 
     def get_unary_weights(self, w):
+        """Extracts the unary part of the weight vector.
+
+        Parameters
+        ----------
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        unary : ndarray, shape=(n_states)
+            Unary weights.
+        """
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
         return w[:self.n_states]
 
     def psi(self, x, y):
+        """Feature vector associated with instance (x, y).
+
+        Feature representation psi, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+
+        Parameters
+        ----------
+        x : ndarray, shape (width, height, n_states)
+            Unary evidence / input.
+
+        y : ndarray or tuple
+            Either y is an integral ndarray of shape (width, height), giving
+            a complete labeling for x.
+            Or it is the result of a linear programming relaxation. In this
+            case, ``y=(unary_marginals, pariwise_marginals)``, where
+            unary_marginals is an array of shape (width, height, n_states) and
+            pairwise_marginals is an array of shape
+            (n_edges, n_states, n_states).
+
+        Returns
+        -------
+        p : ndarray, shape (size_psi,)
+            Feature vector associated with state (x, y).
+
+        """
         # x is unaries
         # y is a labeling
         if isinstance(y, tuple):
@@ -189,6 +243,40 @@ class GridCRF(CRF):
         return feature
 
     def inference(self, x, w, relaxed=False):
+        """Inference for x using parameters w.
+
+        Finds (approximately)
+        armin_y np.dot(w, psi(x, y))
+        using self.inference_method.
+
+
+        Parameters
+        ----------
+        x : ndarray, shape=(width, height, n_states)
+            Unary evidence / input.
+
+        w : ndarray, shape=(size_psi,)
+            Parameters for the CRF energy function.
+
+        relaxed : bool, default=False
+            Whether relaxed inference should be performed.
+            Only meaningful if inference method is 'lp' or 'ad3'.
+            By default fractional solutions are rounded. If relaxed=True,
+            fractional solutions are returned directly.
+
+        Returns
+        -------
+        y_pred : ndarray or tuple
+            By default an inter ndarray of shape=(width, height)
+            of variable assignments for x is returned.
+            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
+            a tuple (unary_marginals, pairwise_marginals)
+            containing the relaxed inference result is returned.
+            unary marginals is an array of shape (width, height, n_states),
+            pairwise_marginals is an array of
+            shape (n_edges, n_states, n_states).
+
+        """
         unary_params = self.get_unary_weights(w)
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
@@ -220,6 +308,10 @@ class DirectionalGridCRF(CRF):
     (horizontal and vertical) or 4 for a 8 connected neighborhood (additionally
     two diagonals).
 
+    Unary evidence ``x`` is given as array of shape (width, height, n_states),
+    labels ``y`` are given as array of shape (width, height). Grid sizes do not
+    need to be constant over the dataset.
+
     Parameters
     ----------
     n_states : int, default=2
@@ -248,6 +340,19 @@ class DirectionalGridCRF(CRF):
         self.neighborhood = neighborhood
 
     def get_pairwise_weights(self, w):
+        """Extracts the pairwise part of the weight vector.
+
+        Parameters
+        ----------
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        pairwise : ndarray, shape=(n_edge_types, n_states, n_states)
+            Pairwise weights.
+        """
+
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
@@ -255,12 +360,49 @@ class DirectionalGridCRF(CRF):
                                          self.n_states)
 
     def get_unary_weights(self, w):
+        """Extracts the unary part of the weight vector.
+
+        Parameters
+        ----------
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        pairwise : ndarray, shape=(n_states,)
+            Unary weights.
+        """
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
         return w[:self.n_states]
 
     def psi(self, x, y):
+        """Feature vector associated with instance (x, y).
+
+        Feature representation psi, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+
+        Parameters
+        ----------
+        x : ndarray, shape (width, height, n_states)
+            Unary evidence / input.
+
+        y : ndarray or tuple
+            Either y is an integral ndarray of shape (width, height), giving
+            a complete labeling for x.
+            Or it is the result of a linear programming relaxation. In this
+            case, ``y=(unary_marginals, pariwise_marginals)``, where
+            unary_marginals is an array of shape (width, height, n_states) and
+            pairwise_marginals is an array of shape
+            (n_edges, n_states, n_states).
+
+        Returns
+        -------
+        p : ndarray, shape (size_psi,)
+            Feature vector associated with state (x, y).
+
+        """
         # x is unaries
         # y is a labeling
         if isinstance(y, tuple):
@@ -299,6 +441,43 @@ class DirectionalGridCRF(CRF):
         return feature
 
     def inference(self, x, w, relaxed=False, return_energy=False):
+        """Inference for x using parameters w.
+
+        Finds (approximately)
+        armin_y np.dot(w, psi(x, y))
+        using self.inference_method.
+
+
+        Parameters
+        ----------
+        x : ndarray, shape=(width, height, n_states)
+            Unary evidence / input.
+
+        w : ndarray, shape=(size_psi,)
+            Parameters for the CRF energy function.
+
+        relaxed : bool, default=False
+            Whether relaxed inference should be performed.
+            Only meaningful if inference method is 'lp' or 'ad3'.
+            By default fractional solutions are rounded. If relaxed=True,
+            fractional solutions are returned directly.
+
+        return_energy : bool, default=False
+            Whether to return the energy of the solution (x, y) that was found.
+
+        Returns
+        -------
+        y_pred : ndarray or tuple
+            By default an inter ndarray of shape=(width, height)
+            of variable assignments for x is returned.
+            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
+            a tuple (unary_marginals, pairwise_marginals)
+            containing the relaxed inference result is returned.
+            unary marginals is an array of shape (width, height, n_states),
+            pairwise_marginals is an array of
+            shape (n_edges, n_states, n_states).
+
+        """
         self.inference_calls += 1
         # extract unary weights
         unary_params = self.get_unary_weights(w)
@@ -377,66 +556,6 @@ class FixedGraphCRF(CRF):
         unaries = (-1000 * unary_params * x).astype(np.int32)
         pairwise = (-1000 * pairwise_params).astype(np.int32)
         y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
-        return y
-
-
-class FixedGraphCRFNoBias(GridCRF):
-    """CRF with general graph that is THE SAME for all examples.
-    graph is given by scipy sparse adjacency matrix.
-    """
-    def __init__(self, n_states, graph):
-        self.inference_calls = 0
-        self.n_states = n_states
-        #upper triangular for pairwise
-        # last one gives weights to unary potentials
-        self.size_psi = n_states * (n_states - 1) / 2 + 1
-        self.graph = graph
-        self.edges = np.c_[graph.nonzero()].copy("C")
-
-    def psi(self, x, y):
-        # x is unaries
-        # y is a labeling
-        ## unary features:
-        n_nodes = y.shape[0]
-        gx = np.ogrid[:n_nodes]
-        unaries_acc = x[gx, y].sum()
-
-        # x is unaries
-        # y is a labeling
-        n_nodes = y.shape[0]
-
-        ##accumulated pairwise
-        #make one hot encoding
-        labels = np.zeros((n_nodes, self.n_states), dtype=np.int)
-        gx = np.ogrid[:n_nodes]
-        labels[gx, y] = 1
-
-        neighbors = self.graph * labels
-        pw = np.dot(neighbors.T, labels)
-
-        pairwise = pw[np.tri(self.n_states, k=-1, dtype=np.bool)]
-        feature = np.hstack([unaries_acc, pairwise])
-        return feature
-
-    def inference(self, x, w):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        self.inference_calls += 1
-        pairwise_flat = np.asarray(w[:-1])
-        unary = w[-1]
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        upper_tri = np.tri(self.n_states, k=-1, dtype=np.bool)
-        pairwise_params[upper_tri] = pairwise_flat
-        pairwise_params = (pairwise_params + pairwise_params.T
-                           - np.diag(np.diag(pairwise_params)))
-        unaries = (-1000 * unary * x).astype(np.int32)
-        pairwise = (-1000 * pairwise_params).astype(np.int32)
-        y = alpha_expansion_graph(self.edges, unaries, pairwise, random_seed=1)
-        from pyqpbo import binary_graph
-        y_ = binary_graph(self.edges, unaries, pairwise)
-        if (y_ != y).any():
-            tracer()
         return y
 
 
