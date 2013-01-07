@@ -197,18 +197,19 @@ class GridCRF(CRF):
 
         """
         unary_params = self.get_unary_weights(w)
+        unary_potentials = x * unary_params
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
         edges = make_grid_edges(x, neighborhood=self.neighborhood)
         if self.inference_method == "qpbo":
-            return inference_qpbo(x, unary_params, pairwise_params, edges)
+            return inference_qpbo(unary_potentials, pairwise_params, edges)
         elif self.inference_method == "dai":
-            return inference_dai(x, unary_params, pairwise_params, edges)
+            return inference_dai(unary_potentials, pairwise_params, edges)
         elif self.inference_method == "lp":
-            return inference_lp(x, unary_params, pairwise_params, edges,
+            return inference_lp(unary_potentials, pairwise_params, edges,
                                 relaxed)
         elif self.inference_method == "ad3":
-            return inference_ad3(x, unary_params, pairwise_params, edges,
+            return inference_ad3(unary_potentials, pairwise_params, edges,
                                  relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
@@ -396,6 +397,7 @@ class DirectionalGridCRF(CRF):
         self.inference_calls += 1
         # extract unary weights
         unary_params = self.get_unary_weights(w)
+        unary_potentials = x * unary_params
         # extract pairwise weights of shape n_edge_types x n_states x n_states
         pairwise_params = self.get_pairwise_weights(w)
         edges = make_grid_edges(x, neighborhood=self.neighborhood,
@@ -408,14 +410,15 @@ class DirectionalGridCRF(CRF):
         edges = np.vstack(edges)
 
         if self.inference_method == "qpbo":
-            return inference_qpbo(x, unary_params, edge_weights, edges)
+            return inference_qpbo(unary_potentials, edge_weights, edges)
         #elif self.inference_method == "dai":
-            #return _inference_dai(x, unary_params, edge_weights, edges)
+            #return _inference_dai(unary_potentials, edge_weights, edges)
         elif self.inference_method == "lp":
-            return inference_lp(x, unary_params, edge_weights, edges, relaxed,
+            return inference_lp(unary_potentials, edge_weights, edges, relaxed,
                                 return_energy=return_energy)
         elif self.inference_method == "ad3":
-            return inference_ad3(x, unary_params, edge_weights, edges, relaxed)
+            return inference_ad3(unary_potentials, edge_weights, edges,
+                                 relaxed)
         else:
             raise ValueError("inference_method must be 'lp' or"
                              " 'ad3', got %s" % self.inference_method)

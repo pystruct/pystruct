@@ -178,21 +178,22 @@ class GraphCRF(CRF):
         if w.shape != (self.size_psi,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
-        unaries, edges = x
+        features, edges = x
         self.inference_calls += 1
         unary_params = self.get_unary_weights(w)
+        unary_potentials = features * unary_params
+
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
         if self.inference_method == "qpbo":
-            return inference_qpbo(unaries, unary_params, pairwise_params,
-                                  edges)
+            return inference_qpbo(unary_potentials, pairwise_params, edges)
         elif self.inference_method == "dai":
-            return inference_dai(unaries, unary_params, pairwise_params, edges)
+            return inference_dai(unary_potentials, pairwise_params, edges)
         elif self.inference_method == "lp":
-            return inference_lp(unaries, unary_params, pairwise_params, edges,
+            return inference_lp(unary_potentials, pairwise_params, edges,
                                 relaxed)
         elif self.inference_method == "ad3":
-            return inference_ad3(unaries, unary_params, pairwise_params, edges,
+            return inference_ad3(unary_potentials, pairwise_params, edges,
                                  relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
@@ -200,14 +201,14 @@ class GraphCRF(CRF):
 
     def loss_augment(self, x, y, w):
         unary_params = w[:self.n_states].copy()
-        unaries, edges = x
+        features, edges = x
         # avoid division by zero:
         if (unary_params == 0).any():
             raise ValueError("Unary params are exactly zero, can not do"
                              " loss-augmentation!")
-        unaries_ = unaries.copy()
+        features_ = features.copy()
         for l in np.arange(self.n_states):
-            # for each class, decrement unaries
+            # for each class, decrement features
             # for loss-agumention
-            unaries_[y != l, l] += 1. / unary_params[l]
-        return (unaries_, edges)
+            features_[y != l, l] += 1. / unary_params[l]
+        return (features_, edges)

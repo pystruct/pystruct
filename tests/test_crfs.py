@@ -63,7 +63,7 @@ def test_energy_lp():
         pairwise_params = np.random.normal() * np.eye(3)
         edges = make_grid_edges(x)
         # check map inference
-        inf_res, energy_lp = inference_lp(x, unary_params, pairwise_params,
+        inf_res, energy_lp = inference_lp(x * unary_params, pairwise_params,
                                           edges=edges, relaxed=True,
                                           return_energy=True, exact=True)
         found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)

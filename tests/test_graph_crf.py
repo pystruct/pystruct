@@ -47,7 +47,7 @@ def test_graph_crf_energy_lp_integral():
     crf = GraphCRF(n_states=2, inference_method='lp')
     unary_params = crf.get_unary_weights(w)
     pairwise_params = crf.get_pairwise_weights(w)
-    inf_res, energy_lp = inference_lp(x_1, unary_params, pairwise_params,
+    inf_res, energy_lp = inference_lp(x_1 * unary_params, pairwise_params,
                                       edges=g_1, relaxed=True,
                                       return_energy=True, exact=True)
     # integral solution
@@ -61,14 +61,14 @@ def test_graph_crf_energy_lp_relaxed():
     crf = GraphCRF(n_states=2, inference_method='lp')
     unary_params = crf.get_unary_weights(w)
     pairwise_params = crf.get_pairwise_weights(w)
-    inf_res, energy_lp = inference_lp(x_2, unary_params, pairwise_params,
+    inf_res, energy_lp = inference_lp(x_2 * unary_params, pairwise_params,
                                       edges=g_2, relaxed=True,
                                       return_energy=True, exact=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x_2, g_2), inf_res)))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
-    inf_res, energy_lp = inference_lp(x, unary_params, -pairwise_params,
+    inf_res, energy_lp = inference_lp(x * unary_params, -pairwise_params,
                                       edges=g_1, relaxed=True,
                                       return_energy=True, exact=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x, g_1), inf_res)))

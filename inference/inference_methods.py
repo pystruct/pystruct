@@ -9,9 +9,9 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def inference_qpbo(x, unary_params, pairwise_params, edges):
-    n_states = x.shape[-1]
-    unaries = (-1000 * unary_params * x).copy().astype(np.int32)
+def inference_qpbo(unary_potentials, pairwise_params, edges):
+    n_states = unary_potentials.shape[-1]
+    unaries = (-1000 * unary_potentials).copy().astype(np.int32)
     unaries = unaries.reshape(-1, n_states)
     pairwise = (-1000 * pairwise_params).copy().astype(np.int32)
     edges = edges.astype(np.int32)
@@ -28,26 +28,26 @@ def inference_qpbo(x, unary_params, pairwise_params, edges):
         edge_weights = pairwise
     y = alpha_expansion_general_graph(edges, unaries, edge_weights,
                                       random_seed=1)
-    return y.reshape(x.shape[:-1])
+    return y.reshape(unary_potentials.shape[:-1])
 
 
-def inference_dai(x, unary_params, pairwise_params, edges):
+def inference_dai(unary_potentials, pairwise_params, edges):
     ## build graph
-    n_states = x.shape[-1]
-    log_unaries = unary_params * x.reshape(-1, n_states)
+    n_states = unary_potentials.shape[-1]
+    log_unaries = unary_potentials.reshape(-1, n_states)
     max_entry = max(np.max(log_unaries), 1)
     unaries = np.exp(log_unaries / max_entry)
 
     y = mrf(unaries, edges, np.exp(pairwise_params / max_entry), alg='jt')
-    y = y.reshape(x.shape[:-1])
+    y = y.reshape(unary_potentials.shape[:-1])
 
     return y
 
 
-def inference_lp(x, unary_params, pairwise_params, edges, relaxed=False,
+def inference_lp(unary_potentials, pairwise_params, edges, relaxed=False,
                  return_energy=False, exact=False):
-    n_states = x.shape[-1]
-    unaries = unary_params * x.reshape(-1, n_states)
+    n_states = unary_potentials.shape[-1]
+    unaries = unary_potentials.reshape(-1, n_states)
     if pairwise_params.shape == (n_states, n_states):
         # only one matrix given
         edge_weights = np.repeat(pairwise_params[np.newaxis, :, :],
@@ -70,26 +70,26 @@ def inference_lp(x, unary_params, pairwise_params, edges, relaxed=False,
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
-        unary_marginals = unary_marginals.reshape(x.shape)
+        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         if pairwise_params.shape == (n_states, n_states):
             pairwise_accumulated = pairwise_marginals.sum(axis=0)
-            pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
-                                                                x.shape[-1])
+            pairwise_accumulated = pairwise_accumulated.reshape(n_states,
+                                                                n_states)
             y = (unary_marginals, pairwise_accumulated)
         else:
             y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
-        y = y.reshape(x.shape[:-1])
+        y = y.reshape(unary_potentials.shape[:-1])
     if return_energy:
         return y, energy
     return y
 
 
-def inference_ad3(x, unary_params, pairwise_params, edges, relaxed=False,
+def inference_ad3(unary_potentials, pairwise_params, edges, relaxed=False,
                   verbose=0):
-    n_states = x.shape[-1]
-    unaries = unary_params * x.reshape(-1, n_states)
+    n_states = unary_potentials.shape[-1]
+    unaries = unary_potentials.reshape(-1, n_states)
     if pairwise_params.shape == (n_states, n_states):
         # only one matrix given
         edge_weights = np.repeat(pairwise_params[np.newaxis, :, :],
@@ -107,15 +107,15 @@ def inference_ad3(x, unary_params, pairwise_params, edges, relaxed=False,
     if n_fractional:
         print("fractional solutions found: %d" % n_fractional)
     if relaxed:
-        unary_marginals = unary_marginals.reshape(x.shape)
+        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         if pairwise_params.shape == (n_states, n_states):
             pairwise_accumulated = pairwise_marginals.sum(axis=0)
-            pairwise_accumulated = pairwise_accumulated.reshape(x.shape[-1],
-                                                                x.shape[-1])
+            pairwise_accumulated = pairwise_accumulated.reshape(n_states,
+                                                                n_states)
             y = (unary_marginals, pairwise_accumulated)
         else:
             y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
-        y = y.reshape(x.shape[:-1])
+        y = y.reshape(unary_potentials.shape[:-1])
     return y
