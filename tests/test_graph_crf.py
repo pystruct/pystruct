@@ -72,3 +72,16 @@ def test_graph_crf_energy_lp_relaxed():
                                        edges=g_1, relaxed=True,
                                        return_energy=True, exact=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x, g_1), inf_res)))
+
+
+def test_graph_crf_loss_augment():
+    x = (x_1, g_1)
+    y = y_1
+    crf = GraphCRF(n_states=2)
+    x_loss_augmented = crf.loss_augment(x, y, w)
+    # check that y has same energy with loss and loss-augmented x
+    assert_almost_equal(np.dot(w, crf.psi(x, y)),
+                        np.dot(w, crf.psi(x_loss_augmented, y)))
+    # check that y_2 fulfulls energy + loss condition
+    assert_almost_equal(np.dot(w, crf.psi(x, y_2)) + crf.loss(y, y_2),
+                        np.dot(w, crf.psi(x_loss_augmented, y_2)))

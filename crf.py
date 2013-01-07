@@ -722,16 +722,17 @@ class GraphCRF(CRF):
 
     def loss_augment(self, x, y, w):
         unary_params = w[:self.n_states].copy()
+        unaries, edges = x
         # avoid division by zero:
         if (unary_params == 0).any():
             raise ValueError("Unary params are exactly zero, can not do"
                              " loss-augmentation!")
-        x_ = x.copy()
+        unaries_ = unaries.copy()
         for l in np.arange(self.n_states):
             # for each class, decrement unaries
             # for loss-agumention
-            x_[y != l, l] += 1. / unary_params[l]
-        return x_
+            unaries_[y != l, l] += 1. / unary_params[l]
+        return (unaries_, edges)
 
 
 def exhaustive_loss_augmented_inference(problem, x, y, w):
