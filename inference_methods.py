@@ -45,7 +45,7 @@ def _inference_qpbo(x, unary_params, pairwise_params, edges):
         edge_weights = pairwise
     y = alpha_expansion_general_graph(edges, unaries, edge_weights,
                                       random_seed=1)
-    return y.reshape(x.shape[:2])
+    return y.reshape(x.shape[:-1])
 
 
 def _inference_dai(x, unary_params, pairwise_params, edges):
@@ -56,7 +56,7 @@ def _inference_dai(x, unary_params, pairwise_params, edges):
     unaries = np.exp(log_unaries / max_entry)
 
     y = mrf(unaries, edges, np.exp(pairwise_params / max_entry), alg='jt')
-    y = y.reshape(x.shape[:2])
+    y = y.reshape(x.shape[:-1])
 
     return y
 
@@ -97,7 +97,7 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
             y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
-        y = y.reshape(x.shape[0], x.shape[1])
+        y = y.reshape(x.shape[:-1])
     if return_energy:
         return y, energy
     return y
@@ -134,5 +134,5 @@ def _inference_ad3(x, unary_params, pairwise_params, edges,
             y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
-        y = y.reshape(x.shape[0], x.shape[1])
+        y = y.reshape(x.shape[:-1])
     return y
