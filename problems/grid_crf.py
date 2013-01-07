@@ -136,8 +136,9 @@ class GridCRF(CRF):
         # y is a labeling
         if isinstance(y, tuple):
             # y can also be continuous (from lp)
-            # in this case, it comes with accumulated edge marginals
+            # in this case, it comes with edge marginals
             y, pw = y
+            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
             x_flat = x.reshape(-1, x.shape[-1])
             y_flat = y.reshape(-1, y.shape[-1])
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
@@ -196,11 +197,11 @@ class GridCRF(CRF):
             shape (n_edges, n_states, n_states).
 
         """
+        self.inference_calls += 1
         unary_params = self.get_unary_weights(w)
         unary_potentials = x * unary_params
-        pairwise_params = self.get_pairwise_weights(w)
-        self.inference_calls += 1
         edges = make_grid_edges(x, neighborhood=self.neighborhood)
+        pairwise_params = self.get_pairwise_weights(w)
         if self.inference_method == "qpbo":
             return inference_qpbo(unary_potentials, pairwise_params, edges)
         elif self.inference_method == "dai":

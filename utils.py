@@ -41,6 +41,7 @@ def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
         x_flat = x.reshape(-1, x.shape[-1])
         y_flat = y.reshape(-1, y.shape[-1])
         unaries_acc = np.sum(x_flat * y_flat, axis=0)
+        pw = pw.reshape(-1, n_states, n_states).sum(axis=0)
     else:
         ## unary features:
         gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
