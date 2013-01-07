@@ -159,11 +159,6 @@ class StructuredSVM(object):
                                            candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
 
-                # check that the slack fits the loss-augmented inference
-                dpsi_ = self.problem._loss_augmented_dpsi(x, y, y_hat, w)
-                if np.abs(slack + min(0, np.dot(w, dpsi_))) > 0.01:
-                    tracer()
-
                 current_loss += loss
 
                 if self.verbose > 1:
@@ -211,7 +206,9 @@ class StructuredSVM(object):
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
 
             # hack to make loss-augmented prediction working:
-            w[:self.problem.n_states][w[:self.problem.n_states] == 0] = 1e-10
+            unary_weights = self.problem.get_unary_weights(w)
+            unary_weights[unary_weights == 0] = 1e-10
+            #w[:self.problem.n_states][w[:self.problem.n_states] == 0] = 1e-10
             slacks = [max(np.max([-np.dot(w, psi_) + loss_
                                   for _, psi_, loss_ in sample]), 0)
                       for sample in constraints]
