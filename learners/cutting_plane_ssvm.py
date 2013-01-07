@@ -161,7 +161,7 @@ class StructuredSVM(object):
 
                 current_loss += loss
 
-                if self.verbose > 1:
+                if self.verbose > 3:
                     print("current slack: %f" % slack)
                 y_hat_plain = unwrap_pairwise(y_hat)
                 already_active = np.any([True for y__, _, _ in constraints[i]
