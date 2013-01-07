@@ -21,7 +21,8 @@ class CRF(StructuredProblem):
         """Modifies x to model loss-augmentation.
 
         Modifies x such that
-        np.dot(psi(x, y_hat), w) == np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        np.dot(psi(x_hat, y_hat), w)
+            == np.dot(psi(x, y_hat), w) + loss(y, y_hat)
 
         Parameters
         ----------
