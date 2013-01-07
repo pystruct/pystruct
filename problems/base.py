@@ -21,7 +21,7 @@ class StructuredProblem(object):
         return (self.psi(x_loss_augmented, y)
                 - self.psi(x_loss_augmented, y_hat))
 
-    def inference(self, x, w):
+    def inference(self, x, w, relaxed=None):
         # IMPLEMENT ME
         pass
 
@@ -43,6 +43,6 @@ class StructuredProblem(object):
         # all entries minus correct ones
         return np.prod(y.shape) - np.sum(y_one_hot * y_hat)
 
-    def loss_augmented_inference(self, x, y, w):
+    def loss_augmented_inference(self, x, y, w, relaxed=None):
         print("FALLBACK no loss augmented inference found")
         return self.inference(x, w)

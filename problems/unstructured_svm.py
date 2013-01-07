@@ -19,14 +19,19 @@ class BinarySVMProblem(StructuredProblem):
     """
     def __init__(self, n_features):
         self.size_psi = n_features + 1
+        self.n_states = 2
+        self.inference_calls = 0
 
     def psi(self, x, y):
         if y not in [-1, 1]:
             raise ValueError("y has to be either -1 or +1, got %s" % repr(y))
-        return y * np.vstack([x, [1]])
+        return y * np.hstack([x, [1]])
 
-    def inference(self, x, w):
+    def inference(self, x, w, relaxed=None):
         return np.sign(np.dot(x, w[:-1]) + w[-1])
 
-    def loss_augmented_inference(self, x, y, w):
+    def loss_augmented_inference(self, x, y, w, relaxed=None):
         return np.sign(np.dot(x, w[:-1]) + w[-1] - y)
+
+    def get_unary_weights(self, w):
+        return np.array([])
