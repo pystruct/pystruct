@@ -28,9 +28,9 @@ def _make_grid_edges(x, neighborhood=4, return_lists=False):
 
 def _inference_qpbo(x, unary_params, pairwise_params, edges):
     n_states = x.shape[-1]
-    unaries = (-1000 * unary_params * x).astype(np.int32)
+    unaries = (-1000 * unary_params * x).copy().astype(np.int32)
     unaries = unaries.reshape(-1, n_states)
-    pairwise = (-1000 * pairwise_params).astype(np.int32)
+    pairwise = (-1000 * pairwise_params).copy().astype(np.int32)
     edges = edges.astype(np.int32)
     if pairwise_params.shape == (n_states, n_states):
         # only one matrix given
