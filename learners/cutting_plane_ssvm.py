@@ -167,7 +167,7 @@ class StructuredSVM(object):
                 already_active = np.any([True for y__, _, _ in constraints[i]
                                          if (y_hat_plain ==
                                              unwrap_pairwise(y__)).all()])
-                if already_active or (y_hat == y).all():
+                if already_active:
                     continue
 
                 if self.check_constraints:

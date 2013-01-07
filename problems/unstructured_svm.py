@@ -208,6 +208,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
             raise ValueError("y has to be between 0 and %d, got %s."
                              % (self.n_states, repr(y)))
         scores = np.dot(w.reshape(self.n_states, -1), np.hstack([x, [1]]))
+        scores[y] -= 1
         return np.argmax(scores)
 
     def get_unary_weights(self, w):
