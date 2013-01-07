@@ -113,6 +113,8 @@ class GraphCRF(CRF):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
             unaries_acc = np.sum(unary_evidence * unary_marginals, axis=0)
+            # accumulate pairwise
+            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
         else:
             n_nodes = y.shape[0]
             gx = np.ogrid[:n_nodes]
