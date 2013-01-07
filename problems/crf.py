@@ -36,7 +36,10 @@ class CRF(StructuredProblem):
             Weights that will be used for inference.
             TODO: refactor this :-/
 
-        Return
+        Returns
+        -------
+        x_hat : ndarray, shape (n_nodes, n_states)
+            Loss-augmented unary evidence.
         """
         unary_params = w[:self.n_states].copy()
         # avoid division by zero:
