@@ -167,7 +167,7 @@ class StructuredSVM(object):
                 already_active = np.any([True for y__, _, _ in constraints[i]
                                          if (y_hat_plain ==
                                              unwrap_pairwise(y__)).all()])
-                if already_active:
+                if already_active or (y_hat == y).all():
                     continue
 
                 if self.check_constraints:
@@ -209,9 +209,10 @@ class StructuredSVM(object):
             unary_weights = self.problem.get_unary_weights(w)
             unary_weights[unary_weights == 0] = 1e-10
             #w[:self.problem.n_states][w[:self.problem.n_states] == 0] = 1e-10
-            slacks = [max(np.max([-np.dot(w, psi_) + loss_
-                                  for _, psi_, loss_ in sample]), 0)
+            slacks = [[-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]
                       for sample in constraints]
+            # slacks are non-negative. Not all sample have slacks
+            slacks = [max(np.max(s or 0), 0) for s in slacks]
             sum_of_slacks = np.sum(slacks)
             objective_p = self.C * sum_of_slacks / len(X) + np.sum(w ** 2) / 2.
             primal_objective_curve.append(objective_p)
