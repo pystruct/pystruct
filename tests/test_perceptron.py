@@ -1,7 +1,7 @@
 #import numpy as np
 from numpy.testing import assert_array_equal
-from pystruct.crf import GridCRF
-from pystruct.structured_perceptron import StructuredPerceptron
+from pystruct.problems import GridCRF
+from pystruct.learners import StructuredPerceptron
 import pystruct.toy_datasets as toy
 
 

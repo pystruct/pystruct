@@ -3,10 +3,9 @@ from numpy.testing import assert_array_equal
 from nose.tools import assert_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.crf import exhaustive_loss_augmented_inference
-from pystruct.latent_crf import LatentGridCRF, LatentDirectionalGridCRF
-from pystruct.latent_crf import kmeans_init
-from pystruct.inference_methods import _make_grid_edges
+from pystruct.utils import exhaustive_loss_augmented_inference, make_grid_edges
+from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
+from pystruct.problems.latent_crf import kmeans_init
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -14,7 +13,7 @@ tracer = Tracer()
 
 def test_k_means_initialization():
     X, Y = toy.generate_big_checker(n_samples=10)
-    edges = _make_grid_edges(X[0], return_lists=True)
+    edges = make_grid_edges(X[0], return_lists=True)
 
     # sanity check for one state
     H = kmeans_init(X, Y, edges, n_states_per_label=1)
@@ -27,7 +26,7 @@ def test_k_means_initialization():
 
     # for dataset with more than two states
     X, Y = toy.generate_blocks_multinomial(n_samples=10)
-    edges = _make_grid_edges(X[0], return_lists=True)
+    edges = make_grid_edges(X[0], return_lists=True)
 
     # sanity check for one state
     H = kmeans_init(X, Y, edges, n_states_per_label=1)

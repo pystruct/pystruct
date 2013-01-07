@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from pystruct.crf import GridCRF, DirectionalGridCRF
-from pystruct.structured_svm import StructuredSVM, SubgradientStructuredSVM
+
+from pystruct.problems import GridCRF, DirectionalGridCRF
+from pystruct.learners import StructuredSVM, SubgradientStructuredSVM
 import pystruct.toy_datasets as toy
 
 

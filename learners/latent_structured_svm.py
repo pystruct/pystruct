@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
 
-from structured_svm import StructuredSVM, inference, find_constraint
+from .cutting_plane_ssvm import StructuredSVM
+from ..utils import inference, find_constraint
 
 from IPython.core.debugger import Tracer
 

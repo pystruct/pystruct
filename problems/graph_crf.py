@@ -1,7 +1,7 @@
 import numpy as np
 
-from ..inference import (_inference_qpbo, _inference_dai, _inference_lp,
-                         _inference_ad3)
+from ..inference import (inference_qpbo, inference_dai, inference_lp,
+                         inference_ad3)
 from .crf import CRF
 
 
@@ -184,17 +184,16 @@ class GraphCRF(CRF):
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
         if self.inference_method == "qpbo":
-            return _inference_qpbo(unaries, unary_params, pairwise_params,
-                                   edges)
-        elif self.inference_method == "dai":
-            return _inference_dai(unaries, unary_params, pairwise_params,
+            return inference_qpbo(unaries, unary_params, pairwise_params,
                                   edges)
+        elif self.inference_method == "dai":
+            return inference_dai(unaries, unary_params, pairwise_params, edges)
         elif self.inference_method == "lp":
-            return _inference_lp(unaries, unary_params, pairwise_params, edges,
-                                 relaxed)
+            return inference_lp(unaries, unary_params, pairwise_params, edges,
+                                relaxed)
         elif self.inference_method == "ad3":
-            return _inference_ad3(unaries, unary_params, pairwise_params,
-                                  edges, relaxed)
+            return inference_ad3(unaries, unary_params, pairwise_params, edges,
+                                 relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)

@@ -1,9 +1,9 @@
 import numpy as np
 
 from .crf import CRF
-from ..inference_methods import (_inference_qpbo, _inference_dai,
-                                 _inference_lp, _inference_ad3,
-                                 _make_grid_edges)
+from ..inference import (inference_qpbo, inference_dai, inference_lp,
+                         inference_ad3)
+from ..utils import make_grid_edges
 
 
 def pairwise_grid_features(grid_labels, neighborhood=4):
@@ -199,17 +199,17 @@ class GridCRF(CRF):
         unary_params = self.get_unary_weights(w)
         pairwise_params = self.get_pairwise_weights(w)
         self.inference_calls += 1
-        edges = _make_grid_edges(x, neighborhood=self.neighborhood)
+        edges = make_grid_edges(x, neighborhood=self.neighborhood)
         if self.inference_method == "qpbo":
-            return _inference_qpbo(x, unary_params, pairwise_params, edges)
+            return inference_qpbo(x, unary_params, pairwise_params, edges)
         elif self.inference_method == "dai":
-            return _inference_dai(x, unary_params, pairwise_params, edges)
+            return inference_dai(x, unary_params, pairwise_params, edges)
         elif self.inference_method == "lp":
-            return _inference_lp(x, unary_params, pairwise_params, edges,
-                                 relaxed)
+            return inference_lp(x, unary_params, pairwise_params, edges,
+                                relaxed)
         elif self.inference_method == "ad3":
-            return _inference_ad3(x, unary_params, pairwise_params, edges,
-                                  relaxed)
+            return inference_ad3(x, unary_params, pairwise_params, edges,
+                                 relaxed)
         else:
             raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
                              % self.inference_method)
@@ -329,8 +329,8 @@ class DirectionalGridCRF(CRF):
             unaries_acc = np.sum(x_flat * y_flat, axis=0)
             # pw contains separate entries for all edges
             # we need to find out which belong to which kind
-            edges = _make_grid_edges(x, neighborhood=self.neighborhood,
-                                     return_lists=True)
+            edges = make_grid_edges(x, neighborhood=self.neighborhood,
+                                    return_lists=True)
             n_edges = [len(e) for e in edges]
             n_edges.insert(0, 0)
             edge_boundaries = np.cumsum(n_edges)
@@ -398,8 +398,8 @@ class DirectionalGridCRF(CRF):
         unary_params = self.get_unary_weights(w)
         # extract pairwise weights of shape n_edge_types x n_states x n_states
         pairwise_params = self.get_pairwise_weights(w)
-        edges = _make_grid_edges(x, neighborhood=self.neighborhood,
-                                 return_lists=True)
+        edges = make_grid_edges(x, neighborhood=self.neighborhood,
+                                return_lists=True)
         n_edges = [len(e) for e in edges]
         # replicate pairwise weights for edges of certain type
         edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
@@ -408,15 +408,14 @@ class DirectionalGridCRF(CRF):
         edges = np.vstack(edges)
 
         if self.inference_method == "qpbo":
-            return _inference_qpbo(x, unary_params, edge_weights, edges)
+            return inference_qpbo(x, unary_params, edge_weights, edges)
         #elif self.inference_method == "dai":
             #return _inference_dai(x, unary_params, edge_weights, edges)
         elif self.inference_method == "lp":
-            return _inference_lp(x, unary_params, edge_weights, edges, relaxed,
-                                 return_energy=return_energy)
+            return inference_lp(x, unary_params, edge_weights, edges, relaxed,
+                                return_energy=return_energy)
         elif self.inference_method == "ad3":
-            return _inference_ad3(x, unary_params, edge_weights, edges,
-                                  relaxed)
+            return inference_ad3(x, unary_params, edge_weights, edges, relaxed)
         else:
             raise ValueError("inference_method must be 'lp' or"
                              " 'ad3', got %s" % self.inference_method)

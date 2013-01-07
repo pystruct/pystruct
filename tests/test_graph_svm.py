@@ -1,10 +1,10 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 #from nose.tools import assert_true
-from pystruct.crf import GraphCRF
-from pystruct.structured_svm import StructuredSVM
+from pystruct.problems import GraphCRF
+from pystruct.learners import StructuredSVM
 import pystruct.toy_datasets as toy
-from pystruct.inference_methods import _make_grid_edges
+from pystruct.utils import make_grid_edges
 
 
 def test_binary_blocks_cutting_plane():
@@ -27,7 +27,7 @@ def test_binary_blocks_cutting_plane():
         x2, y2 = x2[:-1], y2[:-1]
         # generate graphs
         X_ = [x1, x2, x3]
-        G = [_make_grid_edges(x) for x in X_]
+        G = [make_grid_edges(x) for x in X_]
 
         # reshape / flatten x and y
         X_ = [x.reshape(-1, n_states) for x in X_]

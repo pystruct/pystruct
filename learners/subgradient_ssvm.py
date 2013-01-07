@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .cutting_plane_ssvm import StructuredSVM
-from .tools import find_constraint
+from ..utils import find_constraint
 
 
 class SubgradientStructuredSVM(StructuredSVM):

@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 
 from .base import StructuredProblem
@@ -57,18 +56,3 @@ class CRF(StructuredProblem):
                              (self.size_psi, w.shape))
         x_ = self.loss_augment(x, y, w)
         return self.inference(x_, w, relaxed)
-
-
-def exhaustive_loss_augmented_inference(problem, x, y, w):
-    size = np.prod(x.shape[:-1])
-    best_y = None
-    best_energy = np.inf
-    for y_hat in itertools.product(range(problem.n_states), repeat=size):
-        y_hat = np.array(y_hat).reshape(x.shape[:-1])
-        #print("trying %s" % repr(y_hat))
-        psi = problem.psi(x, y_hat)
-        energy = -problem.loss(y, y_hat) - np.dot(w, psi)
-        if energy < best_energy:
-            best_energy = energy
-            best_y = y_hat
-    return best_y

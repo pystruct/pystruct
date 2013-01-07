@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.optimize import fmin
 
-from .cutting_pane_ssvm import StructuredSVM
-from .tools import find_constraint
+from .cutting_plane_ssvm import StructuredSVM
+from ..utils import find_constraint
 
 
 class PrimalDSStructuredSVM(StructuredSVM):

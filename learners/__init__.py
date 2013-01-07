@@ -1,7 +1,9 @@
 from .cutting_plane_ssvm import StructuredSVM
-from .subgradient_sssvm import SubgradientStructuredSVM
+from .subgradient_ssvm import SubgradientStructuredSVM
 from .downhill_simplex_ssvm import PrimalDSStructuredSVM
+from .structured_perceptron import StructuredPerceptron
+from .latent_structured_svm import LatentSSVM
 
 
 __all__ = ["StructuredSVM", "SubgradientStructuredSVM",
-           "PrimalDSStructuredSVM"]
+           "PrimalDSStructuredSVM", "StructuredPerceptron", "LatentSSVM"]

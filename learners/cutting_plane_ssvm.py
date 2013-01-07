@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
 
-from ..inference.base import unwrap_pairwise
-from .tools import find_constraint
+from ..utils import unwrap_pairwise, find_constraint
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
