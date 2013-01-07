@@ -1,32 +1,15 @@
 import numpy as np
 from pyqpbo import alpha_expansion_general_graph
 from daimrf import mrf
-from linear_programming import lp_general_graph
 import AD3
+
+from .linear_programming import lp_general_graph
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def _make_grid_edges(x, neighborhood=4, return_lists=False):
-    if neighborhood not in [4, 8]:
-        raise ValueError("neighborhood can only be '4' or '8', got %s" %
-                         repr(neighborhood))
-    inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
-    inds = inds.astype(np.int64)
-    right = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
-    down = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
-    edges = [right, down]
-    if neighborhood == 8:
-        upright = np.c_[inds[1:, :-1].ravel(), inds[:-1, 1:].ravel()]
-        downright = np.c_[inds[:-1, :-1].ravel(), inds[1:, 1:].ravel()]
-        edges.extend([upright, downright])
-    if return_lists:
-        return edges
-    return np.vstack(edges)
-
-
-def _inference_qpbo(x, unary_params, pairwise_params, edges):
+def inference_qpbo(x, unary_params, pairwise_params, edges):
     n_states = x.shape[-1]
     unaries = (-1000 * unary_params * x).copy().astype(np.int32)
     unaries = unaries.reshape(-1, n_states)
@@ -48,7 +31,7 @@ def _inference_qpbo(x, unary_params, pairwise_params, edges):
     return y.reshape(x.shape[:-1])
 
 
-def _inference_dai(x, unary_params, pairwise_params, edges):
+def inference_dai(x, unary_params, pairwise_params, edges):
     ## build graph
     n_states = x.shape[-1]
     log_unaries = unary_params * x.reshape(-1, n_states)
@@ -61,8 +44,8 @@ def _inference_dai(x, unary_params, pairwise_params, edges):
     return y
 
 
-def _inference_lp(x, unary_params, pairwise_params, edges,
-                  relaxed=False, return_energy=False, exact=False):
+def inference_lp(x, unary_params, pairwise_params, edges, relaxed=False,
+                 return_energy=False, exact=False):
     n_states = x.shape[-1]
     unaries = unary_params * x.reshape(-1, n_states)
     if pairwise_params.shape == (n_states, n_states):
@@ -103,8 +86,8 @@ def _inference_lp(x, unary_params, pairwise_params, edges,
     return y
 
 
-def _inference_ad3(x, unary_params, pairwise_params, edges,
-                   relaxed=False, verbose=0):
+def inference_ad3(x, unary_params, pairwise_params, edges, relaxed=False,
+                  verbose=0):
     n_states = x.shape[-1]
     unaries = unary_params * x.reshape(-1, n_states)
     if pairwise_params.shape == (n_states, n_states):
