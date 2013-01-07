@@ -28,9 +28,11 @@ class BinarySVMProblem(StructuredProblem):
         return y * np.hstack([x, [1]])
 
     def inference(self, x, w, relaxed=None):
+        self.inference_calls += 1
         return np.sign(np.dot(x, w[:-1]) + w[-1])
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
+        self.inference_calls += 1
         return np.sign(np.dot(x, w[:-1]) + w[-1] - y)
 
     def get_unary_weights(self, w):
