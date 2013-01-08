@@ -126,6 +126,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
         # one weight-vector per class, each with additional bias term
         self.size_psi = n_classes * (n_features + 1)
         self.n_states = n_classes
+        self.n_features = n_features
         self.inference_calls = 0
 
     def psi(self, x, y):
@@ -151,7 +152,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
             raise ValueError("y has to be between 0 and %d, got %s."
                              % (self.n_states, repr(y)))
         # put feature vector in the place of the weights corresponding to y
-        result = np.zeros(self.size_psi).reshape(self.n_states, -1)
+        result = np.zeros((self.n_states, self.n_features + 1))
         result[y, :] = np.hstack([x, [1]])
         return result.ravel()
 
