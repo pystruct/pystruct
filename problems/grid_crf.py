@@ -134,7 +134,7 @@ class GridCRF(CRF):
                 np.diag(np.diag(pairwise_params)))
 
 
-class DirectionalGridCRF(CRF):
+class DirectionalGridCRF(GridCRF):
     """CRF in which each direction of edges has their own set of parameters.
 
     Pairwise potentials are not symmetric and are independend for each kind of
@@ -167,11 +167,9 @@ class DirectionalGridCRF(CRF):
         Possible choices are 4 and 8.
     """
     def __init__(self, n_states=2, inference_method='lp', neighborhood=4):
-        CRF.__init__(self, n_states, inference_method)
+        GridCRF.__init__(self, n_states, inference_method,
+                         neighborhood=neighborhood)
         self.n_edge_types = 2 if neighborhood == 4 else 4
-        # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states + n_states * n_states * self.n_edge_types
-        self.neighborhood = neighborhood
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -236,9 +234,6 @@ class DirectionalGridCRF(CRF):
         feature = np.hstack([unaries_acc, pw.ravel()])
         return feature
 
-    def get_edges(self, x):
-        return make_grid_edges(x, neighborhood=self.neighborhood)
-
     def get_pairwise_potentials(self, x, w):
         self._check_size_w(w)
         edges = make_grid_edges(x, neighborhood=self.neighborhood,
@@ -250,7 +245,3 @@ class DirectionalGridCRF(CRF):
         edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
                         for pw, n in zip(pairwise_params, n_edges)]
         return np.vstack(edge_weights)
-
-    def get_unary_potentials(self, x, w):
-        self._check_size_w(w)
-        return x * w[:self.n_states]
