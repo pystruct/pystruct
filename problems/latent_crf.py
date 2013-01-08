@@ -10,7 +10,8 @@ from scipy import sparse
 
 from sklearn.cluster import KMeans
 
-from . import GridCRF, CRF, DirectionalGridCRF
+from . import GridCRF, DirectionalGridCRF
+from ..inference import inference_dispatch
 from ..utils import make_grid_edges
 
 from IPython.core.debugger import Tracer
@@ -56,26 +57,26 @@ def kmeans_init(X, Y, edges, n_states_per_label=2, symmetric=True):
     return H
 
 
-class LatentCRF(CRF):
-    def __repr__(self):
-        return ("LatentCRF, n_labels : %d, n_states: %d, inference_method: %s"
-                % (self.n_states, self.n_labels, self.inference_method))
+#class LatentCRF(CRF):
+    #def __repr__(self):
+        #return ("LatentCRF, n_labels : %d, n_states: %d, inference_method: %s"
+                #% (self.n_states, self.n_labels, self.inference_method))
 
-    def loss_augment(self, x, h, w):
-        # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        unary_params = w[:self.n_states].copy()
-        # avoid division by zero:
-        unary_params[unary_params == 0] = 1e-10
-        for s in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_wide[h / self.n_states_per_label
-                   != s / self.n_states_per_label, s] += 1. / unary_params[s]
-        return x_wide
+    #def loss_augment(self, x, h, w):
+        ## augment unary potentials for latent states
+        #x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
+        #unary_params = w[:self.n_states].copy()
+        ## avoid division by zero:
+        #unary_params[unary_params == 0] = 1e-10
+        #for s in np.arange(self.n_states):
+            ## for each class, decrement unaries
+            ## for loss-agumention
+            #x_wide[h / self.n_states_per_label
+                   #!= s / self.n_states_per_label, s] += 1. / unary_params[s]
+        #return x_wide
 
 
-class LatentGridCRF(LatentCRF, GridCRF):
+class LatentGridCRF(GridCRF):
     """Latent variable CRF with 2d grid graph.
     """
     def __init__(self, n_labels, n_states_per_label=2,
@@ -94,13 +95,6 @@ class LatentGridCRF(LatentCRF, GridCRF):
         return kmeans_init(X, Y, [edges],
                            n_states_per_label=self.n_states_per_label)
 
-    def _loss_augmented_dpsi(self, x, h, h_hat, w):
-        # debugging only!
-        x_loss_augmented = self.loss_augment(x, h, w)
-        psi1 = GridCRF.psi(self, x_loss_augmented, h)
-        psi2 = GridCRF.psi(self, x_loss_augmented, h_hat)
-        return psi1 - psi2
-
     def psi(self, x, h):
         # x is unaries
         # h is latent labeling
@@ -108,35 +102,40 @@ class LatentGridCRF(LatentCRF, GridCRF):
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         return GridCRF.psi(self, x_wide, h)
 
-    def inference(self, x, w):
-        # augment unary potentials for latent states
+    def get_unary_potentials(self, x, w):
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        # do usual inference
-        h = GridCRF.inference(self, x_wide, w)
-        return h
+        return GridCRF.get_unary_potentials(self, x_wide, w)
 
-    def loss_augmented_inference(self, x, h, w, relaxed=False):
-        # augment unary potentials for latent states
-        x_wide = self.loss_augment(x, h, w)
-        # do usual inference
-        h = GridCRF.inference(self, x_wide, w, relaxed=relaxed)
-        return h
+    def loss_augmented_inference(self, x, h, w, relaxed=False,
+                                 return_energy=False):
+        self.inference_calls += 1
+        self._check_size_w(w)
+        unary_potentials = self.get_unary_potentials(x, w)
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+        # do loss-augmentation
+        for l in np.arange(self.n_states):
+            # for each class, decrement features
+            # for loss-agumention
+            unary_potentials[h // self.n_states_per_label
+                             != l // self.n_states_per_label, l] += 1.
+
+        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                  self.inference_method, relaxed=relaxed,
+                                  return_energy=return_energy)
 
     def latent(self, x, y, w):
-        # augment unary potentials for latent states
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        # do usual inference
-        unary_params = self.get_unary_weights(w)
+        unary_potentials = self.get_unary_potentials(x, w)
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
                         y[:, :, np.newaxis])
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        # work around the inference interface... why oh why?
-        x_wide[other_states] = (-1000 * np.sign(unary_params)
-                                * np.ones(x_wide.shape))[other_states]
-        h = GridCRF.inference(self, x_wide, w, relaxed=False)
-        if (h / self.n_states_per_label != y).any():
+        unary_potentials[other_states] = -1000
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+        h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                               self.inference_method, relaxed=False)
+        if (h // self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
                 tracer()
@@ -146,8 +145,8 @@ class LatentGridCRF(LatentCRF, GridCRF):
         return h
 
     def loss(self, h, h_hat):
-        return np.sum(h / self.n_states_per_label
-                      != h_hat / self.n_states_per_label)
+        return np.sum(h // self.n_states_per_label
+                      != h_hat // self.n_states_per_label)
 
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
@@ -159,7 +158,7 @@ class LatentGridCRF(LatentCRF, GridCRF):
         return super(LatentGridCRF, self).continuous_loss(y_org, y_hat_org)
 
 
-class LatentDirectionalGridCRF(LatentCRF, DirectionalGridCRF):
+class LatentDirectionalGridCRF(LatentGridCRF, DirectionalGridCRF):
     """Latent variable CRF with directional 2d grid graph.
     """
     def __init__(self, n_labels, n_states_per_label=2,
@@ -214,14 +213,14 @@ class LatentDirectionalGridCRF(LatentCRF, DirectionalGridCRF):
         unary_params = self.get_unary_weights(w)
         # forbid h that is incompoatible with y
         # by modifying unary params
-        other_states = (np.arange(self.n_states) / self.n_states_per_label !=
+        other_states = (np.arange(self.n_states) // self.n_states_per_label !=
                         y[:, :, np.newaxis])
         x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         # work around the inference interface... why oh why?
         x_wide[other_states] = (-1000 * np.sign(unary_params)
                                 * np.ones(x_wide.shape))[other_states]
         h = DirectionalGridCRF.inference(self, x_wide, w, relaxed=False)
-        if (h / self.n_states_per_label != y).any():
+        if (h // self.n_states_per_label != y).any():
             if np.any(w):
                 print("inconsistent h and y")
                 tracer()
@@ -231,13 +230,13 @@ class LatentDirectionalGridCRF(LatentCRF, DirectionalGridCRF):
         return h
 
     def loss(self, h, h_hat):
-        return np.sum(h / self.n_states_per_label
-                      != h_hat / self.n_states_per_label)
+        return np.sum(h // self.n_states_per_label
+                      != h_hat // self.n_states_per_label)
 
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
         y_hat_org = y_hat.reshape(y.shape[0], y.shape[1], self.n_labels,
                                   self.n_states_per_label).sum(axis=-1)
-        y_org = y / self.n_states_per_label
+        y_org = y // self.n_states_per_label
         return DirectionalGridCRF.continuous_loss(self, y_org, y_hat_org)
