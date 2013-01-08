@@ -29,10 +29,21 @@ class GraphCRF(CRF):
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
     """
-    def __init__(self, n_states=2, inference_method='qpbo'):
+    def __init__(self, n_states=2, n_features=None, inference_method='qpbo'):
         CRF.__init__(self, n_states, inference_method)
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states + n_states * (n_states + 1) / 2
+        if n_features is None:
+            # backward compatibilty hack
+            n_features = n_states
+        self.n_features = n_features
+        self.size_psi = n_states * n_features + n_states * (n_states + 1) / 2
+
+    def _check_size_x(self, x):
+        features, edges = x
+        if features.shape[1] != self.n_features:
+            raise ValueError("Unary evidence should have %d feature per node,"
+                             " got %s instead."
+                             % (self.n_features, features.shape[1]))
 
     def get_pairwise_potentials(self, x, w):
         """Extracts the pairwise part of the weight vector.
@@ -48,7 +59,8 @@ class GraphCRF(CRF):
             Pairwise weights.
         """
         self._check_size_w(w)
-        pairwise_flat = np.asarray(w[self.n_states:])
+        self._check_size_x(x)
+        pairwise_flat = np.asarray(w[self.n_states * self.n_features:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         # set lower triangle of matrix, then make symmetric
         # we could try to redo this using ``scipy.spatial.distance`` somehow
@@ -70,8 +82,11 @@ class GraphCRF(CRF):
             Unary weights.
         """
         self._check_size_w(w)
+        self._check_size_x(x)
         features, edges = x
-        return features * w[:self.n_states]
+        pairwise_params = w[:self.n_states * self.n_features].reshape(
+            self.n_states, self.n_features)
+        return np.dot(features, pairwise_params.T)
 
     def get_edges(self, x):
         return x[1]
@@ -105,31 +120,30 @@ class GraphCRF(CRF):
             Feature vector associated with state (x, y).
 
         """
-        unary_evidence, edges = x
+        self._check_size_x(x)
+        features, edges = x
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
-            unaries_acc = np.sum(unary_evidence * unary_marginals, axis=0)
             # accumulate pairwise
             pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
         else:
             n_nodes = y.shape[0]
             gx = np.ogrid[:n_nodes]
-            selected_unaries = unary_evidence[gx, y]
-            unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                                      minlength=self.n_states)
+
+            #make one hot encoding
+            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
+            gx = np.ogrid[:n_nodes]
+            unary_marginals[gx, y] = 1
 
             ##accumulated pairwise
-            #make one hot encoding
-            labels = np.zeros((n_nodes, self.n_states),
-                              dtype=np.int)
-            gx = np.ogrid[:n_nodes]
-            labels[gx, y] = 1
-            pw = np.dot(labels[edges[:, 0]].T, labels[edges[:, 1]])
+            pw = np.dot(unary_marginals[edges[:, 0]].T,
+                        unary_marginals[edges[:, 1]])
 
+        unaries_acc = np.dot(features.T, unary_marginals)
         pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        feature = np.hstack([unaries_acc,
-                             pw[np.tri(self.n_states, dtype=np.bool)]])
-        return feature
+        psi_vector = np.hstack([unaries_acc.ravel(),
+                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        return psi_vector

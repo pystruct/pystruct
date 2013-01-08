@@ -5,8 +5,9 @@ from nose.tools import assert_almost_equal
 
 from pystruct.problems import GraphCRF
 
-w = np.array([1, 1,
-              .22,
+w = np.array([1, 0,  # unary
+              0, 1,
+              .22,  # pairwise
               0, .22])
 
 # triangle
