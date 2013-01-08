@@ -49,9 +49,7 @@ class GraphCRF(CRF):
         pairwise : ndarray, shape=(n_states, n_states)
             Pairwise weights.
         """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         # set lower triangle of matrix, then make symmetric
@@ -73,9 +71,7 @@ class GraphCRF(CRF):
         unary : ndarray, shape=(n_states)
             Unary weights.
         """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         return w[:self.n_states]
 
     def psi(self, x, y):
@@ -177,9 +173,7 @@ class GraphCRF(CRF):
             shape (n_states, n_states) of accumulated pairwise marginals.
 
         """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         features, edges = x
         self.inference_calls += 1
         unary_params = self.get_unary_weights(w)
@@ -202,6 +196,7 @@ class GraphCRF(CRF):
                              % self.inference_method)
 
     def loss_augment(self, x, y, w):
+        self._check_size_w(w)
         unary_params = w[:self.n_states].copy()
         features, edges = x
         # avoid division by zero:

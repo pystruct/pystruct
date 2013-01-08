@@ -77,9 +77,7 @@ class GridCRF(CRF):
         pairwise : ndarray, shape=(n_states, n_states)
             Pairwise weights.
         """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         pairwise_flat = np.asarray(w[self.n_states:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         # set lower triangle of matrix, then make symmetric
@@ -101,9 +99,7 @@ class GridCRF(CRF):
         unary : ndarray, shape=(n_states)
             Unary weights.
         """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         return w[:self.n_states]
 
     def psi(self, x, y):
@@ -197,6 +193,7 @@ class GridCRF(CRF):
             shape (n_edges, n_states, n_states).
 
         """
+        self._check_size_w(w)
         self.inference_calls += 1
         unary_params = self.get_unary_weights(w)
         unary_potentials = x * unary_params
@@ -270,9 +267,7 @@ class DirectionalGridCRF(CRF):
             Pairwise weights.
         """
 
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+        self._check_size_w(w)
         return w[self.n_states:].reshape(self.n_edge_types, self.n_states,
                                          self.n_states)
 
@@ -395,6 +390,7 @@ class DirectionalGridCRF(CRF):
             shape (n_states, n_states) of accumulated pairwise marginals.
 
         """
+        self._check_size_w(w)
         self.inference_calls += 1
         # extract unary weights
         unary_params = self.get_unary_weights(w)

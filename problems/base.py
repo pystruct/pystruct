@@ -11,6 +11,11 @@ class StructuredProblem(object):
     def __init__(self):
         self.size_psi = None
 
+    def _check_size_w(self, w):
+        if w.shape != (self.size_psi,):
+            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
+                             (self.size_psi, w.shape))
+
     def psi(self, x, y):
         # IMPLEMENT ME
         pass
