@@ -9,6 +9,24 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
+def inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                       inference_method, relaxed=False, return_energy=False,
+                       exact=False):
+    if inference_method == "qpbo":
+        return inference_qpbo(unary_potentials, pairwise_potentials, edges)
+    elif inference_method == "dai":
+        return inference_dai(unary_potentials, pairwise_potentials, edges)
+    elif inference_method == "lp":
+        return inference_lp(unary_potentials, pairwise_potentials, edges,
+                            relaxed, return_energy=return_energy, exact=exact)
+    elif inference_method == "ad3":
+        return inference_ad3(unary_potentials, pairwise_potentials, edges,
+                             relaxed)
+    else:
+        raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo' or"
+                         " 'dai', got %s" % inference_method)
+
+
 def _validate_params(unary_potentials, pairwise_params, edges):
     n_states = unary_potentials.shape[-1]
     if pairwise_params.shape == (n_states, n_states):

@@ -14,8 +14,9 @@ class CRF(StructuredProblem):
         self.inference_calls = 0
 
     def __repr__(self):
-        return ("GridCRF, n_states: %d, inference_method: %s"
-                % (self.n_states, self.inference_method))
+        return ("%s, n_states: %d, inference_method: %s"
+                % (type(self).__name__, self.n_states,
+                   self.inference_method))
 
     def loss_augment(self, x, y, w):
         """Modifies x to model loss-augmentation.

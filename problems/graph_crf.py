@@ -1,7 +1,6 @@
 import numpy as np
 
-from ..inference import (inference_qpbo, inference_dai, inference_lp,
-                         inference_ad3)
+from ..inference import inference_dispatch
 from .crf import CRF
 
 
@@ -180,20 +179,8 @@ class GraphCRF(CRF):
         unary_potentials = features * unary_params
 
         pairwise_params = self.get_pairwise_weights(w)
-        self.inference_calls += 1
-        if self.inference_method == "qpbo":
-            return inference_qpbo(unary_potentials, pairwise_params, edges)
-        elif self.inference_method == "dai":
-            return inference_dai(unary_potentials, pairwise_params, edges)
-        elif self.inference_method == "lp":
-            return inference_lp(unary_potentials, pairwise_params, edges,
-                                relaxed)
-        elif self.inference_method == "ad3":
-            return inference_ad3(unary_potentials, pairwise_params, edges,
-                                 relaxed)
-        else:
-            raise ValueError("inference_method must be 'qpbo' or 'dai', got %s"
-                             % self.inference_method)
+        return inference_dispatch(unary_potentials, pairwise_params, edges,
+                                  self.inference_method, relaxed)
 
     def loss_augment(self, x, y, w):
         self._check_size_w(w)
