@@ -44,7 +44,7 @@ def test_with_crosses_bad_init():
 
 
 def test_directional_bars():
-    for inference_method in ['ad3', 'qpbo', 'lp']:
+    for inference_method in ['lp']:
         X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
                                  total_size=6)
         n_labels = 2
