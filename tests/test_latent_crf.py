@@ -83,6 +83,45 @@ def test_blocks_crf():
     assert_equal(crf.loss(h, h_hat), 0)
 
 
+def test_blocks_crf_directional():
+    # test latent directional CRF on blocks
+    # test that all results are the same as equivalent LatentGridCRF
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1,  1,  1,  1,
+                  0,
+                  0,   0,
+                  -4, -4,  0,
+                  -4, -4,  0, 0])
+    w_directional = np.array([1,   1,  1,  1,
+                              0,   0, -4, -4,
+                              0,   0, -4, -4,
+                              -4, -4,  0,  0,
+                              -4, -4,  0,  0,
+                              0,   0, -4, -4,
+                              0,   0, -4, -4,
+                              -4, -4,  0,  0,
+                              -4, -4,  0,  0])
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    directional_crf = LatentDirectionalGridCRF(n_labels=2,
+                                               n_states_per_label=2)
+    h_hat = crf.inference(x, w)
+    h_hat_d = directional_crf.inference(x, w_directional)
+    assert_array_equal(h_hat, h_hat_d)
+
+    h = crf.latent(x, y, w)
+    h_d = directional_crf.latent(x, y, w_directional)
+    assert_array_equal(h, h_d)
+
+    h_hat = crf.loss_augmented_inference(x, y, w)
+    h_hat_d = directional_crf.loss_augmented_inference(x, y, w_directional)
+    assert_array_equal(h_hat, h_hat_d)
+
+    psi = crf.psi(x, h_hat)
+    psi_d = directional_crf.psi(x, h_hat)
+    assert_array_equal(np.dot(psi, w), np.dot(psi_d, w_directional))
+
+
 def test_latent_consistency_zero_pw():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
