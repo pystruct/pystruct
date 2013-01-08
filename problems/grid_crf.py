@@ -170,6 +170,7 @@ class DirectionalGridCRF(GridCRF):
         GridCRF.__init__(self, n_states, inference_method,
                          neighborhood=neighborhood)
         self.n_edge_types = 2 if neighborhood == 4 else 4
+        self.size_psi = n_states + self.n_edge_types * n_states ** 2
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
