@@ -66,8 +66,10 @@ def test_psi_discrete():
         psi_y = crf.psi(x, y)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first unary, then horizontal, then vertical
-        unary_psi = crf.get_unary_weights(psi_y)
-        pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+        unary_psi = psi_y[:crf.n_states]
+        pw_psi_horz, pw_psi_vert = psi_y[crf.n_states:].reshape(2,
+                                                                crf.n_states,
+                                                                crf.n_states)
         xx, yy = np.indices(y.shape)
         assert_array_almost_equal(unary_psi,
                                   np.bincount(y.ravel(), x[xx, yy, y].ravel()))
@@ -104,8 +106,10 @@ def test_psi_continuous():
         psi_y = crf.psi(x, y_pred)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first unary, then horizontal, then vertical
-        unary_psi = crf.get_unary_weights(psi_y)
-        pw_psi_horz, pw_psi_vert = crf.get_pairwise_weights(psi_y)
+        unary_psi = psi_y[:crf.n_states]
+        pw_psi_horz, pw_psi_vert = psi_y[crf.n_states:].reshape(2,
+                                                                crf.n_states,
+                                                                crf.n_states)
 
         # test unary
         xx, yy = np.indices(y.shape)

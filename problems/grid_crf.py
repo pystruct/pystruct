@@ -1,7 +1,6 @@
 import numpy as np
 
 from .crf import CRF
-from ..inference import inference_dispatch
 from ..utils import make_grid_edges
 
 
@@ -174,42 +173,6 @@ class DirectionalGridCRF(CRF):
         self.size_psi = n_states + n_states * n_states * self.n_edge_types
         self.neighborhood = neighborhood
 
-    def get_pairwise_weights(self, w):
-        """Extracts the pairwise part of the weight vector.
-
-        Parameters
-        ----------
-        w : ndarray, shape=(size_psi,)
-            Weight vector for CRF instance.
-
-        Returns
-        -------
-        pairwise : ndarray, shape=(n_edge_types, n_states, n_states)
-            Pairwise weights.
-        """
-
-        self._check_size_w(w)
-        return w[self.n_states:].reshape(self.n_edge_types, self.n_states,
-                                         self.n_states)
-
-    def get_unary_weights(self, w):
-        """Extracts the unary part of the weight vector.
-
-        Parameters
-        ----------
-        w : ndarray, shape=(size_psi,)
-            Weight vector for CRF instance.
-
-        Returns
-        -------
-        pairwise : ndarray, shape=(n_states,)
-            Unary weights.
-        """
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        return w[:self.n_states]
-
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
 
@@ -273,60 +236,21 @@ class DirectionalGridCRF(CRF):
         feature = np.hstack([unaries_acc, pw.ravel()])
         return feature
 
-    def inference(self, x, w, relaxed=False, return_energy=False):
-        """Inference for x using parameters w.
+    def get_edges(self, x):
+        return make_grid_edges(x, neighborhood=self.neighborhood)
 
-        Finds (approximately)
-        armin_y np.dot(w, psi(x, y))
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : ndarray, shape=(width, height, n_states)
-            Unary evidence / input.
-
-        w : ndarray, shape=(size_psi,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(width, height)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
-        """
+    def get_pairwise_potentials(self, x, w):
         self._check_size_w(w)
-        self.inference_calls += 1
-        # extract unary weights
-        unary_params = self.get_unary_weights(w)
-        unary_potentials = x * unary_params
-        # extract pairwise weights of shape n_edge_types x n_states x n_states
-        pairwise_params = self.get_pairwise_weights(w)
         edges = make_grid_edges(x, neighborhood=self.neighborhood,
                                 return_lists=True)
         n_edges = [len(e) for e in edges]
-        # replicate pairwise weights for edges of certain type
+        pairwise_params = w[self.n_states:].reshape(self.n_edge_types,
+                                                    self.n_states,
+                                                    self.n_states)
         edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
                         for pw, n in zip(pairwise_params, n_edges)]
-        edge_weights = np.vstack(edge_weights)
-        edges = np.vstack(edges)
+        return np.vstack(edge_weights)
 
-        return inference_dispatch(unary_potentials, edge_weights, edges,
-                                  self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy)
+    def get_unary_potentials(self, x, w):
+        self._check_size_w(w)
+        return x * w[:self.n_states]
