@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal, assert_almost_equal, assert_raises
+from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.problems import GridCRF
@@ -85,21 +85,12 @@ def test_loss_augmentation():
     pairwise_params[np.tri(2, dtype=np.bool)] = pairwise_flat
     pairwise_params = (pairwise_params + pairwise_params.T
                        - np.diag(np.diag(pairwise_params)))
-    crf = GridCRF()
-    x_loss_augmented = crf.loss_augment(x, y, w)
-    y_hat = crf.inference(x_loss_augmented, w)
-    # test that loss_augmented_inference does the same
-    y_hat_2 = crf.loss_augmented_inference(x, y, w)
-    assert_array_equal(y_hat_2, y_hat)
-    energy = compute_energy(x, y_hat, unary_params, pairwise_params)
-    energy_loss_augmented = compute_energy(x_loss_augmented, y_hat,
-                                           unary_params, pairwise_params)
+    crf = GridCRF(inference_method='lp')
+    y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
+    energy_loss_augmented = compute_energy(x, y_hat, unary_params,
+                                           pairwise_params)
 
-    assert_almost_equal(energy + crf.loss(y, y_hat), energy_loss_augmented)
-
-    # with zero in w:
-    unary_params[1] = 0
-    assert_raises(ValueError, crf.loss_augment, x, y, w)
+    assert_almost_equal(energy + crf.loss(y, y_hat), -energy_loss_augmented)
 
 
 def test_binary_blocks_crf():

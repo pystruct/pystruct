@@ -63,44 +63,6 @@ class GridCRF(CRF):
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states + n_states * (n_states + 1) / 2
 
-    def get_pairwise_weights(self, w):
-        """Extracts the pairwise part of the weight vector.
-
-        Parameters
-        ----------
-        w : ndarray, shape=(size_psi,)
-            Weight vector for CRF instance.
-
-        Returns
-        -------
-        pairwise : ndarray, shape=(n_states, n_states)
-            Pairwise weights.
-        """
-        self._check_size_w(w)
-        pairwise_flat = np.asarray(w[self.n_states:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
-
-    def get_unary_weights(self, w):
-        """Extracts the unary part of the weight vector.
-
-        Parameters
-        ----------
-        w : ndarray, shape=(size_psi,)
-            Weight vector for CRF instance.
-
-        Returns
-        -------
-        unary : ndarray, shape=(n_states)
-            Unary weights.
-        """
-        self._check_size_w(w)
-        return w[:self.n_states]
-
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
 
@@ -157,109 +119,20 @@ class GridCRF(CRF):
                              pw[np.tri(self.n_states, dtype=np.bool)]])
         return feature
 
-    def inference(self, x, w, relaxed=False):
-        """Inference for x using parameters w.
+    def get_edges(self, x):
+        return make_grid_edges(x, neighborhood=self.neighborhood)
 
-        Finds (approximately)
-        armin_y np.dot(w, psi(x, y))
-        using self.inference_method.
+    def get_unary_potentials(self, x, w):
+        return x * w[:self.n_states]
 
-
-        Parameters
-        ----------
-        x : ndarray, shape=(width, height, n_states)
-            Unary evidence / input.
-
-        w : ndarray, shape=(size_psi,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(width, height)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
-            pairwise_marginals is an array of
-            shape (n_edges, n_states, n_states).
-
-        """
-        self._check_size_w(w)
-        self.inference_calls += 1
-        unary_params = self.get_unary_weights(w)
-        unary_potentials = x * unary_params
-        edges = make_grid_edges(x, neighborhood=self.neighborhood)
-        pairwise_params = self.get_pairwise_weights(w)
-        return inference_dispatch(unary_potentials, pairwise_params, edges,
-                                  self.inference_method, relaxed)
-
-    def loss_augmented_inference(self, x, y, w, relaxed=False,
-                                 return_energy=False):
-        """Loss-augmented Inference for x relative to y using parameters w.
-
-        Finds (approximately)
-        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(y, y_hat)
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : ndarray, shape=(width, height, n_states)
-            Unary evidence / input.
-
-        y : ndarray, shape (width, height)
-            Ground truth labeling relative to which the loss
-            will be measured.
-
-        w : ndarray, shape=(size_psi,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(width, height)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
-        """
-        self.inference_calls += 1
-        self._check_size_w(w)
-        features, edges = x
-        unary_params = self.get_unary_weights(w)
-        unary_potentials = features * unary_params
-        pairwise_params = self.get_pairwise_weights(w)
-
-        # do loss-augmentation
-        for l in np.arange(self.n_states):
-            # for each class, decrement features
-            # for loss-agumention
-            unary_potentials[y != l, l] += 1.
-
-        return inference_dispatch(unary_potentials, pairwise_params, edges,
-                                  self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy)
+    def get_pairwise_potentials(self, x, w):
+        pairwise_flat = np.asarray(w[self.n_states:])
+        pairwise_params = np.zeros((self.n_states, self.n_states))
+        # set lower triangle of matrix, then make symmetric
+        # we could try to redo this using ``scipy.spatial.distance`` somehow
+        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
+        return (pairwise_params + pairwise_params.T -
+                np.diag(np.diag(pairwise_params)))
 
 
 class DirectionalGridCRF(CRF):
