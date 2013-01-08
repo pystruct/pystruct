@@ -205,10 +205,6 @@ class StructuredSVM(object):
                     break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
 
-            # hack to make loss-augmented prediction working:
-            unary_weights = self.problem.get_unary_weights(w)
-            unary_weights[unary_weights == 0] = 1e-10
-            #w[:self.problem.n_states][w[:self.problem.n_states] == 0] = 1e-10
             slacks = [[-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]
                       for sample in constraints]
             # slacks are non-negative. Not all sample have slacks

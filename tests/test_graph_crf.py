@@ -4,7 +4,6 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_almost_equal
 
 from pystruct.problems import GraphCRF
-from pystruct.inference import inference_lp
 
 w = np.array([1, 1,
               .22,
@@ -45,11 +44,8 @@ def test_graph_crf_continuous_inference():
 
 def test_graph_crf_energy_lp_integral():
     crf = GraphCRF(n_states=2, inference_method='lp')
-    unary_params = crf.get_unary_weights(w)
-    pairwise_params = crf.get_pairwise_weights(w)
-    inf_res, energy_lp = inference_lp(x_1 * unary_params, pairwise_params,
-                                      edges=g_1, relaxed=True,
-                                      return_energy=True, exact=True)
+    inf_res, energy_lp = crf.inference((x_1, g_1), w, relaxed=True,
+                                       return_energy=True, exact=True)
     # integral solution
     assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
     y = np.argmax(inf_res[0], axis=-1)
@@ -59,18 +55,14 @@ def test_graph_crf_energy_lp_integral():
 
 def test_graph_crf_energy_lp_relaxed():
     crf = GraphCRF(n_states=2, inference_method='lp')
-    unary_params = crf.get_unary_weights(w)
-    pairwise_params = crf.get_pairwise_weights(w)
-    inf_res, energy_lp = inference_lp(x_2 * unary_params, pairwise_params,
-                                      edges=g_2, relaxed=True,
-                                      return_energy=True, exact=True)
+    inf_res, energy_lp = crf.inference((x_1, g_1), w, relaxed=True,
+                                       return_energy=True, exact=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x_2, g_2), inf_res)))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
-    inf_res, energy_lp = inference_lp(x * unary_params, -pairwise_params,
-                                      edges=g_1, relaxed=True,
-                                      return_energy=True, exact=True)
+    inf_res, energy_lp = crf.inference((x, g_1), w, relaxed=True,
+                                       return_energy=True, exact=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x, g_1), inf_res)))
 
 

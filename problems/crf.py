@@ -1,6 +1,7 @@
 import numpy as np
 
 from .base import StructuredProblem
+from ..inference import inference_dispatch
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -18,46 +19,114 @@ class CRF(StructuredProblem):
                 % (type(self).__name__, self.n_states,
                    self.inference_method))
 
-    def loss_augment(self, x, y, w):
-        """Modifies x to model loss-augmentation.
+    def loss_augmented_inference(self, x, y, w, relaxed=False,
+                                 return_energy=False):
+        """Loss-augmented Inference for x relative to y using parameters w.
 
-        Modifies x such that
-        np.dot(psi(x_hat, y_hat), w)
-            == np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        Finds (approximately)
+        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(y, y_hat)
+        using self.inference_method.
+
 
         Parameters
         ----------
-        x : ndarray, shape (n_nodes, n_states)
-            Unary evidence / input to augment.
+        x : tuple
+            Instance of a graph with unary evidence.
+            x=(unaries, edges)
+            unaries are an nd-array of shape (n_nodes, n_states),
+            edges are an nd-array of shape (n_edges, 2)
 
         y : ndarray, shape (n_nodes,)
             Ground truth labeling relative to which the loss
             will be measured.
 
-        w : ndarray, shape (size_psi,)
-            Weights that will be used for inference.
-            TODO: refactor this :-/
+        w : ndarray, shape=(size_psi,)
+            Parameters for the CRF energy function.
+
+        relaxed : bool, default=False
+            Whether relaxed inference should be performed.
+            Only meaningful if inference method is 'lp' or 'ad3'.
+            By default fractional solutions are rounded. If relaxed=True,
+            fractional solutions are returned directly.
+
+        return_energy : bool, default=False
+            Whether to return the energy of the solution (x, y) that was found.
 
         Returns
         -------
-        x_hat : ndarray, shape (n_nodes, n_states)
-            Loss-augmented unary evidence.
-        """
-        unary_params = w[:self.n_states].copy()
-        # avoid division by zero:
-        if (unary_params == 0).any():
-            raise ValueError("Unary params are exactly zero, can not do"
-                             " loss-augmentation!")
-        x_ = x.copy()
-        for l in np.arange(self.n_states):
-            # for each class, decrement unaries
-            # for loss-agumention
-            x_[y != l, l] += 1. / unary_params[l]
-        return x_
+        y_pred : ndarray or tuple
+            By default an inter ndarray of shape=(n_nodes)
+            of variable assignments for x is returned.
+            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
+            a tuple (unary_marginals, pairwise_marginals)
+            containing the relaxed inference result is returned.
+            unary marginals is an array of shape (width, height, n_states),
+            pairwise_marginals is an array of
+            shape (n_states, n_states) of accumulated pairwise marginals.
 
-    def loss_augmented_inference(self, x, y, w, relaxed=False):
-        if w.shape != (self.size_psi,):
-            raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
-        x_ = self.loss_augment(x, y, w)
-        return self.inference(x_, w, relaxed)
+        """
+        self.inference_calls += 1
+        self._check_size_w(w)
+        unary_potentials = self.get_unary_potentials(x, w)
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+        # do loss-augmentation
+        for l in np.arange(self.n_states):
+            # for each class, decrement features
+            # for loss-agumention
+            unary_potentials[y != l, l] += 1.
+
+        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                  self.inference_method, relaxed=relaxed,
+                                  return_energy=return_energy)
+
+    def inference(self, x, w, relaxed=False, return_energy=False, exact=False):
+        """Inference for x using parameters w.
+
+        Finds (approximately)
+        armin_y np.dot(w, psi(x, y))
+        using self.inference_method.
+
+
+        Parameters
+        ----------
+        x : tuple
+            Instance of a graph with unary evidence.
+            x=(unaries, edges)
+            unaries are an nd-array of shape (n_nodes, n_states),
+            edges are an nd-array of shape (n_edges, 2)
+
+        w : ndarray, shape=(size_psi,)
+            Parameters for the CRF energy function.
+
+        relaxed : bool, default=False
+            Whether relaxed inference should be performed.
+            Only meaningful if inference method is 'lp' or 'ad3'.
+            By default fractional solutions are rounded. If relaxed=True,
+            fractional solutions are returned directly.
+
+        return_energy : bool, default=False
+            Whether to return the energy of the solution (x, y) that was found.
+
+        Returns
+        -------
+        y_pred : ndarray or tuple
+            By default an inter ndarray of shape=(width, height)
+            of variable assignments for x is returned.
+            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
+            a tuple (unary_marginals, pairwise_marginals)
+            containing the relaxed inference result is returned.
+            unary marginals is an array of shape (width, height, n_states),
+            pairwise_marginals is an array of
+            shape (n_states, n_states) of accumulated pairwise marginals.
+
+        """
+        self._check_size_w(w)
+        self.inference_calls += 1
+        unary_potentials = self.get_unary_potentials(x, w)
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+
+        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                  self.inference_method, relaxed=relaxed,
+                                  return_energy=return_energy, exact=exact)
