@@ -8,7 +8,7 @@ import pystruct.toy_datasets as toy
 def test_binary_blocks():
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = StructuredPerceptron(problem=crf, max_iter=30)
+    clf = StructuredPerceptron(problem=crf, max_iter=40)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
