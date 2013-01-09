@@ -56,12 +56,12 @@ def test_binary_ssvm_repellent_potentials():
 
         submodular_clf = StructuredSVM(problem=crf, max_iter=200, C=100,
                                        verbose=0, check_constraints=True,
-                                       positive_constraint=[2, 3, 4])
+                                       positive_constraint=[4, 5, 6])
         submodular_clf.fit(X, Y)
         Y_pred = submodular_clf.predict(X)
         # submodular crf can not do better than unaries
         for i, x in enumerate(X):
-            y_pred_unaries = crf.inference(x, np.array([1, 1, 0, 0, 0]))
+            y_pred_unaries = crf.inference(x, np.array([1, 0, 0, 1, 0, 0, 0]))
             assert_array_equal(y_pred_unaries, Y_pred[i])
 
 
@@ -71,8 +71,8 @@ def test_binary_ssvm_attractive_potentials():
     crf = GridCRF()
     submodular_clf = StructuredSVM(problem=crf, max_iter=200, C=100,
                                    verbose=1, check_constraints=True,
-                                   positive_constraint=[3])
+                                   positive_constraint=[5])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
-    assert_true(submodular_clf.w[3] < 0)  # don't ask me about signs
+    assert_true(submodular_clf.w[5] < 0)  # don't ask me about signs
