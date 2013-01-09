@@ -18,8 +18,9 @@ def test_continuous_y():
     for inference_method in ["lp", "ad3"]:
         X, Y = toy.generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
-        w = np.array([1, 1,
-                      0,
+        w = np.array([1, 0,  # unary
+                      0, 1,
+                      0,     # pairwise
                       -4, 0])
 
         crf = GridCRF(inference_method=inference_method)
@@ -76,28 +77,23 @@ def test_energy_lp():
 def test_loss_augmentation():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1., 1.,
-                  0.,
-                  -4., 0.])
-    unary_params = w[:2]
-    pairwise_flat = np.asarray(w[2:])
-    pairwise_params = np.zeros((2, 2))
-    pairwise_params[np.tri(2, dtype=np.bool)] = pairwise_flat
-    pairwise_params = (pairwise_params + pairwise_params.T
-                       - np.diag(np.diag(pairwise_params)))
+    w = np.array([1, 0,  # unary
+                  0, 1,
+                  0,     # pairwise
+                  -4, 0])
     crf = GridCRF(inference_method='lp')
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
-    energy_loss_augmented = compute_energy(x, y_hat, unary_params,
-                                           pairwise_params)
 
-    assert_almost_equal(energy + crf.loss(y, y_hat), -energy_loss_augmented)
+    assert_almost_equal(energy + crf.loss(y, y_hat),
+                        -np.dot(w, crf.psi(x, y_hat)))
 
 
 def test_binary_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1, 1,
-                  0,
+    w = np.array([1, 0,  # unary
+                  0, 1,
+                  0,     # pairwise
                   -4, 0])
     for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
         crf = GridCRF(inference_method=inference_method)
@@ -108,8 +104,9 @@ def test_binary_blocks_crf():
 def test_binary_blocks_crf_n8_lp():
     X, Y = toy.generate_blocks(n_samples=1, noise=1)
     x, y = X[0], Y[0]
-    w = np.array([1, 1,
-                  1,
+    w = np.array([1, 0,  # unary
+                  0, 1,
+                  1,     # pairwise
                   -1.4, 1])
     crf = GridCRF(inference_method="lp", neighborhood=8)
     y_hat = crf.inference(x, w)
@@ -119,8 +116,10 @@ def test_binary_blocks_crf_n8_lp():
 def test_blocks_multinomial_crf():
     X, Y = toy.generate_blocks_multinomial(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1., 1., 1.,
-                 .4,
+    w = np.array([1., 0., 0.,  # unaryA
+                  0., 1., 0.,
+                  0., 0., 1.,
+                 .4,           # pairwise
                  -.3, .3,
                  -.5, -.1, .3])
     for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
@@ -136,8 +135,8 @@ def test_binary_grid_unaries():
         x, y = X[0], Y[0]
         for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
             crf = GridCRF(inference_method=inference_method)
-            w_unaries_only = np.zeros(5)
-            w_unaries_only[:2] = 1.
+            w_unaries_only = np.zeros(7)
+            w_unaries_only[:4] = np.eye(2).ravel()
             # test that inference with unaries only is the
             # same as argmax
             inf_unaries = crf.inference(x, w_unaries_only)
@@ -168,7 +167,7 @@ def test_multinomial_grid_unaries():
         for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
             crf = GridCRF(n_states=n_labels, inference_method=inference_method)
             w_unaries_only = np.zeros(crf.size_psi)
-            w_unaries_only[:n_labels] = 1.
+            w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
             # test that inference with unaries only is the
             # same as argmax
             inf_unaries = crf.inference(x, w_unaries_only)
@@ -216,7 +215,7 @@ def test_binary_crf_exhaustive():
         x = np.random.uniform(-1, 1, size=(3, 3))
         x = np.dstack([-x, np.zeros_like(x)]).copy()
         crf = GridCRF()
-        w = np.random.uniform(-1, 1, size=5)
+        w = np.random.uniform(-1, 1, size=7)
         # check map inference
         y_hat = crf.inference(x, w)
         y_ex = exhausive_inference_binary(crf, x, w)
@@ -235,7 +234,7 @@ def test_binary_crf_exhaustive_loss_augmented():
         y = np.random.randint(2, size=(3, 3))
         x = np.random.uniform(-1, 1, size=(3, 3))
         x = np.dstack([-x, np.zeros_like(x)])
-        w = np.random.uniform(-1, 1, size=5)
+        w = np.random.uniform(-1, 1, size=7)
         crf = GridCRF()
         # check loss augmented map inference
         y_hat = crf.loss_augmented_inference(x, y, w)

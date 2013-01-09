@@ -56,11 +56,22 @@ class GridCRF(CRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, inference_method='qpbo', neighborhood=4):
+    def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
+                 neighborhood=4):
         CRF.__init__(self, n_states, inference_method)
+        if n_features is None:
+            # backward compatibilty hack
+            n_features = n_states
+        self.n_features = n_features
         self.neighborhood = neighborhood
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states + n_states * (n_states + 1) / 2
+        self.size_psi = n_states * n_features + n_states * (n_states + 1) / 2
+
+    def _check_size_x(self, x):
+        if x.shape[-1] != self.n_features:
+            raise ValueError("Unary evidence should have %d feature per node,"
+                             " got %s instead."
+                             % (self.n_features, x.shape[-1]))
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -90,31 +101,35 @@ class GridCRF(CRF):
         """
         # x is unaries
         # y is a labeling
+        self._check_size_x(x)
+        x_flat = x.reshape(-1, self.n_features)
         if isinstance(y, tuple):
             # y can also be continuous (from lp)
             # in this case, it comes with edge marginals
-            y, pw = y
+            unary_marginals, pw = y
             pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
-            x_flat = x.reshape(-1, x.shape[-1])
-            y_flat = y.reshape(-1, y.shape[-1])
-            unaries_acc = np.sum(x_flat * y_flat, axis=0)
+            unary_marginals = unary_marginals.reshape(-1, self.n_states)
+            unaries_acc = np.sum(x_flat * unary_marginals, axis=0)
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-            selected_unaries = x[gx, gy, y]
-            unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                                      minlength=self.n_states)
+            #selected_unaries = x[gx, gy, y]
+            #unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
+                                      #minlength=self.n_states)
+
+            #make one hot encoding
+            unary_marginals = np.zeros((y.shape[0], y.shape[1], self.n_states),
+                                       dtype=np.int)
+            unary_marginals[gx, gy, y] = 1
 
             ##accumulated pairwise
-            #make one hot encoding
-            labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                              dtype=np.int)
-            labels[gx, gy, y] = 1
-            pw = np.sum(pairwise_grid_features(labels, self.neighborhood),
-                        axis=0)
+            pw = np.sum(pairwise_grid_features(unary_marginals,
+                                               self.neighborhood), axis=0)
 
+        unaries_acc = np.dot(x_flat.T, unary_marginals.reshape(-1,
+                                                               self.n_states))
         pw = pw + pw.T - np.diag(np.diag(pw))
-        feature = np.hstack([unaries_acc,
+        feature = np.hstack([unaries_acc.ravel(),
                              pw[np.tri(self.n_states, dtype=np.bool)]])
         return feature
 
@@ -122,10 +137,17 @@ class GridCRF(CRF):
         return make_grid_edges(x, neighborhood=self.neighborhood)
 
     def get_unary_potentials(self, x, w):
-        return x * w[:self.n_states]
+        self._check_size_w(w)
+        self._check_size_x(x)
+        pairwise_params = w[:self.n_states * self.n_features].reshape(
+            self.n_features, self.n_states)
+        res = np.dot(x.reshape(-1, self.n_features), pairwise_params)
+        return res.reshape(x.shape[0], x.shape[1], self.n_states)
 
     def get_pairwise_potentials(self, x, w):
-        pairwise_flat = np.asarray(w[self.n_states:])
+        self._check_size_x(x)
+        self._check_size_w(w)
+        pairwise_flat = np.asarray(w[self.n_states * self.n_features:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         # set lower triangle of matrix, then make symmetric
         # we could try to redo this using ``scipy.spatial.distance`` somehow
