@@ -108,8 +108,6 @@ class GridCRF(CRF):
             # in this case, it comes with edge marginals
             unary_marginals, pw = y
             pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
-            unary_marginals = unary_marginals.reshape(-1, self.n_states)
-            unaries_acc = np.sum(x_flat * unary_marginals, axis=0)
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
@@ -188,11 +186,13 @@ class DirectionalGridCRF(GridCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, inference_method='lp', neighborhood=4):
-        GridCRF.__init__(self, n_states, inference_method,
+    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+                 neighborhood=4):
+        GridCRF.__init__(self, n_states, n_features, inference_method,
                          neighborhood=neighborhood)
         self.n_edge_types = 2 if neighborhood == 4 else 4
-        self.size_psi = n_states + self.n_edge_types * n_states ** 2
+        self.size_psi = (n_states * self.n_features
+                         + self.n_edge_types * n_states ** 2)
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -221,14 +221,14 @@ class DirectionalGridCRF(GridCRF):
 
         """
         # x is unaries
+        self._check_size_x(x)
+        x_flat = x.reshape(-1, x.shape[-1])
         # y is a labeling
         if isinstance(y, tuple):
             # y can also be continuous (from lp)
             # in this case, it comes with accumulated edge marginals
-            y, pw = y
-            x_flat = x.reshape(-1, x.shape[-1])
-            y_flat = y.reshape(-1, y.shape[-1])
-            unaries_acc = np.sum(x_flat * y_flat, axis=0)
+            unary_marginals, pw = y
+
             # pw contains separate entries for all edges
             # we need to find out which belong to which kind
             edges = make_grid_edges(x, neighborhood=self.neighborhood,
@@ -243,28 +243,28 @@ class DirectionalGridCRF(GridCRF):
         else:
             ## unary features:
             gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-            selected_unaries = x[gx, gy, y]
-            unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                                      minlength=self.n_states)
 
             ##accumulated pairwise
             #make one hot encoding
-            labels = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                              dtype=np.int)
-            labels[gx, gy, y] = 1
-            pw = np.vstack(pairwise_grid_features(labels, self.neighborhood))
+            unary_marginals = np.zeros((y.shape[0], y.shape[1], self.n_states),
+                                       dtype=np.int)
+            unary_marginals[gx, gy, y] = 1
+            pw = np.vstack(pairwise_grid_features(unary_marginals,
+                                                  self.neighborhood))
 
-        feature = np.hstack([unaries_acc, pw.ravel()])
+        unaries_acc = np.dot(x_flat.T, unary_marginals.reshape(-1,
+                                                               self.n_states))
+        feature = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return feature
 
     def get_pairwise_potentials(self, x, w):
         self._check_size_w(w)
+        self._check_size_x(x)
         edges = make_grid_edges(x, neighborhood=self.neighborhood,
                                 return_lists=True)
         n_edges = [len(e) for e in edges]
-        pairwise_params = w[self.n_states:].reshape(self.n_edge_types,
-                                                    self.n_states,
-                                                    self.n_states)
+        pairwise_params = w[self.n_states * self.n_features:].reshape(
+            self.n_edge_types, self.n_states, self.n_states)
         edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
                         for pw, n in zip(pairwise_params, n_edges)]
         return np.vstack(edge_weights)
