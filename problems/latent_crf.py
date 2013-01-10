@@ -60,13 +60,16 @@ def kmeans_init(X, Y, edges, n_states_per_label=2, symmetric=True):
 class LatentGridCRF(GridCRF):
     """Latent variable CRF with 2d grid graph.
     """
-    def __init__(self, n_labels, n_states_per_label=2,
+    def __init__(self, n_labels, n_features=None, n_states_per_label=2,
                  inference_method='qpbo'):
         self.n_states_per_label = n_states_per_label
         self.n_labels = n_labels
+        if n_features is None:
+            n_features = n_labels
 
         n_states = n_labels * n_states_per_label
-        GridCRF.__init__(self, n_states, inference_method=inference_method)
+        GridCRF.__init__(self, n_states, n_features,
+                         inference_method=inference_method)
 
     def init_latent(self, X, Y):
         # treat all edges the same
@@ -79,7 +82,7 @@ class LatentGridCRF(GridCRF):
         # x is unaries
         # h is latent labeling
         ## unary features:
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
+        #x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
         return GridCRF.psi(self, x_wide, h)
 
     def get_unary_potentials(self, x, w):

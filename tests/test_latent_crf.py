@@ -57,11 +57,12 @@ def test_k_means_initialization_directional_crf():
 def test_blocks_crf_unaries():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1,  0,  1,  0,
-                  0,
-                  0,  0,
-                  0,  0,  0,
-                  0,  0,  0, 0])
+    unary_weights = np.eye(2)
+    pairwise_weights = np.array([0,
+                                 0,  0,
+                                 0,  0,  0,
+                                 0,  0,  0, 0])
+    w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     h_hat = crf.inference(x, w)
     assert_array_equal(h_hat / 2, np.argmax(x, axis=-1))
@@ -70,11 +71,11 @@ def test_blocks_crf_unaries():
 def test_blocks_crf():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1,  1,  1,  1,
-                  0,
-                  0,   0,
-                  -4, -4,  0,
-                  -4, -4,  0, 0])
+    pairwise_weights = np.array([0,
+                                 0,   0,
+                                -4, -4,  0,
+                                -4, -4,  0, 0])
+    w = np.hstack([np.eye(2).ravel(), pairwise_weights])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     h_hat = crf.inference(x, w)
     assert_array_equal(y, h_hat / 2)
@@ -88,20 +89,20 @@ def test_blocks_crf_directional():
     # test that all results are the same as equivalent LatentGridCRF
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    w = np.array([1,  1,  1,  1,
-                  0,
-                  0,   0,
-                  -4, -4,  0,
-                  -4, -4,  0, 0])
-    w_directional = np.array([1,   1,  1,  1,
-                              0,   0, -4, -4,
-                              0,   0, -4, -4,
-                              -4, -4,  0,  0,
-                              -4, -4,  0,  0,
-                              0,   0, -4, -4,
-                              0,   0, -4, -4,
-                              -4, -4,  0,  0,
-                              -4, -4,  0,  0])
+    pairwise_weights = np.array([0,
+                                 0,   0,
+                                -4, -4,  0,
+                                -4, -4,  0, 0])
+    w = np.hstack([np.eye(2).ravel(), pairwise_weights])
+    pw_directional = np.array([0,   0, -4, -4,
+                               0,   0, -4, -4,
+                               -4, -4,  0,  0,
+                               -4, -4,  0,  0,
+                               0,   0, -4, -4,
+                               0,   0, -4, -4,
+                               -4, -4,  0,  0,
+                               -4, -4,  0,  0])
+    w_directional = np.hstack([np.eye(4).ravel(), pw_directional])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     directional_crf = LatentDirectionalGridCRF(n_labels=2,
                                                n_states_per_label=2)
@@ -125,7 +126,7 @@ def test_blocks_crf_directional():
 def test_latent_consistency_zero_pw():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
-        w = np.zeros(14)
+        w = np.zeros(18)
         w[:4] = np.random.normal(size=4)
         y = np.random.randint(2, size=(5, 5))
         x = np.random.normal(size=(5, 5, 2))
@@ -136,7 +137,7 @@ def test_latent_consistency_zero_pw():
 def test_latent_consistency():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
-        w = np.random.normal(size=14)
+        w = np.random.normal(size=18)
         y = np.random.randint(2, size=(4, 4))
         x = np.random.normal(size=(4, 4, 2))
         h = crf.latent(x, y, w)
@@ -147,7 +148,7 @@ def test_loss_augmented_inference_exhaustive():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2,
                         inference_method='dai')
     for i in xrange(10):
-        w = np.random.normal(size=14)
+        w = np.random.normal(size=18)
         y = np.random.randint(2, size=(2, 2))
         x = np.random.normal(size=(2, 2, 2))
         h_hat = crf.loss_augmented_inference(x, y * 2, w)
