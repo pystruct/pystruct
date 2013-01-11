@@ -9,7 +9,8 @@ import pystruct.toy_datasets as toy
 
 def test_with_crosses():
     # very simple dataset. k-means init is perfect
-    for inference_method in ['ad3', 'qpbo', 'lp']:
+    #for inference_method in ['ad3', 'qpbo', 'lp']:
+    for inference_method in ['lp']:
         X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
                                     total_size=8)
         n_labels = 2
