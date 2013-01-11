@@ -142,11 +142,9 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
                  inference_method='qpbo', neighborhood=4):
-        if n_features is None:
-            n_features = n_labels
         LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
-        DirectionalGridCRF.__init__(self, self.n_states, n_features,
+        DirectionalGridCRF.__init__(self, self.n_states, self.n_features,
                                     inference_method=inference_method,
                                     neighborhood=neighborhood)
 
