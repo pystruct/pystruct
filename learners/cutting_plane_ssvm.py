@@ -11,7 +11,7 @@ import cvxopt
 import cvxopt.solvers
 import matplotlib.pyplot as plt
 
-from joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed
 
 from ..utils import unwrap_pairwise, find_constraint
 

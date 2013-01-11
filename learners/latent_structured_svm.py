@@ -8,7 +8,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed
 
 from .cutting_plane_ssvm import StructuredSVM
 from ..utils import inference, find_constraint

@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
