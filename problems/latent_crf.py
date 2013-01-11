@@ -78,17 +78,6 @@ class LatentGridCRF(GridCRF):
         return kmeans_init(X, Y, [edges],
                            n_states_per_label=self.n_states_per_label)
 
-    def psi(self, x, h):
-        # x is unaries
-        # h is latent labeling
-        ## unary features:
-        #x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        return GridCRF.psi(self, x_wide, h)
-
-    def get_unary_potentials(self, x, w):
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        return GridCRF.get_unary_potentials(self, x_wide, w)
-
     def loss_augmented_inference(self, x, h, w, relaxed=False,
                                  return_energy=False):
         self.inference_calls += 1
@@ -151,11 +140,13 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     Things that have to do with y or h need to call the
     LatentGridCRF function - that simply works because the feature are right.
     """
-    def __init__(self, n_labels, n_states_per_label=2, inference_method='qpbo',
-                 neighborhood=4):
-        LatentGridCRF.__init__(self, n_labels, n_states_per_label,
+    def __init__(self, n_labels, n_features=None, n_states_per_label=2,
+                 inference_method='qpbo', neighborhood=4):
+        if n_features is None:
+            n_features = n_labels
+        LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
-        DirectionalGridCRF.__init__(self, self.n_states,
+        DirectionalGridCRF.__init__(self, self.n_states, n_features,
                                     inference_method=inference_method,
                                     neighborhood=neighborhood)
 
