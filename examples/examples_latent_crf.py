@@ -24,11 +24,11 @@ def main():
                      plot=True)
     clf.fit(X_train, Y_train)
 
-    i = 0
-    loss = 0
     for X_, Y_, H, name in [[X_train, Y_train, clf.H_init_, "train"],
                             [X_test, Y_test, [None] * len(X_test), "test"]]:
         Y_pred = clf.predict(X_)
+        i = 0
+        loss = 0
         for x, y, h_init, y_pred in zip(X_, Y_, H, Y_pred):
             loss += np.sum(y != y_pred / crf.n_states_per_label)
             fig, ax = plt.subplots(3, 2)
