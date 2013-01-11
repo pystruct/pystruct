@@ -1,7 +1,4 @@
 import numpy as np
-from pyqpbo import alpha_expansion_general_graph
-from daimrf import mrf
-import AD3
 
 from .linear_programming import lp_general_graph
 
@@ -44,6 +41,7 @@ def _validate_params(unary_potentials, pairwise_params, edges):
 
 
 def inference_qpbo(unary_potentials, pairwise_potentials, edges):
+    from pyqpbo import alpha_expansion_general_graph
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -58,6 +56,7 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
 
 
 def inference_dai(unary_potentials, pairwise_potentials, edges):
+    from daimrf import mrf
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -97,6 +96,7 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
                   verbose=0):
+    import AD3
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)

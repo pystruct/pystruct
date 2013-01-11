@@ -34,13 +34,13 @@ Inference Solvers
 -----------------
 Does the inference.
 
-There are some options to use differnent solvers for inference.
+There are some options to use different solvers for inference.
 A linear programming solver using GLPK is included.
 I have Python interfaces for several other methods on github,
 including LibDAI, QPBO, AD3 and GCO (submodular graph cuts).
 
 This is where the heavy lifting is done and in some sense these backends
-are exchangable. I'm hoping to unify stuff a bit more here.
+are exchangeable. I'm hoping to unify stuff a bit more here.
 
 
 Remarks
@@ -54,3 +54,27 @@ There are not publications yet that you can cite for this, I'm hoping there
 will be some in the future.
 
 Btw: this is research with unit tests!
+
+
+Installation
+============
+There is no need to compile anything, this pure Python.
+There are quite a couple of requirements, though:
+
+* You need cvxopt for the cutting plane SVM solver.
+* You need sklearn for some tidbits here and there, also I import joblib from sklearn.
+* For the linear programming inference, you need pyglpk from here: http://tfinley.net/software/pyglpk/ (not the one from easy install!)
+  I'll try to use the linear programming solver / interface from cvxopt soon, but haven't had time for that yet.
+
+* For the other inference algorithms that are wrapped in the inference folder,
+  you need the following of my repositories.  You can just pick and choose from
+  those, but that will make some tests fail.
+
+  QPBO
+    https://github.com/amueller/pyqpbo
+
+  libdai
+    https://github.com/amueller/daimrf
+
+  AD3
+    https://github.com/amueller/AD3
