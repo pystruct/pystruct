@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from crf import DirectionalGridCRF
+from pystruct.problems import DirectionalGridCRF
 #from structured_perceptron import StructuredPerceptron
-import structured_svm as ssvm
-import toy_datasets as toy
+import pystruct.learners as ssvm
+import pystruct.toy_datasets as toy
 
 
 from IPython.core.debugger import Tracer

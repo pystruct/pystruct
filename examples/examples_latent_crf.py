@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 from sklearn.cross_validation import train_test_split
 
-import latent_crf
-from latent_structured_svm import LatentSSVM
+from pystruct.problems import LatentDirectionalGridCRF
+from pystruct.learners import LatentSSVM
 
 import toy_datasets as toy
 
@@ -25,7 +25,7 @@ def main():
     n_labels = len(np.unique(Y_train))
     #crf = latent_crf.LatentGridCRF(n_labels=n_labels, n_states_per_label=4,
                                    #inference_method='lp')
-    crf = latent_crf.LatentDirectionalGridCRF(n_labels=n_labels,
+    crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                               n_states_per_label=3,
                                               inference_method='lp')
     clf = LatentSSVM(problem=crf, max_iter=50, C=10., verbose=2,
