@@ -157,17 +157,6 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
                            n_states_per_label=self.n_states_per_label,
                            symmetric=False)
 
-    def get_unary_potentials(self, x, w):
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        return DirectionalGridCRF.get_unary_potentials(self, x_wide, w)
-
-    def psi(self, x, h):
-        # x is unaries
-        # h is latent labeling
-        ## unary features:
-        x_wide = np.repeat(x, self.n_states_per_label, axis=-1)
-        return DirectionalGridCRF.psi(self, x_wide, h)
-
     def loss_augmented_inference(self, x, h, w, relaxed=False):
         h = LatentGridCRF.loss_augmented_inference(self, x, h, w,
                                                    relaxed=relaxed)
