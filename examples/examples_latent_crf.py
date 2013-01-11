@@ -6,7 +6,7 @@ from sklearn.cross_validation import train_test_split
 from pystruct.problems import LatentDirectionalGridCRF
 from pystruct.learners import LatentSSVM
 
-import toy_datasets as toy
+import pystruct.toy_datasets as toy
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
@@ -46,11 +46,10 @@ def main():
         ax[0, 0].matshow(y * crf.n_states_per_label,
                          vmin=0, vmax=crf.n_states - 1)
         ax[0, 0].set_title("ground truth")
-        w_unaries_only = np.zeros_like(clf.w)
-        size_unaries = len(crf.get_unary_weights(clf.w))
-        w_unaries_only[:size_unaries] = 1
-        unary_pred = crf.inference(x, w_unaries_only)
-        ax[0, 1].matshow(unary_pred, vmin=0, vmax=crf.n_states - 1)
+        #w_unaries_only = np.zeros_like(clf.w)
+        #w_unaries_only[
+        #unary_pred = crf.inference(x, w_unaries_only)
+        #ax[0, 1].matshow(unary_pred, vmin=0, vmax=crf.n_states - 1)
         ax[0, 1].set_title("unaries only")
         ax[1, 0].matshow(h_init, vmin=0, vmax=crf.n_states - 1)
         ax[1, 0].set_title("latent initial")

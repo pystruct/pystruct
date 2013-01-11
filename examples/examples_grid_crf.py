@@ -33,8 +33,7 @@ def main():
     Y_pred = np.array(clf.predict(X))
 
     np.set_printoptions(suppress=True)  # suppress scientific notation
-    print(crf.get_pairwise_weights(clf.w))
-    print(crf.get_unary_weights(clf.w))
+    print(clf.w)
 
     i = 0
     loss = 0
