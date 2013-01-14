@@ -124,8 +124,8 @@ class GridCRF(CRF):
             pw = np.sum(pairwise_grid_features(unary_marginals,
                                                self.neighborhood), axis=0)
 
-        unaries_acc = np.dot(x_flat.T, unary_marginals.reshape(-1,
-                                                               self.n_states))
+        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
+                             x_flat)
         pw = pw + pw.T - np.diag(np.diag(pw))
         feature = np.hstack([unaries_acc.ravel(),
                              pw[np.tri(self.n_states, dtype=np.bool)]])
@@ -137,9 +137,9 @@ class GridCRF(CRF):
     def get_unary_potentials(self, x, w):
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_params = w[:self.n_states * self.n_features].reshape(
-            self.n_features, self.n_states)
-        res = np.dot(x.reshape(-1, self.n_features), pairwise_params)
+        unary_params = w[:self.n_states * self.n_features].reshape(
+            self.n_states, self.n_features)
+        res = np.dot(x.reshape(-1, self.n_features), unary_params.T)
         return res.reshape(x.shape[0], x.shape[1], self.n_states)
 
     def get_pairwise_potentials(self, x, w):

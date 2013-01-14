@@ -6,8 +6,7 @@ from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.problems import GridCRF
-from pystruct.inference import inference_lp
-from pystruct.utils import make_grid_edges, find_constraint, compute_energy
+from pystruct.utils import find_constraint
 
 
 from IPython.core.debugger import Tracer
@@ -58,20 +57,16 @@ def test_energy_lp():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
     found_fractional = False
+    crf = GridCRF(n_states=3, n_features=4, inference_method='lp')
     while not found_fractional:
-        x = np.random.normal(size=(2, 2, 3))
-        unary_params = np.ones(3)
-        pairwise_params = np.random.normal() * np.eye(3)
-        edges = make_grid_edges(x)
-        # check map inference
-        inf_res, energy_lp = inference_lp(x * unary_params, pairwise_params,
-                                          edges=edges, relaxed=True,
-                                          return_energy=True, exact=True)
-        found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
-        energy_svm = compute_energy(x, inf_res, unary_params,
-                                    pairwise_params, neighborhood=4)
+        x = np.random.normal(size=(2, 2, 4))
+        w = np.random.uniform(size=crf.size_psi)
+        inf_res, energy_lp = crf.inference(x, w, relaxed=True,
+                                           return_energy=True, exact=True)
+        assert_almost_equal(energy_lp,
+                            -np.dot(w, crf.psi(x, inf_res)))
 
-        assert_almost_equal(energy_lp, -energy_svm)
+        found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
 
 
 def test_loss_augmentation():
