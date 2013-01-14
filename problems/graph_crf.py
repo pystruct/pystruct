@@ -84,9 +84,9 @@ class GraphCRF(CRF):
         self._check_size_w(w)
         self._check_size_x(x)
         features, edges = x
-        pairwise_params = w[:self.n_states * self.n_features].reshape(
+        unary_params = w[:self.n_states * self.n_features].reshape(
             self.n_states, self.n_features)
-        return np.dot(features, pairwise_params.T)
+        return np.dot(features, unary_params.T)
 
     def get_edges(self, x):
         return x[1]
@@ -141,7 +141,7 @@ class GraphCRF(CRF):
             pw = np.dot(unary_marginals[edges[:, 0]].T,
                         unary_marginals[edges[:, 1]])
 
-        unaries_acc = np.dot(features.T, unary_marginals)
+        unaries_acc = np.dot(unary_marginals.T, features)
         pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
         psi_vector = np.hstack([unaries_acc.ravel(),
