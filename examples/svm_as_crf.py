@@ -1,4 +1,5 @@
 # a CRF with one node is the same as a multiclass SVM
+# evaluation on iris dataset (really easy)
 
 from time import time
 import numpy as np
@@ -20,13 +21,13 @@ Y = y.reshape(-1, 1)
 
 X_train, X_test, y_train, y_test = train_test_split(X_, Y)
 
-pbl = GraphCRF(n_features=4, n_states=3)
-svm = StructuredSVM(pbl, verbose=2, check_constraints=False, C=20, n_jobs=1)
+pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
+svm = StructuredSVM(pbl, verbose=1, check_constraints=True, C=100, n_jobs=1)
 
 
 start = time()
 svm.fit(X_train, y_train)
 time_svm = time() - start
-y_pred = np.hstack(svm.predict(X_test))
+y_pred = np.vstack(svm.predict(X_test))
 print("Score with pystruct crf svm: %f (took %f seconds)"
       % (np.mean(y_pred == y_test), time_svm))
