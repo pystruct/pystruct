@@ -66,7 +66,8 @@ def inference_dai(unary_potentials, pairwise_potentials, edges):
     max_entry = max(np.max(log_unaries), 1)
     unaries = np.exp(log_unaries / max_entry)
 
-    y = mrf(unaries, edges, np.exp(pairwise_potentials / max_entry), alg='jt')
+    y = mrf(unaries, edges.astype(np.int64),
+            np.exp(pairwise_potentials / max_entry), alg='jt')
     y = y.reshape(shape_org)
     return y
 
