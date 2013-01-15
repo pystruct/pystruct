@@ -5,7 +5,7 @@ from nose.tools import assert_equal
 import pystruct.toy_datasets as toy
 from pystruct.utils import exhaustive_loss_augmented_inference, make_grid_edges
 from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
-from pystruct.problems.latent_crf import kmeans_init
+from pystruct.problems.latent_grid_crf import kmeans_init
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
