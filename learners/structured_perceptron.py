@@ -11,6 +11,39 @@ def inference(problem, x, w):
 
 
 class StructuredPerceptron(object):
+    """Structured Perceptron training.
+
+    Implements a simple structured perceptron without regularization.
+    The structured perceptron approximately minimizes the zero-one loss.
+    Therefore the learning does not take problem.loss into account.
+    It is just shown to illustrate the learning progress.
+    As the perceptron learning is not margin-based, the problem does not
+    need to provide loss_augmented_inference.
+
+    Parameters
+    ----------
+    problem : StructuredProblem
+        Object containing problem formulation. Has to implement
+        `loss`, `inference`.
+
+    max_iter : int (default=100)
+        Maximum number of passes over dataset to find constraints and update
+        parameters.
+
+    verbose : int (default=0)
+        Verbosity
+
+    plot : bool (default=Fale)
+        Whether to plot a learning curve in the end.
+
+    batch: bool (default=False)
+        Whether to do batch learning or online learning.
+
+    Attributes
+    ----------
+    w : nd-array, shape=(problem.psi,)
+        The learned weights of the SVM.
+    """
     def __init__(self, problem, max_iter=100, verbose=0, plot=False,
                  batch=False):
         self.max_iter = max_iter
@@ -20,6 +53,19 @@ class StructuredPerceptron(object):
         self.batch = batch
 
     def fit(self, X, Y):
+        """Learn parameters using structured perceptron.
+
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+            No requirement on the particular form of entries of X is made.
+
+        Y : iterable
+            Training labels. Contains the strctured labels for inputs in X.
+            Needs to have the same length as X.
+        """
+
         n_samples = len(X)
         size_psi = self.problem.size_psi
         w = np.zeros(size_psi)
@@ -62,49 +108,18 @@ class StructuredPerceptron(object):
         self.w = w
 
     def predict(self, X):
+        """Predict output on examples in X.
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+
+        Returns
+        -------
+        Y_pred : list
+            List of inference results for X using the learned parameters.
+        """
         prediction = []
         for x in X:
             prediction.append(self.problem.inference(x, self.w))
-        return prediction
-
-
-class LatentStructuredPerceptron(StructuredPerceptron):
-    def fit(self, X, Y):
-        n_samples = len(X)
-        size_psi = self.problem.size_psi
-        w = np.zeros(size_psi)
-        #try:
-        for iteration in xrange(self.max_iter):
-            alpha = 1. / (1 + iteration)
-            losses = 0
-            print("iteration %d" % iteration)
-            i = 0
-            for x, y in zip(X, Y):
-                print("example %03d" % i)
-                h = self.problem.latent(x, y, w)
-                h_hat, y_hat = self.problem.inference(x, w)
-                plt.matshow(h_hat.reshape(18, 18))
-                if not iteration % 10 and i < 5:
-                    plt.matshow(h.reshape(18, 18))
-                    plt.colorbar()
-                    plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
-                    plt.close()
-                    plt.colorbar()
-                    plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
-                    plt.close()
-                current_loss = self.problem.loss(y, y_hat)
-                losses += current_loss
-                if current_loss:
-                    w += alpha * (self.problem.psi(x, h, y) -
-                                  self.problem.psi(x, h_hat, y_hat))
-                i += 1
-            print("avg loss: %f w: %s" % (float(losses) / n_samples, str(w)))
-        #except KeyboardInterrupt:
-            #pass
-        self.w = w
-
-    def predict(self, X):
-        prediction = []
-        for x in X:
-            prediction.append(self.problem.inference(x, self.w)[0])
         return prediction

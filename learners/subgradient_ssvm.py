@@ -85,6 +85,18 @@ class SubgradientStructuredSVM(StructuredSVM):
         return w
 
     def fit(self, X, Y):
+        """Learn parameters using subgradient descent.
+
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+            No requirement on the particular form of entries of X is made.
+
+        Y : iterable
+            Training labels. Contains the strctured labels for inputs in X.
+            Needs to have the same length as X.
+        """
         print("Training primal subgradient structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
