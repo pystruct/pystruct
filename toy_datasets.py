@@ -1,3 +1,7 @@
+# these are some grid datasets to play with the algorithms.
+# some are solable with submodular constraints, some are not.
+# some need latent variables, some need directions.
+
 import numpy as np
 from IPython.core.debugger import Tracer
 
@@ -72,7 +76,7 @@ def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8):
 
 
 def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8,
-                  random_seed=0):
+                  random_seed=0, separate_labels=True):
     np.random.seed(random_seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
     for i in xrange(n_samples):
@@ -91,7 +95,7 @@ def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8,
                 l_old = l
                 #Y[i, t:t + box_size, l:l + box_size] = 1
                 if np.random.uniform() > .5:
-                    Y[i, t:t + bars_size, l] = 2
+                    Y[i, t:t + bars_size, l] = 2 if separate_labels else 1
                 else:
                     Y[i, t, l:l + bars_size] = 1
 
