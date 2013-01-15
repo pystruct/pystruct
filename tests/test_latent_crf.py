@@ -57,9 +57,7 @@ def test_k_means_initialization_directional_crf():
 def test_blocks_crf_unaries():
     X, Y = toy.generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
-    unary_weights = np.zeros((2, 4))
-    unary_weights[0, :2] = 1
-    unary_weights[1, 2:] = 1
+    unary_weights = np.repeat(np.eye(2), 2, axis=0)
     pairwise_weights = np.array([0,
                                  0,  0,
                                  0,  0,  0,
@@ -77,9 +75,7 @@ def test_blocks_crf():
                                  0,   0,
                                 -4, -4,  0,
                                 -4, -4,  0, 0])
-    unary_weights = np.zeros((2, 4))
-    unary_weights[0, :2] = 1
-    unary_weights[1, 2:] = 1
+    unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     h_hat = crf.inference(x, w)
@@ -98,9 +94,7 @@ def test_blocks_crf_directional():
                                  0,   0,
                                 -4, -4,  0,
                                 -4, -4,  0, 0])
-    unary_weights = np.zeros((2, 4))
-    unary_weights[0, :2] = 1
-    unary_weights[1, 2:] = 1
+    unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     pw_directional = np.array([0,   0, -4, -4,
                                0,   0, -4, -4,
