@@ -108,12 +108,9 @@ class LatentGridCRF(GridCRF):
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h // self.n_states_per_label != y).any():
-            if np.any(w):
-                print("inconsistent h and y")
-                tracer()
-                h = y * self.n_states_per_label
-            else:
-                h = y * self.n_states_per_label
+            print("inconsistent h and y")
+            h = y * self.n_states_per_label
+            tracer()
         return h
 
     def loss(self, h, h_hat):
