@@ -6,7 +6,45 @@ from ..utils import find_constraint
 
 
 class SubgradientStructuredSVM(StructuredSVM):
-    """Margin rescaled with l1 slack penalty."""
+    """Structured SVM solver using subgradient descent.
+
+    Implements a margin rescaled with l1 slack penalty.
+    By default, a constant learning rate is used.
+    It is also possible to use the adaptive learning rate found by AdaGrad.
+
+    This class implements batch subgradient descent, i.e. does a single update
+    for each pass over the dataset.
+
+    Parmeters
+    ---------
+    problem : StructuredProblem
+        Object containing problem formulation. Has to implement
+        `loss`, `inference` and `loss_augmented_inference`.
+
+    max_iter : int
+        Maximum number of passes over dataset to find constraints and perform
+        updates.
+
+    C : float
+        Regularization parameter
+
+    verbose : int
+        Verbosity.
+
+    learningrate : float
+        Learning rate used in subgradient descent.
+
+    momentum : float
+        Momentum used in subgradient descent.
+
+    plot : bool (default=Fale)
+        Whether to plot a learning curve in the end.
+
+    adagrad : bool (default=False)
+        Whether to use adagrad gradient scaling.
+        Ignores if True, momentum is ignored.
+
+    """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learningrate=0.001, plot=False, adagrad=False):
         super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
@@ -19,6 +57,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.grad_old = np.zeros(self.problem.size_psi)
 
     def _solve_subgradient(self, psis):
+        """Do a single subgradient step."""
         if hasattr(self, 'w'):
             w = self.w
         else:

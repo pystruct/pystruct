@@ -54,6 +54,14 @@ class StructuredSVM(object):
 
     break_on_bad: bool (default=True)
         Whether to break (start debug mode) when inference was approximate.
+
+    Attributes
+    ----------
+    w : nd-array, shape=(problem.psi,)
+        The learned weights of the SVM.
+
+    old_solution : dict
+        The last solution found by the qp solver.
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
@@ -132,6 +140,26 @@ class StructuredSVM(object):
         return w, solution['primal objective']
 
     def fit(self, X, Y, constraints=None):
+        """Learn parameters using cutting plane method.
+
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+            No requirement on the particular form of entries of X is made.
+
+        Y : iterable
+            Training labels. Contains the strctured labels for inputs in X.
+            Needs to have the same length as X.
+
+        contraints : iterable
+            Known constraints for warm-starts. List of same length as X.
+            Each entry is itself a list of constraints for a given instance x .
+            Each constraint is of the form [y_hat, delta_psi, loss], where
+            y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
+            and loss is the loss for predicting y_hat instead of the true label
+            y.
+        """
         print("Training dual structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
@@ -245,6 +273,17 @@ class StructuredSVM(object):
         #self.primal_objective_ = primal_objective_curve[-1]
 
     def predict(self, X):
+        """Predict output on examples in X.
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+
+        Returns
+        -------
+        Y_pred : list
+            List of inference results for X using the learned parameters.
+        """
         prediction = []
         for x in X:
             prediction.append(self.problem.inference(x, self.w))
