@@ -9,6 +9,10 @@ class StructuredProblem(object):
     """
 
     def __init__(self):
+        """Initialize the problem.
+        Needs to set self.size_psi, the dimensionalty of the joint features for
+        an instance with labeling (x, y).
+        """
         self.size_psi = None
 
     def _check_size_w(self, w):
