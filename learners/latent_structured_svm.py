@@ -35,13 +35,14 @@ class LatentSSVM(StructuredSVM):
         self.H_init_ = H_init
         H = H_init
         inds = np.arange(len(H))
-        for i, h in zip(inds, H):
-            plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
-            plt.colorbar()
-            plt.savefig("figures/h_init_%03d.png" % i)
-            plt.close()
+        if self.plot:
+            for i, h in zip(inds, H):
+                plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
+                plt.colorbar()
+                plt.savefig("figures/h_init_%03d.png" % i)
+                plt.close()
 
-        for iteration in xrange(10):
+        for iteration in xrange(5):
             print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
             if iteration == 0:
