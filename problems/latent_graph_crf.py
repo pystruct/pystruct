@@ -16,13 +16,13 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def kmeans_init(features, Y, all_edges, n_labels=2, n_states_per_label=2,
+def kmeans_init(X, Y, all_edges, n_labels=2, n_states_per_label=2,
                 symmetric=True):
     # flatten grids
-    features = features.reshape(features.shape[0], -1, features.shape[-1])
+    X = X.reshape(X.shape[0], -1, X.shape[-1])
     all_feats = []
     # iterate over samples
-    for x, y, edges in zip(features, Y, all_edges):
+    for x, y, edges in zip(X, Y, all_edges):
         # first, get neighbor counts from nodes
         n_nodes = x.shape[0]
         labels_one_hot = np.zeros((n_nodes, n_labels), dtype=np.int)
@@ -37,13 +37,13 @@ def kmeans_init(features, Y, all_edges, n_labels=2, n_states_per_label=2,
             directions = [g + g.T for g in graphs]
         else:
             directions = [T for g in graphs for T in [g, g.T]]
-        features = [s * labels_one_hot.reshape(size, -1) for s in directions]
-        features = np.hstack(features)
+        neighbors = [s * labels_one_hot.reshape(size, -1) for s in directions]
+        neighbors = np.hstack(neighbors)
         # normalize (for borders)
-        features /= features.sum(axis=1)[:, np.newaxis]
+        neighbors /= max(neighbors.sum(axis=1)[:, np.newaxis], 1)
 
         # add unaries
-        #features = np.dstack([x, neighbors])
+        features = np.hstack([x, neighbors])
         all_feats.append(features)
     all_feats = np.vstack(all_feats)
     # states (=clusters) will be saved in H
@@ -102,7 +102,7 @@ class LatentGraphCRF(GraphCRF):
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = (np.arange(self.n_states) / self.n_states_per_label !=
-                        y[:, :, np.newaxis])
+                        y[:, np.newaxis])
         unary_potentials[other_states] = -1000
         pairwise_potentials = self.get_pairwise_potentials(x, w)
         edges = self.get_edges(x)
