@@ -1,6 +1,6 @@
 import numpy as np
 
-from .crf import CRF
+from .graph_crf import GraphCRF
 from ..utils import make_grid_edges
 
 
@@ -27,7 +27,7 @@ def pairwise_grid_features(grid_labels, neighborhood=4):
     return features
 
 
-class GridCRF(CRF):
+class GridCRF(GraphCRF):
     """Pairwise CRF on a 2d grid.
 
     Pairwise potentials are symmetric and the same for all edges.
@@ -52,20 +52,14 @@ class GridCRF(CRF):
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
 
-    neighborhood: int, default=4
+    neighborhood : int, default=4
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
     def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
                  neighborhood=4):
-        CRF.__init__(self, n_states, inference_method)
-        if n_features is None:
-            # backward compatibilty hack
-            n_features = n_states
-        self.n_features = n_features
+        GraphCRF.__init__(self, n_states, n_features, inference_method)
         self.neighborhood = neighborhood
-        # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = n_states * n_features + n_states * (n_states + 1) / 2
 
     def get_edges(self, x):
         return make_grid_edges(x, neighborhood=self.neighborhood)
@@ -74,23 +68,8 @@ class GridCRF(CRF):
         return x.reshape(-1, self.n_features)
 
     def get_unary_potentials(self, x, w):
-        self._check_size_w(w)
-        self._check_size_x(x)
-        unary_params = w[:self.n_states * self.n_features].reshape(
-            self.n_states, self.n_features)
-        res = np.dot(x.reshape(-1, self.n_features), unary_params.T)
+        res = GraphCRF.get_unary_potentials(self, x, w)
         return res.reshape(x.shape[0], x.shape[1], self.n_states)
-
-    def get_pairwise_potentials(self, x, w):
-        self._check_size_x(x)
-        self._check_size_w(w)
-        pairwise_flat = np.asarray(w[self.n_states * self.n_features:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
 
 
 class DirectionalGridCRF(GridCRF):
