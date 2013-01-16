@@ -2,7 +2,6 @@
 # (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
 # ALL RIGHTS RESERVED.
 #
-# DON'T USE WITHOUT AUTHOR CONSENT!
 #
 
 import numpy as np
@@ -83,7 +82,7 @@ class LatentGridCRF(GridCRF):
                                   self.n_labels,
                                   self.n_states_per_label).sum(axis=-1)
         y_org = y / self.n_states_per_label
-        return super(LatentGridCRF, self).continuous_loss(y_org, y_hat_org)
+        return GridCRF.continuous_loss(self, y_org, y_hat_org)
 
 
 class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):

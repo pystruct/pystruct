@@ -2,7 +2,6 @@
 # (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
 # ALL RIGHTS RESERVED.
 #
-# DON'T USE WITHOUT AUTHOR CONSENT!
 #
 
 import numpy as np
@@ -122,8 +121,8 @@ class LatentGraphCRF(GraphCRF):
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
-        y_hat_org = y_hat.reshape(y.shape[0], y.shape[1],
+        y_hat_org = y_hat.reshape(-1,
                                   self.n_labels,
                                   self.n_states_per_label).sum(axis=-1)
         y_org = y / self.n_states_per_label
-        return super(LatentGraphCRF, self).continuous_loss(y_org, y_hat_org)
+        return GraphCRF.continuous_loss(self, y_org, y_hat_org)
