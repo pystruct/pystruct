@@ -10,7 +10,6 @@ from sklearn.cross_validation import train_test_split
 from pystruct.problems import GraphCRF
 from pystruct.learners import StructuredSVM
 
-# do a binary digit classification
 iris = load_iris()
 X, y = iris.data, iris.target
 
