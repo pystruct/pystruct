@@ -38,13 +38,6 @@ class GraphCRF(CRF):
         self.n_features = n_features
         self.size_psi = n_states * n_features + n_states * (n_states + 1) / 2
 
-    def _check_size_x(self, x):
-        features, edges = x
-        if features.shape[1] != self.n_features:
-            raise ValueError("Unary evidence should have %d feature per node,"
-                             " got %s instead."
-                             % (self.n_features, features.shape[1]))
-
     def get_pairwise_potentials(self, x, w):
         """Extracts the pairwise part of the weight vector.
 
@@ -91,59 +84,5 @@ class GraphCRF(CRF):
     def get_edges(self, x):
         return x[1]
 
-    def psi(self, x, y):
-        """Feature vector associated with instance (x, y).
-
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
-
-        Parameters
-        ----------
-        x : tuple
-            Instance of a graph with unary evidence.
-            x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_states),
-            edges are an nd-array of shape (n_edges, 2)
-
-        y : ndarray or tuple
-            Either y is an integral ndarray of shape (n_nodes), giving
-            a complete labeling for x.
-            Or it is the result of a linear programming relaxation. In this
-            case, ``y=(unary_marginals, pariwise_marginals)``, where
-            unary_marginals is an array of shape (n_nodes, n_states) and
-            pairwise_marginals is an array of shape
-            (n_states, n_states).
-
-        Returns
-        -------
-        p : ndarray, shape (size_psi,)
-            Feature vector associated with state (x, y).
-
-        """
-        self._check_size_x(x)
-        features, edges = x
-
-        if isinstance(y, tuple):
-            # y is result of relaxation, tuple of unary and pairwise marginals
-            unary_marginals, pw = y
-            # accumulate pairwise
-            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
-        else:
-            n_nodes = y.shape[0]
-            gx = np.ogrid[:n_nodes]
-
-            #make one hot encoding
-            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
-            gx = np.ogrid[:n_nodes]
-            unary_marginals[gx, y] = 1
-
-            ##accumulated pairwise
-            pw = np.dot(unary_marginals[edges[:, 0]].T,
-                        unary_marginals[edges[:, 1]])
-
-        unaries_acc = np.dot(unary_marginals.T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
-
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
-        return psi_vector
+    def get_features(self, x):
+        return x[0]

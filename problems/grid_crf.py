@@ -67,72 +67,11 @@ class GridCRF(CRF):
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = n_states * n_features + n_states * (n_states + 1) / 2
 
-    def _check_size_x(self, x):
-        if x.shape[-1] != self.n_features:
-            raise ValueError("Unary evidence should have %d feature per node,"
-                             " got %s instead."
-                             % (self.n_features, x.shape[-1]))
-
-    def psi(self, x, y):
-        """Feature vector associated with instance (x, y).
-
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
-
-        Parameters
-        ----------
-        x : ndarray, shape (width, height, n_states)
-            Unary evidence / input.
-
-        y : ndarray or tuple
-            Either y is an integral ndarray of shape (width, height), giving
-            a complete labeling for x.
-            Or it is the result of a linear programming relaxation. In this
-            case, ``y=(unary_marginals, pariwise_marginals)``, where
-            unary_marginals is an array of shape (width, height, n_states) and
-            pairwise_marginals is an array of shape
-            (n_edges, n_states, n_states).
-
-        Returns
-        -------
-        p : ndarray, shape (size_psi,)
-            Feature vector associated with state (x, y).
-
-        """
-        # x is unaries
-        # y is a labeling
-        self._check_size_x(x)
-        x_flat = x.reshape(-1, self.n_features)
-        if isinstance(y, tuple):
-            # y can also be continuous (from lp)
-            # in this case, it comes with edge marginals
-            unary_marginals, pw = y
-            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
-        else:
-            ## unary features:
-            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-            #selected_unaries = x[gx, gy, y]
-            #unaries_acc = np.bincount(y.ravel(), selected_unaries.ravel(),
-                                      #minlength=self.n_states)
-
-            #make one hot encoding
-            unary_marginals = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                                       dtype=np.int)
-            unary_marginals[gx, gy, y] = 1
-
-            ##accumulated pairwise
-            pw = np.sum(pairwise_grid_features(unary_marginals,
-                                               self.neighborhood), axis=0)
-
-        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
-                             x_flat)
-        pw = pw + pw.T - np.diag(np.diag(pw))
-        feature = np.hstack([unaries_acc.ravel(),
-                             pw[np.tri(self.n_states, dtype=np.bool)]])
-        return feature
-
     def get_edges(self, x):
         return make_grid_edges(x, neighborhood=self.neighborhood)
+
+    def get_features(self, x):
+        return x.reshape(-1, self.n_features)
 
     def get_unary_potentials(self, x, w):
         self._check_size_w(w)
