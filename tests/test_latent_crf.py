@@ -12,28 +12,32 @@ tracer = Tracer()
 
 
 def test_k_means_initialization():
-    X, Y = toy.generate_big_checker(n_samples=10)
-    edges = make_grid_edges(X[0], return_lists=True)
+    n_samples = 10
+    X, Y = toy.generate_big_checker(n_samples=n_samples)
+    edges = [make_grid_edges(x, return_lists=True) for x in X]
+    n_labels = len(np.unique(Y))
+    X = X.reshape(n_samples, -1, n_labels)
 
     # sanity check for one state
-    H = kmeans_init(X, Y, edges, n_states_per_label=1)
+    H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
     assert_array_equal(Y, H)
 
     # check number of states
-    H = kmeans_init(X, Y, edges, n_states_per_label=3)
+    H = kmeans_init(X, Y, edges, n_states_per_label=3, n_labels=n_labels)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 3)
 
     # for dataset with more than two states
     X, Y = toy.generate_blocks_multinomial(n_samples=10)
-    edges = make_grid_edges(X[0], return_lists=True)
+    n_labels = len(np.unique(Y))
+    edges = [make_grid_edges(x, return_lists=True) for x in X]
 
     # sanity check for one state
-    H = kmeans_init(X, Y, edges, n_states_per_label=1)
+    H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
     assert_array_equal(Y, H)
 
     # check number of states
-    H = kmeans_init(X, Y, edges, n_states_per_label=2)
+    H = kmeans_init(X, Y, edges, n_states_per_label=2, n_labels=n_labels)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 2)
 

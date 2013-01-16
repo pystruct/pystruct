@@ -7,16 +7,59 @@
 
 import numpy as np
 
-from . import GridCRF, DirectionalGridCRF
-from .latent_graph_crf import kmeans_init
+from scipy import sparse
+from sklearn.cluster import KMeans
+
+from . import GraphCRF
 from ..inference import inference_dispatch
-from ..utils import make_grid_edges
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-class LatentGridCRF(GridCRF):
+def kmeans_init(features, Y, all_edges, n_labels=2, n_states_per_label=2,
+                symmetric=True):
+    # flatten grids
+    features = features.reshape(features.shape[0], -1, features.shape[-1])
+    all_feats = []
+    # iterate over samples
+    for x, y, edges in zip(features, Y, all_edges):
+        # first, get neighbor counts from nodes
+        n_nodes = x.shape[0]
+        labels_one_hot = np.zeros((n_nodes, n_labels), dtype=np.int)
+        y = y.ravel()
+        gx = np.ogrid[:n_nodes]
+        labels_one_hot[gx, y] = 1
+
+        size = np.prod(y.shape)
+        graphs = [sparse.coo_matrix((np.ones(e.shape[0]), e.T), (size, size))
+                  for e in edges]
+        if symmetric:
+            directions = [g + g.T for g in graphs]
+        else:
+            directions = [T for g in graphs for T in [g, g.T]]
+        features = [s * labels_one_hot.reshape(size, -1) for s in directions]
+        features = np.hstack(features)
+        # normalize (for borders)
+        features /= features.sum(axis=1)[:, np.newaxis]
+
+        # add unaries
+        #features = np.dstack([x, neighbors])
+        all_feats.append(features)
+    all_feats = np.vstack(all_feats)
+    # states (=clusters) will be saved in H
+    H = np.zeros_like(Y, dtype=np.int)
+    km = KMeans(n_clusters=n_states_per_label)
+    # for each state, run k-means over whole dataset
+    for label in np.arange(n_labels):
+        indicator = Y.ravel() == label
+        f = all_feats[indicator]
+        states = km.fit_predict(f)
+        H.ravel()[indicator] = states + label * n_states_per_label
+    return H
+
+
+class LatentGraphCRF(GraphCRF):
     """Latent variable CRF with 2d grid graph.
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
@@ -27,14 +70,14 @@ class LatentGridCRF(GridCRF):
             n_features = n_labels
 
         n_states = n_labels * n_states_per_label
-        GridCRF.__init__(self, n_states, n_features,
-                         inference_method=inference_method)
+        GraphCRF.__init__(self, n_states, n_features,
+                          inference_method=inference_method)
 
     def init_latent(self, X, Y):
         # treat all edges the same
-        edges = [[make_grid_edges(x, neighborhood=self.neighborhood,
-                                  return_lists=False)] for x in X]
-        return kmeans_init(X, Y, edges,
+        edges = [self.get_edges(x) for x in X]
+        features = [self.get_features(x) for x in X]
+        return kmeans_init(features, Y, [edges],
                            n_states_per_label=self.n_states_per_label)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False,
@@ -83,35 +126,4 @@ class LatentGridCRF(GridCRF):
                                   self.n_labels,
                                   self.n_states_per_label).sum(axis=-1)
         y_org = y / self.n_states_per_label
-        return super(LatentGridCRF, self).continuous_loss(y_org, y_hat_org)
-
-
-class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
-    """Latent variable CRF with directional 2d grid graph.
-
-    Multiple inheritance weirdness....
-    All features / potentials are the same as in the DirectionalGridCRF,
-    so use these.
-
-    Things that have to do with y or h need to call the
-    LatentGridCRF function - that simply works because the feature are right.
-    """
-    def __init__(self, n_labels, n_features=None, n_states_per_label=2,
-                 inference_method='qpbo', neighborhood=4):
-        LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
-                               inference_method=inference_method)
-        DirectionalGridCRF.__init__(self, self.n_states, self.n_features,
-                                    inference_method=inference_method,
-                                    neighborhood=neighborhood)
-
-    def init_latent(self, X, Y):
-        edges = [make_grid_edges(x, neighborhood=self.neighborhood,
-                                 return_lists=True) for x in X]
-        return kmeans_init(X, Y, edges,
-                           n_states_per_label=self.n_states_per_label,
-                           symmetric=False)
-
-    def loss_augmented_inference(self, x, h, w, relaxed=False):
-        h = LatentGridCRF.loss_augmented_inference(self, x, h, w,
-                                                   relaxed=relaxed)
-        return h
+        return super(LatentGraphCRF, self).continuous_loss(y_org, y_hat_org)
