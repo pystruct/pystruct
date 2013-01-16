@@ -74,9 +74,9 @@ class LatentGraphCRF(GraphCRF):
 
     def init_latent(self, X, Y):
         # treat all edges the same
-        edges = [self.get_edges(x) for x in X]
-        features = [self.get_features(x) for x in X]
-        return kmeans_init(features, Y, [edges],
+        edges = [[self.get_edges(x)] for x in X]
+        features = np.array([self.get_features(x) for x in X])
+        return kmeans_init(features, Y, edges,
                            n_states_per_label=self.n_states_per_label)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False,

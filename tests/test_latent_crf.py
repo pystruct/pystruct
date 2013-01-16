@@ -4,7 +4,8 @@ from nose.tools import assert_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.utils import exhaustive_loss_augmented_inference, make_grid_edges
-from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
+from pystruct.problems import (LatentGridCRF, LatentDirectionalGridCRF,
+                               LatentGraphCRF)
 from pystruct.problems.latent_grid_crf import kmeans_init
 
 from IPython.core.debugger import Tracer
@@ -42,7 +43,8 @@ def test_k_means_initialization():
     assert_array_equal(Y, H / 2)
 
 
-def test_k_means_initialization_crf():
+def test_k_means_initialization_grid_crf():
+    # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
                         inference_method='lp')
@@ -50,7 +52,20 @@ def test_k_means_initialization_crf():
     assert_array_equal(Y, H)
 
 
-def test_k_means_initialization_directional_crf():
+def test_k_means_initialization_graph_crf():
+    # with only 1 state per label, nothing happends
+    X, Y = toy.generate_big_checker(n_samples=10)
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=1,
+                         inference_method='lp')
+    # convert grid problem to graph problem
+    X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
+         for x in X]
+
+    H = crf.init_latent(X, Y)
+    assert_array_equal(Y, H)
+
+
+def test_k_means_initialization_directional_grid_crf():
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentDirectionalGridCRF(n_labels=2, n_states_per_label=1,
                                    inference_method='lp')
