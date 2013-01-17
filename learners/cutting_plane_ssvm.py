@@ -55,6 +55,10 @@ class StructuredSVM(object):
     break_on_bad: bool (default=True)
         Whether to break (start debug mode) when inference was approximate.
 
+    n_jobs : int, default=1
+        Number of parallel jobs for inference. -1 means as many as cpus.
+
+
     Attributes
     ----------
     w : nd-array, shape=(problem.psi,)
@@ -179,8 +183,9 @@ class StructuredSVM(object):
             current_loss = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+            verbose = max(0, self.verbose - 3)
             candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                             verbose=self.verbose - 2)(
+                                             verbose=verbose)(
                                                  delayed(find_constraint)(
                                                      self.problem, x, y, w)
                                                  for x, y in zip(X, Y))

@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.externals.joblib import Parallel, delayed
+
 from .cutting_plane_ssvm import StructuredSVM
 from ..utils import find_constraint
 
@@ -44,11 +46,19 @@ class SubgradientStructuredSVM(StructuredSVM):
         Whether to use adagrad gradient scaling.
         Ignores if True, momentum is ignored.
 
+    n_jobs : int, default=1
+        Number of parallel jobs for inference. -1 means as many as cpus.
+
+    Attributes
+    ----------
+    w : nd-array, shape=(problem.psi,)
+        The learned weights of the SVM.
+
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learningrate=0.001, plot=False, adagrad=False):
-        super(SubgradientStructuredSVM, self).__init__(problem, max_iter, C,
-                                                       verbose=verbose)
+                 learningrate=0.001, plot=False, adagrad=False, n_jobs=1):
+        StructuredSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+                               n_jobs=n_jobs)
         self.momentum = momentum
         self.learningrate = learningrate
         self.t = 0
@@ -111,9 +121,16 @@ class SubgradientStructuredSVM(StructuredSVM):
             positive_slacks = 0
             current_loss = 0.
             objective = 0.
-            for i, x, y in zip(np.arange(len(X)), X, Y):
-                y_hat, delta_psi, slack, loss = find_constraint(self.problem,
-                                                                x, y, w)
+            verbose = max(0, self.verbose - 3)
+            candidate_constraints = Parallel(n_jobs=self.n_jobs,
+                                             verbose=verbose)(
+                                                 delayed(find_constraint)(
+                                                     self.problem, x, y, w)
+                                                 for x, y in zip(X, Y))
+
+            for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
+                                           candidate_constraints):
+                y_hat, delta_psi, slack, loss = constraint
                 objective += slack
                 psis.append(delta_psi)
 

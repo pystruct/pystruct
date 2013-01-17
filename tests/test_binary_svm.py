@@ -37,7 +37,7 @@ def test_simple_1d_dataset_cutting_plane():
     Y = 1 - 2 * (X < .5)
 
     pbl = BinarySVMProblem(n_features=1)
-    svm = StructuredSVM(pbl, verbose=10, check_constraints=True, C=1000)
+    svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
 
@@ -49,7 +49,7 @@ def test_blobs_2d_cutting_plane():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMProblem(n_features=2)
-    svm = StructuredSVM(pbl, verbose=10, check_constraints=True, C=1000)
+    svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -62,7 +62,7 @@ def test_blobs_2d_subgradient():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMProblem(n_features=2)
-    svm = SubgradientStructuredSVM(pbl, verbose=10,
+    svm = SubgradientStructuredSVM(pbl, verbose=3,
                                    C=1000)
 
     svm.fit(X_train, Y_train)
