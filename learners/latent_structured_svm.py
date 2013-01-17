@@ -70,8 +70,6 @@ class LatentSSVM(StructuredSVM):
             #if iteration == 0:
                 #subsvm.max_iter = 10
 
-            #subsvm.fit(X, H, constraints=new_constraints)
-            #constraints = subsvm.constraints_
             subsvm.fit(X, H, constraints=constraints)
             #if iteration == 0:
                 #subsvm.max_iter = self.max_iter
