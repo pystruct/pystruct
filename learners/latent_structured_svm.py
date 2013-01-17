@@ -75,9 +75,8 @@ class LatentSSVM(StructuredSVM):
             subsvm.fit(X, H, constraints=constraints)
             #if iteration == 0:
                 #subsvm.max_iter = self.max_iter
-            H_hat = Parallel(n_jobs=self.n_jobs)(delayed(inference)
-                                                 (self.problem, x, subsvm.w)
-                                                 for x in X)
+            H_hat = Parallel(n_jobs=self.n_jobs, verbose=self.verbose - 2)(
+                delayed(inference)(self.problem, x, subsvm.w) for x in X)
             inds = np.arange(len(H))
             if self.plot:
                 for i, h, h_hat in zip(inds, H, H_hat):

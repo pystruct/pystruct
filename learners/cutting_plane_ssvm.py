@@ -179,10 +179,11 @@ class StructuredSVM(object):
             current_loss = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
-            candidate_constraints = (Parallel(n_jobs=self.n_jobs)
-                                     (delayed(find_constraint)
-                                      (self.problem, x, y, w)
-                                      for x, y in zip(X, Y)))
+            candidate_constraints = Parallel(n_jobs=self.n_jobs,
+                                             verbose=self.verbose - 2)(
+                                                 delayed(find_constraint)(
+                                                     self.problem, x, y, w)
+                                                 for x, y in zip(X, Y))
             for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
                                            candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
@@ -255,7 +256,7 @@ class StructuredSVM(object):
                 print("objective converged.")
                 break
             self.ws.append(w)
-            if self.verbose > 1:
+            if self.verbose > 5:
                 print(w)
         self.w = w
         self.constraints_ = constraints
