@@ -296,7 +296,7 @@ class StructuredSVM(object):
         return prediction
 
     def score(self, X, Y):
-        """Compute score as -loss over whole data set.
+        """Compute score as 1 - loss over whole data set.
 
         Returns the average accuracy (in terms of problem.loss)
         over X and Y.
@@ -312,7 +312,7 @@ class StructuredSVM(object):
         Returns
         -------
         score : float
-            Average of -loss over training examples.
+            Average of 1 - loss over training examples.
         """
-        return np.mean([-self.problem.loss(y, y_pred)
+        return np.mean([1 - self.problem.loss(y, y_pred) / float(y.size)
                         for y, y_pred in zip(Y, self.predict(X))])
