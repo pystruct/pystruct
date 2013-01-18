@@ -6,6 +6,9 @@ from sklearn.externals.joblib import Parallel, delayed
 from .cutting_plane_ssvm import StructuredSVM
 from ..utils import find_constraint
 
+from IPython.core.debugger import Tracer
+tracer = Tracer()
+
 
 class SubgradientStructuredSVM(StructuredSVM):
     """Structured SVM solver using subgradient descent.
@@ -33,7 +36,7 @@ class SubgradientStructuredSVM(StructuredSVM):
     verbose : int
         Verbosity.
 
-    learningrate : float
+    learning_rate : float, default=0.001
         Learning rate used in subgradient descent.
 
     momentum : float
@@ -48,6 +51,10 @@ class SubgradientStructuredSVM(StructuredSVM):
 
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
+        Only for batch learning.
+
+    batch : bool, default=True
+        Whether to do batch or online learning.
 
     Attributes
     ----------
@@ -56,39 +63,37 @@ class SubgradientStructuredSVM(StructuredSVM):
 
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learningrate=0.001, plot=False, adagrad=False, n_jobs=1):
+                 learning_rate=0.001, plot=False, adagrad=False, n_jobs=1,
+                 batch=True):
         StructuredSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                                n_jobs=n_jobs)
         self.momentum = momentum
-        self.learningrate = learningrate
+        self.learning_rate = learning_rate
         self.t = 0
         self.plot = plot
         self.adagrad = adagrad
         self.grad_old = np.zeros(self.problem.size_psi)
+        self.batch = batch
 
-    def _solve_subgradient(self, psis):
+    def _solve_subgradient(self, w, psis):
         """Do a single subgradient step."""
-        if hasattr(self, 'w'):
-            w = self.w
-        else:
-            w = np.ones(self.problem.size_psi) * 1e-10
         psi_matrix = np.vstack(psis).mean(axis=0)
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
-        #grad = (self.learningrate / (self.t + 1.) ** 2
+        #grad = (self.learning_rate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
         grad = (psi_matrix - w / self.C)
 
         if self.adagrad:
             self.grad_old += grad ** 2
-            w += self.learningrate * grad / (1. + np.sqrt(self.grad_old))
+            w += self.learning_rate * grad / (1. + np.sqrt(self.grad_old))
             print("grad old %f" % np.mean(self.grad_old))
-            print("effective lr %f" % (self.learningrate /
+            print("effective lr %f" % (self.learning_rate /
                                        np.mean(1. + np.sqrt(self.grad_old))))
         else:
-            grad_old = ((1 - self.momentum) * grad
-                        + self.momentum * self.grad_old)
-            #w += self.learningrate / (self.t + 1) * grad_old
-            w += self.learningrate * grad_old
+            self.grad_old = ((1 - self.momentum) * grad
+                             + self.momentum * self.grad_old)
+            #w += self.learning_rate / (self.t + 1) * grad_old
+            w += self.learning_rate * self.grad_old
 
         self.w = w
         self.t += 1.
@@ -110,48 +115,62 @@ class SubgradientStructuredSVM(StructuredSVM):
         print("Training primal subgradient structural SVM")
         # we initialize with a small value so that loss-augmented inference
         # can give us something meaningful in the first iteration
-        w = 1e-5 * np.ones(self.problem.size_psi)
+        w = np.zeros(self.problem.size_psi)
         #constraints = []
         all_psis = []
-        losses = []
         loss_curve = []
         objective_curve = []
         for iteration in xrange(self.max_iter):
-            psis = []
             positive_slacks = 0
             current_loss = 0.
             objective = 0.
             verbose = max(0, self.verbose - 3)
-            candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                             verbose=verbose)(
-                                                 delayed(find_constraint)(
-                                                     self.problem, x, y, w)
-                                                 for x, y in zip(X, Y))
+            if self.batch:
+                # batch learning
+                candidate_constraints = Parallel(n_jobs=self.n_jobs,
+                                                 verbose=verbose)(
+                                                     delayed(find_constraint)(
+                                                         self.problem, x, y, w)
+                                                     for x, y in zip(X, Y))
 
-            for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
-                                           candidate_constraints):
-                y_hat, delta_psi, slack, loss = constraint
-                objective += slack
-                psis.append(delta_psi)
+                psis = []
+                for x, y, constraint in zip(X, Y, candidate_constraints):
+                    y_hat, delta_psi, slack, loss = constraint
+                    objective += slack
+                    psis.append(delta_psi)
 
-                losses.append(loss)
-                current_loss += loss
-                if slack > 0:
-                    positive_slacks += 1
+                    current_loss += loss
+                    if slack > 0:
+                        positive_slacks += 1
+                w = self._solve_subgradient(w, psis)
+                all_psis.extend(psis)
+            else:
+                # online learning
+                for x, y in zip(X, Y):
+                    y_hat, delta_psi, slack, loss = \
+                        find_constraint(self.problem, x, y, w)
+                    objective += slack
+                    all_psis.append(delta_psi)
+
+                    current_loss += loss
+                    if slack > 0:
+                        positive_slacks += 1
+                w = self._solve_subgradient(w, [delta_psi])
+
+            # some statistics
             objective /= len(X)
             current_loss /= len(X)
             objective += np.sum(w ** 2) / self.C / 2.
             if positive_slacks == 0:
                 print("No additional constraints")
+                tracer()
                 break
             if self.verbose > 0:
                 print("iteration %d" % iteration)
                 print("current loss: %f  positive slacks: %d, objective: %f" %
                       (current_loss, positive_slacks, objective))
             loss_curve.append(current_loss)
-            all_psis.extend(psis)
             objective_curve.append(objective)
-            w = self._solve_subgradient(psis)
 
             if self.verbose > 2:
                 print(w)
