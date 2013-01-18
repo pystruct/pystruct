@@ -115,15 +115,15 @@ def test_psi_continuous():
 def test_energy():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
-    found_fractional = False
-    unary_params = np.eye(3).ravel()
     for inference_method in ["lp", "ad3"]:
+        found_fractional = False
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         while not found_fractional:
-            x = np.random.normal(size=(4, 4, 3))
+            x = np.random.normal(size=(7, 8, 3))
+            unary_params = np.random.normal(size=(3, 3))
             pw1 = np.random.normal(size=(3, 3))
             pw2 = np.random.normal(size=(3, 3))
-            w = np.hstack([unary_params, pw1.ravel(), pw2.ravel()])
+            w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
             res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
             found_fractional = np.any(np.max(res[0], axis=-1) != 1)
 
