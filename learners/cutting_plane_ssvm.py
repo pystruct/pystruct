@@ -165,9 +165,7 @@ class StructuredSVM(object):
             y.
         """
         print("Training dual structural SVM")
-        # we initialize with a small value so that loss-augmented inference
-        # can give us something meaningful in the first iteration
-        w = np.ones(self.problem.size_psi) * 1e-5
+        w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
