@@ -13,8 +13,8 @@ tracer = Tracer()
 
 def main():
     #X, Y = toy.generate_big_checker(n_samples=20, noise=0.8)
-    #X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20)
-    X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
+    X, Y = toy.generate_blocks_multinomial(noise=1, n_samples=20)
+    #X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
     #X, Y = toy.generate_easy(n_samples=50, noise=10)
     #X, Y = toy.generate_easy_explicit(n_samples=25, noise=10)
     #X, Y = toy.generate_checker_multinomial(n_samples=20)
@@ -27,8 +27,10 @@ def main():
                              check_constraints=True, n_jobs=12, plot=True)
     #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10,
                                #plot=True)
-    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=500, C=1000000,
-            #verbose=10, momentum=.0, learningrate=0.01, plot=True)
+    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
+                                        #verbose=10, momentum=.9,
+                                        #learning_rate=0.1, plot=True,
+                                        #n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
 
@@ -46,10 +48,7 @@ def main():
         fig, plots = plt.subplots(1, 4)
         plots[0].matshow(y)
         plots[0].set_title("gt")
-        w_unaries_only = np.zeros(crf.size_psi)
-        w_unaries_only[:n_labels] = 1.
-        unary_pred = crf.inference(x, w_unaries_only)
-        plots[1].matshow(unary_pred)
+        plots[1].matshow(np.argmax(x, axis=-1))
         plots[1].set_title("unaries only")
         plots[2].matshow(y_pred)
         plots[2].set_title("prediction")
