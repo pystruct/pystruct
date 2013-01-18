@@ -170,8 +170,8 @@ class DirectionalGridCRF(GridCRF):
             pw = np.vstack(pairwise_grid_features(unary_marginals,
                                                   self.neighborhood))
 
-        unaries_acc = np.dot(x_flat.T, unary_marginals.reshape(-1,
-                                                               self.n_states))
+        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
+                             x_flat)
         feature = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return feature
 
