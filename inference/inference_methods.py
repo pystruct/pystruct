@@ -18,7 +18,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                             relaxed, return_energy=return_energy, exact=exact)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
-                             relaxed)
+                             relaxed=relaxed, return_energy=return_energy)
     else:
         raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo' or"
                          " 'dai', got %s" % inference_method)
@@ -96,7 +96,7 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0):
+                  verbose=0, return_energy=False):
     import AD3
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
@@ -115,4 +115,6 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     else:
         y = np.argmax(unary_marginals, axis=-1)
         y = y.reshape(shape_org)
+    if return_energy:
+        return y, -energy
     return y
