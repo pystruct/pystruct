@@ -26,20 +26,20 @@ class SubgradientStructuredSVM(StructuredSVM):
         Object containing problem formulation. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
-    max_iter : int
+    max_iter : int, default=100
         Maximum number of passes over dataset to find constraints and perform
         updates.
 
-    C : float
+    C : float, default=1.
         Regularization parameter
 
-    verbose : int
+    verbose : int, default=0
         Verbosity.
 
     learning_rate : float, default=0.001
         Learning rate used in subgradient descent.
 
-    momentum : float
+    momentum : float, default=0.9
         Momentum used in subgradient descent.
 
     plot : bool (default=Fale)
