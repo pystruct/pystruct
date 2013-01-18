@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pystruct.problems import DirectionalGridCRF
+#from pystruct.problems import GridCRF
 #from structured_perceptron import StructuredPerceptron
 import pystruct.learners as ssvm
 import pystruct.toy_datasets as toy
@@ -12,15 +13,11 @@ tracer = Tracer()
 
 
 def main():
-    #X, Y = toy.generate_big_checker(n_samples=20, noise=0.8)
-    X, Y = toy.generate_blocks_multinomial(noise=1, n_samples=20)
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20)
     #X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
-    #X, Y = toy.generate_easy(n_samples=50, noise=10)
     #X, Y = toy.generate_easy_explicit(n_samples=25, noise=10)
     #X, Y = toy.generate_checker_multinomial(n_samples=20)
     n_labels = len(np.unique(Y))
-    #crf = GridCRF(n_states=n_labels, inference_method="dai")
-    #crf = GridCRF(n_states=n_labels, inference_method="lp", neighborhood=4)
     crf = DirectionalGridCRF(n_states=n_labels, inference_method="lp",
                              neighborhood=4)
     clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=1000000, verbose=1,
@@ -29,8 +26,8 @@ def main():
                                #plot=True)
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,
-                                        #learning_rate=0.1, plot=True,
-                                        #n_jobs=-1)
+                                        #learning_rate=0.04, plot=True,
+                                        #n_jobs=-1, batch=False)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
 
@@ -41,8 +38,7 @@ def main():
     loss = 0
     for x, y, y_pred in zip(X, Y, Y_pred):
         y_pred = y_pred.reshape(x.shape[:2])
-        #loss += np.sum(y != y_pred)
-        loss += np.sum(np.logical_xor(y, y_pred))
+        loss += np.sum(y != y_pred)
         #if i > 10:
             #continue
         fig, plots = plt.subplots(1, 4)
