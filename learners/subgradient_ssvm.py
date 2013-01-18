@@ -117,7 +117,6 @@ class SubgradientStructuredSVM(StructuredSVM):
         # can give us something meaningful in the first iteration
         w = np.zeros(self.problem.size_psi)
         #constraints = []
-        all_psis = []
         loss_curve = []
         objective_curve = []
         for iteration in xrange(self.max_iter):
@@ -143,14 +142,12 @@ class SubgradientStructuredSVM(StructuredSVM):
                     if slack > 0:
                         positive_slacks += 1
                 w = self._solve_subgradient(w, psis)
-                all_psis.extend(psis)
             else:
                 # online learning
                 for x, y in zip(X, Y):
                     y_hat, delta_psi, slack, loss = \
                         find_constraint(self.problem, x, y, w)
                     objective += slack
-                    all_psis.append(delta_psi)
 
                     current_loss += loss
                     if slack > 0:
