@@ -40,7 +40,7 @@ def kmeans_init(X, Y, all_edges, n_labels=2, n_states_per_label=2,
         neighbors = [s * labels_one_hot.reshape(size, -1) for s in directions]
         neighbors = np.hstack(neighbors)
         # normalize (for borders)
-        neighbors /= max(neighbors.sum(axis=1)[:, np.newaxis], 1)
+        neighbors /= np.maximum(neighbors.sum(axis=1)[:, np.newaxis], 1)
 
         # add unaries
         features = np.hstack([x, neighbors])
