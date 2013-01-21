@@ -22,13 +22,16 @@ X /= X.max()
 
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-pbl = BinarySVMProblem(n_features=X_train.shape[1])
+pbl = BinarySVMProblem(n_features=X_train.shape[1] + 1)  # add one for bias
 svm = StructuredSVM(pbl, verbose=2, check_constraints=False, C=20)
 
 start = time()
-svm.fit(X_train, y_train)
+# we add a constant 1 feature for the bias
+X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
+svm.fit(X_train_bias, y_train)
 time_svm = time() - start
-y_pred = np.hstack(svm.predict(X_test))
+X_test_bias = np.hstack([X_test, np.ones((X_test.shape[0], 1))])
+y_pred = np.hstack(svm.predict(X_test_bias))
 print("Score with pystruct toy svm: %f (took %f seconds)"
       % (np.mean(y_pred == y_test), time_svm))
 
