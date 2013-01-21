@@ -168,7 +168,6 @@ class SubgradientStructuredSVM(StructuredSVM):
             objective += np.sum(w ** 2) / self.C / 2.
             if positive_slacks == 0:
                 print("No additional constraints")
-                tracer()
                 break
             if self.verbose > 0:
                 print("iteration %d" % iteration)
