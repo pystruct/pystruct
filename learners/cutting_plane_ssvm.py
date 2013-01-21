@@ -162,6 +162,28 @@ class StructuredSVM(object):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
+    def _check_bad_constraint(self, slack, old_constraints, w):
+        # "smart" stopping criterion
+        # check if most violated constraint is more violated
+        # than previous ones by more then eps.
+        # If it is less violated, inference was wrong/approximate
+        bad_new_constraint = False
+        if self.check_constraints:
+            for con in old_constraints:
+                # compute slack for old constraint
+                slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
+                if self.verbose > 5:
+                    print("slack old constraint: %f" % slack_tmp)
+                # if slack of new constraint is smaller or not
+                # significantly larger, don't add constraint.
+                # if smaller, complain about approximate inference.
+                if slack - slack_tmp < -1e-5:
+                    print("bad inference: %f" % (slack_tmp - slack))
+                    if self.break_on_bad:
+                        tracer()
+                    bad_new_constraint = True
+                    break
+        return bad_new_constraint
     def fit(self, X, Y, constraints=None):
         """Learn parameters using cutting plane method.
 
@@ -191,7 +213,6 @@ class StructuredSVM(object):
         loss_curve = []
         objective_curve = []
         primal_objective_curve = []
-        self.ws = []
         self.alphas = []  # dual solutions
         for iteration in xrange(self.max_iter):
             if self.verbose > 0:
@@ -221,25 +242,8 @@ class StructuredSVM(object):
                 if already_active:
                     continue
 
-                if self.check_constraints:
-                    # "smart" stopping criterion
-                    # check if most violated constraint is more violated
-                    # than previous ones by more then eps.
-                    # If it is less violated, inference was wrong/approximate
-                    for con in constraints[i]:
-                        # compute slack for old constraint
-                        slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
-                        if self.verbose > 1:
-                            print("slack old constraint: %f" % slack_tmp)
-                        # if slack of new constraint is smaller or not
-                        # significantly larger, don't add constraint.
-                        # if smaller, complain about approximate inference.
-                        if slack - slack_tmp < -1e-5:
-                            print("bad inference: %f" % (slack_tmp - slack))
-                            if self.break_on_bad:
-                                tracer()
-                            already_active = True
-                            break
+                if self._check_bad_constraint(slack, constraints[i], w):
+                    continue
 
                 # if significant slack and constraint not active
                 # this is a weaker check than the "check_constraints" one.
@@ -277,7 +281,6 @@ class StructuredSVM(object):
                     primal_objective_curve[-2] < 0.0001):
                 print("objective converged.")
                 break
-            self.ws.append(w)
             if self.verbose > 5:
                 print(w)
         self.w = w
