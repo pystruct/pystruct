@@ -113,8 +113,6 @@ class SubgradientStructuredSVM(StructuredSVM):
             Needs to have the same length as X.
         """
         print("Training primal subgradient structural SVM")
-        # we initialize with a small value so that loss-augmented inference
-        # can give us something meaningful in the first iteration
         w = np.zeros(self.problem.size_psi)
         #constraints = []
         loss_curve = []
@@ -152,7 +150,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                     current_loss += loss
                     if slack > 0:
                         positive_slacks += 1
-                w = self._solve_subgradient(w, [delta_psi])
+                    w = self._solve_subgradient(w, [delta_psi])
 
             # some statistics
             objective /= len(X)
