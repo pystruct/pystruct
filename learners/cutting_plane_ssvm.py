@@ -103,9 +103,17 @@ class StructuredSVM(object):
                              " 'true', got %s" % self.show_loss)
 
     def _solve_n_slack_qp(self, constraints, n_samples):
+        # if there is no array for counting constraint activity, create one:
+        #constraints_active = [np.zeros(len(sample)) for sample in constraints]
+        #try:
+            #for i, sample in enumerate(self.constraints_active):
+                #constraints_active[i][:sample.size()] = sample
+        #except AttributeError:
+            #pass
         C = self.C / float(n_samples)
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
+
         psi_matrix = np.vstack(psis)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
@@ -162,12 +170,21 @@ class StructuredSVM(object):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
-    def _check_bad_constraint(self, slack, old_constraints, w):
+    def _check_bad_constraint(self, y_hat, slack, old_constraints, w):
+        if slack < 1e-5:
+            return True
+        y_hat_plain = unwrap_pairwise(y_hat)
+
+        already_active = np.any([True for y__, _, _ in old_constraints
+                                 if (y_hat_plain ==
+                                     unwrap_pairwise(y__)).all()])
+        if already_active:
+            return True
+
         # "smart" stopping criterion
         # check if most violated constraint is more violated
         # than previous ones by more then eps.
         # If it is less violated, inference was wrong/approximate
-        bad_new_constraint = False
         if self.check_constraints:
             for con in old_constraints:
                 # compute slack for old constraint
@@ -181,9 +198,10 @@ class StructuredSVM(object):
                     print("bad inference: %f" % (slack_tmp - slack))
                     if self.break_on_bad:
                         tracer()
-                    bad_new_constraint = True
-                    break
-        return bad_new_constraint
+                    return True
+
+        return False
+
     def fit(self, X, Y, constraints=None):
         """Learn parameters using cutting plane method.
 
@@ -212,9 +230,9 @@ class StructuredSVM(object):
             constraints = [[] for i in xrange(n_samples)]
         loss_curve = []
         objective_curve = []
-        primal_objective_curve = []
         self.alphas = []  # dual solutions
         for iteration in xrange(self.max_iter):
+            # main loop
             if self.verbose > 0:
                 print("iteration %d" % iteration)
             new_constraints = 0
@@ -227,29 +245,26 @@ class StructuredSVM(object):
                                                  delayed(find_constraint)(
                                                      self.problem, x, y, w)
                                                  for x, y in zip(X, Y))
+
             for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
                                            candidate_constraints):
+                # loop over dataset
                 y_hat, delta_psi, slack, loss = constraint
-
                 current_loss += self._get_loss(x, y, w, loss)
-
                 if self.verbose > 3:
                     print("current slack: %f" % slack)
-                y_hat_plain = unwrap_pairwise(y_hat)
-                already_active = np.any([True for y__, _, _ in constraints[i]
-                                         if (y_hat_plain ==
-                                             unwrap_pairwise(y__)).all()])
-                if already_active:
+
+                if not loss > 0:
+                    # can have y != y_hat but loss = 0 in latent svm.
+                    # we need this here as dpsi is then != 0
                     continue
 
-                if self._check_bad_constraint(slack, constraints[i], w):
+                if self._check_bad_constraint(y_hat, slack, constraints[i], w):
                     continue
 
-                # if significant slack and constraint not active
-                # this is a weaker check than the "check_constraints" one.
-                if not already_active and slack > 1e-5:
-                    constraints[i].append([y_hat, delta_psi, loss])
-                    new_constraints += 1
+                constraints[i].append([y_hat, delta_psi, loss])
+                new_constraints += 1
+
             current_loss /= len(X)
             loss_curve.append(current_loss)
 
@@ -260,25 +275,14 @@ class StructuredSVM(object):
                     break
             w, objective = self._solve_n_slack_qp(constraints, n_samples)
 
-            slacks = [[-np.dot(w, psi_) + loss_ for _, psi_, loss_ in sample]
-                      for sample in constraints]
-            # slacks are non-negative. Not all sample have slacks
-            slacks = [max(np.max(s or 0), 0) for s in slacks]
-            sum_of_slacks = np.sum(slacks)
-            objective_p = self.C * sum_of_slacks / len(X) + np.sum(w ** 2) / 2.
-            primal_objective_curve.append(objective_p)
-            if (len(primal_objective_curve) > 2
-                    and objective_p > primal_objective_curve[-2] + 1e8):
-                print("primal loss became smaller. that shouldn't happen.")
-                tracer()
             objective_curve.append(objective)
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, "
-                      "primal objective: %f dual objective: %f" %
+                      "dual objective: %f" %
                       (current_loss, new_constraints,
-                       primal_objective_curve[-1], objective))
-            if (iteration > 1 and primal_objective_curve[-1] -
-                    primal_objective_curve[-2] < 0.0001):
+                       objective))
+            if (iteration > 1 and objective_curve[-2]
+                    - objective_curve[-1] < 0.0001):
                 print("objective converged.")
                 break
             if self.verbose > 5:
@@ -288,15 +292,12 @@ class StructuredSVM(object):
         print("calls to inference: %d" % self.problem.inference_calls)
         if self.plot:
             plt.figure()
-            plt.subplot(131, title="loss")
+            plt.subplot(121, title="loss")
             plt.plot(loss_curve)
-            plt.subplot(132, title="objective")
+            plt.subplot(122, title="objective")
             plt.plot(objective_curve)
-            plt.subplot(133, title="primal objective")
-            plt.plot(primal_objective_curve)
             plt.show()
             plt.close()
-        #self.primal_objective_ = primal_objective_curve[-1]
 
     def predict(self, X):
         """Predict output on examples in X.

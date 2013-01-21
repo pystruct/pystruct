@@ -13,6 +13,7 @@ tracer = Tracer()
 
 def test_problem_1d():
     # 10 1d datapoints between -1 and 1
+    np.random.seed(0)
     X = np.random.uniform(size=(10, 1))
     # linearly separable labels
     Y = 1 - 2 * (X.ravel() < .5)
