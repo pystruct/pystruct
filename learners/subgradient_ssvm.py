@@ -85,7 +85,11 @@ class SubgradientStructuredSVM(StructuredSVM):
 
     def _solve_subgradient(self, w, psis):
         """Do a single subgradient step."""
-        psi_matrix = np.vstack(psis).mean(axis=0)
+        if len(psis) > 1:
+            psi_matrix = np.mean(psis, axis=0)
+        else:
+            psi_matrix = psis[0]
+
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learning_rate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
