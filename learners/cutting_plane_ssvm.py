@@ -58,6 +58,15 @@ class StructuredSVM(object):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
+    show_loss : string, default='augmented'
+        Controlls the meaning of the loss curve and convergence messages.
+        By default (show_loss='augmented') the loss of the loss-augmented
+        prediction is shown, since this is computed any way.
+        Setting show_loss='real' will show the true loss, i.e. the one of
+        the normal prediction. Be aware that this means an additional
+        call to inference in each iteration!
+
+
 
     Attributes
     ----------
@@ -70,7 +79,7 @@ class StructuredSVM(object):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1, plot=False,
-                 break_on_bad=True):
+                 break_on_bad=True, show_loss='true'):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
@@ -80,8 +89,18 @@ class StructuredSVM(object):
         self.n_jobs = n_jobs
         self.plot = plot
         self.break_on_bad = break_on_bad
+        self.show_loss = show_loss
         if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
+
+    def _get_loss(self, x, y, w, augmented_loss):
+        if self.show_loss == 'augmented':
+            return augmented_loss
+        elif self.show_loss == 'true':
+            return self.problem.loss(y, self.problem.inference(x, w))
+        else:
+            raise ValueError("show_loss should be 'augmented' or"
+                             " 'true', got %s" % self.show_loss)
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C / float(n_samples)
@@ -191,7 +210,7 @@ class StructuredSVM(object):
                                            candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
 
-                current_loss += loss
+                current_loss += self._get_loss(x, y, w, loss)
 
                 if self.verbose > 3:
                     print("current slack: %f" % slack)

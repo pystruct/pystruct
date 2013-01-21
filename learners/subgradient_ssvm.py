@@ -60,7 +60,7 @@ class SubgradientStructuredSVM(StructuredSVM):
         Controlls the meaning of the loss curve and convergence messages.
         By default (show_loss='augmented') the loss of the loss-augmented
         prediction is shown, since this is computed any way.
-        Setting show_loss='real' will show the true loss, i.e. the one of
+        Setting show_loss='true' will show the true loss, i.e. the one of
         the normal prediction. Be aware that this means an additional
         call to inference in each iteration!
 
@@ -74,7 +74,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                  learning_rate=0.001, plot=False, adagrad=False, n_jobs=1,
                  batch=True, show_loss='augmented'):
         StructuredSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                               n_jobs=n_jobs)
+                               n_jobs=n_jobs, show_loss=show_loss)
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
@@ -82,7 +82,6 @@ class SubgradientStructuredSVM(StructuredSVM):
         self.adagrad = adagrad
         self.grad_old = np.zeros(self.problem.size_psi)
         self.batch = batch
-        self.show_loss = show_loss
 
     def _solve_subgradient(self, w, psis):
         """Do a single subgradient step."""
@@ -144,14 +143,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                     y_hat, delta_psi, slack, loss = constraint
                     objective += slack
                     psis.append(delta_psi)
-                    if self.show_loss == 'augmented':
-                        current_loss += loss
-                    elif self.show_loss == 'real':
-                        current_loss += self.problem.loss(
-                            y, self.problem.inference(x, w))
-                    else:
-                        raise ValueError("show_loss should be 'augmented' or"
-                                         " 'real', got %s" % self.show_loss)
+                    current_loss += self._get_loss(x, y, w, loss)
                     if slack > 0:
                         positive_slacks += 1
                 w = self._solve_subgradient(w, psis)
@@ -161,15 +153,7 @@ class SubgradientStructuredSVM(StructuredSVM):
                     y_hat, delta_psi, slack, loss = \
                         find_constraint(self.problem, x, y, w)
                     objective += slack
-
-                    if self.show_loss == 'augmented':
-                        current_loss += loss
-                    elif self.show_loss == 'real':
-                        current_loss += self.problem.loss(
-                            y, self.problem.inference(x, w))
-                    else:
-                        raise ValueError("show_loss should be 'augmented' or"
-                                         " 'real', got %s" % self.show_loss)
+                    current_loss += self._get_loss(x, y, w, loss)
                     if slack > 0:
                         positive_slacks += 1
                     w = self._solve_subgradient(w, [delta_psi])
