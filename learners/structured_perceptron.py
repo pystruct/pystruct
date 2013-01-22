@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.externals.joblib import Parallel, delayed
 
+from .ssvm import BaseSSVM
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
@@ -10,7 +11,7 @@ def inference(problem, x, w):
     return problem.inference(x, w)
 
 
-class StructuredPerceptron(object):
+class StructuredPerceptron(BaseSSVM):
     """Structured Perceptron training.
 
     Implements a simple structured perceptron without regularization.
@@ -46,10 +47,8 @@ class StructuredPerceptron(object):
     """
     def __init__(self, problem, max_iter=100, verbose=0, plot=False,
                  batch=False):
-        self.max_iter = max_iter
-        self.problem = problem
-        self.verbose = verbose
-        self.plot = plot
+        BaseSSVM.__init__(self, problem, max_iter=max_iter, verbose=verbose,
+                          plot=plot)
         self.batch = batch
 
     def fit(self, X, Y):
@@ -106,20 +105,3 @@ class StructuredPerceptron(object):
             plt.show()
         self.loss_curve_ = loss_curve
         self.w = w
-
-    def predict(self, X):
-        """Predict output on examples in X.
-        Parameters
-        ----------
-        X : iterable
-            Traing instances. Contains the structured input objects.
-
-        Returns
-        -------
-        Y_pred : list
-            List of inference results for X using the learned parameters.
-        """
-        prediction = []
-        for x in X:
-            prediction.append(self.problem.inference(x, self.w))
-        return prediction

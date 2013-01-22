@@ -13,13 +13,14 @@ import matplotlib.pyplot as plt
 
 #from sklearn.externals.joblib import Parallel, delayed
 
+from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-class StructuredSVM(object):
+class StructuredSVM(BaseSSVM):
     """Structured SVM training with l1 slack penalty.
 
     Implements margin rescaled structural SVM using
@@ -83,37 +84,18 @@ class StructuredSVM(object):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1, plot=False,
                  break_on_bad=True, show_loss='true', batch_size=100):
-        self.max_iter = max_iter
+
+        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+                          n_jobs=n_jobs, show_loss=show_loss, plot=plot)
+
         self.positive_constraint = positive_constraint
-        self.problem = problem
-        self.C = float(C)
-        self.verbose = verbose
         self.check_constraints = check_constraints
-        self.n_jobs = n_jobs
-        self.plot = plot
         self.break_on_bad = break_on_bad
-        self.show_loss = show_loss
         self.batch_size = batch_size
         if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
 
-    def _get_loss(self, x, y, w, augmented_loss):
-        if self.show_loss == 'augmented':
-            return augmented_loss
-        elif self.show_loss == 'true':
-            return self.problem.loss(y, self.problem.inference(x, w))
-        else:
-            raise ValueError("show_loss should be 'augmented' or"
-                             " 'true', got %s" % self.show_loss)
-
     def _solve_n_slack_qp(self, constraints, n_samples):
-        # if there is no array for counting constraint activity, create one:
-        #constraints_active = [np.zeros(len(sample)) for sample in constraints]
-        #try:
-            #for i, sample in enumerate(self.constraints_active):
-                #constraints_active[i][:sample.size()] = sample
-        #except AttributeError:
-            #pass
         C = self.C / float(n_samples)
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
@@ -291,9 +273,7 @@ class StructuredSVM(object):
                 #tracer()
                 if iteration > 0:
                     break
-            #w, objective = self._solve_n_slack_qp(constraints, n_samples)
 
-            #objective_curve.append(objective)
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, "
                       "dual objective: %f" %
@@ -305,6 +285,7 @@ class StructuredSVM(object):
                 break
             if self.verbose > 5:
                 print(w)
+
         self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
@@ -316,42 +297,3 @@ class StructuredSVM(object):
             plt.plot(objective_curve)
             plt.show()
             plt.close()
-
-    def predict(self, X):
-        """Predict output on examples in X.
-        Parameters
-        ----------
-        X : iterable
-            Traing instances. Contains the structured input objects.
-
-        Returns
-        -------
-        Y_pred : list
-            List of inference results for X using the learned parameters.
-        """
-        prediction = []
-        for x in X:
-            prediction.append(self.problem.inference(x, self.w))
-        return prediction
-
-    def score(self, X, Y):
-        """Compute score as 1 - loss over whole data set.
-
-        Returns the average accuracy (in terms of problem.loss)
-        over X and Y.
-
-        Parameters
-        ----------
-        X : iterable
-            Evaluation data.
-
-        Y : iterable
-            True labels.
-
-        Returns
-        -------
-        score : float
-            Average of 1 - loss over training examples.
-        """
-        return np.mean([1 - self.problem.loss(y, y_pred) / float(y.size)
-                        for y, y_pred in zip(Y, self.predict(X))])

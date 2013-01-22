@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 
 from sklearn.externals.joblib import Parallel, delayed
 
-from .cutting_plane_ssvm import StructuredSVM
+from .ssvm import BaseSSVM
 from ..utils import find_constraint
 
 from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-class SubgradientStructuredSVM(StructuredSVM):
+class SubgradientStructuredSVM(BaseSSVM):
     """Structured SVM solver using subgradient descent.
 
     Implements a margin rescaled with l1 slack penalty.
@@ -73,12 +73,11 @@ class SubgradientStructuredSVM(StructuredSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, plot=False, adagrad=False, n_jobs=1,
                  batch=True, show_loss='augmented'):
-        StructuredSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                               n_jobs=n_jobs, show_loss=show_loss)
+        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+                          n_jobs=n_jobs, show_loss=show_loss, plot=plot)
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
-        self.plot = plot
         self.adagrad = adagrad
         self.grad_old = np.zeros(self.problem.size_psi)
         self.batch = batch
