@@ -119,14 +119,34 @@ def objective_primal(problem, w, X, Y, C):
 
 
 def exhaustive_loss_augmented_inference(problem, x, y, w):
-    size = np.prod(x.shape[:-1])
+    size = y.size
     best_y = None
     best_energy = np.inf
     for y_hat in itertools.product(range(problem.n_states), repeat=size):
-        y_hat = np.array(y_hat).reshape(x.shape[:-1])
+        y_hat = np.array(y_hat).reshape(y.shape)
         #print("trying %s" % repr(y_hat))
         psi = problem.psi(x, y_hat)
         energy = -problem.loss(y, y_hat) - np.dot(w, psi)
+        if energy < best_energy:
+            best_energy = energy
+            best_y = y_hat
+    return best_y
+
+
+def exhaustive_inference(problem, x, w):
+    # hack to get the grid shape of x
+    if isinstance(x, np.ndarray):
+        feats = x
+    else:
+        feats = problem.get_features(x)
+    size = np.prod(feats.shape[:-1])
+    best_y = None
+    best_energy = np.inf
+    for y_hat in itertools.product(range(problem.n_states), repeat=size):
+        y_hat = np.array(y_hat).reshape(feats.shape[:-1])
+        #print("trying %s" % repr(y_hat))
+        psi = problem.psi(x, y_hat)
+        energy = -np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat

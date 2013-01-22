@@ -1,12 +1,11 @@
-import itertools
-
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.problems import GridCRF
-from pystruct.utils import find_constraint
+from pystruct.utils import (find_constraint, exhaustive_inference,
+                            exhaustive_loss_augmented_inference)
 
 
 from IPython.core.debugger import Tracer
@@ -175,34 +174,6 @@ def test_multinomial_grid_unaries():
             assert_array_equal(inf_unaries, Y[0])
 
 
-def exhausive_inference_binary(problem, x, w):
-    size = np.prod(x.shape[:-1])
-    best_y = None
-    best_energy = np.inf
-    for y_hat in itertools.product([0, 1], repeat=size):
-        y_hat = np.array(y_hat).reshape(x.shape[:-1])
-        psi = problem.psi(x, y_hat)
-        energy = -np.dot(w, psi)
-        if energy < best_energy:
-            best_energy = energy
-            best_y = y_hat
-    return best_y
-
-
-def exhausive_loss_augmented_inference_binary(problem, x, y, w):
-    size = np.prod(x.shape[:-1])
-    best_y = None
-    best_energy = np.inf
-    for y_hat in itertools.product([0, 1], repeat=size):
-        y_hat = np.array(y_hat).reshape(x.shape[:-1])
-        psi = problem.psi(x, y_hat)
-        energy = -problem.loss(y, y_hat) - np.dot(w, psi)
-        if energy < best_energy:
-            best_energy = energy
-            best_y = y_hat
-    return best_y
-
-
 def test_binary_crf_exhaustive():
     # tests graph cut inference against brute force
     # on random data / weights
@@ -214,7 +185,7 @@ def test_binary_crf_exhaustive():
         w = np.random.uniform(-1, 1, size=7)
         # check map inference
         y_hat = crf.inference(x, w)
-        y_ex = exhausive_inference_binary(crf, x, w)
+        y_ex = exhaustive_inference(crf, x, w)
         #print(y_hat)
         #print(y_ex)
         #print("++++++++++++++++++++++")
@@ -234,7 +205,7 @@ def test_binary_crf_exhaustive_loss_augmented():
         crf = GridCRF()
         # check loss augmented map inference
         y_hat = crf.loss_augmented_inference(x, y, w)
-        y_ex = exhausive_loss_augmented_inference_binary(crf, x, y, w)
+        y_ex = exhaustive_loss_augmented_inference(crf, x, y, w)
         #print(y_hat)
         #print(y_ex)
         #print("++++++++++++++++++++++")
