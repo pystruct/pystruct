@@ -11,7 +11,7 @@ import cvxopt
 import cvxopt.solvers
 import matplotlib.pyplot as plt
 
-from sklearn.externals.joblib import Parallel, delayed
+#from sklearn.externals.joblib import Parallel, delayed
 
 from ..utils import unwrap_pairwise, find_constraint
 
@@ -66,6 +66,9 @@ class StructuredSVM(object):
         the normal prediction. Be aware that this means an additional
         call to inference in each iteration!
 
+    batch_size : int, default=100
+        Number of constraints after which we solve the QP again.
+
 
 
     Attributes
@@ -79,7 +82,7 @@ class StructuredSVM(object):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1, plot=False,
-                 break_on_bad=True, show_loss='true'):
+                 break_on_bad=True, show_loss='true', batch_size=100):
         self.max_iter = max_iter
         self.positive_constraint = positive_constraint
         self.problem = problem
@@ -90,6 +93,7 @@ class StructuredSVM(object):
         self.plot = plot
         self.break_on_bad = break_on_bad
         self.show_loss = show_loss
+        self.batch_size = batch_size
         if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
 
@@ -159,7 +163,7 @@ class StructuredSVM(object):
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-5
+        sv = a > 1e-10
         box = np.dot(blocks, a)
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
@@ -231,6 +235,7 @@ class StructuredSVM(object):
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
+        # we have to update at least once after going through the dataset
         for iteration in xrange(self.max_iter):
             # main loop
             if self.verbose > 0:
@@ -239,17 +244,19 @@ class StructuredSVM(object):
             current_loss = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
-            verbose = max(0, self.verbose - 3)
-            candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                             verbose=verbose)(
-                                                 delayed(find_constraint)(
-                                                     self.problem, x, y, w)
-                                                 for x, y in zip(X, Y))
+            #verbose = max(0, self.verbose - 3)
+            #candidate_constraints = Parallel(n_jobs=self.n_jobs,
+                                             #verbose=verbose)(
+                                                 #delayed(find_constraint)(
+                                                     #self.problem, x, y, w)
+                                                 #for x, y in zip(X, Y))
 
-            for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
-                                           candidate_constraints):
+            #for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
+                                           #candidate_constraints):
+            for i, x, y in zip(np.arange(len(X)), X, Y):
                 # loop over dataset
-                y_hat, delta_psi, slack, loss = constraint
+                y_hat, delta_psi, slack, loss = find_constraint(self.problem,
+                                                                x, y, w)
                 current_loss += self._get_loss(x, y, w, loss)
                 if self.verbose > 3:
                     print("current slack: %f" % slack)
@@ -265,6 +272,17 @@ class StructuredSVM(object):
                 constraints[i].append([y_hat, delta_psi, loss])
                 new_constraints += 1
 
+                if not new_constraints % self.batch_size:
+                    w, objective = self._solve_n_slack_qp(constraints,
+                                                          n_samples)
+                    objective_curve.append(objective)
+
+            # update qp once again for good measure (if there were less than
+            # batch_size constraints for example)
+            w, objective = self._solve_n_slack_qp(constraints,
+                                                  n_samples)
+            objective_curve.append(objective)
+
             current_loss /= len(X)
             loss_curve.append(current_loss)
 
@@ -273,9 +291,9 @@ class StructuredSVM(object):
                 #tracer()
                 if iteration > 0:
                     break
-            w, objective = self._solve_n_slack_qp(constraints, n_samples)
+            #w, objective = self._solve_n_slack_qp(constraints, n_samples)
 
-            objective_curve.append(objective)
+            #objective_curve.append(objective)
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, "
                       "dual objective: %f" %
