@@ -69,7 +69,8 @@ class StructuredSVM(BaseSSVM):
 
     batch_size : int, default=100
         Number of constraints after which we solve the QP again.
-
+        batch_size=-1 means that an update is performed only after going once
+        over the whole training set.
 
 
     Attributes
@@ -83,7 +84,8 @@ class StructuredSVM(BaseSSVM):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1, plot=False,
-                 break_on_bad=True, show_loss='true', batch_size=100):
+                 break_on_bad=True, show_loss='true', batch_size=100,
+                 tol=0.0001):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss=show_loss, plot=plot)
@@ -92,6 +94,7 @@ class StructuredSVM(BaseSSVM):
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
+        self.tol = tol
         if verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
 
@@ -209,7 +212,7 @@ class StructuredSVM(BaseSSVM):
             and loss is the loss for predicting y_hat instead of the true label
             y.
         """
-        print("Training dual structural SVM")
+        print("Training n-slack dual structural SVM")
         w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
         if constraints is None:
@@ -254,10 +257,15 @@ class StructuredSVM(BaseSSVM):
                 constraints[i].append([y_hat, delta_psi, loss])
                 new_constraints += 1
 
-                if not new_constraints % self.batch_size:
+                if (self.batch_size > 0
+                        and not new_constraints % self.batch_size):
                     w, objective = self._solve_n_slack_qp(constraints,
                                                           n_samples)
                     objective_curve.append(objective)
+
+            if new_constraints == 0:
+                print("no additional constraints")
+                break
 
             # update qp once again for good measure (if there were less than
             # batch_size constraints for example)
@@ -268,19 +276,13 @@ class StructuredSVM(BaseSSVM):
             current_loss /= len(X)
             loss_curve.append(current_loss)
 
-            if new_constraints == 0:
-                print("no additional constraints")
-                #tracer()
-                if iteration > 0:
-                    break
-
             if self.verbose > 0:
                 print("current loss: %f  new constraints: %d, "
                       "dual objective: %f" %
                       (current_loss, new_constraints,
                        objective))
             if (iteration > 1 and objective_curve[-2]
-                    - objective_curve[-1] < 0.0001):
+                    - objective_curve[-1] < self.tol):
                 print("objective converged.")
                 break
             if self.verbose > 5:
