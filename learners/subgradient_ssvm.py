@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.externals.joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed, cpu_count
+from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
 from ..utils import find_constraint
@@ -17,8 +18,9 @@ class SubgradientStructuredSVM(BaseSSVM):
     By default, a constant learning rate is used.
     It is also possible to use the adaptive learning rate found by AdaGrad.
 
-    This class implements batch subgradient descent, i.e. does a single update
-    for each pass over the dataset.
+    This class implements online subgradient descent. If n_jobs != 1,
+    small batches of size n_jobs are used to exploit parallel inference.
+    If inference is fast, use n_jobs=1.
 
     Parmeters
     ---------
@@ -53,9 +55,6 @@ class SubgradientStructuredSVM(BaseSSVM):
         Number of parallel jobs for inference. -1 means as many as cpus.
         Only for batch learning.
 
-    batch : bool, default=True
-        Whether to do batch or online learning.
-
     show_loss : string, default='augmented'
         Controlls the meaning of the loss curve and convergence messages.
         By default (show_loss='augmented') the loss of the loss-augmented
@@ -82,17 +81,13 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.grad_old = np.zeros(self.problem.size_psi)
         self.batch = batch
 
-    def _solve_subgradient(self, w, psis):
+    def _solve_subgradient(self, w, dpsi):
         """Do a single subgradient step."""
-        if len(psis) > 1:
-            psi_matrix = np.mean(psis, axis=0)
-        else:
-            psi_matrix = psis[0]
 
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learning_rate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
-        grad = (psi_matrix - w / self.C)
+        grad = (dpsi - w / self.C)
 
         if self.adagrad:
             self.grad_old += grad ** 2
@@ -128,29 +123,16 @@ class SubgradientStructuredSVM(BaseSSVM):
         #constraints = []
         loss_curve = []
         objective_curve = []
+        n_samples = len(X)
         for iteration in xrange(self.max_iter):
             positive_slacks = 0
             current_loss = 0.
             objective = 0.
             verbose = max(0, self.verbose - 3)
-            if self.batch:
-                # batch learning
-                candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                                 verbose=verbose)(
-                                                     delayed(find_constraint)(
-                                                         self.problem, x, y, w)
-                                                     for x, y in zip(X, Y))
+            #if self.batch_size < self.n_jobs:
+                #batch_size = max(self.batch_size, self.n_jobs)
 
-                psis = []
-                for x, y, constraint in zip(X, Y, candidate_constraints):
-                    y_hat, delta_psi, slack, loss = constraint
-                    objective += slack
-                    psis.append(delta_psi)
-                    current_loss += self._get_loss(x, y, w, loss)
-                    if slack > 0:
-                        positive_slacks += 1
-                w = self._solve_subgradient(w, psis)
-            else:
+            if self.n_jobs == 1:
                 # online learning
                 for x, y in zip(X, Y):
                     y_hat, delta_psi, slack, loss = \
@@ -159,7 +141,35 @@ class SubgradientStructuredSVM(BaseSSVM):
                     current_loss += self._get_loss(x, y, w, loss)
                     if slack > 0:
                         positive_slacks += 1
-                    w = self._solve_subgradient(w, [delta_psi])
+                    w = self._solve_subgradient(w, delta_psi)
+            else:
+                # generate batches of size n_jobs
+                # to speed up inference
+                if self.n_jobs == -1:
+                    n_jobs = cpu_count()
+                else:
+                    n_jobs = self.j_jobs
+
+                n_batches = int(np.ceil(float(len(X)) / n_jobs))
+                slices = gen_even_slices(n_samples, n_batches)
+                for batch in slices:
+                    X_b = X[batch]
+                    Y_b = Y[batch]
+                    candidate_constraints = Parallel(
+                        n_jobs=self.n_jobs,
+                        verbose=verbose)(delayed(find_constraint)(
+                            self.problem, x, y, w) for x, y in zip(X_b, Y_b))
+                    dpsi = np.zeros(self.problem.size_psi)
+                    for x, y, constraint in zip(X_b, Y_b,
+                                                candidate_constraints):
+                        y_hat, delta_psi, slack, loss = constraint
+                        objective += slack
+                        dpsi += delta_psi
+                        current_loss += self._get_loss(x, y, w, loss)
+                        if slack > 0:
+                            positive_slacks += 1
+                    dpsi /= float(n_samples)
+                    w = self._solve_subgradient(w, dpsi)
 
             # some statistics
             objective /= len(X)
