@@ -217,6 +217,9 @@ class StructuredSVM(BaseSSVM):
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
+            new_constraints = 0
+        else:
+            new_constraints = np.sum([len(c) for c in constraints])
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
@@ -225,7 +228,10 @@ class StructuredSVM(BaseSSVM):
             # main loop
             if self.verbose > 0:
                 print("iteration %d" % iteration)
-            new_constraints = 0
+            if iteration > 0:
+                # don't reset in the first iteration
+                # we might have been passed some
+                new_constraints = 0
             current_loss = 0.
             #for i, x, y in zip(np.arange(len(X)), X, Y):
                 #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
