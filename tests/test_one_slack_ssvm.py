@@ -1,22 +1,36 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-#from nose.tools import assert_true
-from pystruct.problems import GraphCRF
-from pystruct.learners import StructuredSVM
+
+from pystruct.problems import GridCRF, GraphCRF
+from pystruct.learners import OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
 
 
-def test_binary_blocks_cutting_plane():
+def test_multinomial_blocks_one_slack():
+    #testing cutting plane ssvm on easy multinomial dataset
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
+                                           seed=0)
+    n_labels = len(np.unique(Y))
+    for inference_method in ['lp']:
+        crf = GridCRF(n_states=n_labels, inference_method=inference_method)
+        clf = OneSlackSSVM(problem=crf, max_iter=50, C=100, verbose=100,
+                           check_constraints=True, break_on_bad=True)
+        clf.fit(X, Y)
+        Y_pred = clf.predict(X)
+        assert_array_equal(Y, Y_pred)
+
+
+def test_binary_blocks_one_slack_graph():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in ["dai", "lp", "qpbo", "ad3"]:
+    for inference_method in ["dai", "lp"]:
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
-                            check_constraints=True, break_on_bad=False,
-                            n_jobs=1)
+        clf = OneSlackSSVM(problem=crf, max_iter=100, C=100, verbose=100,
+                           check_constraints=True, break_on_bad=True,
+                           n_jobs=1)
         x1, x2, x3 = X
         y1, y2, y3 = Y
         n_states = len(np.unique(Y))
