@@ -222,7 +222,13 @@ class OneSlackSSVM(BaseSSVM):
             # a constraint is a joint configuration,
             # the mean over dpsi, the mean over losses and the slack
             Ys, dpsis, violations, losses = zip(*new_constraint)
-            dpsi_mean = np.mean(dpsis, axis=0)
+            # compute the mean over psis
+            # don't use numpy here. we don't want to allocate more memory
+            dpsi_mean = np.zeros(self.problem.size_psi)
+            for dpsi in dpsis:
+                dpsi_mean += dpsi
+            dpsi_mean /= len(dpsis)
+
             loss_mean = np.mean(losses)
             slack = loss_mean - np.dot(w, dpsi_mean)
 
