@@ -8,7 +8,7 @@ from IPython.core.debugger import Tracer
 tracer = Tracer()
 
 
-def lp_general_graph(unaries, edges, edge_weights, exact=False):
+def lp_general_graph(unaries, edges, edge_weights):
     if unaries.shape[1] != edge_weights.shape[1]:
         raise ValueError("incompatible shapes of unaries"
                          " and edge_weights.")
@@ -73,7 +73,11 @@ def lp_general_graph(unaries, edges, edge_weights, exact=False):
     b_[:n_nodes] = 1    # ones for unary cummation constraints
     b = cvxopt.matrix(b_)
 
+    # silence glpk
+    cvxopt.solvers.options['LPX_K_MSGLEV'] = False
+
     result = cvxopt.solvers.lp(c, G, h, A, b, solver='glpk')
+
     x = np.array(result['x'])
     unary_variables = x[:n_nodes * n_states].reshape(n_nodes, n_states)
     pairwise_variables = x[n_nodes * n_states:].reshape(n_edges, n_states ** 2)
@@ -82,14 +86,14 @@ def lp_general_graph(unaries, edges, edge_weights, exact=False):
     return unary_variables, pairwise_variables, result['primal objective']
 
 
-def solve_lp(unaries, edges, pairwise, exact=False):
+def solve_lp(unaries, edges, pairwise):
     if unaries.shape[1] != pairwise.shape[0]:
         raise ValueError("incompatible shapes of unaries"
                          " and pairwise potentials.")
 
     n_edges = len(edges)
     edge_weights = np.repeat(pairwise[np.newaxis, :, :], n_edges, axis=0)
-    return lp_general_graph(unaries, edges, edge_weights, exact=exact)
+    return lp_general_graph(unaries, edges, edge_weights)
 
 
 def main():

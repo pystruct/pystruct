@@ -91,7 +91,7 @@ class CRF(StructuredProblem):
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
 
-    def inference(self, x, w, relaxed=False, return_energy=False, exact=False):
+    def inference(self, x, w, relaxed=False, return_energy=False):
         """Inference for x using parameters w.
 
         Finds (approximately)
@@ -140,4 +140,4 @@ class CRF(StructuredProblem):
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy, exact=exact)
+                                  return_energy=return_energy)

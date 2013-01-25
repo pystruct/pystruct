@@ -46,7 +46,7 @@ def test_graph_crf_continuous_inference():
 def test_graph_crf_energy_lp_integral():
     crf = GraphCRF(n_states=2, inference_method='lp')
     inf_res, energy_lp = crf.inference((x_1, g_1), w, relaxed=True,
-                                       return_energy=True, exact=True)
+                                       return_energy=True)
     # integral solution
     assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
     y = np.argmax(inf_res[0], axis=-1)
@@ -59,14 +59,14 @@ def test_graph_crf_energy_lp_relaxed():
         w_ = np.random.uniform(size=w.shape)
         crf = GraphCRF(n_states=2, inference_method='lp')
         inf_res, energy_lp = crf.inference((x_1, g_1), w_, relaxed=True,
-                                           return_energy=True, exact=True)
+                                           return_energy=True)
         assert_almost_equal(energy_lp,
                             -np.dot(w_, crf.psi((x_2, g_2), inf_res)))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
     inf_res, energy_lp = crf.inference((x, g_1), w, relaxed=True,
-                                       return_energy=True, exact=True)
+                                       return_energy=True)
     assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x, g_1), inf_res)))
 
 

@@ -38,8 +38,7 @@ def test_inference():
     edge_weights = np.vstack([edge_weights_horizontal, edge_weights_vertical])
 
     # do inference
-    res = lp_general_graph(-x.reshape(-1, n_states), edges, edge_weights,
-                           exact=False)
+    res = lp_general_graph(-x.reshape(-1, n_states), edges, edge_weights)
 
     for inference_method in ["lp", "ad3"]:
         # same inference through CRF inferface

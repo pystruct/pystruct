@@ -7,15 +7,14 @@ tracer = Tracer()
 
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                       inference_method, relaxed=False, return_energy=False,
-                       exact=False):
+                       inference_method, relaxed=False, return_energy=False):
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges)
     elif inference_method == "dai":
         return inference_dai(unary_potentials, pairwise_potentials, edges)
     elif inference_method == "lp":
         return inference_lp(unary_potentials, pairwise_potentials, edges,
-                            relaxed, return_energy=return_energy, exact=exact)
+                            relaxed, return_energy=return_energy)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
                              relaxed=relaxed, return_energy=return_energy)
@@ -73,13 +72,13 @@ def inference_dai(unary_potentials, pairwise_potentials, edges):
 
 
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                 return_energy=False, exact=False):
+                 return_energy=False):
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
 
     unaries = unary_potentials.reshape(-1, n_states)
-    res = lp_general_graph(-unaries, edges, -pairwise_potentials, exact=exact)
+    res = lp_general_graph(-unaries, edges, -pairwise_potentials)
     unary_marginals, pairwise_marginals, energy = res
     n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
     if n_fractional:

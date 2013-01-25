@@ -62,10 +62,9 @@ def test_energy_lp():
             x = np.random.normal(size=(2, 2, 4))
             w = np.random.uniform(size=crf.size_psi)
             inf_res, energy_lp = crf.inference(x, w, relaxed=True,
-                                               return_energy=True, exact=True)
+                                               return_energy=True)
             assert_almost_equal(energy_lp,
                                 -np.dot(w, crf.psi(x, inf_res)))
-
             found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
 
 

@@ -61,14 +61,14 @@ Installation
 There is no need to compile anything, this pure Python.
 There are quite a couple of requirements, though:
 
-* You need cvxopt for the cutting plane SVM solver.
+* You need cvxopt for the cutting plane SVM solver and linear programming inference.
+  By default I use the glpk solver for the LP, so you need that, too, if you want to use LP inference.
+
 * You need sklearn for some tidbits here and there, also I import joblib from sklearn.
-* For the linear programming inference, you need pyglpk from here: http://tfinley.net/software/pyglpk/ (not the one from easy install!)
-  I'll try to use the linear programming solver / interface from cvxopt soon, but haven't had time for that yet.
 
 * For the other inference algorithms that are wrapped in the inference folder,
-  you need the following of my repositories.  You can just pick and choose from
-  those, but that will make some tests fail.
+  you need the following of my repositories. You can just pick and choose from
+  those, but lack of methods will make some tests fail.
 
   QPBO
     https://github.com/amueller/pyqpbo
