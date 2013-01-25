@@ -2,8 +2,6 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-import matplotlib.pyplot as plt
-
 
 def lp_general_graph(unaries, edges, edge_weights):
     if unaries.shape[1] != edge_weights.shape[1]:
@@ -94,9 +92,11 @@ def solve_lp(unaries, edges, pairwise):
 
 
 def main():
+    import pystruct.toy_datasets as toy
+    import matplotlib.pyplot as plt
     # create mrf problem:
     pairwise = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
-    import pystruct.toy_datasets as toy
+
     X, Y = toy.generate_blocks_multinomial(n_samples=1, noise=.5)
     x, y = X[0], Y[0]
     inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
