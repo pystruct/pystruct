@@ -1,9 +1,6 @@
 import numpy as np
 import cvxopt
 import cvxopt.solvers
-from IPython.core.debugger import Tracer
-
-tracer = Tracer()
 
 
 class SVM(object):

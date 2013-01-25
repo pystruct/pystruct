@@ -2,9 +2,6 @@ import numpy as np
 
 from .linear_programming import lp_general_graph
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, relaxed=False, return_energy=False):

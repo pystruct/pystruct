@@ -16,9 +16,6 @@ import matplotlib.pyplot as plt
 from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 class StructuredSVM(BaseSSVM):
     """Structured SVM training with l1 slack penalty.
@@ -140,7 +137,8 @@ class StructuredSVM(BaseSSVM):
                               + 1e-8 * np.eye(psi_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h)
             if solution['status'] != "optimal":
-                tracer()
+                from IPython.core.debugger import Tracer
+                Tracer()()
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
@@ -186,7 +184,8 @@ class StructuredSVM(BaseSSVM):
                 if slack - slack_tmp < -1e-5:
                     print("bad inference: %f" % (slack_tmp - slack))
                     if self.break_on_bad:
-                        tracer()
+                        from IPython.core.debugger import Tracer
+                        Tracer()()
                     return True
 
         return False

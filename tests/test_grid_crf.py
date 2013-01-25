@@ -8,10 +8,6 @@ from pystruct.utils import (find_constraint, exhaustive_inference,
                             exhaustive_loss_augmented_inference)
 
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
-
 def test_continuous_y():
     for inference_method in ["lp", "ad3"]:
         X, Y = toy.generate_blocks(n_samples=1)

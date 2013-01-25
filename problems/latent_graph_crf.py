@@ -12,9 +12,6 @@ from sklearn.cluster import KMeans
 from . import GraphCRF
 from ..inference import inference_dispatch
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def kmeans_init(X, Y, all_edges, n_labels=2, n_states_per_label=2,
                 symmetric=True):
@@ -111,7 +108,8 @@ class LatentGraphCRF(GraphCRF):
         if (h // self.n_states_per_label != y).any():
             print("inconsistent h and y")
             h = y * self.n_states_per_label
-            tracer()
+            from IPython.core.debugger import Tracer
+            Tracer()()
         return h
 
     def loss(self, h, h_hat):

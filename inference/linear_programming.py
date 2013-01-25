@@ -3,9 +3,6 @@ import cvxopt
 import cvxopt.solvers
 
 import matplotlib.pyplot as plt
-from IPython.core.debugger import Tracer
-
-tracer = Tracer()
 
 
 def lp_general_graph(unaries, edges, edge_weights):
@@ -112,7 +109,6 @@ def main():
                                                              pairwise)
     plt.matshow(np.argmax(unary_assignment, axis=1).reshape(y.shape))
     plt.show()
-    tracer()
 
 if __name__ == "__main__":
     main()

@@ -8,9 +8,6 @@ from pystruct.problems import BinarySVMProblem
 from pystruct.learners import (StructuredSVM, SubgradientStructuredSVM,
                                OneSlackSSVM)
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def test_problem_1d():
     # 10 1d datapoints between -1 and 1

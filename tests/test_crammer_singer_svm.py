@@ -7,9 +7,6 @@ from sklearn.datasets import make_blobs
 from pystruct.problems import CrammerSingerSVMProblem
 from pystruct.learners import StructuredSVM, SubgradientStructuredSVM
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def test_simple_1d_dataset_cutting_plane():
     # 10 1d datapoints between 0 and 1

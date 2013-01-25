@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
-from IPython.core.debugger import Tracer
-tracer = Tracer()
 
 
 def inference(problem, x, w):

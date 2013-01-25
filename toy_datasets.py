@@ -3,9 +3,6 @@
 # some need latent variables, some need directions.
 
 import numpy as np
-from IPython.core.debugger import Tracer
-
-tracer = Tracer()
 
 
 #### binary

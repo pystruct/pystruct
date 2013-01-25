@@ -1,9 +1,6 @@
 import itertools
 import numpy as np
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def unwrap_pairwise(y):
     """given a y that may contain pairwise marginals, yield plain y."""
@@ -74,7 +71,6 @@ def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
                            labels[1:, :-1, :].reshape(-1, n_states))
             diag2 = np.dot(labels[1:, 1:, :].reshape(-1, n_states).T,
                            labels[:-1, :-1, :].reshape(-1, n_states))
-            tracer()
             pw = vert + horz + diag1 + diag2
     pw = pw + pw.T - np.diag(np.diag(pw))
     energy = (np.dot(unaries_acc, unary_params)

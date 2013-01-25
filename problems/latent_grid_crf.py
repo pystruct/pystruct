@@ -11,9 +11,6 @@ from .latent_graph_crf import kmeans_init
 from ..inference import inference_dispatch
 from ..utils import make_grid_edges
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 class LatentGridCRF(GridCRF):
     """Latent variable CRF with 2d grid graph.
@@ -70,7 +67,8 @@ class LatentGridCRF(GridCRF):
         if (h // self.n_states_per_label != y).any():
             print("inconsistent h and y")
             h = y * self.n_states_per_label
-            tracer()
+            from IPython.core.debugger import Tracer
+            Tracer()()
         return h
 
     def loss(self, h, h_hat):

@@ -8,9 +8,6 @@ from pystruct.learners import LatentSSVM
 
 import pystruct.toy_datasets as toy
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def main():
     X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,

@@ -8,10 +8,6 @@ import pystruct.learners as ssvm
 import pystruct.toy_datasets as toy
 
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
-
 def main():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20)
     #X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)

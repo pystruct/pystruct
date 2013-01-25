@@ -8,9 +8,6 @@ from pystruct.problems import (LatentGridCRF, LatentDirectionalGridCRF,
                                LatentGraphCRF)
 from pystruct.problems.latent_grid_crf import kmeans_init
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 def test_k_means_initialization():
     n_samples = 10

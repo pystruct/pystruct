@@ -13,10 +13,6 @@ from sklearn.externals.joblib import Parallel, delayed
 from .cutting_plane_ssvm import StructuredSVM
 from ..utils import inference, find_constraint
 
-from IPython.core.debugger import Tracer
-
-tracer = Tracer()
-
 
 class LatentSSVM(StructuredSVM):
     def fit(self, X, Y, H_init=None):

@@ -2,10 +2,6 @@ import numpy as np
 
 from .crf import CRF
 
-from IPython.core.debugger import Tracer
-
-tracer = Tracer()
-
 
 class GraphCRF(CRF):
     """Pairwise CRF on a general graph.

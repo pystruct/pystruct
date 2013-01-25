@@ -2,9 +2,6 @@ import numpy as np
 
 from .base import StructuredProblem
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 class BinarySVMProblem(StructuredProblem):
     """Formulate standard linear binary SVM in CRF framework.

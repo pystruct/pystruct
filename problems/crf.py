@@ -3,9 +3,6 @@ import numpy as np
 from .base import StructuredProblem
 from ..inference import inference_dispatch
 
-from IPython.core.debugger import Tracer
-tracer = Tracer()
-
 
 class CRF(StructuredProblem):
     """Abstract base class"""
