@@ -8,7 +8,6 @@
 import numpy as np
 import cvxopt
 import cvxopt.solvers
-import matplotlib.pyplot as plt
 
 from sklearn.externals.joblib import Parallel, delayed
 
@@ -78,6 +77,14 @@ class OneSlackSSVM(BaseSSVM):
 
     old_solution : dict
         The last solution found by the qp solver.
+
+   ``loss_curve_`` : list of float
+        List of loss values after each pass thorugh the dataset.
+        Either sum of slacks (loss on loss augmented predictions)
+        or actual loss, depends on the value of ``show_loss``.
+
+   ``objective_curve_`` : list of float
+       Primal objective after each pass through the dataset.
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
@@ -257,11 +264,5 @@ class OneSlackSSVM(BaseSSVM):
         self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
-        if self.plot:
-            plt.figure()
-            plt.subplot(121, title="loss")
-            plt.plot(loss_curve)
-            plt.subplot(122, title="objective")
-            plt.plot(objective_curve)
-            plt.show()
-            plt.close()
+        self.loss_curve_ = loss_curve
+        self.objective_curve_ = objective_curve

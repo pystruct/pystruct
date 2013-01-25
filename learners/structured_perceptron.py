@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
@@ -32,9 +31,6 @@ class StructuredPerceptron(BaseSSVM):
     verbose : int (default=0)
         Verbosity
 
-    plot : bool (default=Fale)
-        Whether to plot a learning curve in the end.
-
     batch: bool (default=False)
         Whether to do batch learning or online learning.
 
@@ -42,11 +38,12 @@ class StructuredPerceptron(BaseSSVM):
     ----------
     w : nd-array, shape=(problem.psi,)
         The learned weights of the SVM.
+
+   ``loss_curve_`` : list of float
+        List of loss values after each pass thorugh the dataset.
     """
-    def __init__(self, problem, max_iter=100, verbose=0, plot=False,
-                 batch=False):
-        BaseSSVM.__init__(self, problem, max_iter=max_iter, verbose=verbose,
-                          plot=plot)
+    def __init__(self, problem, max_iter=100, verbose=0, batch=False):
+        BaseSSVM.__init__(self, problem, max_iter=max_iter, verbose=verbose)
         self.batch = batch
 
     def fit(self, X, Y):
@@ -98,8 +95,5 @@ class StructuredPerceptron(BaseSSVM):
                     print("alpha: %f" % alpha)
         except KeyboardInterrupt:
             pass
-        if self.plot:
-            plt.plot(loss_curve)
-            plt.show()
         self.loss_curve_ = loss_curve
         self.w = w

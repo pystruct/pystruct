@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices
@@ -41,9 +40,6 @@ class SubgradientStructuredSVM(BaseSSVM):
     momentum : float, default=0.9
         Momentum used in subgradient descent.
 
-    plot : bool (default=Fale)
-        Whether to plot a learning curve in the end.
-
     adagrad : bool (default=False)
         Whether to use adagrad gradient scaling.
         Ignores if True, momentum is ignored.
@@ -64,12 +60,20 @@ class SubgradientStructuredSVM(BaseSSVM):
     w : nd-array, shape=(problem.psi,)
         The learned weights of the SVM.
 
+   ``loss_curve_`` : list of float
+        List of loss values after each pass thorugh the dataset.
+        Either sum of slacks (loss on loss augmented predictions)
+        or actual loss, depending on the value of ``show_loss``.
+
+   ``objective_curve_`` : list of float
+       Primal objective after each pass through the dataset.
+
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learning_rate=0.001, plot=False, adagrad=False, n_jobs=1,
+                 learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss='augmented'):
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss=show_loss, plot=plot)
+                          n_jobs=n_jobs, show_loss=show_loss)
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
@@ -187,11 +191,7 @@ class SubgradientStructuredSVM(BaseSSVM):
         except KeyboardInterrupt:
             pass
         self.w = w
+        self.loss_curve_ = loss_curve
+        self.objective_curve_ = objective_curve
         print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
-        if self.plot:
-            plt.subplot(121, title="loss")
-            plt.plot(loss_curve)
-            plt.subplot(122, title="objective")
-            plt.plot(objective_curve)
-            plt.show()
