@@ -1,5 +1,6 @@
 import numpy as np
-import glpk            # Import the GLPK module
+import cvxopt
+import cvxopt.solvers
 
 import matplotlib.pyplot as plt
 from IPython.core.debugger import Tracer
@@ -17,49 +18,28 @@ def lp_general_graph(unaries, edges, edge_weights, exact=False):
         raise ValueError("Number of edge weights different from number of"
                          "edges")
 
-    lp = glpk.LPX()          # Create empty problem instance
-    lp.name = 'sample'       # Assign symbolic name to problem
-    lp.obj.maximize = False  # Set this as a maximization problem
     n_nodes, n_states = unaries.shape
     n_edges = len(edges)
 
-    # this will hold our constraints:
-    matrix = []
-
-    # columns are variables. n_nodes * n_states for nodes,
+    # variables: n_nodes * n_states for nodes,
     # n_edges * n_states ** 2 for edges
     n_variables = n_nodes * n_states + n_edges * n_states ** 2
-    lp.cols.add(n_variables)         # Append columns to this instance
 
-    # variables for unary marginals
-    for i, col in enumerate(lp.cols[:n_nodes * n_states]):
-        col.name = "mu_%d=%d" % (i // n_states, i % n_states)
-
-    # variables for pairwise marginals
-    for i, col in enumerate(lp.cols[n_nodes * n_states:]):
-        edge = edges[i // n_states ** 2]
-        state_pair = i % n_states ** 2
-        col.name = "mu_%d,%d=%d,%d" % (edge[0], edge[1],
-                                       state_pair // n_states,
-                                       state_pair % n_states)
-
-    for c in lp.cols:      # Iterate over all columns
-        c.bounds = 0.0, None     # Set bound 0 <= xi < inf
-
-    # rows are constraints. one per node,
+    # constraints: one per node,
     # and n_nodes * n_states for pairwise
     n_constraints = n_nodes + 2 * n_edges * n_states
-    lp.rows.add(n_constraints)         # Append rows to this instance
+
     # offset to get to the edge variables in columns
     edges_offset = n_nodes * n_states
+    constraints = np.zeros((n_constraints, n_variables))
 
-    for i, r in enumerate(lp.rows[:n_nodes]):
-        r.name = "summation %d" % i
-        r.bounds = 1
+    # summation constraints
+    for i in xrange(n_nodes):
         for j in xrange(n_states):
-            matrix.append((i, i * n_states + j, 1))
+            constraints[i, i * n_states + j] = 1
 
-    for i, r in enumerate(lp.rows[n_nodes:]):
+    # edge marginalization constraint
+    for i in xrange(2 * n_edges * n_states):
         row_idx = i + n_nodes
         #print("i: %d" % i)
         edge = i // (2 * n_states)
@@ -69,43 +49,37 @@ def lp_general_graph(unaries, edges, edge_weights, exact=False):
         vertex_in_edge = i % (2 * n_states) // n_states
         vertex = edges[edge][vertex_in_edge]
         #print("vertex: %d" % vertex)
-        r.name = "marginalization edge %d[%d] state %d" % (edge, vertex, state)
         # for one vertex iterate over all states of the other vertex
-        matrix.append((row_idx, int(vertex) * n_states + state, -1))
+        constraints[row_idx, int(vertex) * n_states + state] = -1
         edge_var_index = edges_offset + edge * n_states ** 2
         if vertex_in_edge == 0:
             # first vertex in edge
             for j in xrange(n_states):
-                matrix.append((row_idx, edge_var_index
-                               + state * n_states + j, 1))
+                constraints[row_idx, edge_var_index + state * n_states + j] = 1
         else:
             # second vertex in edge
             for j in xrange(n_states):
-                matrix.append((row_idx, edge_var_index
-                               + j * n_states + state, 1))
-
-        r.bounds = 0
+                constraints[row_idx, edge_var_index + j * n_states + state] = 1
 
     coef = np.ravel(unaries)
     # pairwise:
     repeated_pairwise = edge_weights.ravel()
     coef = np.hstack([coef, repeated_pairwise])
-    lp.obj[:] = coef.tolist()   # Set objective coefficients
-    lp.matrix = matrix
-    glpk.env.term_on = False
-    if exact:
-        lp.exact()           # Solve this LP with the simplex method
-    else:
-        lp.simplex()           # Solve this LP with the simplex method
-    #print 'Z = %g;' % lp.obj.value,  # Retrieve and print obj func value
-    #print '; '.join('%s = %g' % (c.name, c.primal) for c in lp.cols)
-    res = np.array([c.primal for c in lp.cols])
-    unary_variables = res[:n_nodes * n_states].reshape(n_nodes, n_states)
-    pairwise_variables = res[n_nodes * n_states:].reshape(n_edges,
-                                                          n_states ** 2)
+    c = cvxopt.matrix(coef)
+    G = cvxopt.matrix(-np.eye(n_variables))  # for positivity inequalities
+    h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
+    A = cvxopt.matrix(constraints)  # unary and pairwise summation constratints
+    b_ = np.zeros(n_constraints)  # zeros for pairwise summation constraints
+    b_[:n_nodes] = 1    # ones for unary cummation constraints
+    b = cvxopt.matrix(b_)
+
+    result = cvxopt.solvers.lp(c, G, h, A, b, solver='glpk')
+    x = np.array(result['x'])
+    unary_variables = x[:n_nodes * n_states].reshape(n_nodes, n_states)
+    pairwise_variables = x[n_nodes * n_states:].reshape(n_edges, n_states ** 2)
     assert((np.abs(unary_variables.sum(axis=1) - 1) < 1e-4).all())
     assert((np.abs(pairwise_variables.sum(axis=1) - 1) < 1e-4).all())
-    return unary_variables, pairwise_variables, lp.obj.value
+    return unary_variables, pairwise_variables, result['primal objective']
 
 
 def solve_lp(unaries, edges, pairwise, exact=False):
@@ -120,10 +94,8 @@ def solve_lp(unaries, edges, pairwise, exact=False):
 
 def main():
     # create mrf problem:
-    # two nodes, binary problem
-    # potts potential
-    pairwise = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-    import toy_datasets as toy
+    pairwise = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
+    import pystruct.toy_datasets as toy
     X, Y = toy.generate_blocks_multinomial(n_samples=1, noise=.5)
     x, y = X[0], Y[0]
     inds = np.arange(x.shape[0] * x.shape[1]).reshape(x.shape[:2])
@@ -132,7 +104,8 @@ def main():
     vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
     edges = np.vstack([horz, vert])
     x = x.reshape(-1, x.shape[-1])
-    unary_assignment = solve_lp(-x, pairwise, edges)
+    unary_assignment, pairwise_assignment, energy = solve_lp(-x, edges,
+                                                             pairwise)
     plt.matshow(np.argmax(unary_assignment, axis=1).reshape(y.shape))
     plt.show()
     tracer()
