@@ -172,6 +172,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
         y_pred : int
             Predicted class label.
         """
+        self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
         return np.argmax(scores)
 
@@ -198,6 +199,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
         y_hat : int
             Label with highest sum of loss and score.
         """
+        self.inference_calls += 1
         if y not in range(self.n_states):
             raise ValueError("y has to be between 0 and %d, got %s."
                              % (self.n_states, repr(y)))
