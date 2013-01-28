@@ -30,7 +30,7 @@ def test_with_crosses_bad_init():
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
-    clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
+    clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 3, verbose=2,
                      check_constraints=True, n_jobs=-1, break_on_bad=True)
     H_init = crf.init_latent(X, Y)
 
