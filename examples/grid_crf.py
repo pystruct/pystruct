@@ -22,7 +22,7 @@ def main():
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,
                                         #learning_rate=0.04,
-                                        #n_jobs=-1, batch=False)
+                                        #n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
 

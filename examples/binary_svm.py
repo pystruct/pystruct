@@ -28,8 +28,8 @@ n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
                             batch_size=-1)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=500,
                              max_iter=1000, tol=1e-10)
-subgradient_svm = SubgradientStructuredSVM(pbl, batch=False, C=20,
-                                           learning_rate=0.0001, max_iter=50)
+subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.0001,
+                                           max_iter=50)
 
 # we add a constant 1 feature for the bias
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
