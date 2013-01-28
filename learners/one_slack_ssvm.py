@@ -12,7 +12,7 @@ import cvxopt.solvers
 from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
-from ..utils import unwrap_pairwise, find_constraint
+from ..utils import find_constraint
 
 
 class OneSlackSSVM(BaseSSVM):
@@ -100,8 +100,8 @@ class OneSlackSSVM(BaseSSVM):
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C)
-        psis = [c[1] for c in constraints]
-        losses = [c[2] for c in constraints]
+        psis = [c[0] for c in constraints]
+        losses = [c[1] for c in constraints]
 
         psi_matrix = np.vstack(psis)
         n_constraints = len(psis)
@@ -153,14 +153,17 @@ class OneSlackSSVM(BaseSSVM):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
-    def _check_bad_constraint(self, Ys, slack, old_constraints, w):
+    def _check_bad_constraint(self, slack, dpsi_mean, loss,
+                              old_constraints, w):
         if slack < 1e-5:
             return True
-        Ys_plain = [unwrap_pairwise(y) for y in Ys]
-        all_old_Ys = [[unwrap_pairwise(y_) for y_ in Ys_]
-                      for Ys_, _, _ in old_constraints]
-        equals = [np.all([np.all(y == y_) for y, y_ in zip(Ys_plain, old_Ys)])
-                  for old_Ys in all_old_Ys]
+        #Ys_plain = [unwrap_pairwise(y) for y in Ys]
+        #all_old_Ys = [[unwrap_pairwise(y_) for y_ in Ys_]
+                      #for Ys_, _, _ in old_constraints]
+        #equals = [np.all([np.all(y == y_) for y, y_ in zip(Ys_plain, old_Ys)])
+                  #for old_Ys in all_old_Ys]
+        equals = [True for dpsi_, loss_ in old_constraints
+                  if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
 
         if np.any(equals):
             return True
@@ -168,7 +171,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.check_constraints:
             for con in old_constraints:
                 # compute slack for old constraint
-                slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
+                slack_tmp = max(con[1] - np.dot(w, con[0]), 0)
                 if self.verbose > 5:
                     print("slack old constraint: %f" % slack_tmp)
                 # if slack of new constraint is smaller or not
@@ -238,11 +241,12 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose > 0:
                 print("current loss: %f  new slack: %f" % (loss_mean, slack))
             # now check the slack + the constraint
-            if self._check_bad_constraint(Ys, slack, constraints, w):
+            if self._check_bad_constraint(slack, dpsi_mean, loss_mean,
+                                          constraints, w):
                 print("no additional constraints")
                 break
 
-            constraints.append((Ys, dpsi_mean, loss_mean))
+            constraints.append((dpsi_mean, loss_mean))
 
             w, objective = self._solve_1_slack_qp(constraints,
                                                   n_samples)
