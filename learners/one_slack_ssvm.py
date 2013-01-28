@@ -45,9 +45,6 @@ class OneSlackSSVM(BaseSSVM):
     positive_constraint: list of ints
         Indices of parmeters that are constraint to be positive.
 
-    plot : bool (default=Fale)
-        Whether to plot a learning curve in the end.
-
     break_on_bad: bool (default=True)
         Whether to break (start debug mode) when inference was approximate.
 
@@ -88,11 +85,11 @@ class OneSlackSSVM(BaseSSVM):
     """
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
-                 verbose=1, positive_constraint=None, n_jobs=1, plot=False,
+                 verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss='true', tol=0.0001):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss=show_loss, plot=plot)
+                          n_jobs=n_jobs, show_loss=show_loss)
 
         self.positive_constraint = positive_constraint
         self.check_constraints = check_constraints

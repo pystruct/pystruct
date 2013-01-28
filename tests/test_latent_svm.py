@@ -17,8 +17,7 @@ def test_with_crosses():
         crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                             inference_method=inference_method)
         clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                         check_constraints=True, n_jobs=1, break_on_bad=True,
-                         plot=False)
+                         check_constraints=True, n_jobs=-1, break_on_bad=True)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(np.array(Y_pred) / 2, Y)
@@ -32,8 +31,7 @@ def test_with_crosses_bad_init():
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
     clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                     check_constraints=True, n_jobs=1, break_on_bad=True,
-                     plot=False)
+                     check_constraints=True, n_jobs=-1, break_on_bad=True)
     H_init = crf.init_latent(X, Y)
 
     mask = np.random.uniform(size=H_init.shape) > .7
@@ -52,8 +50,7 @@ def test_directional_bars():
         crf = LatentDirectionalGridCRF(n_labels=n_labels, n_states_per_label=4,
                                        inference_method=inference_method)
         clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                         check_constraints=True, n_jobs=1, break_on_bad=True,
-                         plot=False)
+                         check_constraints=True, n_jobs=-1, break_on_bad=True)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 

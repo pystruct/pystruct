@@ -43,8 +43,7 @@ def test_multinomial_blocks_subgradient():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = SubgradientStructuredSVM(problem=crf, max_iter=50, C=10, verbose=0,
-                                   momentum=.98, learning_rate=0.001,
-                                   plot=False)
+                                   momentum=.98, learning_rate=0.001)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -66,8 +65,7 @@ def test_multinomial_checker_subgradient():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = SubgradientStructuredSVM(problem=crf, max_iter=50, C=10, verbose=10,
-                                   momentum=.98, learning_rate=0.01,
-                                   plot=False)
+                                   momentum=.98, learning_rate=0.01)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

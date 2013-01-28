@@ -1,15 +1,17 @@
 import numpy as np
+from sklearn.externals.joblib import Parallel, delayed
+
+from ..utils import inference
 
 
 class BaseSSVM(object):
     """ABC that implements common functionality."""
-    def __init__(self, problem, max_iter=100, C=1.0, verbose=0, plot=False,
+    def __init__(self, problem, max_iter=100, C=1.0, verbose=0,
                  n_jobs=1, show_loss='augmented'):
         self.problem = problem
         self.max_iter = max_iter
         self.C = C
         self.verbose = verbose
-        self.plot = plot
         self.show_loss = show_loss
         self.n_jobs = n_jobs
 

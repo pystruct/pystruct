@@ -17,12 +17,11 @@ def main():
     crf = DirectionalGridCRF(n_states=n_labels, inference_method="lp",
                              neighborhood=4)
     clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=1000000, verbose=1,
-                             check_constraints=True, n_jobs=12, plot=True)
-    #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10,
-                               #plot=True)
+                             check_constraints=True, n_jobs=12)
+    #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10)
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,
-                                        #learning_rate=0.04, plot=True,
+                                        #learning_rate=0.04,
                                         #n_jobs=-1, batch=False)
     clf.fit(X, Y)
     Y_pred = np.array(clf.predict(X))
