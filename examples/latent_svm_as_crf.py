@@ -33,7 +33,7 @@ print("Score with pystruct crf svm: %f" % np.mean(y_pred == y_test))
 latent_pbl = LatentGraphCRF(n_features=2, n_labels=2, n_states_per_label=2,
                             inference_method='lp')
 latent_svm = LatentSSVM(latent_pbl, verbose=1, check_constraints=True, C=100,
-                        n_jobs=1, plot=False)
+                        n_jobs=1)
 # we explicitly initialize randomly to make it a bit more interesting
 latent_svm.fit(X_train_, y_train,
                H_init=np.random.randint(2, size=y_train.shape) + 2 * y_train)

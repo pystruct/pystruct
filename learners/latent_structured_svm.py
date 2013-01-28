@@ -6,7 +6,6 @@
 #
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from sklearn.externals.joblib import Parallel, delayed
 
@@ -31,7 +30,8 @@ class LatentSSVM(StructuredSVM):
         self.H_init_ = H_init
         H = H_init
         inds = np.arange(len(H))
-        if self.plot:
+        if False:
+            import matplotlib.pyplot as plt
             for i, h in zip(inds, H):
                 plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
                 plt.colorbar()
@@ -72,7 +72,8 @@ class LatentSSVM(StructuredSVM):
             H_hat = Parallel(n_jobs=self.n_jobs, verbose=self.verbose - 2)(
                 delayed(inference)(self.problem, x, subsvm.w) for x in X)
             inds = np.arange(len(H))
-            if self.plot:
+            if False:
+                import matplotlib.pyplot as plt
                 for i, h, h_hat in zip(inds, H, H_hat):
                     plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
                     plt.colorbar()
