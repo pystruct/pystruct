@@ -15,8 +15,6 @@ from ..inference import inference_dispatch
 
 def kmeans_init(X, Y, all_edges, n_labels=2, n_states_per_label=2,
                 symmetric=True):
-    # flatten grids
-    X = X.reshape(X.shape[0], -1, X.shape[-1])
     all_feats = []
     # iterate over samples
     for x, y, edges in zip(X, Y, all_edges):
@@ -42,16 +40,19 @@ def kmeans_init(X, Y, all_edges, n_labels=2, n_states_per_label=2,
         # add unaries
         features = np.hstack([x, neighbors])
         all_feats.append(features)
-    all_feats = np.vstack(all_feats)
-    # states (=clusters) will be saved in H
-    H = np.zeros_like(Y, dtype=np.int)
+    all_feats_stacked = np.vstack(all_feats)
+    Y_stacked = np.hstack(Y).ravel()
     km = KMeans(n_clusters=n_states_per_label)
     # for each state, run k-means over whole dataset
-    for label in np.arange(n_labels):
-        indicator = Y.ravel() == label
-        f = all_feats[indicator]
-        states = km.fit_predict(f)
-        H.ravel()[indicator] = states + label * n_states_per_label
+    H = [np.zeros_like(y) for y in Y]
+    for label in np.unique(Y_stacked):
+        indicator = Y_stacked == label
+        f = all_feats_stacked[indicator]
+        km.fit(f)
+        for feats_sample, y, h in zip(all_feats, Y, H):
+            indicator_sample = y.ravel() == label
+            h.ravel()[indicator_sample] = km.predict(
+                feats_sample[indicator_sample]) + label * n_states_per_label
     return H
 
 

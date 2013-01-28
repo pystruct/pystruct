@@ -33,7 +33,7 @@ class LatentGridCRF(GridCRF):
         H = kmeans_init(X.reshape(X.shape[0], -1, self.n_features),
                         Y.reshape(Y.shape[0], -1), edges,
                         n_states_per_label=self.n_states_per_label)
-        return H.reshape(Y.shape)
+        return np.array(H).reshape(Y.shape)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False,
                                  return_energy=False):
@@ -106,9 +106,11 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     def init_latent(self, X, Y):
         edges = [make_grid_edges(x, neighborhood=self.neighborhood,
                                  return_lists=True) for x in X]
-        return kmeans_init(X, Y, edges,
-                           n_states_per_label=self.n_states_per_label,
-                           symmetric=False)
+        H = kmeans_init(X.reshape(X.shape[0], -1, self.n_features),
+                        Y.reshape(Y.shape[0], -1), edges,
+                        n_states_per_label=self.n_states_per_label,
+                        symmetric=False)
+        return np.array(H).reshape(Y.shape)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False):
         h = LatentGridCRF.loss_augmented_inference(self, x, h, w,
