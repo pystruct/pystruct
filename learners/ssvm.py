@@ -27,9 +27,9 @@ class BaseSSVM(object):
         Y_pred : list
             List of inference results for X using the learned parameters.
         """
-        prediction = []
-        for x in X:
-            prediction.append(self.problem.inference(x, self.w))
+        verbose = max(0, self.verbose - 3)
+        prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+            delayed(inference)(self.problem, x, self.w) for x in X)
         return prediction
 
     def score(self, X, Y):
