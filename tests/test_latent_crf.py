@@ -13,29 +13,38 @@ def test_k_means_initialization():
     n_samples = 10
     X, Y = toy.generate_big_checker(n_samples=n_samples)
     edges = [make_grid_edges(x, return_lists=True) for x in X]
+    # flatten the grid
+    Y = Y.reshape(Y.shape[0], -1)
+    X = X.reshape(X.shape[0], -1, X.shape[-1])
     n_labels = len(np.unique(Y))
     X = X.reshape(n_samples, -1, n_labels)
 
     # sanity check for one state
     H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
+    H = np.vstack(H)
     assert_array_equal(Y, H)
 
     # check number of states
     H = kmeans_init(X, Y, edges, n_states_per_label=3, n_labels=n_labels)
+    H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 3)
 
     # for dataset with more than two states
     X, Y = toy.generate_blocks_multinomial(n_samples=10)
-    n_labels = len(np.unique(Y))
     edges = [make_grid_edges(x, return_lists=True) for x in X]
+    Y = Y.reshape(Y.shape[0], -1)
+    X = X.reshape(X.shape[0], -1, X.shape[-1])
+    n_labels = len(np.unique(Y))
 
     # sanity check for one state
     H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
+    H = np.vstack(H)
     assert_array_equal(Y, H)
 
     # check number of states
     H = kmeans_init(X, Y, edges, n_states_per_label=2, n_labels=n_labels)
+    H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 2)
 
