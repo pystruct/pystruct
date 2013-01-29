@@ -46,7 +46,7 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
         # continuous version of the loss
         # y_hat is the result of linear programming
         return LatentGraphCRF.continuous_loss(
-            self, y, y_hat.reshape(-1, y_hat.shape[-1]))
+            self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
 
 
 class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):

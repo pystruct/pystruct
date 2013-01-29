@@ -43,11 +43,11 @@ class StructuredProblem(object):
         # y is the result of linear programming
         y_one_hot = np.zeros_like(y_hat)
         if y.ndim == 2:
-            gx, gy = np.indices(y.shape)
-            y_one_hot[gx, gy, y] = 1
-        else:
-            gx = np.indices(y.shape)
-            y_one_hot[gx, y] = 1
+            raise ValueError("FIXME!")
+            #gx, gy = np.indices(y.shape)
+            #y_one_hot[gx, gy, y] = 1
+        gx = np.indices(y.shape)
+        y_one_hot[gx, y] = 1
 
         # all entries minus correct ones
         return np.prod(y.shape) - np.sum(y_one_hot * y_hat)
