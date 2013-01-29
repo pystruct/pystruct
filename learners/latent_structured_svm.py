@@ -84,3 +84,7 @@ class LatentSSVM(BaseSSVM):
             w = subsvm.w
             ws.append(w)
         self.w = w
+
+    def predict(self, X):
+        prediction = BaseSSVM.predict(self, X)
+        return [self.problem.label_from_latent(h) for h in prediction]
