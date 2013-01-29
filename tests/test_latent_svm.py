@@ -28,6 +28,22 @@ def test_with_crosses():
             assert_array_equal(np.array(Y_pred), Y)
 
 
+def test_with_crosses_base_svms():
+    # very simple dataset. k-means init is perfect
+    for base_svm in ['1-slack', 'n-slack', 'subgradient']:
+        X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+                                    total_size=8)
+        n_labels = 2
+        crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
+                            inference_method='lp')
+        clf = LatentSSVM(problem=crf, max_iter=150, C=10. ** 5, verbose=2,
+                         check_constraints=True, n_jobs=-1, break_on_bad=True,
+                         base_svm=base_svm, learning_rate=5)
+        clf.fit(X, Y)
+        Y_pred = clf.predict(X)
+        assert_array_equal(np.array(Y_pred), Y)
+
+
 def test_with_crosses_bad_init():
     # use less perfect initialization
     X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,

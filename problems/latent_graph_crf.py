@@ -124,7 +124,7 @@ class LatentGraphCRF(GraphCRF):
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = self._states_map != y[:, np.newaxis]
-        unary_potentials[other_states] = -1000
+        unary_potentials[other_states] = -1e5
         pairwise_potentials = self.get_pairwise_potentials(x, w)
         edges = self.get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,

@@ -104,7 +104,7 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.t += 1.
         return w
 
-    def fit(self, X, Y):
+    def fit(self, X, Y, constraints=None):
         """Learn parameters using subgradient descent.
 
         Parameters
@@ -116,6 +116,9 @@ class SubgradientStructuredSVM(BaseSSVM):
         Y : iterable
             Training labels. Contains the strctured labels for inputs in X.
             Needs to have the same length as X.
+
+        constraints : None
+            Discarded. Only for API compatibility currently.
         """
         print("Training primal subgradient structural SVM")
         w = getattr(self, "w", np.zeros(self.problem.size_psi))
@@ -175,6 +178,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                 objective /= len(X)
                 current_loss /= len(X)
                 objective += np.sum(w ** 2) / self.C / 2.
+
                 if positive_slacks == 0:
                     print("No additional constraints")
                     break
