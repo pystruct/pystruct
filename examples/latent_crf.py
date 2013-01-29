@@ -41,8 +41,9 @@ def main():
             ax[1, 1].matshow(crf.latent(x, y, clf.w),
                              vmin=0, vmax=crf.n_states - 1)
             ax[1, 1].set_title("latent final")
-            ax[2, 0].matshow(y_pred, vmin=0, vmax=crf.n_labels - 1)
-            ax[2, 0].set_title("prediction")
+            ax[2, 0].matshow(crf.inference(x, clf.w),
+                             vmin=0, vmax=crf.n_states - 1)
+            ax[2, 0].set_title("prediction latent")
             ax[2, 1].matshow(y_pred,
                              vmin=0, vmax=crf.n_labels - 1)
             ax[2, 1].set_title("prediction")
