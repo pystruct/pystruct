@@ -86,7 +86,7 @@ class StructuredSVM(BaseSSVM):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
-                 break_on_bad=True, show_loss='true', batch_size=100,
+                 break_on_bad=True, show_loss='augmented', batch_size=100,
                  tol=0.0001):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
