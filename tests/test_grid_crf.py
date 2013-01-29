@@ -191,20 +191,21 @@ def test_binary_crf_exhaustive_loss_augmented():
     # tests graph cut inference against brute force
     # on random data / weights
     np.random.seed(0)
-    for i in xrange(50):
-        # generate data and weights
-        y = np.random.randint(2, size=(3, 3))
-        x = np.random.uniform(-1, 1, size=(3, 3))
-        x = np.dstack([-x, np.zeros_like(x)])
-        w = np.random.uniform(-1, 1, size=7)
-        crf = GridCRF()
-        # check loss augmented map inference
-        y_hat = crf.loss_augmented_inference(x, y, w)
-        y_ex = exhaustive_loss_augmented_inference(crf, x, y, w)
-        #print(y_hat)
-        #print(y_ex)
-        #print("++++++++++++++++++++++")
-        assert_array_equal(y_hat, y_ex)
+    for inference_method in ['qpbo', 'lp']:
+        crf = GridCRF(inference_method=inference_method)
+        for i in xrange(50):
+            # generate data and weights
+            y = np.random.randint(2, size=(3, 3))
+            x = np.random.uniform(-1, 1, size=(3, 3))
+            x = np.dstack([-x, np.zeros_like(x)])
+            w = np.random.uniform(-1, 1, size=7)
+            # check loss augmented map inference
+            y_hat = crf.loss_augmented_inference(x, y, w)
+            y_ex = exhaustive_loss_augmented_inference(crf, x, y, w)
+            #print(y_hat)
+            #print(y_ex)
+            #print("++++++++++++++++++++++")
+            assert_array_equal(y_hat, y_ex)
 
 if __name__ == "__main__":
     test_binary_crf_exhaustive()
