@@ -71,14 +71,15 @@ class LatentSSVM(BaseSSVM):
                 print("changes in H: %d" % np.sum(H_new != H))
 
                 # update constraints:
-                constraints = [[] for i in xrange(len(X))]
-                for sample, h, i in zip(subsvm.constraints_, H_new,
-                                        np.arange(len(X))):
-                    for constraint in sample:
-                        const = find_constraint(self.problem, X[i], h, w,
-                                                constraint[0])
-                        y_hat, dpsi, _, loss = const
-                        constraints[i].append([y_hat, dpsi, loss])
+                if self.base_svm == 'n-slack':
+                    constraints = [[] for i in xrange(len(X))]
+                    for sample, h, i in zip(subsvm.constraints_, H_new,
+                                            np.arange(len(X))):
+                        for constraint in sample:
+                            const = find_constraint(self.problem, X[i], h, w,
+                                                    constraint[0])
+                            y_hat, dpsi, _, loss = const
+                            constraints[i].append([y_hat, dpsi, loss])
                 H = H_new
 
             subsvm.fit(X, H, constraints=constraints)
