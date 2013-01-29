@@ -68,38 +68,30 @@ class GridCRF(GraphCRF):
     def get_features(self, x):
         return x.reshape(-1, self.n_features)
 
-    def inference(self, x, w, relaxed=False, return_energy=False):
-        y = GraphCRF.inference(self, x, w, relaxed=relaxed,
-                               return_energy=return_energy)
+    def _reshape_y(self, y, shape_x, return_energy):
         if return_energy:
             y, energy = y
 
         if isinstance(y, tuple):
-            y = (y[0].reshape(x.shape[0], x.shape[1], y[0].shape[1]), y[1])
+            y = (y[0].reshape(shape_x[0], shape_x[1], y[0].shape[1]), y[1])
         else:
-            y = y.reshape(x.shape[:-1])
+            y = y.reshape(shape_x[:-1])
 
         if return_energy:
             return y, energy
         return y
+
+    def inference(self, x, w, relaxed=False, return_energy=False):
+        y = GraphCRF.inference(self, x, w, relaxed=relaxed,
+                               return_energy=return_energy)
+        return self._reshape_y(y, x.shape, return_energy)
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
         y_hat = GraphCRF.loss_augmented_inference(self, x, y.ravel(), w,
                                                   relaxed=relaxed,
                                                   return_energy=return_energy)
-        if return_energy:
-            y_hat, energy = y_hat
-
-        if isinstance(y_hat, tuple):
-            y_hat = (y_hat[0].reshape(x.shape[0], x.shape[1],
-                                      y_hat[0].shape[1]), y_hat[1])
-        else:
-            y_hat = y_hat.reshape(x.shape[:-1])
-
-        if return_energy:
-            return y_hat, energy
-        return y_hat
+        return self._reshape_y(y_hat, x.shape, return_energy)
 
 
 class DirectionalGridCRF(GridCRF):
