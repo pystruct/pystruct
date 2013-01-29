@@ -1,9 +1,10 @@
 import numpy as np
-from numpy.testing import assert_array_equal
-from nose.tools import assert_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
+from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.utils import exhaustive_loss_augmented_inference, make_grid_edges
+from pystruct.utils import (exhaustive_loss_augmented_inference,
+                            make_grid_edges, find_constraint)
 from pystruct.problems import (LatentGridCRF, LatentDirectionalGridCRF,
                                LatentGraphCRF)
 from pystruct.problems.latent_grid_crf import kmeans_init
@@ -20,12 +21,14 @@ def test_k_means_initialization():
     X = X.reshape(n_samples, -1, n_labels)
 
     # sanity check for one state
-    H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
+    H = kmeans_init(X, Y, edges, n_states_per_label=[1] * n_labels,
+                    n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(Y, H)
 
     # check number of states
-    H = kmeans_init(X, Y, edges, n_states_per_label=3, n_labels=n_labels)
+    H = kmeans_init(X, Y, edges, n_states_per_label=[3] * n_labels,
+                    n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 3)
@@ -38,12 +41,14 @@ def test_k_means_initialization():
     n_labels = len(np.unique(Y))
 
     # sanity check for one state
-    H = kmeans_init(X, Y, edges, n_states_per_label=1, n_labels=n_labels)
+    H = kmeans_init(X, Y, edges, n_states_per_label=[1] * n_labels,
+                    n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(Y, H)
 
     # check number of states
-    H = kmeans_init(X, Y, edges, n_states_per_label=2, n_labels=n_labels)
+    H = kmeans_init(X, Y, edges, n_states_per_label=[2] * n_labels,
+                    n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
     assert_array_equal(Y, H / 2)
@@ -181,3 +186,44 @@ def test_loss_augmented_inference_exhaustive():
         h_hat = crf.loss_augmented_inference(x, y * 2, w)
         h = exhaustive_loss_augmented_inference(crf, x, y * 2, w)
         assert_array_equal(h, h_hat)
+
+
+def test_continuous_y():
+    for inference_method in ["lp", "ad3"]:
+        X, Y = toy.generate_blocks(n_samples=1)
+        x, y = X[0], Y[0]
+        w = np.array([1, 0,  # unary
+                      0, 1,
+                      0,     # pairwise
+                      -4, 0])
+
+        crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
+                            inference_method=inference_method)
+        psi = crf.psi(x, y)
+        y_cont = np.zeros_like(x)
+        gx, gy = np.indices(x.shape[:-1])
+        y_cont[gx, gy, y] = 1
+        # need to generate edge marginals
+        vert = np.dot(y_cont[1:, :, :].reshape(-1, 2).T,
+                      y_cont[:-1, :, :].reshape(-1, 2))
+        # horizontal edges
+        horz = np.dot(y_cont[:, 1:, :].reshape(-1, 2).T,
+                      y_cont[:, :-1, :].reshape(-1, 2))
+        pw = vert + horz
+
+        psi_cont = crf.psi(x, (y_cont, pw))
+        assert_array_almost_equal(psi, psi_cont)
+
+        const = find_constraint(crf, x, y, w, relaxed=False)
+        const_cont = find_constraint(crf, x, y, w, relaxed=True)
+
+        # dpsi and loss are equal:
+        assert_array_almost_equal(const[1], const_cont[1])
+        assert_almost_equal(const[2], const_cont[2])
+
+        # returned y_hat is one-hot version of other
+        assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
+
+        # test loss:
+        assert_equal(crf.loss(y, const[0]),
+                     crf.continuous_loss(y, const_cont[0][0]))

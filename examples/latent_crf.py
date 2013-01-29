@@ -14,7 +14,7 @@ def main():
                                 total_size=8)
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.5)
     n_labels = len(np.unique(Y_train))
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
                         inference_method='lp')
     clf = LatentSSVM(problem=crf, max_iter=50, C=1000., verbose=2,
                      check_constraints=True, n_jobs=-1, break_on_bad=True)
@@ -26,7 +26,7 @@ def main():
         i = 0
         loss = 0
         for x, y, h_init, y_pred in zip(X_, Y_, H, Y_pred):
-            loss += np.sum(y != y_pred / crf.n_states_per_label)
+            loss += np.sum(y != crf.label_from_latent(y_pred))
             fig, ax = plt.subplots(3, 2)
             ax[0, 0].matshow(y, vmin=0, vmax=crf.n_labels - 1)
             ax[0, 0].set_title("ground truth")
@@ -43,7 +43,7 @@ def main():
             ax[1, 1].set_title("latent final")
             ax[2, 0].matshow(y_pred, vmin=0, vmax=crf.n_states - 1)
             ax[2, 0].set_title("prediction")
-            ax[2, 1].matshow((y_pred // crf.n_states_per_label),
+            ax[2, 1].matshow((crf.label_from_latent(y_pred)),
                              vmin=0, vmax=crf.n_labels - 1)
             ax[2, 1].set_title("prediction")
             for a in ax.ravel():

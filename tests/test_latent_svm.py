@@ -9,18 +9,23 @@ import pystruct.toy_datasets as toy
 
 def test_with_crosses():
     # very simple dataset. k-means init is perfect
-    #for inference_method in ['ad3', 'qpbo', 'lp']:
-    for inference_method in ['lp']:
-        X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                    total_size=8)
-        n_labels = 2
-        crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
-                            inference_method=inference_method)
-        clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                         check_constraints=True, n_jobs=-1, break_on_bad=True)
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
-        assert_array_equal(np.array(Y_pred) / 2, Y)
+    for n_states_per_label in [2, [1, 2]]:
+        # test with 2 states for both foreground and background,
+        # as well as with single background state
+        #for inference_method in ['ad3', 'qpbo', 'lp']:
+        for inference_method in ['lp']:
+            X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+                                        total_size=8)
+            n_labels = 2
+            crf = LatentGridCRF(n_labels=n_labels,
+                                n_states_per_label=n_states_per_label,
+                                inference_method=inference_method)
+            clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
+                             check_constraints=True, n_jobs=-1,
+                             break_on_bad=True)
+            clf.fit(X, Y)
+            Y_pred = clf.predict(X)
+            assert_array_equal(np.array(Y_pred), Y)
 
 
 def test_with_crosses_bad_init():
@@ -39,7 +44,7 @@ def test_with_crosses_bad_init():
     clf.fit(X, Y, H_init=H_init)
     Y_pred = clf.predict(X)
 
-    assert_array_equal(np.array(Y_pred) / 2, Y)
+    assert_array_equal(np.array(Y_pred), Y)
 
 
 def test_directional_bars():
@@ -54,4 +59,4 @@ def test_directional_bars():
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 
-        assert_array_equal(np.array(Y_pred) / 4, Y)
+        assert_array_equal(np.array(Y_pred), Y)
