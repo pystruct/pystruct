@@ -58,7 +58,8 @@ class GridCRF(GraphCRF):
     """
     def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
                  neighborhood=4):
-        GraphCRF.__init__(self, n_states, n_features, inference_method)
+        GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
+                          inference_method=inference_method)
         self.neighborhood = neighborhood
 
     def get_edges(self, x):
@@ -67,9 +68,38 @@ class GridCRF(GraphCRF):
     def get_features(self, x):
         return x.reshape(-1, self.n_features)
 
-    def get_unary_potentials(self, x, w):
-        res = GraphCRF.get_unary_potentials(self, x, w)
-        return res.reshape(x.shape[0], x.shape[1], self.n_states)
+    def inference(self, x, w, relaxed=False, return_energy=False):
+        y = GraphCRF.inference(self, x, w, relaxed=relaxed,
+                               return_energy=return_energy)
+        if return_energy:
+            y, energy = y
+
+        if isinstance(y, tuple):
+            y = (y[0].reshape(x.shape[0], x.shape[1], y[0].shape[1]), y[1])
+        else:
+            y = y.reshape(x.shape[:-1])
+
+        if return_energy:
+            return y, energy
+        return y
+
+    def loss_augmented_inference(self, x, y, w, relaxed=False,
+                                 return_energy=False):
+        y_hat = GraphCRF.loss_augmented_inference(self, x, y.ravel(), w,
+                                                  relaxed=relaxed,
+                                                  return_energy=return_energy)
+        if return_energy:
+            y_hat, energy = y_hat
+
+        if isinstance(y_hat, tuple):
+            y_hat = (y_hat[0].reshape(x.shape[0], x.shape[1],
+                                      y_hat[0].shape[1]), y_hat[1])
+        else:
+            y_hat = y_hat.reshape(x.shape[:-1])
+
+        if return_energy:
+            return y_hat, energy
+        return y_hat
 
 
 class DirectionalGridCRF(GridCRF):
@@ -106,7 +136,8 @@ class DirectionalGridCRF(GridCRF):
     """
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
                  neighborhood=4):
-        GridCRF.__init__(self, n_states, n_features, inference_method,
+        GridCRF.__init__(self, n_states, n_features,
+                         inference_method=inference_method,
                          neighborhood=neighborhood)
         self.n_edge_types = 2 if neighborhood == 4 else 4
         self.size_psi = (n_states * self.n_features
