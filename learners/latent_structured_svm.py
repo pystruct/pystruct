@@ -7,36 +7,53 @@
 
 import numpy as np
 
-from sklearn.externals.joblib import Parallel, delayed
 
+from .ssvm import BaseSSVM
 from .cutting_plane_ssvm import StructuredSVM
-from ..utils import inference, find_constraint
+from .one_slack_ssvm import OneSlackSSVM
+from .subgradient_ssvm import SubgradientStructuredSVM
+from ..utils import find_constraint
 
 
-class LatentSSVM(StructuredSVM):
+class LatentSSVM(BaseSSVM):
+    def __init__(self, problem, max_iter=100, C=1.0, verbose=1, n_jobs=1,
+                 break_on_bad=True, show_loss='true', base_svm='n-slack',
+                 check_constraints=True, batch_size=100, tol=0.0001):
+        self.base_svm = base_svm
+        self.check_constraints = check_constraints
+        self.break_on_bad = break_on_bad
+        self.batch_size = batch_size
+        self.tol = tol
+        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+                          n_jobs=n_jobs, show_loss=show_loss)
+
     def fit(self, X, Y, H_init=None):
-        w = np.ones(self.problem.size_psi) * 1e-5
-        subsvm = StructuredSVM(self.problem, self.max_iter, self.C,
-                               self.check_constraints, verbose=self.verbose -
-                               1, n_jobs=self.n_jobs,
-                               break_on_bad=self.break_on_bad)
-        #objectives = []
+        w = np.zeros(self.problem.size_psi)
+        if self.base_svm == 'n-slack':
+            subsvm = StructuredSVM(
+                self.problem, self.max_iter, self.C, self.check_constraints,
+                verbose=self.verbose - 1, n_jobs=self.n_jobs,
+                break_on_bad=self.break_on_bad, batch_size=self.batch_size,
+                tol=self.tol)
+        elif self.base_svm == '1-slack':
+            subsvm = OneSlackSSVM(
+                self.problem, self.max_iter, self.C, self.check_constraints,
+                verbose=self.verbose - 1, n_jobs=self.n_jobs,
+                break_on_bad=self.break_on_bad)
+        elif self.base_svm == 'subgradient':
+            subsvm = SubgradientStructuredSVM(
+                self.problem, self.max_iter, self.C, self.check_constraints,
+                verbose=self.verbose - 1, n_jobs=self.n_jobs,
+                break_on_bad=self.break_on_bad)
+        else:
+            raise ValueError("base_svm must be one of '1-slack', 'n-slack', "
+                             "'subgradient'. Got %s. " % str(self.base_svm))
         constraints = None
         ws = []
-        #Y = Y / self.problem.n_states_per_label
         if H_init is None:
             H_init = self.problem.init_latent(X, Y)
-        #kmeans_init(X, Y, edges, self.problem.n_states_per_label)
         self.H_init_ = H_init
         H = H_init
-        inds = np.arange(len(H))
-        if False:
-            import matplotlib.pyplot as plt
-            for i, h in zip(inds, H):
-                plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
-                plt.colorbar()
-                plt.savefig("figures/h_init_%03d.png" % i)
-                plt.close()
 
         for iteration in xrange(5):
             print("LATENT SVM ITERATION %d" % iteration)
@@ -62,31 +79,8 @@ class LatentSSVM(StructuredSVM):
                         y_hat, dpsi, _, loss = const
                         constraints[i].append([y_hat, dpsi, loss])
                 H = H_new
-            #if initialization weak?
-            #if iteration == 0:
-                #subsvm.max_iter = 10
 
             subsvm.fit(X, H, constraints=constraints)
-            #if iteration == 0:
-                #subsvm.max_iter = self.max_iter
-            H_hat = Parallel(n_jobs=self.n_jobs, verbose=self.verbose - 2)(
-                delayed(inference)(self.problem, x, subsvm.w) for x in X)
-            inds = np.arange(len(H))
-            if False:
-                import matplotlib.pyplot as plt
-                for i, h, h_hat in zip(inds, H, H_hat):
-                    plt.matshow(h, vmin=0, vmax=self.problem.n_states - 1)
-                    plt.colorbar()
-                    plt.savefig("figures/h_%03d_%03d.png" % (iteration, i))
-                    plt.close()
-                    plt.matshow(h_hat, vmin=0, vmax=self.problem.n_states - 1)
-                    plt.colorbar()
-                    plt.savefig("figures/h_hat_%03d_%03d.png" % (iteration, i))
-                    plt.close()
             w = subsvm.w
             ws.append(w)
-            #objectives.append(subsvm.primal_objective_)
         self.w = w
-        #plt.figure()
-        #plt.plot(objectives)
-        #plt.show()
