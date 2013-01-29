@@ -10,7 +10,8 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-#from sklearn.externals.joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed
+from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
@@ -236,51 +237,48 @@ class StructuredSVM(BaseSSVM):
                 # we might have been passed some
                 new_constraints = 0
             current_loss = 0.
-            #for i, x, y in zip(np.arange(len(X)), X, Y):
-                #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
-            #verbose = max(0, self.verbose - 3)
-            #candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                             #verbose=verbose)(
-                                                 #delayed(find_constraint)(
-                                                     #self.problem, x, y, w)
-                                                 #for x, y in zip(X, Y))
+            # generate slices through dataset from batch_size
+            n_batches = int(np.ceil(float(len(X)) / self.batch_size))
+            slices = gen_even_slices(n_samples, n_batches)
+            for batch in slices:
+                verbose = max(0, self.verbose - 3)
+                X_b = X[batch]
+                Y_b = Y[batch]
+                candidate_constraints = Parallel(n_jobs=self.n_jobs,
+                                                 verbose=verbose)(
+                                                     delayed(find_constraint)(
+                                                         self.problem, x, y, w)
+                                                     for x, y in zip(X_b, Y_b))
 
-            #for i, x, y, constraint in zip(np.arange(len(X)), X, Y,
-                                           #candidate_constraints):
-            for i, x, y in zip(np.arange(len(X)), X, Y):
-                # loop over dataset
-                y_hat, delta_psi, slack, loss = find_constraint(self.problem,
-                                                                x, y, w)
-                current_loss += self._get_loss(x, y, w, loss)
-                if self.verbose > 3:
-                    print("current slack: %f" % slack)
+                # for each slice, gather new constraints
+                for i, x, y, constraint in zip(np.arange(len(X_b)), X_b, Y_b,
+                                               candidate_constraints):
+                    # loop over dataset
+                    y_hat, delta_psi, slack, loss = constraint
 
-                if not loss > 0:
-                    # can have y != y_hat but loss = 0 in latent svm.
-                    # we need this here as dpsi is then != 0
-                    continue
+                    current_loss += self._get_loss(x, y, w, loss)
+                    if self.verbose > 3:
+                        print("current slack: %f" % slack)
 
-                if self._check_bad_constraint(y_hat, slack, constraints[i], w):
-                    continue
+                    if not loss > 0:
+                        # can have y != y_hat but loss = 0 in latent svm.
+                        # we need this here as dpsi is then != 0
+                        continue
 
-                constraints[i].append([y_hat, delta_psi, loss])
-                new_constraints += 1
+                    if self._check_bad_constraint(y_hat, slack, constraints[i],
+                                                  w):
+                        continue
 
-                if (self.batch_size > 0
-                        and not new_constraints % self.batch_size):
-                    w, objective = self._solve_n_slack_qp(constraints,
-                                                          n_samples)
-                    objective_curve.append(objective)
+                    constraints[i].append([y_hat, delta_psi, loss])
+                    new_constraints += 1
+                # after processing the slice, solve the qp
+                w, objective = self._solve_n_slack_qp(constraints,
+                                                      n_samples)
+                objective_curve.append(objective)
 
             if new_constraints == 0:
                 print("no additional constraints")
                 break
-
-            # update qp once again for good measure (if there were less than
-            # batch_size constraints for example)
-            w, objective = self._solve_n_slack_qp(constraints,
-                                                  n_samples)
-            objective_curve.append(objective)
 
             current_loss /= len(X)
             loss_curve.append(current_loss)
