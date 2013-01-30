@@ -43,8 +43,8 @@ def generate_big_checker(n_samples=20, noise=.5, n_fields=3, field_size=3):
     return X, Y
 
 
-def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8):
-    np.random.seed(0)
+def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8, seed=0):
+    np.random.seed(seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
     for i in xrange(n_samples):
         t_old, l_old = -10, -10
