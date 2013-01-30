@@ -19,6 +19,18 @@ def test_binary_blocks_cutting_plane():
         assert_array_equal(Y, Y_pred)
 
 
+def test_binary_blocks_batches_n_slack():
+    #testing cutting plane ssvm on easy binary dataset
+    X, Y = toy.generate_blocks(n_samples=5)
+    crf = GridCRF(inference_method='lp')
+    clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+                        check_constraints=True, break_on_bad=False,
+                        n_jobs=1, batch_size=1)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+
+
 def test_binary_blocks_subgradient():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
