@@ -240,10 +240,12 @@ class StructuredSVM(BaseSSVM):
             # generate slices through dataset from batch_size
             n_batches = int(np.ceil(float(len(X)) / self.batch_size))
             slices = gen_even_slices(n_samples, n_batches)
+            indices = np.arange(n_samples)
             for batch in slices:
                 verbose = max(0, self.verbose - 3)
                 X_b = X[batch]
                 Y_b = Y[batch]
+                indices_b = indices[batch]
                 candidate_constraints = Parallel(n_jobs=self.n_jobs,
                                                  verbose=verbose)(
                                                      delayed(find_constraint)(
@@ -251,7 +253,7 @@ class StructuredSVM(BaseSSVM):
                                                      for x, y in zip(X_b, Y_b))
 
                 # for each slice, gather new constraints
-                for i, x, y, constraint in zip(np.arange(len(X_b)), X_b, Y_b,
+                for i, x, y, constraint in zip(indices_b, X_b, Y_b,
                                                candidate_constraints):
                     # loop over dataset
                     y_hat, delta_psi, slack, loss = constraint
