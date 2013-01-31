@@ -221,9 +221,9 @@ class StructuredSVM(BaseSSVM):
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
-            new_constraints = 0
         else:
-            new_constraints = np.sum([len(c) for c in constraints])
+            w, objective = self._solve_n_slack_qp(constraints,
+                                                  n_samples)
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
@@ -232,16 +232,14 @@ class StructuredSVM(BaseSSVM):
             # main loop
             if self.verbose > 0:
                 print("iteration %d" % iteration)
-            if iteration > 0:
-                # don't reset in the first iteration
-                # we might have been passed some
-                new_constraints = 0
+            new_constraints = 0
             current_loss = 0.
             # generate slices through dataset from batch_size
             n_batches = int(np.ceil(float(len(X)) / self.batch_size))
             slices = gen_even_slices(n_samples, n_batches)
             indices = np.arange(n_samples)
             for batch in slices:
+                new_constraints_batch = 0
                 verbose = max(0, self.verbose - 3)
                 X_b = X[batch]
                 Y_b = Y[batch]
@@ -272,11 +270,14 @@ class StructuredSVM(BaseSSVM):
                         continue
 
                     constraints[i].append([y_hat, delta_psi, loss])
-                    new_constraints += 1
+                    new_constraints_batch += 1
+
                 # after processing the slice, solve the qp
-                w, objective = self._solve_n_slack_qp(constraints,
-                                                      n_samples)
-                objective_curve.append(objective)
+                if new_constraints_batch:
+                    w, objective = self._solve_n_slack_qp(constraints,
+                                                          n_samples)
+                    objective_curve.append(objective)
+                    new_constraints += new_constraints_batch
 
             if new_constraints == 0:
                 print("no additional constraints")
