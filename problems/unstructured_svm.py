@@ -141,9 +141,6 @@ class CrammerSingerSVMProblem(StructuredProblem):
         p : ndarray, shape (size_psi,)
             Feature vector associated with state (x, y).
         """
-        if y not in range(self.n_states):
-            raise ValueError("y has to be between 0 and %d, got %s."
-                             % (self.n_states, repr(y)))
         # put feature vector in the place of the weights corresponding to y
         result = np.zeros((self.n_states, self.n_features))
         result[y, :] = x
