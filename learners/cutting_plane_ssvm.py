@@ -241,7 +241,11 @@ class StructuredSVM(BaseSSVM):
             new_constraints = 0
             current_loss = 0.
             # generate slices through dataset from batch_size
-            n_batches = int(np.ceil(float(len(X)) / self.batch_size))
+            if self.batch_size < 1 and not self.batch_size == -1:
+                raise ValueError("batch_size should be integer >= 1 or -1,"
+                                 "got %s." % str(self.batch_size))
+            batch_size = self.batch_size if self.batch_size != -1 else len(X)
+            n_batches = int(np.ceil(float(len(X)) / batch_size))
             slices = gen_even_slices(n_samples, n_batches)
             indices = np.arange(n_samples)
             for batch in slices:
