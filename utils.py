@@ -100,6 +100,10 @@ def inference(problem, x, w):
     return problem.inference(x, w)
 
 
+def loss_augmented_inference(problem, x, y, w):
+    return problem.loss_augmented_inference(x, y, w)
+
+
 # easy debugging
 def objective_primal(problem, w, X, Y, C):
     objective = 0
