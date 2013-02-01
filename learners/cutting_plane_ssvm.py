@@ -66,6 +66,12 @@ class StructuredSVM(BaseSSVM):
         batch_size=-1 means that an update is performed only after going once
         over the whole training set.
 
+    tol : float, default=-10
+        Convergence tolerance. If dual objective decreases less than tol,
+        learning is stopped. The default corresponds to ignoring the behavior
+        of the dual objective and stop only if no more constraints can be
+        found.
+
 
     Attributes
     ----------
@@ -87,7 +93,7 @@ class StructuredSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss='augmented', batch_size=100,
-                 tol=0.0001):
+                 tol=-10):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss=show_loss)

@@ -62,9 +62,11 @@ class OneSlackSSVM(BaseSSVM):
     batch_size : int, default=100
         Number of constraints after which we solve the QP again.
 
-    tol : float, default=0.0001
+    tol : float, default=-10
         Convergence tolerance. If dual objective decreases less than tol,
-        learning is stopped.
+        learning is stopped. The default corresponds to ignoring the behavior
+        of the dual objective and stop only if no more constraints can be
+        found.
 
 
     Attributes
