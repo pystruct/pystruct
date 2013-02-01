@@ -103,8 +103,6 @@ class StructuredSVM(BaseSSVM):
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
         self.tol = tol
-        if verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C / float(n_samples)
@@ -223,6 +221,11 @@ class StructuredSVM(BaseSSVM):
             y.
         """
         print("Training n-slack dual structural SVM")
+        if self.verbose < 2:
+            cvxopt.solvers.options['show_progress'] = False
+        else:
+            cvxopt.solvers.options['show_progress'] = True
+
         w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
         if constraints is None:

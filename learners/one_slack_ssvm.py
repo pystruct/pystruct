@@ -97,8 +97,6 @@ class OneSlackSSVM(BaseSSVM):
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
-        if verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C)
@@ -209,6 +207,10 @@ class OneSlackSSVM(BaseSSVM):
             y.
         """
         print("Training 1-slack dual structural SVM")
+        if self.verbose < 2:
+            cvxopt.solvers.options['show_progress'] = False
+        else:
+            cvxopt.solvers.options['show_progress'] = True
         w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
         if constraints is None:
