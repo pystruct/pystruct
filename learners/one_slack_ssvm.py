@@ -12,7 +12,7 @@ import cvxopt.solvers
 from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
-from ..utils import find_constraint
+from ..utils import loss_augmented_inference
 
 
 class OneSlackSSVM(BaseSSVM):
@@ -223,23 +223,27 @@ class OneSlackSSVM(BaseSSVM):
             # main loop
             if self.verbose > 0:
                 print("iteration %d" % iteration)
-            #for i, x, y in zip(np.arange(len(X)), X, Y):
-                #y_hat, delta_psi, slack, loss = self._find_constraint(x, y, w)
+            # do inference in parallel
             verbose = max(0, self.verbose - 3)
-            new_constraint = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(find_constraint)(self.problem, x, y, w)
-                for x, y in zip(X, Y))
-            # a constraint is a joint configuration,
-            # the mean over dpsi, the mean over losses and the slack
-            Ys, dpsis, violations, losses = zip(*new_constraint)
-            # compute the mean over psis
-            # don't use numpy here. we don't want to allocate more memory
-            dpsi_mean = np.zeros(self.problem.size_psi)
-            for dpsi in dpsis:
-                dpsi_mean += dpsi
-            dpsi_mean /= len(dpsis)
+            if self.n_jobs != 1:
+                verbose = max(0, self.verbose - 3)
+                Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                    delayed(loss_augmented_inference)(
+                        self.problem, x, y, w) for x, y in zip(X, Y))
+            else:
+                Y_hat = [self.problem.loss_augmented_inference(x, y, w)
+                         for x, y in zip(X, Y)]
 
-            loss_mean = np.mean(losses)
+            # compute the mean over psis and losses
+            dpsi_mean = np.zeros(self.problem.size_psi)
+            for x, y, y_hat in zip(X, Y, Y_hat):
+                dpsi_mean += self.problem.psi(x, y)
+                dpsi_mean -= self.problem.psi(x, y_hat)
+            dpsi_mean /= n_samples
+
+            loss_mean = np.mean([self.problem.loss(y, y_hat)
+                                 for y, y_hat in zip(Y, Y_hat)])
+
             slack = loss_mean - np.dot(w, dpsi_mean)
 
             if self.verbose > 0:
