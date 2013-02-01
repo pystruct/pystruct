@@ -51,8 +51,10 @@ class BaseSSVM(object):
         score : float
             Average of 1 - loss over training examples.
         """
-        return np.mean([1 - self.problem.loss(y, y_pred) / float(y.size)
-                        for y, y_pred in zip(Y, self.predict(X))])
+        losses = [self.problem.loss(y, y_pred)
+                  for y, y_pred in zip(Y, self.predict(X))]
+        max_losses = [self.problem.max_loss(y) for y in Y]
+        return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _get_loss(self, x, y, w, augmented_loss):
         if self.show_loss == 'augmented':

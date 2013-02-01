@@ -38,6 +38,10 @@ class StructuredProblem(object):
         # hamming loss:
         return np.sum(y != y_hat)
 
+    def max_loss(self, y):
+        # maximum possible los on y for macro averages
+        return y.size
+
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
