@@ -260,10 +260,10 @@ class OneSlackSSVM(BaseSSVM):
 
             loss_curve.append(loss_mean)
 
-            #if (iteration > 1 and objective_curve[-2]
-                    #- objective_curve[-1] < self.tol):
-                #print("objective converged.")
-                #break
+            if (iteration > 1 and objective_curve[-2]
+                    - objective_curve[-1] < self.tol):
+                print("objective converged.")
+                break
             if self.verbose > 5:
                 print(w)
         self.w = w
