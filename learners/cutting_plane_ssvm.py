@@ -133,7 +133,7 @@ class StructuredSVM(BaseSSVM):
             zero_constr = np.zeros(len(self.positive_constraint))
 
         # put together
-        G = cvxopt.matrix(np.vstack((-idy, blocks, psis_constr)))
+        G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, blocks, psis_constr))))
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
 
