@@ -7,6 +7,9 @@ class StructuredProblem(object):
     This class defines what is necessary to use the structured svm.
     You have to implement at least psi and inference.
     """
+    def __repr__(self):
+        return ("%s, size_psi: %d"
+                % (type(self).__name__, self.size_psi))
 
     def __init__(self):
         """Initialize the problem.

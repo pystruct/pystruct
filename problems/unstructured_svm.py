@@ -23,6 +23,10 @@ class BinarySVMProblem(StructuredProblem):
         self.n_states = 2
         self.inference_calls = 0
 
+    def __repr__(self):
+        return ("%s, n_features: %d"
+                % (type(self).__name__, self.n_features))
+
     def psi(self, x, y):
         """Compute joint feature vector of x and y.
 
@@ -121,6 +125,10 @@ class CrammerSingerSVMProblem(StructuredProblem):
         self.n_states = n_classes
         self.n_features = n_features
         self.inference_calls = 0
+
+    def __repr__(self):
+        return ("%s(n_features=%d, n_classes=%d)"
+                % (type(self).__name__, self.n_features, self.n_states))
 
     def psi(self, x, y):
         """Compute joint feature vector of x and y.

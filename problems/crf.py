@@ -16,7 +16,7 @@ class CRF(StructuredProblem):
         self.n_features = n_features
 
     def __repr__(self):
-        return ("%s, n_states: %d, inference_method: %s"
+        return ("%s(n_states: %d, inference_method: %s)"
                 % (type(self).__name__, self.n_states,
                    self.inference_method))
 
