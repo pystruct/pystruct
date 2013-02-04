@@ -179,7 +179,8 @@ class SubgradientStructuredSVM(BaseSSVM):
                             y_hat, delta_psi, slack, loss = constraint
                             objective += slack
                             dpsi += delta_psi
-                            current_loss += self._get_loss(x, y, w, loss)
+                            current_loss += self._get_loss(x, y, w,
+                                                           augmented_loss=loss)
                             if slack > 0:
                                 positive_slacks += 1
                         dpsi /= float(len(X_b))

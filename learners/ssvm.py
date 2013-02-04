@@ -65,9 +65,15 @@ class BaseSSVM(object):
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
-    def _get_loss(self, x, y, w, augmented_loss):
+    def _get_loss(self, x, y, w, augmented_loss=None, y_hat=None):
         if self.show_loss == 'augmented':
-            return augmented_loss
+            if augmented_loss is not None:
+                return augmented_loss
+            elif y_hat is not None:
+                self.problem.loss(y, y_hat)
+            else:
+                raise ValueError("show_loss='augmented' but neither "
+                                 "augmented_loss nor y_hat was passed")
         elif self.show_loss == 'true':
             return self.problem.loss(y, self.problem.inference(x, w))
         else:

@@ -247,7 +247,14 @@ class OneSlackSSVM(BaseSSVM):
             slack = loss_mean - np.dot(w, dpsi_mean)
 
             if self.verbose > 0:
-                print("current loss: %f  new slack: %f" % (loss_mean, slack))
+                if self.show_loss == 'true':
+                    display_loss = np.mean([
+                        self.problem.loss(y, self.problem.inference(x, w))
+                        for y, x in zip(Y, X)])
+                else:
+                    display_loss = loss_mean
+                print("current loss: %f  new slack: %f"
+                      % (display_loss, slack))
             # now check the slack + the constraint
             if self._check_bad_constraint(slack, dpsi_mean, loss_mean,
                                           constraints, w):
