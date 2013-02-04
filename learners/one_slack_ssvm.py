@@ -121,7 +121,7 @@ class OneSlackSSVM(BaseSSVM):
             zero_constr = np.zeros(len(self.positive_constraint))
 
         # put together
-        G = cvxopt.matrix(np.vstack((-idy, psis_constr)))
+        G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, psis_constr))))
         h = cvxopt.matrix(np.hstack((tmp1, zero_constr)))
 
         # equality constraint: sum of all alpha must be = C
