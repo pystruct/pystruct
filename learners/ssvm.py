@@ -1,3 +1,5 @@
+import inspect
+
 import numpy as np
 from sklearn.externals.joblib import Parallel, delayed
 
@@ -14,6 +16,13 @@ class BaseSSVM(object):
         self.verbose = verbose
         self.show_loss = show_loss
         self.n_jobs = n_jobs
+
+    def __repr__(self):
+        args, varargs, kw, default = inspect.getargspec(self.__init__)
+        # remove 'self'
+        args.pop(0)
+        params = ", ".join(["%s=%s" % (k, getattr(self, k)) for k in args])
+        return '%s(%s)' % (self.__class__.__name__, params)
 
     def predict(self, X):
         """Predict output on examples in X.
