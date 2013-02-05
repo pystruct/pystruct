@@ -270,13 +270,19 @@ class OneSlackSSVM(BaseSSVM):
 
             slack = loss_mean - np.dot(w, dpsi_mean)
 
-            if self.verbose > 0:
-                if self.show_loss == 'true':
+            # optionally compute training loss for output / training curve
+            if self.show_loss == 'true':
+                if hasattr(self.problem, 'batch_loss'):
+                    display_loss = np.mean(self.problem.batch_loss(
+                        Y, self.problem.batch_inference(X, w)))
+                else:
                     display_loss = np.mean([
                         self.problem.loss(y, self.problem.inference(x, w))
                         for y, x in zip(Y, X)])
-                else:
-                    display_loss = loss_mean
+            else:
+                display_loss = loss_mean
+
+            if self.verbose > 0:
                 print("current loss: %f  new slack: %f"
                       % (display_loss, slack))
             # now check the slack + the constraint
@@ -292,7 +298,7 @@ class OneSlackSSVM(BaseSSVM):
                 print("dual objective: %f" % objective)
             objective_curve.append(objective)
 
-            loss_curve.append(loss_mean)
+            loss_curve.append(display_loss)
 
             if (iteration > 1 and objective_curve[-2]
                     - objective_curve[-1] < self.tol):
