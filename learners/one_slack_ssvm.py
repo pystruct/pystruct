@@ -185,6 +185,7 @@ class OneSlackSSVM(BaseSSVM):
                     return True
         return False
 
+    #@profile
     def fit(self, X, Y, constraints=None):
         """Learn parameters using cutting plane method.
 
@@ -231,18 +232,35 @@ class OneSlackSSVM(BaseSSVM):
                     delayed(loss_augmented_inference)(
                         self.problem, x, y, w) for x, y in zip(X, Y))
             else:
-                Y_hat = [self.problem.loss_augmented_inference(x, y, w)
-                         for x, y in zip(X, Y)]
+                if hasattr(self.problem, "batch_loss_augmented_inference"):
+                    Y_hat = self.problem.batch_loss_augmented_inference(X, Y,
+                                                                        w)
+                else:
+                    Y_hat = [
+                        self.problem.loss_augmented_inference(x, y, w)
+                        for x, y in zip(X, Y)]
 
             # compute the mean over psis and losses
-            dpsi_mean = np.zeros(self.problem.size_psi)
-            for x, y, y_hat in zip(X, Y, Y_hat):
-                dpsi_mean += self.problem.psi(x, y)
-                dpsi_mean -= self.problem.psi(x, y_hat)
+            if hasattr(self.problem, 'batch_psi'):
+                dpsi_mean = self.problem.batch_psi(X, Y)
+                dpsi_mean -= self.problem.batch_psi(X, Y_hat)
+            else:
+                dpsi_mean = np.zeros(self.problem.size_psi)
+                for x, y, y_hat in zip(X, Y, Y_hat):
+                    dpsi_mean += self.problem.psi(x, y)
+                    dpsi_mean -= self.problem.psi(x, y_hat)
             dpsi_mean /= n_samples
 
-            loss_mean = np.mean([self.problem.loss(y, y_hat)
-                                 for y, y_hat in zip(Y, Y_hat)])
+            if hasattr(self.problem, 'batch_loss'):
+                loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
+            else:
+                #if isinstance(Y_hat[0], tuple):
+                    #loss_func = self.problem.continuous_loss
+                #else:
+                    #loss_func = self.problem.loss
+
+                loss_mean = np.mean([self.problem.loss(y, y_hat)
+                                     for y, y_hat in zip(Y, Y_hat)])
 
             slack = loss_mean - np.dot(w, dpsi_mean)
 
