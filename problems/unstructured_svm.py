@@ -154,6 +154,12 @@ class CrammerSingerSVMProblem(StructuredProblem):
         result[y, :] = x
         return result.ravel()
 
+    def batch_psi(self, X, Y):
+        result = np.zeros((self.n_states, self.n_features))
+        for l in xrange(self.n_states):
+            result[l, :] = np.sum(X[Y == l, :], axis=0)
+        return result.ravel()
+
     def inference(self, x, w, relaxed=None):
         """Inference for x using parameters w.
 
@@ -205,9 +211,14 @@ class CrammerSingerSVMProblem(StructuredProblem):
             Label with highest sum of loss and score.
         """
         self.inference_calls += 1
-        if y not in range(self.n_states):
-            raise ValueError("y has to be between 0 and %d, got %s."
-                             % (self.n_states, repr(y)))
         scores = np.dot(w.reshape(self.n_states, -1), x)
         scores[y] -= 1
         return np.argmax(scores)
+
+    def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
+        scores = np.dot(X, w.reshape(self.n_states, -1).T)
+        scores[np.arange(X.shape[0]), Y] -= 1
+        return np.argmax(scores, axis=1)
+
+    def batch_loss(self, Y, Y_hat):
+        return Y != Y_hat
