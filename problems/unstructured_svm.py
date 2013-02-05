@@ -1,6 +1,7 @@
 import numpy as np
 
 from .base import StructuredProblem
+from .utils import crammer_singer_psi
 
 
 class BinarySVMProblem(StructuredProblem):
@@ -155,10 +156,13 @@ class CrammerSingerSVMProblem(StructuredProblem):
         return result.ravel()
 
     def batch_psi(self, X, Y):
-        result = np.zeros((self.n_states, self.n_features))
-        for l in xrange(self.n_states):
-            result[l, :] = np.sum(X[Y == l, :], axis=0)
-        return result.ravel()
+        #result = np.zeros((self.n_states, self.n_features))
+        #for l in xrange(self.n_states):
+            #result[l, :] = np.sum(X[Y == l, :], axis=0)
+
+        out = np.zeros((self.n_states, self.n_features))
+        crammer_singer_psi(X, Y, out)
+        return out.ravel()
 
     def inference(self, x, w, relaxed=None):
         """Inference for x using parameters w.
