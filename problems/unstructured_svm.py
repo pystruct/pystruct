@@ -25,7 +25,7 @@ class BinarySVMProblem(StructuredProblem):
 
     def __repr__(self):
         return ("%s, n_features: %d"
-                % (type(self).__name__, self.n_features))
+                % (type(self).__name__, self.size_psi))
 
     def psi(self, x, y):
         """Compute joint feature vector of x and y.
@@ -218,6 +218,10 @@ class CrammerSingerSVMProblem(StructuredProblem):
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
         scores[np.arange(X.shape[0]), Y] -= 1
+        return np.argmax(scores, axis=1)
+
+    def batch_inference(self, X, w, relaxed=None):
+        scores = np.dot(X, w.reshape(self.n_states, -1).T)
         return np.argmax(scores, axis=1)
 
     def batch_loss(self, Y, Y_hat):
