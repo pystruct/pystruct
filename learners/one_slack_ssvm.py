@@ -98,7 +98,7 @@ class OneSlackSSVM(BaseSSVM):
         self.break_on_bad = break_on_bad
         self.tol = tol
 
-    def _solve_1_slack_qp(self, constraints, n_samples):
+    def _solve_1_slack_qp(self, constraints):
         C = np.float(self.C)
         psis = [c[0] for c in constraints]
         losses = [c[1] for c in constraints]
@@ -185,7 +185,6 @@ class OneSlackSSVM(BaseSSVM):
                     return True
         return False
 
-    #@profile
     def fit(self, X, Y, constraints=None):
         """Learn parameters using cutting plane method.
 
@@ -219,7 +218,6 @@ class OneSlackSSVM(BaseSSVM):
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
-        # we have to update at least once after going through the dataset
         for iteration in xrange(self.max_iter):
             # main loop
             if self.verbose > 0:
@@ -281,8 +279,7 @@ class OneSlackSSVM(BaseSSVM):
 
             constraints.append((dpsi_mean, loss_mean))
 
-            w, objective = self._solve_1_slack_qp(constraints,
-                                                  n_samples)
+            w, objective = self._solve_1_slack_qp(constraints)
             if self.verbose > 0:
                 print("dual objective: %f" % objective)
             objective_curve.append(objective)
