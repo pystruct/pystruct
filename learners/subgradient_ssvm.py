@@ -212,3 +212,4 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.objective_curve_ = objective_curve
         print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
+        return self

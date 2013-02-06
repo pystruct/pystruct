@@ -317,3 +317,4 @@ class StructuredSVM(BaseSSVM):
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve
         print("calls to inference: %d" % self.problem.inference_calls)
+        return self

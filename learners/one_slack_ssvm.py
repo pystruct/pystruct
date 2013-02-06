@@ -146,7 +146,7 @@ class OneSlackSSVM(BaseSSVM):
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-10
+        sv = a > 1e-5
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
@@ -227,87 +227,92 @@ class OneSlackSSVM(BaseSSVM):
             for x, y in zip(X, Y):
                 psi_gt += self.problem.psi(x, y)
 
-        for iteration in xrange(self.max_iter):
-            # main loop
-            if self.verbose > 0:
-                print("iteration %d" % iteration)
-            # do inference in parallel
-            verbose = max(0, self.verbose - 3)
-            if self.n_jobs != 1:
+        try:
+            # catch ctrl+c to stop training
+            for iteration in xrange(self.max_iter):
+                # main loop
+                if self.verbose > 0:
+                    print("iteration %d" % iteration)
+                # do inference in parallel
                 verbose = max(0, self.verbose - 3)
-                Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                    delayed(loss_augmented_inference)(
-                        self.problem, x, y, w) for x, y in zip(X, Y))
-            else:
-                if hasattr(self.problem, "batch_loss_augmented_inference"):
-                    Y_hat = self.problem.batch_loss_augmented_inference(X, Y,
-                                                                        w)
+                if self.n_jobs != 1:
+                    verbose = max(0, self.verbose - 3)
+                    Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                        delayed(loss_augmented_inference)(
+                            self.problem, x, y, w) for x, y in zip(X, Y))
                 else:
-                    Y_hat = [
-                        self.problem.loss_augmented_inference(x, y, w)
-                        for x, y in zip(X, Y)]
+                    if hasattr(self.problem, "batch_loss_augmented_inference"):
+                        Y_hat = self.problem.batch_loss_augmented_inference(
+                            X, Y, w)
+                    else:
+                        Y_hat = [
+                            self.problem.loss_augmented_inference(x, y, w)
+                            for x, y in zip(X, Y)]
 
-            # compute the mean over psis and losses
-            if hasattr(self.problem, 'batch_psi'):
-                dpsi_mean = self.problem.batch_psi(X, Y_hat)
-            else:
-                dpsi_mean = np.zeros(self.problem.size_psi)
-                for x, y, y_hat in zip(X, Y, Y_hat):
-                    dpsi_mean += self.problem.psi(x, y_hat)
-            dpsi_mean = psi_gt - dpsi_mean
-            dpsi_mean /= n_samples
+                # compute the mean over psis and losses
+                if hasattr(self.problem, 'batch_psi'):
+                    dpsi_mean = self.problem.batch_psi(X, Y_hat)
+                else:
+                    dpsi_mean = np.zeros(self.problem.size_psi)
+                    for x, y, y_hat in zip(X, Y, Y_hat):
+                        dpsi_mean += self.problem.psi(x, y_hat)
+                dpsi_mean = psi_gt - dpsi_mean
+                dpsi_mean /= n_samples
 
-            if hasattr(self.problem, 'batch_loss'):
-                loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
-            else:
-                #if isinstance(Y_hat[0], tuple):
-                    #loss_func = self.problem.continuous_loss
-                #else:
-                    #loss_func = self.problem.loss
-
-                loss_mean = np.mean([self.problem.loss(y, y_hat)
-                                     for y, y_hat in zip(Y, Y_hat)])
-
-            slack = loss_mean - np.dot(w, dpsi_mean)
-
-            # optionally compute training loss for output / training curve
-            if self.show_loss == 'true':
                 if hasattr(self.problem, 'batch_loss'):
-                    display_loss = np.mean(self.problem.batch_loss(
-                        Y, self.problem.batch_inference(X, w)))
+                    loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
                 else:
-                    display_loss = np.mean([
-                        self.problem.loss(y, self.problem.inference(x, w))
-                        for y, x in zip(Y, X)])
-            else:
-                display_loss = loss_mean
+                    #if isinstance(Y_hat[0], tuple):
+                        #loss_func = self.problem.continuous_loss
+                    #else:
+                        #loss_func = self.problem.loss
 
-            if self.verbose > 0:
-                print("current loss: %f  new slack: %f"
-                      % (display_loss, slack))
-            # now check the slack + the constraint
-            if self._check_bad_constraint(slack, dpsi_mean, loss_mean,
-                                          constraints, w):
-                print("no additional constraints")
-                break
+                    loss_mean = np.mean([self.problem.loss(y, y_hat)
+                                         for y, y_hat in zip(Y, Y_hat)])
 
-            constraints.append((dpsi_mean, loss_mean))
+                slack = loss_mean - np.dot(w, dpsi_mean)
 
-            w, objective = self._solve_1_slack_qp(constraints)
-            if self.verbose > 0:
-                print("dual objective: %f" % objective)
-            objective_curve.append(objective)
+                # optionally compute training loss for output / training curve
+                if self.show_loss == 'true':
+                    if hasattr(self.problem, 'batch_loss'):
+                        display_loss = np.mean(self.problem.batch_loss(
+                            Y, self.problem.batch_inference(X, w)))
+                    else:
+                        display_loss = np.mean([
+                            self.problem.loss(y, self.problem.inference(x, w))
+                            for y, x in zip(Y, X)])
+                else:
+                    display_loss = loss_mean
 
-            loss_curve.append(display_loss)
+                if self.verbose > 0:
+                    print("current loss: %f  new slack: %f"
+                          % (display_loss, slack))
+                # now check the slack + the constraint
+                if self._check_bad_constraint(slack, dpsi_mean, loss_mean,
+                                              constraints, w):
+                    print("no additional constraints")
+                    break
 
-            if (iteration > 1 and objective_curve[-2]
-                    - objective_curve[-1] < self.tol):
-                print("objective converged.")
-                break
-            if self.verbose > 5:
-                print(w)
+                constraints.append((dpsi_mean, loss_mean))
+
+                w, objective = self._solve_1_slack_qp(constraints)
+                if self.verbose > 0:
+                    print("dual objective: %f" % objective)
+                objective_curve.append(objective)
+
+                loss_curve.append(display_loss)
+
+                if (iteration > 1 and objective_curve[-2]
+                        - objective_curve[-1] < self.tol):
+                    print("objective converged.")
+                    break
+                if self.verbose > 5:
+                    print(w)
+        except KeyboardInterrupt:
+            pass
         self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve
+        return self
