@@ -24,11 +24,11 @@ X /= X.max()
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 pbl = BinarySVMProblem(n_features=X_train.shape[1] + 1)  # add one for bias
-n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
+n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=10,
                             batch_size=-1)
-one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=20,
+one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
                              max_iter=1000)
-subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.0001,
+subgradient_svm = SubgradientStructuredSVM(pbl, C=10, learning_rate=0.0001,
                                            max_iter=50)
 
 # we add a constant 1 feature for the bias
@@ -60,7 +60,6 @@ y_pred = np.hstack(subgradient_svm.predict(X_test_bias))
 print("Score with pystruct subgradient ssvm: %f (took %f seconds)"
       % (np.mean(y_pred == y_test), time_subgradient_svm))
 
-# because of the way I construct psi, we use half the C
 libsvm = SVC(kernel='linear', C=10)
 start = time()
 libsvm.fit(X_train, y_train)

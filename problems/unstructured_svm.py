@@ -49,7 +49,7 @@ class BinarySVMProblem(StructuredProblem):
         """
         if y not in [-1, 1]:
             raise ValueError("y has to be either -1 or +1, got %s" % repr(y))
-        return y * x
+        return y * x / 2.
 
     def inference(self, x, w, relaxed=None):
         """Inference for x using parameters w.
