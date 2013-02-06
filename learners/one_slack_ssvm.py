@@ -98,8 +98,8 @@ class OneSlackSSVM(BaseSSVM):
         self.break_on_bad = break_on_bad
         self.tol = tol
 
-    def _solve_1_slack_qp(self, constraints):
-        C = np.float(self.C)
+    def _solve_1_slack_qp(self, constraints, n_samples):
+        C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
         psis = [c[0] for c in constraints]
         losses = [c[1] for c in constraints]
 
@@ -295,7 +295,8 @@ class OneSlackSSVM(BaseSSVM):
 
                 constraints.append((dpsi_mean, loss_mean))
 
-                w, objective = self._solve_1_slack_qp(constraints)
+                w, objective = self._solve_1_slack_qp(constraints,
+                                                      n_samples=len(X))
                 if self.verbose > 0:
                     print("dual objective: %f" % objective)
                 objective_curve.append(objective)

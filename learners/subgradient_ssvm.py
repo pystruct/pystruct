@@ -87,13 +87,13 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.grad_old = np.zeros(self.problem.size_psi)
         self.decay_exponent = decay_exponent
 
-    def _solve_subgradient(self, w, dpsi):
+    def _solve_subgradient(self, w, dpsi, n_samples):
         """Do a single subgradient step."""
 
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learning_rate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
-        grad = (dpsi - w / self.C)
+        grad = (dpsi - w / (self.C * n_samples))
 
         if self.adagrad:
             self.grad_old += grad ** 2
@@ -154,7 +154,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                         current_loss += self._get_loss(x, y, w, loss)
                         if slack > 0:
                             positive_slacks += 1
-                        w = self._solve_subgradient(w, delta_psi)
+                        w = self._solve_subgradient(w, delta_psi, n_samples)
                 else:
                     # generate batches of size n_jobs
                     # to speed up inference

@@ -105,7 +105,7 @@ class StructuredSVM(BaseSSVM):
         self.tol = tol
 
     def _solve_n_slack_qp(self, constraints, n_samples):
-        C = self.C / float(n_samples)
+        C = self.C
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
 
