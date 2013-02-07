@@ -90,3 +90,6 @@ class LatentSSVM(BaseSSVM):
     def predict(self, X):
         prediction = BaseSSVM.predict(self, X)
         return [self.problem.label_from_latent(h) for h in prediction]
+
+    def predict_latent(self, X):
+        return BaseSSVM.predict(self, X)
