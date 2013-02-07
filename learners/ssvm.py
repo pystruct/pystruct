@@ -53,8 +53,11 @@ class BaseSSVM(BaseEstimator):
         score : float
             Average of 1 - loss over training examples.
         """
-        losses = [self.problem.loss(y, y_pred)
-                  for y, y_pred in zip(Y, self.predict(X))]
+        if hasattr(self.problem, 'batch_loss'):
+            losses = self.problem.batch_loss(Y, self.predict(X))
+        else:
+            losses = [self.problem.loss(y, y_pred)
+                      for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 

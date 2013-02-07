@@ -233,6 +233,7 @@ class OneSlackSSVM(BaseSSVM):
                 # main loop
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
+                    print(self)
                 # do inference in parallel
                 verbose = max(0, self.verbose - 3)
                 if self.n_jobs != 1:
@@ -274,13 +275,8 @@ class OneSlackSSVM(BaseSSVM):
 
                 # optionally compute training loss for output / training curve
                 if self.show_loss == 'true':
-                    if hasattr(self.problem, 'batch_loss'):
-                        display_loss = np.mean(self.problem.batch_loss(
-                            Y, self.problem.batch_inference(X, w)))
-                    else:
-                        display_loss = np.mean([
-                            self.problem.loss(y, self.problem.inference(x, w))
-                            for y, x in zip(Y, X)])
+                    self.w = w
+                    display_loss = 1 - self.score(X, Y)
                 else:
                     display_loss = loss_mean
 
