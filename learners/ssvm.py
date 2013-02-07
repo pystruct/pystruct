@@ -1,12 +1,12 @@
-import inspect
 
 import numpy as np
 from sklearn.externals.joblib import Parallel, delayed
+from sklearn.base import BaseEstimator
 
 from ..utils import inference
 
 
-class BaseSSVM(object):
+class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0,
                  n_jobs=1, show_loss='augmented'):
@@ -16,13 +16,6 @@ class BaseSSVM(object):
         self.verbose = verbose
         self.show_loss = show_loss
         self.n_jobs = n_jobs
-
-    def __repr__(self):
-        args, varargs, kw, default = inspect.getargspec(self.__init__)
-        # remove 'self'
-        args.pop(0)
-        params = ", ".join(["%s=%s" % (k, getattr(self, k)) for k in args])
-        return '%s(%s)' % (self.__class__.__name__, params)
 
     def predict(self, X):
         """Predict output on examples in X.
