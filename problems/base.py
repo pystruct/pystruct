@@ -39,6 +39,8 @@ class StructuredProblem(object):
 
     def loss(self, y, y_hat):
         # hamming loss:
+        if isinstance(y_hat, tuple):
+            return self.continuous_loss(y, y_hat[0])
         return np.sum(y != y_hat)
 
     def max_loss(self, y):
@@ -51,8 +53,6 @@ class StructuredProblem(object):
         y_one_hot = np.zeros_like(y_hat)
         if y.ndim == 2:
             raise ValueError("FIXME!")
-            #gx, gy = np.indices(y.shape)
-            #y_one_hot[gx, gy, y] = 1
         gx = np.indices(y.shape)
         y_one_hot[gx, y] = 1
 

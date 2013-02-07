@@ -240,14 +240,16 @@ class OneSlackSSVM(BaseSSVM):
                     verbose = max(0, self.verbose - 3)
                     Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
                         delayed(loss_augmented_inference)(
-                            self.problem, x, y, w) for x, y in zip(X, Y))
+                            self.problem, x, y, w, relaxed=True)
+                        for x, y in zip(X, Y))
                 else:
                     if hasattr(self.problem, "batch_loss_augmented_inference"):
                         Y_hat = self.problem.batch_loss_augmented_inference(
-                            X, Y, w)
+                            X, Y, w, relaxed=True)
                     else:
                         Y_hat = [
-                            self.problem.loss_augmented_inference(x, y, w)
+                            self.problem.loss_augmented_inference(x, y, w,
+                                                                  relaxed=True)
                             for x, y in zip(X, Y)]
 
                 # compute the mean over psis and losses
@@ -263,11 +265,6 @@ class OneSlackSSVM(BaseSSVM):
                 if hasattr(self.problem, 'batch_loss'):
                     loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
                 else:
-                    #if isinstance(Y_hat[0], tuple):
-                        #loss_func = self.problem.continuous_loss
-                    #else:
-                        #loss_func = self.problem.loss
-
                     loss_mean = np.mean([self.problem.loss(y, y_hat)
                                          for y, y_hat in zip(Y, Y_hat)])
 

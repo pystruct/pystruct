@@ -100,8 +100,8 @@ def inference(problem, x, w):
     return problem.inference(x, w)
 
 
-def loss_augmented_inference(problem, x, y, w):
-    return problem.loss_augmented_inference(x, y, w)
+def loss_augmented_inference(problem, x, y, w, relaxed=True):
+    return problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
 
 
 # easy debugging

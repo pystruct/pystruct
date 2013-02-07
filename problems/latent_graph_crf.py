@@ -138,8 +138,10 @@ class LatentGraphCRF(GraphCRF):
         return h
 
     def loss(self, h, h_hat):
-        return np.sum(self.label_from_latent(h)
-                      != self.label_from_latent(h_hat))
+        if isinstance(h_hat, tuple):
+            return self.continuous_loss(h, h_hat[0])
+        return GraphCRF.loss(self.label_from_latent(h),
+                             self.label_from_latent(h_hat))
 
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
