@@ -156,11 +156,9 @@ class CrammerSingerSVMProblem(StructuredProblem):
         return result.ravel()
 
     def batch_psi(self, X, Y):
-        #result = np.zeros((self.n_states, self.n_features))
+        out = np.zeros((self.n_states, self.n_features))
         #for l in xrange(self.n_states):
             #result[l, :] = np.sum(X[Y == l, :], axis=0)
-
-        out = np.zeros((self.n_states, self.n_features))
         crammer_singer_psi(X, Y, out)
         return out.ravel()
 
