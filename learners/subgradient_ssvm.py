@@ -184,7 +184,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                             if slack > 0:
                                 positive_slacks += 1
                         dpsi /= float(len(X_b))
-                        w = self._solve_subgradient(w, dpsi)
+                        w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
                 objective /= len(X)
