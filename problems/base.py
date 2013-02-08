@@ -27,6 +27,12 @@ class StructuredProblem(object):
         # IMPLEMENT ME
         pass
 
+    def batch_psi(self, X, Y):
+        psi_ = np.zeros(self.size_psi)
+        for x, y in zip(X, Y):
+            psi_ += self.psi(x, y)
+        return psi_
+
     def _loss_augmented_dpsi(self, x, y, y_hat, w):
         # debugging only!
         x_loss_augmented = self.loss_augment(x, y, w)
@@ -37,11 +43,20 @@ class StructuredProblem(object):
         # IMPLEMENT ME
         pass
 
+    def batch_inference(self, X, w, relaxed=None):
+        # default implementation of batch inference
+        return [self.inference(x, w, relaxed=relaxed)
+                for x in X]
+
     def loss(self, y, y_hat):
         # hamming loss:
         if isinstance(y_hat, tuple):
             return self.continuous_loss(y, y_hat[0])
         return np.sum(y != y_hat)
+
+    def batch_loss(self, Y, Y_hat):
+        # default implementation of batch loss
+        return [self.loss(y, y_hat) for y, y_hat in zip(Y, Y_hat)]
 
     def max_loss(self, y):
         # maximum possible los on y for macro averages
@@ -62,3 +77,8 @@ class StructuredProblem(object):
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         print("FALLBACK no loss augmented inference found")
         return self.inference(x, w)
+
+    def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
+        # default implementation of batch loss augmented inference
+        return [self.loss_augmented_inference(x, y, w, relaxed=relaxed)
+                for x, y in zip(X, Y)]

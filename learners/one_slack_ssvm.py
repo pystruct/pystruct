@@ -215,12 +215,7 @@ class OneSlackSSVM(BaseSSVM):
         self.alphas = []  # dual solutions
 
         # get the psi of the ground truth
-        if hasattr(self.problem, 'batch_psi'):
-            psi_gt = self.problem.batch_psi(X, Y)
-        else:
-            psi_gt = np.zeros(self.problem.size_psi)
-            for x, y in zip(X, Y):
-                psi_gt += self.problem.psi(x, y)
+        psi_gt = self.problem.batch_psi(X, Y)
 
         try:
             # catch ctrl+c to stop training
@@ -248,20 +243,11 @@ class OneSlackSSVM(BaseSSVM):
                             for x, y in zip(X, Y)]
 
                 # compute the mean over psis and losses
-                if hasattr(self.problem, 'batch_psi'):
-                    dpsi_mean = self.problem.batch_psi(X, Y_hat)
-                else:
-                    dpsi_mean = np.zeros(self.problem.size_psi)
-                    for x, y, y_hat in zip(X, Y, Y_hat):
-                        dpsi_mean += self.problem.psi(x, y_hat)
+                dpsi_mean = self.problem.batch_psi(X, Y_hat)
                 dpsi_mean = psi_gt - dpsi_mean
                 dpsi_mean /= n_samples
 
-                if hasattr(self.problem, 'batch_loss'):
-                    loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
-                else:
-                    loss_mean = np.mean([self.problem.loss(y, y_hat)
-                                         for y, y_hat in zip(Y, Y_hat)])
+                loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
                 slack = loss_mean - np.dot(w, dpsi_mean)
 
