@@ -239,30 +239,23 @@ class OneSlackSSVM(BaseSSVM):
                     else:
                         Y_hat = [
                             self.problem.loss_augmented_inference(x, y, w,
-                                                                  relaxed=True)
-                            for x, y in zip(X, Y)]
 
                 # compute the mean over psis and losses
-                dpsi_mean = self.problem.batch_psi(X, Y_hat)
-                dpsi_mean = psi_gt - dpsi_mean
-                dpsi_mean /= n_samples
-
+                dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / n_samples
                 loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
-                slack = loss_mean - np.dot(w, dpsi_mean)
-
+                slack = loss_mean - np.dot(w, dpsi)
                 self._compute_training_loss(X, Y, w, iteration)
 
                 if self.verbose > 0:
                     print("new slack: %f"
                           % (slack))
                 # now check the slack + the constraint
-                if self._check_bad_constraint(slack, dpsi_mean, loss_mean,
+                if self._check_bad_constraint(slack, dpsi, loss_mean,
                                               constraints, w):
                     print("no additional constraints")
                     break
-
-                constraints.append((dpsi_mean, loss_mean))
+                constraints.append((dpsi, loss_mean))
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))
