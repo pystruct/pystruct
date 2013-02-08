@@ -59,14 +59,14 @@ def test_binary_ssvm_repellent_potentials():
     X, Y = toy.generate_checker()
     for inference_method in ["lp", "qpbo", "ad3"]:
         crf = GridCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=200, C=100, verbose=0,
+        clf = StructuredSVM(problem=crf, max_iter=10, C=100, verbose=0,
                             check_constraints=True, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         # standard crf can predict perfectly
         assert_array_equal(Y, Y_pred)
 
-        submodular_clf = StructuredSVM(problem=crf, max_iter=200, C=100,
+        submodular_clf = StructuredSVM(problem=crf, max_iter=10, C=100,
                                        verbose=0, check_constraints=True,
                                        positive_constraint=[4, 5, 6],
                                        n_jobs=-1)
