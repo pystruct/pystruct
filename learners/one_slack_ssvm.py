@@ -15,6 +15,11 @@ from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
 
 
+class NoConstraint(Exception):
+    # raised if we can not construct a constraint from cache
+    pass
+
+
 class OneSlackSSVM(BaseSSVM):
     """Structured SVM training with l1 slack penalty.
 
@@ -65,6 +70,12 @@ class OneSlackSSVM(BaseSSVM):
         of the dual objective and stop only if no more constraints can be
         found.
 
+    inference_cache : int, default=0
+        How many results of loss_augmented_inference to cache per sample.  If >
+        0 the most violating of the cached examples will be used to construct a
+        global constraint. Only if this constraint is not violated, inference
+        will be run again.
+
 
     Attributes
     ----------
@@ -83,7 +94,8 @@ class OneSlackSSVM(BaseSSVM):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
-                 break_on_bad=True, show_loss_every=0, tol=0.0001):
+                 break_on_bad=True, show_loss_every=0, tol=0.0001,
+                 inference_cache=0):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
@@ -92,6 +104,7 @@ class OneSlackSSVM(BaseSSVM):
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
+        self.inference_cache = inference_cache
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
@@ -180,6 +193,60 @@ class OneSlackSSVM(BaseSSVM):
                     return True
         return False
 
+    def _update_cache(self, Y_hat):
+        """Updated cached constraints."""
+        if not self.inference_cache:
+            return
+        for sample, y_hat in zip(self.inference_cache_, Y_hat):
+            if len(sample) > self.inference_cache:
+                sample.pop(0)
+            sample.append(y_hat)
+
+    def _constraint_from_cache(self, X, Y, w, psi_gt, constraints):
+        if not self.inference_cache:
+            raise NoConstraint
+        Y_hat = []
+        for x, y, cached in zip(X, Y, self.inference_cache_):
+            violations = [np.dot(self.problem.psi(x, y_hat), w)
+                          + self.problem.loss(y, y_hat)
+                          for y_hat in cached]
+            Y_hat.append(cached[np.argmax(violations)])
+
+        dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
+        loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
+
+        slack = loss_mean - np.dot(w, dpsi)
+        if self._check_bad_constraint(slack, dpsi, loss_mean,
+                                      constraints, w):
+            raise NoConstraint
+        if self.verbose > 0:
+            print("new slack: %f" % (slack))
+        return Y_hat
+
+    def _find_new_constraint(self, X, Y, w, psi_gt, constraints):
+        if self.n_jobs != 1:
+            # do inference in parallel
+            verbose = max(0, self.verbose - 3)
+            Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                delayed(loss_augmented_inference)(
+                    self.problem, x, y, w, relaxed=True)
+                for x, y in zip(X, Y))
+        else:
+            Y_hat = self.problem.batch_loss_augmented_inference(
+                X, Y, w, relaxed=True)
+        # compute the mean over psis and losses
+
+        dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
+        loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
+
+        slack = loss_mean - np.dot(w, dpsi)
+        if self._check_bad_constraint(slack, dpsi, loss_mean,
+                                      constraints, w):
+            raise NoConstraint
+        if self.verbose > 0:
+            print("new slack: %f" % (slack))
+        return Y_hat, dpsi, loss_mean
+
     def fit(self, X, Y, constraints=None):
         """Learn parameters using cutting plane method.
 
@@ -207,7 +274,6 @@ class OneSlackSSVM(BaseSSVM):
         else:
             cvxopt.solvers.options['show_progress'] = True
         w = np.zeros(self.problem.size_psi)
-        n_samples = len(X)
         if constraints is None:
             constraints = []
         loss_curve = []
@@ -224,37 +290,20 @@ class OneSlackSSVM(BaseSSVM):
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
                     print(self)
-                # do inference in parallel
-                verbose = max(0, self.verbose - 3)
-                if self.n_jobs != 1:
-                    verbose = max(0, self.verbose - 3)
-                    Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                        delayed(loss_augmented_inference)(
-                            self.problem, x, y, w, relaxed=True)
-                        for x, y in zip(X, Y))
-                else:
-                    if hasattr(self.problem, "batch_loss_augmented_inference"):
-                        Y_hat = self.problem.batch_loss_augmented_inference(
-                            X, Y, w, relaxed=True)
-                    else:
-                        Y_hat = [
-                            self.problem.loss_augmented_inference(x, y, w,
+                try:
+                    Y_hat, dpsi, loss_mean = self._constraint_from_cache(X, Y,
+                                                                         w)
+                except NoConstraint:
+                    try:
+                        Y_hat, dpsi, loss_mean = self._find_new_constraint(
+                            X, Y, w, psi_gt, constraints)
+                    except NoConstraint:
+                        print("no additional constraints")
+                        break
 
-                # compute the mean over psis and losses
-                dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / n_samples
-                loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
-
-                slack = loss_mean - np.dot(w, dpsi)
                 self._compute_training_loss(X, Y, w, iteration)
-
-                if self.verbose > 0:
-                    print("new slack: %f"
-                          % (slack))
                 # now check the slack + the constraint
-                if self._check_bad_constraint(slack, dpsi, loss_mean,
-                                              constraints, w):
-                    print("no additional constraints")
-                    break
+                self._update_cache(Y_hat)
                 constraints.append((dpsi, loss_mean))
 
                 w, objective = self._solve_1_slack_qp(constraints,
