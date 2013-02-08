@@ -53,13 +53,10 @@ class StructuredSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
-    show_loss : string, default='augmented'
-        Controlls the meaning of the loss curve and convergence messages.
-        By default (show_loss='augmented') the loss of the loss-augmented
-        prediction is shown, since this is computed any way.
-        Setting show_loss='real' will show the true loss, i.e. the one of
-        the normal prediction. Be aware that this means an additional
-        call to inference in each iteration!
+    show_loss_every : int, default=0
+        Controlls how often the hamming loss is computed (for monitoring
+        purposes). Zero means never, otherwise it will be computed very
+        show_loss_every'th epoch.
 
     batch_size : int, default=100
         Number of constraints after which we solve the QP again.
@@ -82,9 +79,7 @@ class StructuredSVM(BaseSSVM):
         The last solution found by the qp solver.
 
    ``loss_curve_`` : list of float
-        List of loss values after each pass thorugh the dataset.
-        Either sum of slacks (loss on loss augmented predictions)
-        or actual loss, depending on the value of ``show_loss``.
+        List of loss values if show_loss_every > 0.
 
    ``objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
@@ -92,11 +87,11 @@ class StructuredSVM(BaseSSVM):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
-                 break_on_bad=True, show_loss='augmented', batch_size=100,
+                 break_on_bad=True, show_loss_every=0, batch_size=100,
                  tol=-10):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss=show_loss)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every)
 
         self.positive_constraint = positive_constraint
         self.check_constraints = check_constraints
@@ -243,7 +238,6 @@ class StructuredSVM(BaseSSVM):
             if self.verbose > 0:
                 print("iteration %d" % iteration)
             new_constraints = 0
-            current_loss = 0.
             # generate slices through dataset from batch_size
             if self.batch_size < 1 and not self.batch_size == -1:
                 raise ValueError("batch_size should be integer >= 1 or -1,"
@@ -270,7 +264,6 @@ class StructuredSVM(BaseSSVM):
                     # loop over dataset
                     y_hat, delta_psi, slack, loss = constraint
 
-                    current_loss += self._get_loss(x, y, w, loss)
                     if self.verbose > 3:
                         print("current slack: %f" % slack)
 
@@ -297,13 +290,12 @@ class StructuredSVM(BaseSSVM):
                 print("no additional constraints")
                 break
 
-            current_loss /= len(X)
-            loss_curve.append(current_loss)
+            self._compute_training_loss(X, Y, w, iteration)
 
             if self.verbose > 0:
-                print("current loss: %f  new constraints: %d, "
+                print("new constraints: %d, "
                       "dual objective: %f" %
-                      (current_loss, new_constraints,
+                      (new_constraints,
                        objective))
             if (iteration > 1 and objective_curve[-2]
                     - objective_curve[-1] < self.tol):

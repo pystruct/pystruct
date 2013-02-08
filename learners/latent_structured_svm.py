@@ -17,7 +17,7 @@ from ..utils import find_constraint
 
 class LatentSSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=1, n_jobs=1,
-                 break_on_bad=True, show_loss='true', base_svm='n-slack',
+                 break_on_bad=True, show_loss_every=0, base_svm='n-slack',
                  check_constraints=True, batch_size=100, tol=0.0001,
                  learning_rate=0.001):
         self.base_svm = base_svm
@@ -27,7 +27,7 @@ class LatentSSVM(BaseSSVM):
         self.tol = tol
         self.learning_rate = learning_rate
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss=show_loss)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every)
 
     def fit(self, X, Y, H_init=None):
         w = np.zeros(self.problem.size_psi)

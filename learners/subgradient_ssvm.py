@@ -47,13 +47,10 @@ class SubgradientStructuredSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
-    show_loss : string, default='augmented'
-        Controlls the meaning of the loss curve and convergence messages.
-        By default (show_loss='augmented') the loss of the loss-augmented
-        prediction is shown, since this is computed any way.
-        Setting show_loss='true' will show the true loss, i.e. the one of
-        the normal prediction. Be aware that this means an additional
-        call to inference in each iteration!
+    show_loss_every : int, default=0
+        Controlls how often the hamming loss is computed (for monitoring
+        purposes). Zero means never, otherwise it will be computed very
+        show_loss_every'th epoch.
 
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
@@ -67,9 +64,7 @@ class SubgradientStructuredSVM(BaseSSVM):
         The learned weights of the SVM.
 
    ``loss_curve_`` : list of float
-        List of loss values after each pass thorugh the dataset.
-        Either sum of slacks (loss on loss augmented predictions)
-        or actual loss, depending on the value of ``show_loss``.
+        List of loss values if show_loss_every > 0.
 
    ``objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
@@ -77,9 +72,9 @@ class SubgradientStructuredSVM(BaseSSVM):
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
-                 show_loss='augmented', decay_exponent=0):
+                 show_loss_every=0, decay_exponent=0):
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss=show_loss)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every)
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
@@ -141,7 +136,6 @@ class SubgradientStructuredSVM(BaseSSVM):
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
                 positive_slacks = 0
-                current_loss = 0.
                 objective = 0.
                 verbose = max(0, self.verbose - 3)
 
@@ -151,7 +145,6 @@ class SubgradientStructuredSVM(BaseSSVM):
                         y_hat, delta_psi, slack, loss = \
                             find_constraint(self.problem, x, y, w)
                         objective += slack
-                        current_loss += self._get_loss(x, y, w, loss)
                         if slack > 0:
                             positive_slacks += 1
                         w = self._solve_subgradient(w, delta_psi, n_samples)
@@ -179,8 +172,6 @@ class SubgradientStructuredSVM(BaseSSVM):
                             y_hat, delta_psi, slack, loss = constraint
                             objective += slack
                             dpsi += delta_psi
-                            current_loss += self._get_loss(x, y, w,
-                                                           augmented_loss=loss)
                             if slack > 0:
                                 positive_slacks += 1
                         dpsi /= float(len(X_b))
@@ -188,7 +179,6 @@ class SubgradientStructuredSVM(BaseSSVM):
 
                 # some statistics
                 objective /= len(X)
-                current_loss /= len(X)
                 objective += np.sum(w ** 2) / self.C / 2.
 
                 if positive_slacks == 0:
@@ -197,14 +187,16 @@ class SubgradientStructuredSVM(BaseSSVM):
                 if self.verbose > 0:
                     print(self)
                     print("iteration %d" % iteration)
-                    print("current loss: %f  positive slacks: %d,"
+                    print("positive slacks: %d,"
                           "objective: %f" %
-                          (current_loss, positive_slacks, objective))
-                loss_curve.append(current_loss)
+                          (positive_slacks, objective))
                 objective_curve.append(objective)
 
                 if self.verbose > 2:
                     print(w)
+
+                self._compute_training_loss(X, Y, w, iteration)
+
         except KeyboardInterrupt:
             pass
         self.w = w
