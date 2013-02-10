@@ -27,7 +27,7 @@ pbl = BinarySVMProblem(n_features=X_train.shape[1] + 1)  # add one for bias
 n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=10,
                             batch_size=-1)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
-                             max_iter=1000)
+                             max_iter=1000, tol=0.01)
 subgradient_svm = SubgradientStructuredSVM(pbl, C=10, learning_rate=0.0001,
                                            max_iter=50)
 

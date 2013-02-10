@@ -89,3 +89,27 @@ def test_blobs_2d_one_slack():
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
+
+
+def test_blobs_batch():
+    # make two gaussian blobs
+    X, Y = make_blobs(n_samples=80, centers=2, random_state=1)
+    Y = 2 * Y - 1
+
+    pbl = BinarySVMProblem(n_features=2)
+
+    # test psi
+    psi_mean = pbl.batch_psi(X, Y)
+    psi_mean2 = np.sum([pbl.psi(x, y) for x, y in zip(X, Y)], axis=0)
+    assert_array_equal(psi_mean, psi_mean2)
+
+    # test inference
+    w = np.random.uniform(-1, 1, size=pbl.size_psi)
+    Y_hat = pbl.batch_inference(X, w)
+    for i, (x, y_hat) in enumerate(zip(X, Y_hat)):
+        assert_array_equal(Y_hat[i], pbl.inference(x, w))
+
+    # test inference
+    Y_hat = pbl.batch_loss_augmented_inference(X, Y, w)
+    for i, (x, y, y_hat) in enumerate(zip(X, Y, Y_hat)):
+        assert_array_equal(Y_hat[i], pbl.loss_augmented_inference(x, y, w))

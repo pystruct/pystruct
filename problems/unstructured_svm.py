@@ -51,6 +51,9 @@ class BinarySVMProblem(StructuredProblem):
             raise ValueError("y has to be either -1 or +1, got %s" % repr(y))
         return y * x / 2.
 
+    def batch_psi(self, X, Y):
+        return np.sum(X * np.array(Y)[:, np.newaxis] / 2., axis=0)
+
     def inference(self, x, w, relaxed=None):
         """Inference for x using parameters w.
 
@@ -75,6 +78,9 @@ class BinarySVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         return np.sign(np.dot(x, w))
+
+    def batch_inference(self, X, w):
+        return np.sign(np.dot(X, w))
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         """Loss-augmented inference for x and y using parameters w.
@@ -103,6 +109,12 @@ class BinarySVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         return np.sign(np.dot(x, w) - y)
+
+    def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
+        return np.sign(np.dot(X, w) - Y)
+
+    def batch_loss(self, Y, Y_hat):
+        return Y != Y_hat
 
 
 class CrammerSingerSVMProblem(StructuredProblem):
