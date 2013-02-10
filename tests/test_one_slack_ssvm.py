@@ -51,3 +51,17 @@ def test_binary_blocks_one_slack_graph():
         Y_pred = clf.predict(X)
         for y, y_pred in zip(Y, Y_pred):
             assert_array_equal(y, y_pred)
+
+
+def test_one_slack_constraint_caching():
+    #testing cutting plane ssvm on easy multinomial dataset
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
+                                           seed=0)
+    n_labels = len(np.unique(Y))
+    crf = GridCRF(n_states=n_labels, inference_method='lp')
+    clf = OneSlackSSVM(problem=crf, max_iter=50, C=100, verbose=100,
+                       check_constraints=True, break_on_bad=True,
+                       inference_cache=50)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)

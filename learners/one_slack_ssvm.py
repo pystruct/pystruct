@@ -75,6 +75,8 @@ class OneSlackSSVM(BaseSSVM):
         0 the most violating of the cached examples will be used to construct a
         global constraint. Only if this constraint is not violated, inference
         will be run again.
+        This parameter poses a memory / computation tradeoff. Storing more
+        constraints might lead to RAM being exhausted.
 
 
     Attributes
@@ -195,15 +197,19 @@ class OneSlackSSVM(BaseSSVM):
 
     def _update_cache(self, Y_hat):
         """Updated cached constraints."""
-        if not self.inference_cache:
+        if self.inference_cache == 0:
             return
+        if not hasattr(self, "inference_cache_"):
+            self.inference_cache_ = [[] for y in Y_hat]
         for sample, y_hat in zip(self.inference_cache_, Y_hat):
             if len(sample) > self.inference_cache:
                 sample.pop(0)
             sample.append(y_hat)
 
     def _constraint_from_cache(self, X, Y, w, psi_gt, constraints):
-        if not self.inference_cache:
+        if not getattr(self, 'inference_cache_', False):
+            if self.verbose > 10:
+                print("Empty cache.")
             raise NoConstraint
         Y_hat = []
         for x, y, cached in zip(X, Y, self.inference_cache_):
@@ -218,10 +224,12 @@ class OneSlackSSVM(BaseSSVM):
         slack = loss_mean - np.dot(w, dpsi)
         if self._check_bad_constraint(slack, dpsi, loss_mean,
                                       constraints, w):
+            if self.verbose > 1:
+                print("No constraint from cache.")
             raise NoConstraint
         if self.verbose > 0:
             print("new slack: %f" % (slack))
-        return Y_hat
+        return Y_hat, dpsi, loss_mean
 
     def _find_new_constraint(self, X, Y, w, psi_gt, constraints):
         if self.n_jobs != 1:
