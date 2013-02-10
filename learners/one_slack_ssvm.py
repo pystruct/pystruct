@@ -291,8 +291,8 @@ class OneSlackSSVM(BaseSSVM):
                     print("iteration %d" % iteration)
                     print(self)
                 try:
-                    Y_hat, dpsi, loss_mean = self._constraint_from_cache(X, Y,
-                                                                         w)
+                    Y_hat, dpsi, loss_mean = self._constraint_from_cache(
+                        X, Y, w, psi_gt, constraints)
                 except NoConstraint:
                     try:
                         Y_hat, dpsi, loss_mean = self._find_new_constraint(
