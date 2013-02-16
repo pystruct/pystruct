@@ -5,8 +5,9 @@ from .graph_crf import GraphCRF, EdgeTypeGraphCRF
 from .latent_grid_crf import LatentGridCRF, LatentDirectionalGridCRF
 from .latent_graph_crf import LatentGraphCRF
 from .unstructured_svm import BinarySVMProblem, CrammerSingerSVMProblem
+from .multilabel_svm import MultiLabelProblem
 
 __all__ = ["StructuredProblem", "CRF", "GridCRF", "GraphCRF",
            "EdgeTypeGraphCRF", "DirectionalGridCRF", "BinarySVMProblem",
            "LatentGridCRF", "LatentDirectionalGridCRF",
-           "CrammerSingerSVMProblem", "LatentGraphCRF"]
+           "CrammerSingerSVMProblem", "LatentGraphCRF", "MultiLabelProblem"]
