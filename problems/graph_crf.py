@@ -142,3 +142,126 @@ class GraphCRF(CRF):
         psi_vector = np.hstack([unaries_acc.ravel(),
                                 pw[np.tri(self.n_states, dtype=np.bool)]])
         return psi_vector
+
+
+class EdgeTypeGraphCRF(GraphCRF):
+    """CRF with several kinds of edges, each having their own parameters.
+
+    Pairwise potentials are not symmetric and are independend for each kind of
+    edges. This leads to n_classes * n_features parameters for unary potentials
+    and n_edge_types * n_classes ** 2 parameters for edge potentials.
+
+    Unary evidence ``x`` is given as array of shape (width, height, n_states),
+    labels ``y`` are given as array of shape (width, height). Grid sizes do not
+    need to be constant over the dataset.
+
+    Parameters
+    ----------
+    n_states : int, default=2
+        Number of states for all variables.
+
+    inference_method : string, default="qpbo"
+        Function to call do do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+
+    n_edge_types : int, default=1
+        How many different edge-types there are.
+
+    """
+    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+                 n_edge_types=1):
+        GraphCRF.__init__(self, n_states, n_features,
+                          inference_method=inference_method,)
+        self.n_edge_types = n_edge_types
+        self.size_psi = (n_states * self.n_features
+                         + self.n_edge_types * n_states ** 2)
+
+    def get_edges(self, x, flat=True):
+        if flat:
+            # flatten edge-types
+            return np.vstack(x[1])
+        return x[1]
+
+    def psi(self, x, y):
+        """Feature vector associated with instance (x, y).
+
+        Feature representation psi, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+
+        Parameters
+        ----------
+        x : ndarray, shape (width, height, n_states)
+            Unary evidence / input.
+
+        y : ndarray or tuple
+            Either y is an integral ndarray of shape (width, height), giving
+            a complete labeling for x.
+            Or it is the result of a linear programming relaxation. In this
+            case, ``y=(unary_marginals, pariwise_marginals)``, where
+            unary_marginals is an array of shape (width, height, n_states) and
+            pairwise_marginals is an array of shape (n_states, n_states) of
+            accumulated pairwise marginals.
+
+        Returns
+        -------
+        p : ndarray, shape (size_psi,)
+            Feature vector associated with state (x, y).
+
+        """
+        # x is unaries
+        self._check_size_x(x)
+        features, edges = self.get_features(x), self.get_edges(x, flat=False)
+        n_nodes = features.shape[0]
+        edges = self.get_edges(x)
+        # y is a labeling
+        if isinstance(y, tuple):
+            # y can also be continuous (from lp)
+            # in this case, it comes with accumulated edge marginals
+            unary_marginals, pw = y
+
+            # pw contains separate entries for all edges
+            # we need to find out which belong to which kind
+            n_edges = [len(e) for e in edges]
+            n_edges.insert(0, 0)
+            edge_boundaries = np.cumsum(n_edges)
+            pw_accumulated = []
+            for i, j in zip(edge_boundaries[:-1], edge_boundaries[1:]):
+                pw_accumulated.append(pw[i:j].sum(axis=0))
+            pw = np.hstack(pw_accumulated)
+        else:
+            ## unary features:
+            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
+
+            ##accumulated pairwise
+            #make one hot encoding
+            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
+            gx = np.ogrid[:n_nodes]
+            unary_marginals[gx, y] = 1
+
+            ##accumulated pairwise
+            pw = []
+            for edge_type in edges:
+                pw.append(np.dot(unary_marginals[edge_type[:, 0]].T,
+                                 unary_marginals[edge_type[:, 1]]))
+            pw = np.hstack(pw)
+
+        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
+                             features)
+        feature = np.hstack([unaries_acc.ravel(), pw.ravel()])
+        return feature
+
+    def get_pairwise_potentials(self, x, w):
+        self._check_size_w(w)
+        self._check_size_x(x)
+        edges = self.get_edges(x, flat=False)
+        n_edges = [len(e) for e in edges]
+        pairwise_params = w[self.n_states * self.n_features:].reshape(
+            self.n_edge_types, self.n_states, self.n_states)
+        edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
+                        for pw, n in zip(pairwise_params, n_edges)]
+        return np.vstack(edge_weights)
