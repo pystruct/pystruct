@@ -71,12 +71,13 @@ class OneSlackSSVM(BaseSSVM):
         found.
 
     inference_cache : int, default=0
-        How many results of loss_augmented_inference to cache per sample.  If >
-        0 the most violating of the cached examples will be used to construct a
-        global constraint. Only if this constraint is not violated, inference
-        will be run again.
-        This parameter poses a memory / computation tradeoff. Storing more
-        constraints might lead to RAM being exhausted.
+        How many results of loss_augmented_inference to cache per sample.
+        If > 0 the most violating of the cached examples will be used to
+        construct a global constraint. Only if this constraint is not violated,
+        inference will be run again. This parameter poses a memory /
+        computation tradeoff. Storing more constraints might lead to RAM being
+        exhausted. Using inference_cache > 0 is only advisable if computation
+        time is dominated by inference.
 
 
     Attributes
