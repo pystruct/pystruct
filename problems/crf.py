@@ -41,7 +41,7 @@ class CRF(StructuredProblem):
         x : tuple
             Instance of a graph with unary evidence.
             x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_states),
+            unaries are an nd-array of shape (n_nodes, n_features),
             edges are an nd-array of shape (n_edges, 2)
 
         y : ndarray, shape (n_nodes,)
@@ -68,7 +68,7 @@ class CRF(StructuredProblem):
             If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
             a tuple (unary_marginals, pairwise_marginals)
             containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
+            unary marginals is an array of shape (n_nodes, n_states),
             pairwise_marginals is an array of
             shape (n_states, n_states) of accumulated pairwise marginals.
 

@@ -235,7 +235,7 @@ class EdgeTypeGraphCRF(GraphCRF):
             pw_accumulated = []
             for i, j in zip(edge_boundaries[:-1], edge_boundaries[1:]):
                 pw_accumulated.append(pw[i:j].sum(axis=0))
-            pw = np.hstack(pw_accumulated)
+            pw = np.vstack(pw_accumulated)
         else:
             ##accumulated pairwise
             #make one hot encoding
