@@ -1,6 +1,6 @@
 import numpy as np
 
-from .graph_crf import GraphCRF
+from .graph_crf import GraphCRF, EdgeTypeGraphCRF
 from ..utils import make_grid_edges
 
 
@@ -100,7 +100,7 @@ class GridCRF(GraphCRF):
             self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
 
 
-class DirectionalGridCRF(GridCRF):
+class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
     """CRF in which each direction of edges has their own set of parameters.
 
     Pairwise potentials are not symmetric and are independend for each kind of
@@ -141,6 +141,10 @@ class DirectionalGridCRF(GridCRF):
         self.size_psi = (n_states * self.n_features
                          + self.n_edge_types * n_states ** 2)
 
+    def get_edges(self, x, flat=True):
+        return make_grid_edges(x, neighborhood=self.neighborhood,
+                               return_lists=not flat)
+
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
 
@@ -167,51 +171,7 @@ class DirectionalGridCRF(GridCRF):
             Feature vector associated with state (x, y).
 
         """
-        # x is unaries
-        self._check_size_x(x)
-        x_flat = x.reshape(-1, x.shape[-1])
-        # y is a labeling
-        if isinstance(y, tuple):
-            # y can also be continuous (from lp)
-            # in this case, it comes with accumulated edge marginals
-            unary_marginals, pw = y
-
-            # pw contains separate entries for all edges
-            # we need to find out which belong to which kind
-            edges = make_grid_edges(x, neighborhood=self.neighborhood,
-                                    return_lists=True)
-            n_edges = [len(e) for e in edges]
-            n_edges.insert(0, 0)
-            edge_boundaries = np.cumsum(n_edges)
-            pw_accumulated = []
-            for i, j in zip(edge_boundaries[:-1], edge_boundaries[1:]):
-                pw_accumulated.append(pw[i:j].sum(axis=0))
-            pw = np.hstack(pw_accumulated)
-        else:
-            ## unary features:
-            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-
-            ##accumulated pairwise
-            #make one hot encoding
-            unary_marginals = np.zeros((y.shape[0], y.shape[1], self.n_states),
-                                       dtype=np.int)
-            unary_marginals[gx, gy, y] = 1
-            pw = np.vstack(pairwise_grid_features(unary_marginals,
-                                                  self.neighborhood))
-
-        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
-                             x_flat)
-        feature = np.hstack([unaries_acc.ravel(), pw.ravel()])
-        return feature
+        return EdgeTypeGraphCRF.psi(self, x, y)
 
     def get_pairwise_potentials(self, x, w):
-        self._check_size_w(w)
-        self._check_size_x(x)
-        edges = make_grid_edges(x, neighborhood=self.neighborhood,
-                                return_lists=True)
-        n_edges = [len(e) for e in edges]
-        pairwise_params = w[self.n_states * self.n_features:].reshape(
-            self.n_edge_types, self.n_states, self.n_states)
-        edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
-                        for pw, n in zip(pairwise_params, n_edges)]
-        return np.vstack(edge_weights)
+        return EdgeTypeGraphCRF.get_pairwise_potentials(self, x, w)

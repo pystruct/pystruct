@@ -239,6 +239,7 @@ class EdgeTypeGraphCRF(GraphCRF):
         else:
             ##accumulated pairwise
             #make one hot encoding
+            y = y.reshape(n_nodes)
             unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
             gx = np.ogrid[:n_nodes]
             unary_marginals[gx, y] = 1
@@ -248,7 +249,7 @@ class EdgeTypeGraphCRF(GraphCRF):
             for edge_type in edges:
                 pw.append(np.dot(unary_marginals[edge_type[:, 0]].T,
                                  unary_marginals[edge_type[:, 1]]))
-            pw = np.hstack(pw)
+            pw = np.vstack(pw)
 
         unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
                              features)
