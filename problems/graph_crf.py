@@ -10,10 +10,11 @@ class GraphCRF(CRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
-    Unary evidence is given as array of shape (width, height, n_states),
-    labels ``y`` are given as array of shape (width, height) and the graph
-    is given as nd-array of edges of shape (n_edges, 2).
-    An instance ``x`` is represented as a tuple ``(unaries, edges)``.
+    Unary evidence is given as a tuple of shape (n_nodes, n_features),
+    An instance ``x`` is represented as a tuple ``(unaries, edges)``
+    where edges is an array of shape (n_edges, 2), representing the graph.
+
+    Labels ``y`` are given as array of shape (n_features)
 
     Parameters
     ----------
@@ -151,9 +152,12 @@ class EdgeTypeGraphCRF(GraphCRF):
     edges. This leads to n_classes * n_features parameters for unary potentials
     and n_edge_types * n_classes ** 2 parameters for edge potentials.
 
-    Unary evidence ``x`` is given as array of shape (width, height, n_states),
-    labels ``y`` are given as array of shape (width, height). Grid sizes do not
-    need to be constant over the dataset.
+    Unary evidence is given as a tuple of shape (n_nodes, n_features),
+    An instance ``x`` is represented as a tuple ``(unaries, edges)``.
+    Edges is a list of arrays of shape (n_edges_i, 2), one array
+    per type of edge.
+
+    Labels ``y`` are given as array of shape (n_features).
 
     Parameters
     ----------
@@ -195,15 +199,15 @@ class EdgeTypeGraphCRF(GraphCRF):
 
         Parameters
         ----------
-        x : ndarray, shape (width, height, n_states)
-            Unary evidence / input.
+        x : tuple
+            Unary evidence.
 
         y : ndarray or tuple
-            Either y is an integral ndarray of shape (width, height), giving
+            Either y is an integral ndarray of shape (n_nodes,), giving
             a complete labeling for x.
             Or it is the result of a linear programming relaxation. In this
             case, ``y=(unary_marginals, pariwise_marginals)``, where
-            unary_marginals is an array of shape (width, height, n_states) and
+            unary_marginals is an array of shape (n_nodes, n_states) and
             pairwise_marginals is an array of shape (n_states, n_states) of
             accumulated pairwise marginals.
 
