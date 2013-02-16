@@ -10,6 +10,12 @@ w = np.array([1, 0,  # unary
               .22,  # pairwise
               0, .22])
 
+# for directional CRF with non-symmetric weights
+w_sym = np.array([1, 0,    # unary
+                  0, 1,
+                  .22, 0,  # pairwise
+                  0, .22])
+
 # triangle
 x_1 = np.array([[0, 1], [1, 0], [.4, .6]])
 g_1 = np.array([[0, 1], [1, 2], [2, 0]])
@@ -38,10 +44,6 @@ def test_edge_type_graph_crf():
 
     # all edges are of the first type. should do the same as GraphCRF
     # if we make w symmetric
-    w_sym = np.array([1, 0,    # unary
-                      0, 1,
-                      .22, 0,  # pairwise
-                      0, .22])
     for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=1)
@@ -49,7 +51,7 @@ def test_edge_type_graph_crf():
         assert_array_equal(crf.inference((x_2, [g_2]), w_sym), y_2)
 
     # same, only with two edge types and no edges of second type
-    w_sym = np.array([1, 0,    # unary
+    w_sym_ = np.array([1, 0,    # unary
                       0, 1,
                       .22, 0,  # pairwise
                       0, .22,
@@ -58,12 +60,12 @@ def test_edge_type_graph_crf():
     for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=2)
-        assert_array_equal(
-            crf.inference((x_1, [g_1, np.zeros((0, 2), dtype=np.int)]), w_sym),
-            y_1)
-        assert_array_equal(
-            crf.inference((x_2, [g_2, np.zeros((0, 2), dtype=np.int)]), w_sym),
-            y_2)
+        assert_array_equal(crf.inference((x_1, [g_1, np.zeros((0, 2),
+                                                              dtype=np.int)]),
+                                         w_sym_), y_1)
+        assert_array_equal(crf.inference((x_2, [g_2, np.zeros((0, 2),
+                                                              dtype=np.int)]),
+                                         w_sym_), y_2)
 
 
 def test_graph_crf_continuous_inference():
@@ -89,13 +91,13 @@ def test_graph_crf_energy_lp_integral():
 
 
 def test_graph_crf_energy_lp_relaxed():
+    crf = GraphCRF(n_states=2, inference_method='lp')
     for i in xrange(10):
         w_ = np.random.uniform(size=w.shape)
-        crf = GraphCRF(n_states=2, inference_method='lp')
         inf_res, energy_lp = crf.inference((x_1, g_1), w_, relaxed=True,
                                            return_energy=True)
         assert_almost_equal(energy_lp,
-                            -np.dot(w_, crf.psi((x_2, g_2), inf_res)))
+                            -np.dot(w_, crf.psi((x_1, g_1), inf_res)))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
@@ -112,3 +114,34 @@ def test_graph_crf_loss_augment():
     # check that y_hat fulfulls energy + loss condition
     assert_almost_equal(np.dot(w, crf.psi(x, y_hat)) + crf.loss(y, y_hat),
                         -energy)
+
+
+def test_edge_type_graph_crf_energy_lp_integral():
+    # same test as for graph crf above, using single edge type
+    crf = EdgeTypeGraphCRF(n_states=2, inference_method='lp', n_edge_types=1)
+    inf_res, energy_lp = crf.inference((x_1, [g_1]), w_sym, relaxed=True,
+                                       return_energy=True)
+    # integral solution
+    assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
+    y = np.argmax(inf_res[0], axis=-1)
+    # energy and psi check out
+    assert_almost_equal(energy_lp, -np.dot(w_sym, crf.psi((x_1, [g_1]), y)))
+
+
+def test_edge_type_graph_crf_energy_lp_relaxed():
+    # same test as for graph crf above, using single edge type
+    crf = EdgeTypeGraphCRF(n_states=2, inference_method='lp',
+                           n_edge_types=1)
+    for i in xrange(10):
+        w_ = np.random.uniform(size=w_sym.shape)
+        inf_res, energy_lp = crf.inference((x_1, [g_1]), w_, relaxed=True,
+                                           return_energy=True)
+        assert_almost_equal(energy_lp,
+                            -np.dot(w_, crf.psi((x_1, [g_1]), inf_res)))
+
+    # now with fractional solution
+    x = np.array([[0, 0], [0, 0], [0, 0]])
+    inf_res, energy_lp = crf.inference((x, [g_1]), w_sym, relaxed=True,
+                                       return_energy=True)
+    assert_almost_equal(energy_lp,
+                        -np.dot(w_sym, crf.psi((x, [g_1]), inf_res)))

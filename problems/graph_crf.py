@@ -221,7 +221,6 @@ class EdgeTypeGraphCRF(GraphCRF):
         self._check_size_x(x)
         features, edges = self.get_features(x), self.get_edges(x, flat=False)
         n_nodes = features.shape[0]
-        edges = self.get_edges(x)
         # y is a labeling
         if isinstance(y, tuple):
             # y can also be continuous (from lp)
@@ -238,9 +237,6 @@ class EdgeTypeGraphCRF(GraphCRF):
                 pw_accumulated.append(pw[i:j].sum(axis=0))
             pw = np.hstack(pw_accumulated)
         else:
-            ## unary features:
-            gx, gy = np.ogrid[:x.shape[0], :x.shape[1]]
-
             ##accumulated pairwise
             #make one hot encoding
             unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
