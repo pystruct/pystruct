@@ -164,15 +164,10 @@ class OneSlackSSVM(BaseSSVM):
         w = np.dot(a, psi_matrix)
         return w, solution['primal objective']
 
-    def _check_bad_constraint(self, slack, dpsi_mean, loss,
+    def _check_bad_constraint(self, violation, dpsi_mean, loss,
                               old_constraints, w):
-        if slack < 1e-5:
+        if violation < 1e-5:
             return True
-        #Ys_plain = [unwrap_pairwise(y) for y in Ys]
-        #all_old_Ys = [[unwrap_pairwise(y_) for y_ in Ys_]
-                      #for Ys_, _, _ in old_constraints]
-        #equals = [np.all([np.all(y == y_) for y, y_ in zip(Ys_plain, old_Ys)])
-                  #for old_Ys in all_old_Ys]
         equals = [True for dpsi_, loss_ in old_constraints
                   if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
 
@@ -181,31 +176,32 @@ class OneSlackSSVM(BaseSSVM):
 
         if self.check_constraints:
             for con in old_constraints:
-                # compute slack for old constraint
-                slack_tmp = max(con[1] - np.dot(w, con[0]), 0)
+                # compute violation for old constraint
+                violation_tmp = max(con[1] - np.dot(w, con[0]), 0)
                 if self.verbose > 5:
-                    print("slack old constraint: %f" % slack_tmp)
-                # if slack of new constraint is smaller or not
+                    print("violation old constraint: %f" % violation_tmp)
+                # if violation of new constraint is smaller or not
                 # significantly larger, don't add constraint.
                 # if smaller, complain about approximate inference.
-                if slack - slack_tmp < -1e-5:
-                    print("bad inference: %f" % (slack_tmp - slack))
+                if violation - violation_tmp < -1e-5:
+                    print("bad inference: %f" % (violation_tmp - violation))
                     if self.break_on_bad:
                         from IPython.core.debugger import Tracer
                         Tracer()()
                     return True
         return False
 
-    def _update_cache(self, Y_hat):
+    def _update_cache(self, X, Y, Y_hat):
         """Updated cached constraints."""
         if self.inference_cache == 0:
             return
         if not hasattr(self, "inference_cache_"):
             self.inference_cache_ = [[] for y in Y_hat]
-        for sample, y_hat in zip(self.inference_cache_, Y_hat):
+        for sample, x, y, y_hat in zip(self.inference_cache_, X, Y, Y_hat):
             if len(sample) > self.inference_cache:
                 sample.pop(0)
-            sample.append(y_hat)
+            sample.append((self.problem.psi(x, y_hat),
+                           self.problem.loss(y, y_hat), y_hat))
 
     def _constraint_from_cache(self, X, Y, w, psi_gt, constraints):
         if not getattr(self, 'inference_cache_', False):
@@ -213,23 +209,30 @@ class OneSlackSSVM(BaseSSVM):
                 print("Empty cache.")
             raise NoConstraint
         Y_hat = []
-        for x, y, cached in zip(X, Y, self.inference_cache_):
-            violations = [np.dot(self.problem.psi(x, y_hat), w)
-                          + self.problem.loss(y, y_hat)
-                          for y_hat in cached]
-            Y_hat.append(cached[np.argmax(violations)])
+        for cached in self.inference_cache_:
+            # cached has entries of form (psi, loss, y_hat)
+            violations = [np.dot(psi, w) + loss for psi, loss, _ in cached]
+            # [2] gets y_hat out of cached constraint
+            Y_hat.append(cached[np.argmax(violations)][2])
 
         dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
         loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
-        slack = loss_mean - np.dot(w, dpsi)
-        if self._check_bad_constraint(slack, dpsi, loss_mean,
+        violation = loss_mean - np.dot(w, dpsi)
+        if self._check_bad_constraint(violation, dpsi, loss_mean,
                                       constraints, w):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
-        if self.verbose > 0:
-            print("new slack: %f" % (slack))
+        #gr = ((loss_mean - np.dot(w, dpsi) / 2.) * self.C * len(X))
+        #if self.objective_curve_ and gr - self.objective_curve_[-1] < self.tol:
+        #    from IPython.core.debugger import Tracer
+        #    Tracer()()
+        #    if self.verbose > 1:
+        #        print("No constraint from cache.")
+        #    raise NoConstraint
+        #if self.verbose > 0:
+            #print("new violation: %f" % gr)
         return Y_hat, dpsi, loss_mean
 
     def _find_new_constraint(self, X, Y, w, psi_gt, constraints):
@@ -248,12 +251,19 @@ class OneSlackSSVM(BaseSSVM):
         dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
         loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
-        slack = loss_mean - np.dot(w, dpsi)
-        if self._check_bad_constraint(slack, dpsi, loss_mean,
+        violation = loss_mean - np.dot(w, dpsi)
+        if self._check_bad_constraint(violation, dpsi, loss_mean,
                                       constraints, w):
             raise NoConstraint
-        if self.verbose > 0:
-            print("new slack: %f" % (slack))
+        #gr = ((loss_mean - np.dot(w, dpsi) / 2.) * self.C * len(X))
+        #if self.objective_curve_ and gr - self.objective_curve_[-1] < self.tol:
+        #    from IPython.core.debugger import Tracer
+        #    Tracer()()
+        #    if self.verbose > 1:
+        #        print("No constraint from cache.")
+        #    raise NoConstraint
+        #if self.verbose > 0:
+            #print("new violation: %f" % gr)
         return Y_hat, dpsi, loss_mean
 
     def fit(self, X, Y, constraints=None):
@@ -286,7 +296,7 @@ class OneSlackSSVM(BaseSSVM):
         if constraints is None:
             constraints = []
         loss_curve = []
-        objective_curve = []
+        self.objective_curve_ = []
         self.alphas = []  # dual solutions
 
         # get the psi of the ground truth
@@ -311,18 +321,22 @@ class OneSlackSSVM(BaseSSVM):
                         break
 
                 self._compute_training_loss(X, Y, w, iteration)
-                # now check the slack + the constraint
-                self._update_cache(Y_hat)
+                # now check the violation + the constraint
+                self._update_cache(X, Y, Y_hat)
                 constraints.append((dpsi, loss_mean))
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))
+                w = w
                 if self.verbose > 0:
-                    print("dual objective: %f" % objective)
-                objective_curve.append(objective)
+                    primal_objective = (self.C * len(X) *
+                                        (-np.dot(w, dpsi) / 2. + loss_mean))
+                    print("dual objective: %f, primal objective: %f"
+                          % (objective, primal_objective))
+                self.objective_curve_.append(objective)
 
-                if (iteration > 1 and objective_curve[-2]
-                        - objective_curve[-1] < self.tol):
+                if (iteration > 1 and self.objective_curve_[-2]
+                        - self.objective_curve_[-1] < self.tol):
                     print("objective converged.")
                     break
                 if self.verbose > 5:
@@ -333,5 +347,4 @@ class OneSlackSSVM(BaseSSVM):
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
         self.loss_curve_ = loss_curve
-        self.objective_curve_ = objective_curve
         return self
