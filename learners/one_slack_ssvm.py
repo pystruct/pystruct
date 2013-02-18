@@ -200,6 +200,10 @@ class OneSlackSSVM(BaseSSVM):
         for sample, x, y, y_hat in zip(self.inference_cache_, X, Y, Y_hat):
             if len(sample) > self.inference_cache:
                 sample.pop(0)
+            # we computed both of these before, but summed them up immediately
+            # this makes it a little less efficient in the caching case.
+            # the idea is that if we cache, inference is way more expensive
+            # and this doesn't matter much.
             sample.append((self.problem.psi(x, y_hat),
                            self.problem.loss(y, y_hat), y_hat))
 
