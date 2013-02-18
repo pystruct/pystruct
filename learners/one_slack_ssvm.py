@@ -320,13 +320,12 @@ class OneSlackSSVM(BaseSSVM):
                     try:
                         Y_hat, dpsi, loss_mean = self._find_new_constraint(
                             X, Y, w, psi_gt, constraints)
+                        self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
                         print("no additional constraints")
                         break
 
                 self._compute_training_loss(X, Y, w, iteration)
-                # now check the violation + the constraint
-                self._update_cache(X, Y, Y_hat)
                 constraints.append((dpsi, loss_mean))
 
                 w, objective = self._solve_1_slack_qp(constraints,
