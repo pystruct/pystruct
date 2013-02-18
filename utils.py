@@ -79,14 +79,23 @@ def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
 
 
 ## global functions for easy parallelization
-def find_constraint(problem, x, y, w, y_hat=None, relaxed=True):
+def find_constraint(problem, x, y, w, y_hat=None, relaxed=True,
+                    compute_difference=True):
     """Find most violated constraint, or, given y_hat,
-    find slack and dpsi for this constraing."""
+    find slack and dpsi for this constraing.
+
+    As for finding the most violated constraint, it is enough to compute
+    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
+    using compute_differences=False
+    """
 
     if y_hat is None:
         y_hat = problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
     psi = problem.psi
-    delta_psi = psi(x, y) - psi(x, y_hat)
+    if compute_difference:
+        delta_psi = psi(x, y) - psi(x, y_hat)
+    else:
+        delta_psi = -psi(x, y_hat)
     if isinstance(y_hat, tuple):
         # continuous label
         loss = problem.continuous_loss(y, y_hat[0])
