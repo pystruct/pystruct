@@ -77,9 +77,9 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
     unaries = unary_potentials.reshape(-1, n_states)
     res = lp_general_graph(-unaries, edges, -pairwise_potentials)
     unary_marginals, pairwise_marginals, energy = res
-    n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
-    if n_fractional:
-        print("fractional solutions found: %d" % n_fractional)
+    #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
+    #if n_fractional:
+        #print("fractional solutions found: %d" % n_fractional)
     if relaxed:
         unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
@@ -102,9 +102,9 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     res = AD3.general_graph(unaries, edges, pairwise_potentials,
                             verbose=verbose)
     unary_marginals, pairwise_marginals, energy = res
-    n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
-    if n_fractional:
-        print("fractional solutions found: %d" % n_fractional)
+    #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
+    #if n_fractional:
+        #print("fractional solutions found: %d" % n_fractional)
     if relaxed:
         unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
