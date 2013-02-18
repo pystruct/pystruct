@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
+from nose.tools import assert_equal
 
 from pystruct.problems import GridCRF, GraphCRF
 from pystruct.learners import OneSlackSSVM
@@ -65,3 +66,10 @@ def test_one_slack_constraint_caching():
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
+    assert_equal(len(clf.inference_cache_), len(X))
+    # there should be 10 constraints, which are less than the 16 iterations
+    # that are done
+    assert_equal(len(clf.inference_cache_[0]), 10)
+    # all data points have the same number of constraints
+    assert_equal(len(np.unique([len(cache) for cache in
+                                clf.inference_cache_])), 1)
