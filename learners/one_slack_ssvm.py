@@ -12,7 +12,7 @@ import cvxopt.solvers
 from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
-from ..utils import loss_augmented_inference
+from ..utils import loss_augmented_inference, unwrap_pairwise
 
 
 class NoConstraint(Exception):
@@ -198,6 +198,11 @@ class OneSlackSSVM(BaseSSVM):
         if not hasattr(self, "inference_cache_"):
             self.inference_cache_ = [[] for y in Y_hat]
         for sample, x, y, y_hat in zip(self.inference_cache_, X, Y, Y_hat):
+            already_there = [np.all(unwrap_pairwise(y_hat)
+                                    == unwrap_pairwise(cache[2]))
+                             for cache in sample]
+            if np.any(already_there):
+                continue
             if len(sample) > self.inference_cache:
                 sample.pop(0)
             # we computed both of these before, but summed them up immediately

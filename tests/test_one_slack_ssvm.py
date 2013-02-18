@@ -67,9 +67,10 @@ def test_one_slack_constraint_caching():
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
     assert_equal(len(clf.inference_cache_), len(X))
-    # there should be 10 constraints, which are less than the 16 iterations
+    # there should be 9 constraints, which are less than the 16 iterations
     # that are done
-    assert_equal(len(clf.inference_cache_[0]), 10)
-    # all data points have the same number of constraints
-    assert_equal(len(np.unique([len(cache) for cache in
-                                clf.inference_cache_])), 1)
+    assert_equal(len(clf.inference_cache_[0]), 9)
+    # check that we didn't change the behavior of how we construct the cache
+    constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
+    assert_equal(np.max(constraints_per_sample), 10)
+    assert_equal(np.min(constraints_per_sample), 8)
