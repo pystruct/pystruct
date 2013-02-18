@@ -157,7 +157,7 @@ class OneSlackSSVM(BaseSSVM):
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-5
+        sv = a > 1e-8 * C
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
@@ -213,14 +213,18 @@ class OneSlackSSVM(BaseSSVM):
                 print("Empty cache.")
             raise NoConstraint
         Y_hat = []
+        psi_acc = np.zeros(self.problem.size_psi)
+        loss_mean = 0
         for cached in self.inference_cache_:
             # cached has entries of form (psi, loss, y_hat)
             violations = [np.dot(psi, w) + loss for psi, loss, _ in cached]
-            # [2] gets y_hat out of cached constraint
-            Y_hat.append(cached[np.argmax(violations)][2])
+            psi, loss, y_hat = cached[np.argmax(violations)]
+            Y_hat.append(y_hat)
+            psi_acc += psi
+            loss_mean += loss
 
-        dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
-        loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
+        dpsi = (psi_gt - psi_acc) / len(X)
+        loss_mean = loss / len(X)
 
         violation = loss_mean - np.dot(w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean,
