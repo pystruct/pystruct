@@ -308,7 +308,6 @@ class OneSlackSSVM(BaseSSVM):
         w = np.zeros(self.problem.size_psi)
         if constraints is None:
             constraints = []
-        loss_curve = []
         self.objective_curve_ = []
         self.alphas = []  # dual solutions
 
@@ -358,5 +357,4 @@ class OneSlackSSVM(BaseSSVM):
         self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
-        self.loss_curve_ = loss_curve
         return self
