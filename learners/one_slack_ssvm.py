@@ -165,7 +165,7 @@ class OneSlackSSVM(BaseSSVM):
         return w, solution['primal objective']
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
-                              old_constraints, w):
+                              old_constraints, w, break_on_bad):
         if violation < 1e-5:
             return True
         equals = [True for dpsi_, loss_ in old_constraints
@@ -185,7 +185,7 @@ class OneSlackSSVM(BaseSSVM):
                 # if smaller, complain about approximate inference.
                 if violation - violation_tmp < -1e-5:
                     print("bad inference: %f" % (violation_tmp - violation))
-                    if self.break_on_bad:
+                    if break_on_bad:
                         from IPython.core.debugger import Tracer
                         Tracer()()
                     return True
@@ -233,7 +233,7 @@ class OneSlackSSVM(BaseSSVM):
 
         violation = loss_mean - np.dot(w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean,
-                                      constraints, w):
+                                      constraints, w, break_on_bad=False):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
@@ -338,7 +338,6 @@ class OneSlackSSVM(BaseSSVM):
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))
-                w = w
                 if self.verbose > 0:
                     primal_objective = (self.C * len(X) *
                                         (-np.dot(w, dpsi) / 2. + loss_mean))
