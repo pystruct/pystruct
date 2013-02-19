@@ -64,7 +64,7 @@ class OneSlackSSVM(BaseSSVM):
     batch_size : int, default=100
         Number of constraints after which we solve the QP again.
 
-    tol : float, default=-10
+    tol : float, default=1e-5
         Convergence tolerance. If dual objective decreases less than tol,
         learning is stopped. The default corresponds to ignoring the behavior
         of the dual objective and stop only if no more constraints can be
@@ -97,7 +97,7 @@ class OneSlackSSVM(BaseSSVM):
 
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
-                 break_on_bad=True, show_loss_every=0, tol=0.0001,
+                 break_on_bad=True, show_loss_every=0, tol=1e-5,
                  inference_cache=0):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
@@ -166,7 +166,8 @@ class OneSlackSSVM(BaseSSVM):
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
                               old_constraints, w, break_on_bad):
-        if violation < 1e-5:
+        if (violation - self.last_slack_) < self.tol:
+            print("new constraint to weak.")
             return True
         equals = [True for dpsi_, loss_ in old_constraints
                   if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
@@ -237,15 +238,6 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
-        #gr = ((loss_mean - np.dot(w, dpsi) / 2.) * self.C * len(X))
-        #if self.objective_curve_ and gr - self.objective_curve_[-1] < self.tol:
-        #    from IPython.core.debugger import Tracer
-        #    Tracer()()
-        #    if self.verbose > 1:
-        #        print("No constraint from cache.")
-        #    raise NoConstraint
-        #if self.verbose > 0:
-            #print("new violation: %f" % gr)
         return Y_hat, dpsi, loss_mean
 
     def _find_new_constraint(self, X, Y, w, psi_gt, constraints):
@@ -265,18 +257,9 @@ class OneSlackSSVM(BaseSSVM):
         loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
         violation = loss_mean - np.dot(w, dpsi)
-        if self._check_bad_constraint(violation, dpsi, loss_mean,
-                                      constraints, w):
+        if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
+                                      w, break_on_bad=self.break_on_bad):
             raise NoConstraint
-        #gr = ((loss_mean - np.dot(w, dpsi) / 2.) * self.C * len(X))
-        #if self.objective_curve_ and gr - self.objective_curve_[-1] < self.tol:
-        #    from IPython.core.debugger import Tracer
-        #    Tracer()()
-        #    if self.verbose > 1:
-        #        print("No constraint from cache.")
-        #    raise NoConstraint
-        #if self.verbose > 0:
-            #print("new violation: %f" % gr)
         return Y_hat, dpsi, loss_mean
 
     def fit(self, X, Y, constraints=None):
@@ -310,6 +293,7 @@ class OneSlackSSVM(BaseSSVM):
             constraints = []
         self.objective_curve_ = []
         self.alphas = []  # dual solutions
+        self.last_slack_ = -1
 
         # get the psi of the ground truth
         psi_gt = self.problem.batch_psi(X, Y)
@@ -338,17 +322,21 @@ class OneSlackSSVM(BaseSSVM):
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))
+                self.last_slack_ = np.max([(-np.dot(w, dpsi) + loss_mean) for
+                                           dpsi, loss_mean in constraints])
+                self.last_slack_ = max(self.last_slack_, 0)
+
                 if self.verbose > 0:
-                    primal_objective = (self.C * len(X) *
-                                        (-np.dot(w, dpsi) / 2. + loss_mean))
+                    primal_objective = (self.C * len(X)
+                                        * np.max(self.last_slack_, 0)
+                                        + np.sum(w ** 2) / 2)
                     print("dual objective: %f, primal objective: %f"
                           % (objective, primal_objective))
+                    if np.abs(primal_objective + objective) > 0.01:
+                        from IPython.core.debugger import Tracer
+                        Tracer()
                 self.objective_curve_.append(objective)
 
-                if (iteration > 1 and self.objective_curve_[-2]
-                        - self.objective_curve_[-1] < self.tol):
-                    print("objective converged.")
-                    break
                 if self.verbose > 5:
                     print(w)
         except KeyboardInterrupt:
