@@ -26,12 +26,16 @@ def lp_general_graph(unaries, edges, edge_weights):
 
     # offset to get to the edge variables in columns
     edges_offset = n_nodes * n_states
-    constraints = np.zeros((n_constraints, n_variables))
+    # store constraints as triple (data, I, J)
+    data, I, J = [], [], []
 
     # summation constraints
     for i in xrange(n_nodes):
         for j in xrange(n_states):
-            constraints[i, i * n_states + j] = 1
+            data.append(1)
+            I.append(i)
+            J.append(i * n_states + j)
+            #constraints[i, i * n_states + j] = 1
 
     # edge marginalization constraint
     for i in xrange(2 * n_edges * n_states):
@@ -45,25 +49,37 @@ def lp_general_graph(unaries, edges, edge_weights):
         vertex = edges[edge][vertex_in_edge]
         #print("vertex: %d" % vertex)
         # for one vertex iterate over all states of the other vertex
-        constraints[row_idx, int(vertex) * n_states + state] = -1
+        #[row_idx, int(vertex) * n_states + state] = -1
+        data.append(-1)
+        I.append(row_idx)
+        J.append(int(vertex) * n_states + state)
         edge_var_index = edges_offset + edge * n_states ** 2
         if vertex_in_edge == 0:
             # first vertex in edge
             for j in xrange(n_states):
-                constraints[row_idx, edge_var_index + state * n_states + j] = 1
+                data.append(1)
+                I.append(row_idx)
+                J.append(edge_var_index + state * n_states + j)
+                #[row_idx, edge_var_index + state * n_states + j] = 1
         else:
             # second vertex in edge
             for j in xrange(n_states):
-                constraints[row_idx, edge_var_index + j * n_states + state] = 1
+                data.append(1)
+                I.append(row_idx)
+                J.append(edge_var_index + j * n_states + state)
+                #[row_idx, edge_var_index + j * n_states + state] = 1
 
     coef = np.ravel(unaries)
     # pairwise:
     repeated_pairwise = edge_weights.ravel()
     coef = np.hstack([coef, repeated_pairwise])
     c = cvxopt.matrix(coef)
-    G = cvxopt.matrix(-np.eye(n_variables))  # for positivity inequalities
+    # for positivity inequalities
+    G = cvxopt.spdiag(cvxopt.matrix(-np.ones(n_variables)))
+    #G = cvxopt.matrix(-np.eye(n_variables))
     h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
-    A = cvxopt.matrix(constraints)  # unary and pairwise summation constratints
+    # unary and pairwise summation constratints
+    A = cvxopt.spmatrix(data, I, J)
     b_ = np.zeros(n_constraints)  # zeros for pairwise summation constraints
     b_[:n_nodes] = 1    # ones for unary cummation constraints
     b = cvxopt.matrix(b_)
