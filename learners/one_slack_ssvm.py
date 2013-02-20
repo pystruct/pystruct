@@ -141,6 +141,18 @@ class OneSlackSSVM(BaseSSVM):
 
         # solve QP problem
         cvxopt.solvers.options['feastol'] = 1e-5
+        if hasattr(self, 'old_solution'):
+            s = self.old_solution['s']
+            # put s slightly inside the cone..
+            s = cvxopt.matrix(np.vstack([s, [[1e-10]]]))
+            z = self.old_solution['z']
+            z = cvxopt.matrix(np.vstack([z, [[1e-10]]]))
+            initvals = {'x': self.old_solution['x'], 'y':
+                        self.old_solution['y'], 'z': z,
+                        's': s}
+        else:
+            initvals = {}
+        #solution = cvxopt.solvers.qp(P, q, G, h, A, b, initvals=initvals)
         solution = cvxopt.solvers.qp(P, q, G, h, A, b)
         if solution['status'] != "optimal":
             print("regularizing QP!")
@@ -153,7 +165,10 @@ class OneSlackSSVM(BaseSSVM):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
-        self.alphas.append(a)
+        # append list for new constraint
+        self.alphas.append([])
+        for constraint, alpha in zip(self.alphas, a):
+            constraint.append(alpha)
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
