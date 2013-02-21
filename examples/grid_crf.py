@@ -9,15 +9,18 @@ import pystruct.toy_datasets as toy
 
 
 def main():
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20)
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20, seed=0)
     #X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
     #X, Y = toy.generate_easy_explicit(n_samples=25, noise=10)
     #X, Y = toy.generate_checker_multinomial(n_samples=20)
     n_labels = len(np.unique(Y))
     crf = DirectionalGridCRF(n_states=n_labels, inference_method="lp",
                              neighborhood=4)
-    clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=1000000, verbose=1,
-                             check_constraints=True, n_jobs=12)
+    clf = ssvm.OneSlackSSVM(problem=crf, max_iter=1000, C=100, verbose=10,
+                            check_constraints=True, n_jobs=12,
+                            inference_cache=100)
+    #clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=100, verbose=3,
+                             #check_constraints=True, n_jobs=12)
     #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10)
     #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,

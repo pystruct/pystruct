@@ -1,8 +1,8 @@
 from time import time
 import numpy as np
 
-from sklearn.datasets import fetch_mldata
-#from sklearn.datasets import load_digits
+#from sklearn.datasets import fetch_mldata
+from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
 #from sklearn.svm import LinearSVC
 
@@ -11,27 +11,26 @@ from pystruct.learners import (StructuredSVM, OneSlackSSVM,
                                SubgradientStructuredSVM)
 
 # do a binary digit classification
-digits = fetch_mldata("MNIST original")
-#digits = load_digits()
+#digits = fetch_mldata("MNIST original")
+digits = load_digits()
 X, y = digits.data, digits.target
+#X = X / 255.
+X = X / 16.
 y = y.astype(np.int)
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-X = X / 255.
-#X = X / 16.
 
 # we add a constant 1 feature for the bias
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
 X_test_bias = np.hstack([X_test, np.ones((X_test.shape[0], 1))])
 
 pbl = CrammerSingerSVMProblem(n_features=X_train_bias.shape[1], n_classes=10)
-n_slack_svm = StructuredSVM(pbl, verbose=1, check_constraints=False, C=20,
+n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
                             batch_size=-1, tol=1e-2)
-one_slack_svm = OneSlackSSVM(pbl, verbose=3, check_constraints=False, C=20,
-                             max_iter=10, tol=1e-2)
-subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.0001,
-                                           max_iter=1, verbose=10,
-                                           show_loss='true')
+one_slack_svm = OneSlackSSVM(pbl, verbose=50, check_constraints=False, C=.20,
+                             max_iter=10000, tol=.00001, show_loss_every=10)
+subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.000001,
+                                           max_iter=1000, verbose=0)
 
 # n-slack cutting plane ssvm
 #start = time()
@@ -48,10 +47,8 @@ time_one_slack_svm = time() - start
 y_pred = np.hstack(one_slack_svm.predict(X_test_bias))
 print("Score with pystruct 1-slack ssvm: %f (took %f seconds)"
       % (np.mean(y_pred == y_test), time_one_slack_svm))
-#import matplotlib.pyplot as plt
-
-#plt.plot(one_slack_svm.objective_curve_)
-#plt.show()
+from IPython.core.debugger import Tracer
+Tracer()()
 
 #online subgradient ssvm
 #start = time()
@@ -71,3 +68,6 @@ print("Score with pystruct 1-slack ssvm: %f (took %f seconds)"
 #time_libsvm = time() - start
 #print("Score with sklearn and libsvm: %f (took %f seconds)"
       #% (libsvm.score(X_test, y_test), time_libsvm))
+
+#from IPython.core.debugger import Tracer
+#Tracer()()
