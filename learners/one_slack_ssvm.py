@@ -79,6 +79,12 @@ class OneSlackSSVM(BaseSSVM):
         exhausted. Using inference_cache > 0 is only advisable if computation
         time is dominated by inference.
 
+    inactive_threshold : float, default=1e-5
+        Threshold for dual variable of a constraint to be considered inactive.
+
+    inactive_window : float, default=50
+        Window for measuring inactivity. If a constraint is inactive for
+        ``inactive_window`` iterations, it will be pruned from the QP.
 
     Attributes
     ----------
@@ -98,7 +104,8 @@ class OneSlackSSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
-                 inference_cache=0):
+                 inference_cache=0, inactive_threshold=1e-5,
+                 inactive_window=50):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
@@ -108,6 +115,8 @@ class OneSlackSSVM(BaseSSVM):
         self.break_on_bad = break_on_bad
         self.tol = tol
         self.inference_cache = inference_cache
+        self.inactive_threshold = inactive_threshold
+        self.inactive_window = inactive_window
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
@@ -171,8 +180,18 @@ class OneSlackSSVM(BaseSSVM):
             constraint.append(alpha)
         self.old_solution = solution
 
+        # prune unused constraints:
+        # if the max of alpha in last 50 iterations was small, throw away
+        inactive = np.where([np.max(constr[-self.inactive_window:])
+                             < self.inactive_threshold * C
+                             for constr in self.alphas])[0]
+
+        for i, idx in enumerate(inactive):
+            del constraints[idx - i]
+            del self.alphas[idx - i]
+
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-8 * C
+        sv = a > self.inactive_threshold * C
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
