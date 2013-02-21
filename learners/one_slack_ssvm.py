@@ -85,6 +85,7 @@ class OneSlackSSVM(BaseSSVM):
     inactive_window : float, default=50
         Window for measuring inactivity. If a constraint is inactive for
         ``inactive_window`` iterations, it will be pruned from the QP.
+        If set to 0, no constraints will be removed.
 
     Attributes
     ----------
@@ -182,13 +183,14 @@ class OneSlackSSVM(BaseSSVM):
 
         # prune unused constraints:
         # if the max of alpha in last 50 iterations was small, throw away
-        inactive = np.where([np.max(constr[-self.inactive_window:])
-                             < self.inactive_threshold * C
-                             for constr in self.alphas])[0]
+        if self.inactive_window != 0:
+            inactive = np.where([np.max(constr[-self.inactive_window:])
+                                 < self.inactive_threshold * C
+                                 for constr in self.alphas])[0]
 
-        for i, idx in enumerate(inactive):
-            del constraints[idx - i]
-            del self.alphas[idx - i]
+            for i, idx in enumerate(inactive):
+                del constraints[idx - i]
+                del self.alphas[idx - i]
 
         # Support vectors have non zero lagrange multipliers
         sv = a > self.inactive_threshold * C
