@@ -178,7 +178,7 @@ class SubgradientStructuredSVM(BaseSSVM):
 
                 # some statistics
                 objective /= len(X)
-                objective += np.sum(w ** 2) / self.C / 2.
+                objective += np.sum(w ** 2) / (self.C * n_samples) / 2.
 
                 if positive_slacks == 0:
                     print("No additional constraints")
