@@ -18,7 +18,7 @@ def test_multinomial_blocks_one_slack():
     for inference_method in ['lp']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
         clf = OneSlackSSVM(problem=crf, max_iter=50, C=100, verbose=100,
-                           check_constraints=True, break_on_bad=True)
+                           check_constraints=True, break_on_bad=True, tol=.1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -90,7 +90,7 @@ def test_one_slack_constraint_caching():
     crf = GridCRF(n_states=n_labels, inference_method='lp')
     clf = OneSlackSSVM(problem=crf, max_iter=50, C=100, verbose=100,
                        check_constraints=True, break_on_bad=True,
-                       inference_cache=50)
+                       inference_cache=50, inactive_window=0)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

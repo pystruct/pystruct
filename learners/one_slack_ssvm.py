@@ -105,7 +105,7 @@ class OneSlackSSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
-                 inference_cache=0, inactive_threshold=1e-5,
+                 inference_cache=0, inactive_threshold=1e-10,
                  inactive_window=50):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
@@ -177,6 +177,7 @@ class OneSlackSSVM(BaseSSVM):
         a = np.ravel(solution['x'])
         # append list for new constraint
         self.alphas.append([])
+        assert(len(self.alphas) == len(constraints))
         for constraint, alpha in zip(self.alphas, a):
             constraint.append(alpha)
         self.old_solution = solution
@@ -198,7 +199,9 @@ class OneSlackSSVM(BaseSSVM):
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
         w = np.dot(a, psi_matrix)
-        return w, solution['primal objective']
+        # we needed to flip the sign to make the dual into a minimization
+        # problem
+        return w, -solution['primal objective']
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
                               old_constraints, w, break_on_bad):
@@ -343,12 +346,16 @@ class OneSlackSSVM(BaseSSVM):
         self.alphas = []  # dual solutions
         self.blub = []
         self.last_slack_ = -1
+        # append constraint given by ground truth to make our life easier
+        constraints.append((np.zeros(self.problem.size_psi), 0))
+        self.alphas.append([self.C])
 
         # get the psi of the ground truth
         psi_gt = self.problem.batch_psi(X, Y)
 
         try:
             # catch ctrl+c to stop training
+
             for iteration in xrange(self.max_iter):
                 # main loop
                 if self.verbose > 0:
@@ -382,9 +389,11 @@ class OneSlackSSVM(BaseSSVM):
                                         + np.sum(w ** 2) / 2)
                     print("dual objective: %f, primal objective: %f"
                           % (objective, primal_objective))
-                    if np.abs(primal_objective + objective) > 0.01:
+                    if np.abs(primal_objective - objective) > .1:
                         from IPython.core.debugger import Tracer
                         Tracer()()
+                # we only do this here because we didn't add the gt to the
+                # constraints, which makes the dual behave a bit oddly
                 self.objective_curve_.append(objective)
 
                 if self.verbose > 5:
