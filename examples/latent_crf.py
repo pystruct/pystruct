@@ -16,8 +16,12 @@ def main():
     n_labels = len(np.unique(Y_train))
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
                         inference_method='lp')
-    clf = LatentSSVM(problem=crf, max_iter=50, C=1000., verbose=2,
-                     check_constraints=True, n_jobs=-1, break_on_bad=True)
+    #clf = LatentSSVM(problem=crf, max_iter=500, C=1000., verbose=2,
+                     #check_constraints=True, n_jobs=-1, break_on_bad=True,
+                     #base_svm='1-slack', inference_cache=20, tol=.1)
+    clf = LatentSSVM(problem=crf, max_iter=500, C=1000., verbose=2,
+                     check_constraints=True, n_jobs=-1, break_on_bad=True,
+                     tol=.0001)
     clf.fit(X_train, Y_train)
 
     for X_, Y_, H, name in [[X_train, Y_train, clf.H_init_, "train"],
