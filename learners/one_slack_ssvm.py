@@ -209,7 +209,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 1:
             print("New violation: %f difference to last: %f"
                   % (violation, violation_difference))
-        if violation_difference < 0 and self.last_slack_ > 0:
+        if violation_difference < 0 and violation > 0:
             from IPython.core.debugger import Tracer
             Tracer()()
         if (violation_difference) < self.tol:
@@ -281,7 +281,7 @@ class OneSlackSSVM(BaseSSVM):
             loss_mean += loss
 
         dpsi = (psi_gt - psi_acc) / len(X)
-        loss_mean = loss / len(X)
+        loss_mean = loss_mean / len(X)
 
         violation = loss_mean - np.dot(w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
