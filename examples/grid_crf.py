@@ -17,8 +17,8 @@ def main():
     crf = DirectionalGridCRF(n_states=n_labels, inference_method="lp",
                              neighborhood=4)
     clf = ssvm.OneSlackSSVM(problem=crf, max_iter=1000, C=100, verbose=2,
-                            check_constraints=True, n_jobs=12,
-                            inference_cache=1000, inactive_window=0)
+                            check_constraints=True, n_jobs=-1,
+                            inference_cache=100, inactive_window=50, tol=.1)
     #clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=100, verbose=3,
                              #check_constraints=True, n_jobs=12)
     #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10)
