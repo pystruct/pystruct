@@ -28,7 +28,7 @@ pbl = CrammerSingerSVMProblem(n_features=X_train_bias.shape[1], n_classes=10)
 n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
                             batch_size=-1, tol=1e-2)
 one_slack_svm = OneSlackSSVM(pbl, verbose=50, check_constraints=False, C=.20,
-                             max_iter=10000, tol=.00001, show_loss_every=10)
+                             max_iter=10000, tol=.001, show_loss_every=10)
 subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.000001,
                                            max_iter=1000, verbose=0)
 
@@ -47,8 +47,6 @@ time_one_slack_svm = time() - start
 y_pred = np.hstack(one_slack_svm.predict(X_test_bias))
 print("Score with pystruct 1-slack ssvm: %f (took %f seconds)"
       % (np.mean(y_pred == y_test), time_one_slack_svm))
-from IPython.core.debugger import Tracer
-Tracer()()
 
 #online subgradient ssvm
 #start = time()
