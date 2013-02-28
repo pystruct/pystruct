@@ -39,10 +39,11 @@ def test_constraint_removal():
 
     # results are mostly equal
     # if we decrease tol, they will get more similar
-    assert_less(np.mean(clf.predict(X) != clf_no_removal.predict(X)), 0.015)
+    assert_less(np.mean(clf.predict(X) != clf_no_removal.predict(X)), 0.02)
 
     # without removal, have as many constraints as iterations
-    assert_equal(len(clf_no_removal.objective_curve_),
+    # +1 for true y constraint
+    assert_equal(len(clf_no_removal.objective_curve_) + 1,
                  len(clf_no_removal.constraints_))
 
     # with removal, there are less constraints than iterations
