@@ -99,3 +99,30 @@ class LatentSSVM(BaseSSVM):
 
     def predict_latent(self, X):
         return BaseSSVM.predict(self, X)
+
+    def score(self, X, Y):
+        """Compute score as 1 - loss over whole data set.
+
+        Returns the average accuracy (in terms of problem.loss)
+        over X and Y.
+
+        Parameters
+        ----------
+        X : iterable
+            Evaluation data.
+
+        Y : iterable
+            True labels.
+
+        Returns
+        -------
+        score : float
+            Average of 1 - loss over training examples.
+        """
+        if hasattr(self.problem, 'batch_batch_loss'):
+            losses = self.problem.base_batch_loss(Y, self.predict(X))
+        else:
+            losses = [self.problem.base_loss(y, y_pred)
+                      for y, y_pred in zip(Y, self.predict(X))]
+        max_losses = [self.problem.max_loss(y) for y in Y]
+        return 1. - np.sum(losses) / float(np.sum(max_losses))
