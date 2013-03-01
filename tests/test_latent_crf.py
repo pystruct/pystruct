@@ -155,7 +155,44 @@ def test_blocks_crf_directional():
     assert_array_equal(np.dot(psi, w), np.dot(psi_d, w_directional))
 
 
-def test_latent_consistency_zero_pw():
+def test_latent_consistency_zero_pw_graph():
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2)
+    for i in xrange(10):
+        w = np.zeros(18)
+        w[:8] = np.random.normal(size=8)
+        y = np.random.randint(2, size=(5))
+        x = np.random.normal(size=(5, 2))
+        h = crf.latent((x, np.zeros((0, 2), dtype=np.int)), y, w)
+        assert_array_equal(h / 2, y)
+
+
+def test_latent_consistency_graph():
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2)
+    for i in xrange(10):
+        w = np.random.normal(size=18)
+        y = np.random.randint(2, size=(4))
+        x = np.random.normal(size=(4, 2))
+        e = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int)
+        h = crf.latent((x, e), y, w)
+        assert_array_equal(h / 2, y)
+
+
+def test_loss_augmented_inference_energy_graph():
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2,
+                         inference_method='lp')
+    for i in xrange(10):
+        w = np.random.normal(size=18)
+        y = np.random.randint(2, size=(2))
+        x = np.random.normal(size=(2, 2))
+        e = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int)
+        h_hat, energy = crf.loss_augmented_inference((x, e), y * 2, w,
+                                                     relaxed=True,
+                                                     return_energy=True)
+        assert_almost_equal(-energy, np.dot(w, crf.psi((x, e), h_hat))
+                            + crf.loss(y * 2, h_hat))
+
+
+def test_latent_consistency_zero_pw_grid():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.zeros(18)
@@ -166,7 +203,7 @@ def test_latent_consistency_zero_pw():
         assert_array_equal(h / 2, y)
 
 
-def test_latent_consistency():
+def test_latent_consistency_grid():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
@@ -176,7 +213,7 @@ def test_latent_consistency():
         assert_array_equal(h / 2, y)
 
 
-def test_loss_augmented_inference_exhaustive():
+def test_loss_augmented_inference_exhaustive_grid():
     crf = LatentGridCRF(n_labels=2, n_states_per_label=2,
                         inference_method='dai')
     for i in xrange(10):
