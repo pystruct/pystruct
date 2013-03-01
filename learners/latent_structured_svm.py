@@ -19,7 +19,8 @@ class LatentSSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=1, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, base_svm='n-slack',
                  check_constraints=True, batch_size=100, tol=0.0001,
-                 learning_rate=0.001, inference_cache=0, latent_iter=5):
+                 learning_rate=0.001, inference_cache=0, latent_iter=5,
+                 decay_exponent=0):
         self.base_svm = base_svm
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
@@ -28,6 +29,7 @@ class LatentSSVM(BaseSSVM):
         self.learning_rate = learning_rate
         self.inference_cache = inference_cache
         self.latent_iter = latent_iter
+        self.decay_exponent = decay_exponent
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
 
@@ -48,7 +50,8 @@ class LatentSSVM(BaseSSVM):
         elif self.base_svm == 'subgradient':
             subsvm = SubgradientStructuredSVM(
                 self.problem, self.max_iter, self.C, verbose=self.verbose - 1,
-                n_jobs=self.n_jobs, learning_rate=self.learning_rate)
+                n_jobs=self.n_jobs, learning_rate=self.learning_rate,
+                decay_exponent=self.decay_exponent)
         else:
             raise ValueError("base_svm must be one of '1-slack', 'n-slack', "
                              "'subgradient'. Got %s. " % str(self.base_svm))
