@@ -146,7 +146,8 @@ class SubgradientStructuredSVM(BaseSSVM):
                         objective += slack
                         if slack > 0:
                             positive_slacks += 1
-                        w = self._solve_subgradient(w, delta_psi, n_samples)
+                            w = self._solve_subgradient(w, delta_psi,
+                                                        n_samples)
                 else:
                     # generate batches of size n_jobs
                     # to speed up inference
@@ -169,11 +170,10 @@ class SubgradientStructuredSVM(BaseSSVM):
                         for x, y, constraint in zip(X_b, Y_b,
                                                     candidate_constraints):
                             y_hat, delta_psi, slack, loss = constraint
-                            objective += slack
-                            dpsi += delta_psi
                             if slack > 0:
+                                objective += slack
+                                dpsi += delta_psi
                                 positive_slacks += 1
-                        dpsi /= float(len(X_b))
                         w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
