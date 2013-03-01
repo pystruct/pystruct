@@ -1,11 +1,11 @@
 
 import numpy as np
 
-#from sklearn.externals.joblib import Parallel, delayed, cpu_count
-#from sklearn.utils import gen_even_slices
+from sklearn.externals.joblib import Parallel, delayed, cpu_count
+from sklearn.utils import gen_even_slices
 
 from .subgradient_ssvm import SubgradientStructuredSVM
-#from ..utils import find_constraint
+from ..utils import find_constraint_latent
 
 
 class LatentSubgradientSSVM(SubgradientStructuredSVM):
@@ -124,33 +124,34 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                                                         n_samples)
                 else:
                     raise NotImplementedError("AAAAHHH")
-                    # generate batches of size n_jobs
-                    # to speed up inference
-                    #if self.n_jobs == -1:
-                        #n_jobs = cpu_count()
-                    #else:
-                        #n_jobs = self.j_jobs
+                    #generate batches of size n_jobs
+                    #to speed up inference
+                    if self.n_jobs == -1:
+                        n_jobs = cpu_count()
+                    else:
+                        n_jobs = self.j_jobs
 
-                    #n_batches = int(np.ceil(float(len(X)) / n_jobs))
-                    #slices = gen_even_slices(n_samples, n_batches)
-                    #for batch in slices:
-                        #X_b = X[batch]
-                        #Y_b = Y[batch]
-                        #candidate_constraints = Parallel(
-                            #n_jobs=self.n_jobs,
-                            #verbose=verbose)(delayed(find_constraint)(
-                                #self.problem, x, y, w)
-                                #for x, y in zip(X_b, Y_b))
-                        #dpsi = np.zeros(self.problem.size_psi)
-                        #for x, y, constraint in zip(X_b, Y_b,
-                                                    #candidate_constraints):
-                            #y_hat, delta_psi, slack, loss = constraint
-                            #objective += slack
-                            #dpsi += delta_psi
-                            #if slack > 0:
-                                #positive_slacks += 1
-                        #dpsi /= float(len(X_b))
-                        #w = self._solve_subgradient(w, dpsi, n_samples)
+                    n_batches = int(np.ceil(float(len(X)) / n_jobs))
+                    slices = gen_even_slices(n_samples, n_batches)
+                    for batch in slices:
+                        X_b = X[batch]
+                        Y_b = Y[batch]
+                        verbose = self.verbose - 1
+                        candidate_constraints = Parallel(
+                            n_jobs=self.n_jobs,
+                            verbose=verbose)(delayed(find_constraint_latent)(
+                                self.problem, x, y, w)
+                                for x, y in zip(X_b, Y_b))
+                        dpsi = np.zeros(self.problem.size_psi)
+                        for x, y, constraint in zip(X_b, Y_b,
+                                                    candidate_constraints):
+                            y_hat, delta_psi, slack, loss = constraint
+                            objective += slack
+                            dpsi += delta_psi
+                            if slack > 0:
+                                positive_slacks += 1
+                        dpsi /= float(len(X_b))
+                        w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
                 objective /= len(X)

@@ -105,6 +105,23 @@ def find_constraint(problem, x, y, w, y_hat=None, relaxed=True,
     return y_hat, delta_psi, slack, loss
 
 
+def find_constraint_latent(problem, x, y, w, relaxed=True):
+    """Find most violated constraint.
+
+    As for finding the most violated constraint, it is enough to compute
+    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
+    using compute_differences=False
+    """
+    h = problem.latent(x, y, w)
+    h_hat = problem.loss_augmented_inference(x, h, w, relaxed=relaxed)
+    psi = problem.psi
+    delta_psi = psi(x, h) - psi(x, h_hat)
+
+    loss = problem.loss(y, h_hat)
+    slack = max(loss - np.dot(w, delta_psi), 0)
+    return h_hat, delta_psi, slack, loss
+
+
 def inference(problem, x, w):
     return problem.inference(x, w)
 
