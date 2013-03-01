@@ -389,7 +389,8 @@ class OneSlackSSVM(BaseSSVM):
                                         + np.sum(w ** 2) / 2)
                     print("dual objective: %f, primal objective: %f"
                           % (objective, primal_objective))
-                    if np.abs(primal_objective - objective) > .1:
+                    if (np.abs(primal_objective - objective)
+                            / np.abs(objective) > .1):
                         from IPython.core.debugger import Tracer
                         Tracer()()
                 # we only do this here because we didn't add the gt to the
