@@ -112,21 +112,16 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                     for x, y in zip(X, Y):
                         h = self.problem.latent(x, y, w)
                         h_hat = self.problem.loss_augmented_inference(
-                            x, y, w, relaxed=True)
+                            x, h, w, relaxed=True)
                         delta_psi = (self.problem.psi(x, h)
                                      - self.problem.psi(x, h_hat))
                         slack = (-np.dot(delta_psi, w)
                                  + self.problem.loss(h, h_hat))
-                        #y_hat, delta_psi, slack, loss = \
-                            #find_constraint(self.problem, x, y, w)
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                        else:
-                            grr = self.problem.inference(x, w)
-                            from IPython.core.debugger import Tracer
-                            Tracer()()
-                        w = self._solve_subgradient(w, delta_psi, n_samples)
+                            w = self._solve_subgradient(w, delta_psi,
+                                                        n_samples)
                 else:
                     raise NotImplementedError("AAAAHHH")
                     # generate batches of size n_jobs
