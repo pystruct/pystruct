@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from sklearn.cross_validation import train_test_split
 
 from pystruct.problems import LatentGridCRF
-from pystruct.learners import LatentSSVM
+#from pystruct.learners import LatentSSVM
+from pystruct.learners import LatentSubgradientSSVM
 
 import pystruct.toy_datasets as toy
 
@@ -19,9 +20,9 @@ def main():
     #clf = LatentSSVM(problem=crf, max_iter=500, C=1000., verbose=2,
                      #check_constraints=True, n_jobs=-1, break_on_bad=True,
                      #base_svm='1-slack', inference_cache=20, tol=.1)
-    clf = LatentSSVM(problem=crf, max_iter=500, C=1000., verbose=2,
-                     check_constraints=True, n_jobs=-1, break_on_bad=True,
-                     tol=.0001)
+    clf = LatentSubgradientSSVM(
+        problem=crf, max_iter=500, C=1000., verbose=2,
+        n_jobs=1, learning_rate=0.0001, show_loss_every=10)
     clf.fit(X_train, Y_train)
 
     for X_, Y_, H, name in [[X_train, Y_train, clf.H_init_, "train"],

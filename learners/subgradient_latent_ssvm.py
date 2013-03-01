@@ -123,7 +123,6 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                             w = self._solve_subgradient(w, delta_psi,
                                                         n_samples)
                 else:
-                    raise NotImplementedError("AAAAHHH")
                     #generate batches of size n_jobs
                     #to speed up inference
                     if self.n_jobs == -1:
