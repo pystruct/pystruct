@@ -1,6 +1,13 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_equal, assert_less
+
+try:
+  from nose.tools import assert_equal, assert_less
+except ImportError:
+  def assert_equal(a, b):
+    assert a == b, '%r was not equal to %r' % (a, b)
+  def assert_less(a, b):
+    assert a < b, '%r was not less than %r' % (a,b)
 
 from sklearn.datasets import load_digits
 

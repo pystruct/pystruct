@@ -6,9 +6,9 @@
 
 import numpy as np
 
-from . import GridCRF, DirectionalGridCRF
-from .latent_graph_crf import kmeans_init, LatentGraphCRF
-from ..utils import make_grid_edges
+from problems import GridCRF, DirectionalGridCRF
+from problems.latent_graph_crf import kmeans_init, LatentGraphCRF
+from utils import make_grid_edges
 
 
 class LatentGridCRF(GridCRF, LatentGraphCRF):

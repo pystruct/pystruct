@@ -11,8 +11,8 @@ import numpy as np
 from scipy import sparse
 from sklearn.cluster import KMeans
 
-from . import GraphCRF
-from ..inference import inference_dispatch
+from problems import GraphCRF
+from inference import inference_dispatch
 
 
 def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
