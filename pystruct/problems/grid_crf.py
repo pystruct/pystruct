@@ -1,6 +1,6 @@
 import numpy as np
 
-from problems.graph_crf import GraphCRF, EdgeTypeGraphCRF
+from .graph_crf import GraphCRF, EdgeTypeGraphCRF
 from utils import make_grid_edges
 
 

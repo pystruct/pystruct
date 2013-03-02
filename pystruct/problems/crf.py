@@ -1,7 +1,7 @@
 import numpy as np
 
-from problems.base import StructuredProblem
-from inference import inference_dispatch
+from .base import StructuredProblem
+from pystruct.inference import inference_dispatch
 
 
 class CRF(StructuredProblem):

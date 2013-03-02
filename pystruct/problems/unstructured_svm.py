@@ -1,7 +1,7 @@
 import numpy as np
 
-from problems.base import StructuredProblem
-from problems.utilities import crammer_singer_psi
+from .base import StructuredProblem
+from .utilities import crammer_singer_psi
 
 
 class BinarySVMProblem(StructuredProblem):
