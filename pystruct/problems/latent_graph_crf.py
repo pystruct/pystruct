@@ -132,8 +132,8 @@ class LatentGraphCRF(GraphCRF):
                                self.inference_method, relaxed=False)
         if (self.label_from_latent(h) != y).any():
             print("inconsistent h and y")
-            from IPython.core.debugger import Tracer
-            Tracer()()
+            #from IPython.core.debugger import Tracer
+            #Tracer()()
             h = np.hstack([0, np.cumsum(self.n_states_per_label)])[y]
         return h
 

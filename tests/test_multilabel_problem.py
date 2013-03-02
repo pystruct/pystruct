@@ -15,5 +15,5 @@ def test_multilabel_yeast_independent():
                             edges=edges)
     ssvm = OneSlackSSVM(pbl, verbose=10)
     ssvm.fit(X, y)
-    from IPython.core.debugger import Tracer
-    Tracer()()
+    #from IPython.core.debugger import Tracer
+    #Tracer()()

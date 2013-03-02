@@ -25,8 +25,8 @@ class MultiLabelProblem(CRF):
 
     def psi(self, x, y):
         if isinstance(y, tuple):
-            from IPython.core.debugger import Tracer
-            Tracer()()
+            #from IPython.core.debugger import Tracer
+            #Tracer()()
             unary_marginals, pw = y
             unary_marginals = unary_marginals.reshape(self.edges.shape[0],
                                                       self.n_states)
