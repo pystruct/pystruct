@@ -97,7 +97,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         """
         print("Training latent subgradient structural SVM")
         #w = getattr(self, "w", np.zeros(self.problem.size_psi))
-        w = getattr(self, "w", np.random.normal(size=self.problem.size_psi))
+        w = getattr(self, "w", np.random.normal(0, .001,
+                                                size=self.problem.size_psi))
         #constraints = []
         objective_curve = []
         n_samples = len(X)
@@ -121,8 +122,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                            w = self._solve_subgradient(w, delta_psi,
-                                                        n_samples)
+                        w = self._solve_subgradient(w, delta_psi,
+                                                    n_samples)
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
@@ -154,8 +155,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                         w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
-                objective /= len(X)
                 objective += np.sum(w ** 2) / self.C / 2.
+                objective /= float(n_samples)
 
                 if positive_slacks == 0:
                     print("No additional constraints")
