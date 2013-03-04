@@ -185,9 +185,12 @@ class OneSlackSSVM(BaseSSVM):
         # prune unused constraints:
         # if the max of alpha in last 50 iterations was small, throw away
         if self.inactive_window != 0:
-            inactive = np.where([np.max(constr[-self.inactive_window:])
-                                 < self.inactive_threshold * C
-                                 for constr in self.alphas])[0]
+            max_active = [np.max(constr[-self.inactive_window:])
+                          for constr in self.alphas]
+            # find strongest constraint that is not ground truth constraint
+            strongest = np.max(max_active[1:])
+            inactive = np.where(max_active
+                                < self.inactive_threshold * strongest)[0]
 
             for i, idx in enumerate(inactive):
                 del constraints[idx - i]
