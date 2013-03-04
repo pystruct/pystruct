@@ -2,7 +2,9 @@
 # (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
 # ALL RIGHTS RESERVED.
 #
-#
+# Implements a HRF / Latent Dynamic CRF
+# For each output node there is one hidden node that is assigned a latent
+# subclass.
 
 import numbers
 
@@ -60,7 +62,7 @@ def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
 
 
 class LatentGraphCRF(GraphCRF):
-    """Latent variable CRF with 2d grid graph.
+    """Latent variable CRF with arbitrary graph.
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
                  inference_method='qpbo'):
