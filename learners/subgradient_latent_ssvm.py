@@ -96,7 +96,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
             Discarded. Only for API compatibility currently.
         """
         print("Training latent subgradient structural SVM")
-        w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        #w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        w = getattr(self, "w", np.random.normal(size=self.problem.size_psi))
         #constraints = []
         objective_curve = []
         n_samples = len(X)

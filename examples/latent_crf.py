@@ -22,10 +22,12 @@ def main():
                      #base_svm='1-slack', inference_cache=20, tol=.1)
     clf = LatentSubgradientSSVM(
         problem=crf, max_iter=500, C=1000., verbose=2,
-        n_jobs=1, learning_rate=0.0001, show_loss_every=10)
+        n_jobs=-1, learning_rate=0.1, show_loss_every=10)
     clf.fit(X_train, Y_train)
 
-    for X_, Y_, H, name in [[X_train, Y_train, clf.H_init_, "train"],
+    #for X_, Y_, H, name in [[X_train, Y_train, clf.H_init_, "train"],
+                            #[X_test, Y_test, [None] * len(X_test), "test"]]:
+    for X_, Y_, H, name in [[X_train, Y_train, [None] * len(X_test), "train"],
                             [X_test, Y_test, [None] * len(X_test), "test"]]:
         Y_pred = clf.predict(X_)
         i = 0
