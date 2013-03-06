@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 ##from nose.tools import assert_equal, assert_almost_equal, assert_raises
 from nose.tools import assert_almost_equal
 
-from pystruct.problems import GraphCRF, EdgeTypeGraphCRF
+from pystruct.problems import GraphCRF, EdgeTypeGraphCRF, EdgeFeatureGraphCRF
 
 w = np.array([1, 0,  # unary
               0, 1,
@@ -37,6 +37,27 @@ def test_graph_crf_inference():
         assert_array_equal(crf.inference((x_1, g_1), w), y_1)
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
 
+    print crf.get_pairwise_potentials((x_1, g_1),
+                                      w)
+
+
+
+def test_edge_feature_graph_crf() :
+    g_ef = [g_1, np.array([[0,1],[1,0],[1,1]])]
+    X = (x_1, g_ef)
+
+    w = np.array([1, 0,  # unary
+                  0, 1,
+                  .22, .88])  # pairwise
+
+
+    
+    print X
+    crf = EdgeFeatureGraphCRF(n_states=2, inference_method='qpbo',
+                              n_edge_features=2)
+
+    print crf.get_pairwise_potentials(X, w)
+        
 
 def test_edge_type_graph_crf():
     # create two samples with different graphs
@@ -50,23 +71,31 @@ def test_edge_type_graph_crf():
         assert_array_equal(crf.inference((x_1, [g_1]), w_sym), y_1)
         assert_array_equal(crf.inference((x_2, [g_2]), w_sym), y_2)
 
+
+
     # same, only with two edge types and no edges of second type
     w_sym_ = np.array([1, 0,    # unary
-                      0, 1,
-                      .22, 0,  # pairwise
-                      0, .22,
-                      2, -1,   # second edge type, doesn't exist
-                      -1, 3])
+                       0, 1,
+                       .22, 0,  # pairwise
+                       0, .22,
+                       2, -1,   # second edge type, doesn't exist
+                       -1, 3])
     for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
-        crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
+        crf = EdgeTypeGraphCRF(n_states=2,
+                               inference_method=inference_method,
                                n_edge_types=2)
-        assert_array_equal(crf.inference((x_1, [g_1, np.zeros((0, 2),
-                                                              dtype=np.int)]),
+        assert_array_equal(crf.inference((x_1,
+                                          [g_1, np.zeros((0, 2),
+                                                         dtype=np.int)]),
                                          w_sym_), y_1)
         assert_array_equal(crf.inference((x_2, [g_2, np.zeros((0, 2),
                                                               dtype=np.int)]),
                                          w_sym_), y_2)
 
+
+    print crf.get_pairwise_potentials((x_2, [g_2, np.zeros((0, 2),
+                                                           dtype=np.int)]),
+                                      w_sym_)
 
 def test_graph_crf_continuous_inference():
     for inference_method in ['lp', 'ad3']:

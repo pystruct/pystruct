@@ -1,7 +1,7 @@
 import numpy as np
 
 from .graph_crf import GraphCRF, EdgeTypeGraphCRF
-from utils import make_grid_edges
+from pystruct.utils import make_grid_edges
 
 
 def pairwise_grid_features(grid_labels, neighborhood=4):

@@ -213,7 +213,7 @@ class OneSlackSSVM(BaseSSVM):
             from IPython.core.debugger import Tracer
             Tracer()()
         if (violation_difference) < self.tol:
-            print("new constraint to weak.")
+            print("new constraint too weak.")
             return True
         equals = [True for dpsi_, loss_ in old_constraints
                   if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
