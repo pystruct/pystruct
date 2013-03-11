@@ -128,7 +128,6 @@ class SubgradientStructuredSVM(BaseSSVM):
         """
         print("Training primal subgradient structural SVM")
         w = getattr(self, "w", np.zeros(self.problem.size_psi))
-        #constraints = []
         objective_curve = []
         n_samples = len(X)
         try:
@@ -182,7 +181,6 @@ class SubgradientStructuredSVM(BaseSSVM):
 
                 if positive_slacks == 0:
                     print("No additional constraints")
-                    break
                 if self.verbose > 0:
                     print(self)
                     print("iteration %d" % iteration)
@@ -200,6 +198,7 @@ class SubgradientStructuredSVM(BaseSSVM):
             pass
         self.w = w
         self.objective_curve_ = objective_curve
-        print("final objective: %f" % objective_curve[-1])
+        if objective_curve:
+            print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
