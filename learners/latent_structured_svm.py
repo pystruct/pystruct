@@ -20,7 +20,7 @@ class LatentSSVM(BaseSSVM):
                  break_on_bad=True, show_loss_every=0, base_svm='n-slack',
                  check_constraints=True, batch_size=100, tol=0.0001,
                  learning_rate=0.001, inference_cache=0, latent_iter=5,
-                 decay_exponent=0):
+                 decay_exponent=0, inactive_window=50, momentum=0.9):
         self.base_svm = base_svm
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
@@ -30,6 +30,8 @@ class LatentSSVM(BaseSSVM):
         self.inference_cache = inference_cache
         self.latent_iter = latent_iter
         self.decay_exponent = decay_exponent
+        self.momentum = momentum
+        self.inactive_window = inactive_window
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
 
@@ -46,12 +48,13 @@ class LatentSSVM(BaseSSVM):
                 self.problem, self.max_iter, self.C, self.check_constraints,
                 verbose=self.verbose - 1, n_jobs=self.n_jobs,
                 break_on_bad=self.break_on_bad,
-                inference_cache=self.inference_cache)
+                inference_cache=self.inference_cache,
+                inactive_window=self.inactive_window)
         elif self.base_svm == 'subgradient':
             subsvm = SubgradientStructuredSVM(
                 self.problem, self.max_iter, self.C, verbose=self.verbose - 1,
                 n_jobs=self.n_jobs, learning_rate=self.learning_rate,
-                decay_exponent=self.decay_exponent)
+                decay_exponent=self.decay_exponent, momentum=self.momentum)
         else:
             raise ValueError("base_svm must be one of '1-slack', 'n-slack', "
                              "'subgradient'. Got %s. " % str(self.base_svm))
