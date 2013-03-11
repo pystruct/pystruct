@@ -210,10 +210,11 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        if hasattr(self.problem, 'batch_batch_loss'):
-            losses = self.problem.base_batch_loss(Y, self.predict(X))
+        if hasattr(self.problem, 'batch_loss'):
+            losses = self.problem.batch_loss(
+                Y, self.problem.batch_inference(X, self.w))
         else:
-            losses = [self.problem.base_loss(y, y_pred)
+            losses = [self.problem.loss(y, self.problem.inference(y, self.w))
                       for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
