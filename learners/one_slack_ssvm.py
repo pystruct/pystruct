@@ -180,6 +180,7 @@ class OneSlackSSVM(BaseSSVM):
         assert(len(self.alphas) == len(constraints))
         for constraint, alpha in zip(self.alphas, a):
             constraint.append(alpha)
+            constraint = constraint[-self.inactive_window:]
         self.old_solution = solution
 
         # prune unused constraints:
