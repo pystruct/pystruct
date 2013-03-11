@@ -125,7 +125,7 @@ def test_latent_node_boxes_latent_subgradient():
     # reshape / flatten x and y
     X_flat = [x.reshape(-1, 1) for x in X]
     Y_flat = [y.ravel() for y in Y]
-    H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()])
+    H_init = [np.hstack([y.ravel(), np.random.randint(2, 4, size=2 * 2)])
               for y in Y]
 
     X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
