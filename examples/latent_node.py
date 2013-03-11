@@ -31,13 +31,17 @@ def make_simple_2x2():
 
 
 def plot_boxes(boxes, size=4):
-    fig, ax = plt.subplots(1, len(boxes), figsize=(20, 10))
-    for a, x in zip(ax, boxes):
-        a.matshow(x[:size * size].reshape(size, size))
-    if boxes[0].size > size * size:
+    if boxes[0].size == size * size:
         fig, ax = plt.subplots(1, len(boxes), figsize=(20, 10))
         for a, x in zip(ax, boxes):
+            a.matshow(x[:size * size].reshape(size, size))
+    else:
+        # have hidden states
+        fig, ax = plt.subplots(2, len(boxes), figsize=(20, 10))
+        for a, x in zip(ax[0], boxes):
             a.matshow(x[size * size:].reshape(size / 2, size / 2))
+        for a, x in zip(ax[1], boxes):
+            a.matshow(x[:size * size].reshape(size, size))
 
 
 # learn the "easy" 2x2 boxes dataset.
@@ -100,7 +104,4 @@ latent_svm.fit(X_, Y_flat, H_init)
 print("Training score with latent nodes: %f " % latent_svm.score(X_, Y_flat))
 H = latent_svm.predict_latent(X_)
 plot_boxes(H)
-
-Y_ = latent_svm.predict(X_)
-plot_boxes(Y_, size=4)
 plt.show()
