@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_almost_equal
 
 #import pystruct.toy_datasets as toy
@@ -46,7 +46,7 @@ def test_inference_trivial():
     assert_almost_equal(energy_psi, -energy_lp)
 
     # test loss
-    h_unaries = crf.latent(y_unaries, w)
+    h_unaries = crf.latent(x, y_unaries, w)
     assert_equal(crf.loss(h, h_unaries), 2)
 
     # continuous inference and psi:
@@ -58,8 +58,13 @@ def test_inference_trivial():
     # test continuous loss
     assert_equal(crf.loss(h, h_continuous), 0)
 
-    #test loss-augmented inference
-    h_hat = crf.loss_augmented_inference(x, y, w, return_energy=True)
+    #test loss-augmented inference energy
+    h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
+                                                    return_energy=True)
+    assert_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) + crf.loss(h_hat, y))
+    #print(h_hat)
+    #print(h)
+    #print(crf.loss(h_hat, h))
 
 
 def test_inference_chain():

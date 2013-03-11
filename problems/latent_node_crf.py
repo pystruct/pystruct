@@ -113,8 +113,8 @@ class LatentNodeCRF(GraphCRF):
         for l in np.arange(self.n_states):
             # for each class, decrement features
             # for loss-agumention
-            unary_potentials[self.label_from_latent(h)
-                             != self.label_from_latent(l), l] += 1.
+            unary_potentials[np.where(self.label_from_latent(h)
+                             != l)[0], l] += 1.
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
@@ -149,7 +149,7 @@ class LatentNodeCRF(GraphCRF):
         # continuous version of the loss
         # y_hat is the result of linear programming
         y_org = self.label_from_latent(y)
-        y_hat_org = self.label_from_latent(y_hat)[:, :self.n_labels]
+        y_hat_org = y_hat[:y_org.size, :self.n_labels]
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
 
     def psi(self, x, y):
