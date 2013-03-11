@@ -139,9 +139,6 @@ class LatentGraphCRF(GraphCRF):
             h = np.hstack([0, np.cumsum(self.n_states_per_label)])[y]
         return h
 
-    def base_loss(self, y, y_hat):
-        return GraphCRF.loss(self, y, y_hat)
-
     def loss(self, h, h_hat):
         if isinstance(h_hat, tuple):
             return self.continuous_loss(h, h_hat[0])

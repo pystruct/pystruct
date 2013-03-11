@@ -68,13 +68,13 @@ class LatentSSVM(BaseSSVM):
             if iteration == 0:
                 pass
             else:
-                H_new = np.array([self.problem.latent(x, y, w)
-                                  for x, y in zip(X, Y)])
-                if np.all(H_new == H):
+                H_new = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
+                changes = [np.any(h_new != h) for h_new, h in zip(H_new, H)]
+                if not np.any(changes):
                     print("no changes in latent variables of ground truth."
                           " stopping.")
                     break
-                print("changes in H: %d" % np.sum(H_new != H))
+                print("changes in H: %d" % np.sum(changes))
 
                 # update constraints:
                 if self.base_svm == 'n-slack':
@@ -119,10 +119,16 @@ class LatentSSVM(BaseSSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        if hasattr(self.problem, 'batch_batch_loss'):
-            losses = self.problem.base_batch_loss(Y, self.predict(X))
+        #if hasattr(self.problem, 'batch_batch_loss'):
+            #losses = self.problem.base_batch_loss(Y, self.predict(X))
+        #else:
+            #losses = [self.problem.base_loss(y, y_pred)
+                      #for y, y_pred in zip(Y, self.predict(X))]
+        if hasattr(self.problem, 'batch_loss'):
+            losses = self.problem.batch_loss(
+                Y, self.problem.batch_inference(X, self.w))
         else:
-            losses = [self.problem.base_loss(y, y_pred)
+            losses = [self.problem.loss(y, self.problem.inference(y, self.w))
                       for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
