@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal
 from pystruct.problems import GraphCRF, LatentNodeCRF
-from pystruct.learners import StructuredSVM, LatentSSVM
+from pystruct.learners import StructuredSVM, LatentSSVM, LatentSubgradientSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
 
@@ -53,7 +53,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     assert_array_almost_equal(latent_svm.w, clf.w)
 
 
-def test_latent_node_boxes():
+def test_latent_node_boxes_standard_latent():
     # learn the "easy" 2x2 boxes dataset.
     # a 2x2 box is placed randomly in a 4x4 grid
     # we add a latent variable for each 2x2 patch
@@ -93,3 +93,42 @@ def test_latent_node_boxes():
         latent_svm.fit(X_, Y_flat, H_init)
 
         assert_equal(latent_svm.score(X_, Y_flat), 1)
+
+
+def test_latent_node_boxes_latent_subgradient():
+    # same as above, now with elementary subgradients
+
+    # learn the "easy" 2x2 boxes dataset.
+    # a 2x2 box is placed randomly in a 4x4 grid
+    # we add a latent variable for each 2x2 patch
+    # that should make the problem fairly simple
+
+    X, Y = toy.make_simple_2x2(seed=1)
+    latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
+                               n_hidden_states=2, n_features=1)
+    latent_svm = LatentSubgradientSSVM(problem=latent_crf, max_iter=250, C=10,
+                                       verbose=10, learning_rate=0.1,
+                                       momentum=0)
+
+    G = [make_grid_edges(x) for x in X]
+
+    # make edges for hidden states:
+    edges = []
+    node_indices = np.arange(4 * 4).reshape(4, 4)
+    for i, (x, y) in enumerate(itertools.product([0, 2], repeat=2)):
+        for j in xrange(x, x + 2):
+            for k in xrange(y, y + 2):
+                edges.append([i + 4 * 4, node_indices[j, k]])
+
+    G = [np.vstack([make_grid_edges(x), edges]) for x in X]
+
+    # reshape / flatten x and y
+    X_flat = [x.reshape(-1, 1) for x in X]
+    Y_flat = [y.ravel() for y in Y]
+    H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()])
+              for y in Y]
+
+    X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
+    latent_svm.fit(X_, Y_flat, H_init)
+
+    assert_equal(latent_svm.score(X_, Y_flat), 1)
