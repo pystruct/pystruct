@@ -5,30 +5,11 @@ import itertools
 #from nose.tools import assert_equal
 from pystruct.problems import GraphCRF, LatentNodeCRF
 from pystruct.learners import StructuredSVM
-from pystruct.learners import LatentSubgradientSSVM
-#import pystruct.toy_datasets as toy
+#from pystruct.learners import LatentSubgradientSSVM
+from pystruct.learners import LatentSSVM
+import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
 import matplotlib.pyplot as plt
-
-
-def make_simple_2x2():
-    np.random.seed(1)
-    n_samples = 20
-    n_flips = 4
-    X = []
-    Y = []
-    for i in xrange(n_samples):
-        y = np.zeros((4, 4), dtype=np.int)
-        j, k = 2 * np.random.randint(2, size=2)
-        y[j: j + 2, k: k + 2] = 1
-        Y.append(y)
-        x = y.copy()
-        for flip in xrange(n_flips):
-            a, b = np.random.randint(4, size=2)
-            x[a, b] = np.random.randint(2)
-        x[x == 0] = -1
-        X.append(x)
-    return X, Y
 
 
 def plot_boxes(boxes, size=4):
@@ -47,11 +28,10 @@ def plot_boxes(boxes, size=4):
 
 # learn the "easy" 2x2 boxes dataset.
 # a 2x2 box is placed randomly in a 4x4 grid
-# we add a latent variable for each 2x3 patch
+# we add a latent variable for each 2x2 patch
 # that should make the problem fairly simple
-#X, Y = toy.generate_easy(total_size=4, noise=10, n_samples=20, box_size=2)
 
-X, Y = make_simple_2x2()
+X, Y = toy.make_simple_2x2(seed=1)
 
 # flatten X and Y
 X_flat = [x.reshape(-1, 1).astype(np.float) for x in X]

@@ -43,6 +43,25 @@ def generate_big_checker(n_samples=20, noise=.5, n_fields=3, field_size=3):
     return X, Y
 
 
+def make_simple_2x2(seed=0, n_flips=4):
+    np.random.seed(seed)
+    n_samples = 20
+    X = []
+    Y = []
+    for i in xrange(n_samples):
+        y = np.zeros((4, 4), dtype=np.int)
+        j, k = 2 * np.random.randint(2, size=2)
+        y[j: j + 2, k: k + 2] = 1
+        Y.append(y)
+        x = y.copy()
+        for flip in xrange(n_flips):
+            a, b = np.random.randint(4, size=2)
+            x[a, b] = np.random.randint(2)
+        x[x == 0] = -1
+        X.append(x)
+    return X, Y
+
+
 def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8, seed=0):
     np.random.seed(seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
