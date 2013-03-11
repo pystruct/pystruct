@@ -54,40 +54,42 @@ def test_binary_blocks_cutting_plane_latent_node():
 
 
 def test_latent_node_boxes():
-    # learn the "easy" 3x3 boxes dataset.
-    # a 3x3 box is placed randomly in a 6x6 grid
-    # we add a latent variable for each 3x3 patch
+    # learn the "easy" 2x2 boxes dataset.
+    # a 2x2 box is placed randomly in a 4x4 grid
+    # we add a latent variable for each 2x2 patch
     # that should make the problem fairly simple
-    X, Y = toy.generate_easy(total_size=6, noise=10)
+
+    # currently only works with perfect init :-/
+
+    X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
-                               n_hidden_states=2)
-    latent_svm = LatentSSVM(problem=latent_crf, max_iter=20, C=10000,
-                            verbose=3, check_constraints=True,
-                            break_on_bad=False, n_jobs=1, latent_iter=3)
+                               n_hidden_states=2, n_features=1)
+    for base_svm in ['1-slack', 'n-slack', 'subgradient']:
+        latent_svm = LatentSSVM(problem=latent_crf, max_iter=50, C=10,
+                                verbose=10, check_constraints=True,
+                                break_on_bad=True, n_jobs=1, latent_iter=10,
+                                base_svm=base_svm, tol=-1, inactive_window=0,
+                                learning_rate=0.01, momentum=0)
 
-    G = [make_grid_edges(x) for x in X]
+        G = [make_grid_edges(x) for x in X]
 
-    # make edges for hidden states:
-    edges = []
-    node_indices = np.arange(6 * 6).reshape(6, 6)
-    for i, (x, y) in enumerate(itertools.product(xrange(1, 5), repeat=2)):
-        for j in xrange(x - 1, x + 2):
-            for k in xrange(y - 1, y + 2):
-                edges.append([i + 36, node_indices[j, k]])
+        # make edges for hidden states:
+        edges = []
+        node_indices = np.arange(4 * 4).reshape(4, 4)
+        for i, (x, y) in enumerate(itertools.product([0, 2], repeat=2)):
+            for j in xrange(x, x + 2):
+                for k in xrange(y, y + 2):
+                    edges.append([i + 4 * 4, node_indices[j, k]])
 
-    G = [np.vstack([make_grid_edges(x), edges]) for x in X]
+        G = [np.vstack([make_grid_edges(x), edges]) for x in X]
 
-    # reshape / flatten x and y
-    X_flat = [x.reshape(-1, 2) for x in X]
-    Y_flat = [y.ravel() for y in Y]
-    H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()]) for y in Y]
-    #H_init = [np.hstack([y.ravel(), 2 * np.ones(4 * 4, dtype=np.int)])
-              #for y in Y]
+        # reshape / flatten x and y
+        X_flat = [x.reshape(-1, 1) for x in X]
+        Y_flat = [y.ravel() for y in Y]
+        H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()])
+                  for y in Y]
 
-    X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
-    latent_svm.fit(X_, Y_flat, H_init)
+        X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
+        latent_svm.fit(X_, Y_flat, H_init)
 
-    from IPython.core.debugger import Tracer
-    Tracer()()
-
-    assert_equal(latent_svm.score(X_, Y_flat), 1)
+        assert_equal(latent_svm.score(X_, Y_flat), 1)
