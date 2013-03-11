@@ -348,7 +348,6 @@ class OneSlackSSVM(BaseSSVM):
             constraints = []
         self.objective_curve_ = []
         self.alphas = []  # dual solutions
-        self.blub = []
         self.last_slack_ = -1
         # append constraint given by ground truth to make our life easier
         constraints.append((np.zeros(self.problem.size_psi), 0))
@@ -379,7 +378,6 @@ class OneSlackSSVM(BaseSSVM):
 
                 self._compute_training_loss(X, Y, w, iteration)
                 constraints.append((dpsi, loss_mean))
-                self.blub.append(Y_hat)
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))
