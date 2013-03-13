@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_equal, assert_less
+from nose.tools import assert_equal, assert_less, assert_true
 
 from sklearn.datasets import load_digits
 
@@ -103,3 +103,40 @@ def test_one_slack_constraint_caching():
     constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
     assert_equal(np.max(constraints_per_sample), 6)
     assert_equal(np.min(constraints_per_sample), 6)
+
+
+def test_one_slack_attractive_potentials():
+    # test that submodular SSVM can learn the block dataset
+    X, Y = toy.generate_blocks(n_samples=10)
+    crf = GridCRF()
+    submodular_clf = OneSlackSSVM(problem=crf, max_iter=200, C=100, verbose=1,
+                                  check_constraints=True,
+                                  positive_constraint=[5], n_jobs=-1)
+    submodular_clf.fit(X, Y)
+    Y_pred = submodular_clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+    assert_true(submodular_clf.w[5] < 0)  # don't ask me about signs
+
+
+def test_one_slack_repellent_potentials():
+    # test non-submodular learning with and without positivity constraint
+    # dataset is checkerboard
+    X, Y = toy.generate_checker()
+    for inference_method in ["lp", "qpbo", "ad3"]:
+        crf = GridCRF(inference_method=inference_method)
+        clf = OneSlackSSVM(problem=crf, max_iter=10, C=100, verbose=0,
+                           check_constraints=True, n_jobs=-1)
+        clf.fit(X, Y)
+        Y_pred = clf.predict(X)
+        # standard crf can predict perfectly
+        assert_array_equal(Y, Y_pred)
+
+        submodular_clf = OneSlackSSVM(problem=crf, max_iter=10, C=100,
+                                      verbose=0, check_constraints=True,
+                                      positive_constraint=[4, 5, 6], n_jobs=-1)
+        submodular_clf.fit(X, Y)
+        Y_pred = submodular_clf.predict(X)
+        # submodular crf can not do better than unaries
+        for i, x in enumerate(X):
+            y_pred_unaries = crf.inference(x, np.array([1, 0, 0, 1, 0, 0, 0]))
+            assert_array_equal(y_pred_unaries, Y_pred[i])
