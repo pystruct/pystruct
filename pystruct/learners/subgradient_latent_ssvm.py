@@ -58,6 +58,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         ``learning_rate / t ** decay_exponent``. Zero means no decay.
         Ignored if adagrad=True.
 
+    break_on_no_constraints : bool, default=True
+
 
     Attributes
     ----------
@@ -73,11 +75,13 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
-                 show_loss_every=0, decay_exponent=0):
+                 show_loss_every=0, decay_exponent=0,
+                 break_on_no_constraints=True):
         SubgradientStructuredSVM.__init__(
             self, problem, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
-            momentum=momentum, learning_rate=learning_rate, adagrad=adagrad)
+            momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
+            break_on_no_constraints=break_on_no_constraints)
 
     def fit(self, X, Y, H_init=None):
         """Learn parameters using subgradient descent.
@@ -96,7 +100,9 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
             Discarded. Only for API compatibility currently.
         """
         print("Training latent subgradient structural SVM")
-        w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        #w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        w = getattr(self, "w", np.random.normal(0, .001,
+                                                size=self.problem.size_psi))
         #constraints = []
         objective_curve = []
         n_samples = len(X)
@@ -120,8 +126,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                            w = self._solve_subgradient(w, delta_psi,
-                                                        n_samples)
+                        w = self._solve_subgradient(w, delta_psi,
+                                                    n_samples)
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
@@ -153,14 +159,13 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                         w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
-                objective /= len(X)
                 objective += np.sum(w ** 2) / self.C / 2.
+                objective /= float(n_samples)
 
                 if positive_slacks == 0:
                     print("No additional constraints")
-                    from IPython.core.debugger import Tracer
-                    Tracer()()
-                    break
+                    if self.break_on_no_constraints:
+                        break
                 if self.verbose > 0:
                     print(self)
                     print("iteration %d" % iteration)
@@ -208,10 +213,11 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        if hasattr(self.problem, 'batch_batch_loss'):
-            losses = self.problem.base_batch_loss(Y, self.predict(X))
+        if hasattr(self.problem, 'batch_loss'):
+            losses = self.problem.batch_loss(
+                Y, self.problem.batch_inference(X, self.w))
         else:
-            losses = [self.problem.base_loss(y, y_pred)
+            losses = [self.problem.loss(y, self.problem.inference(y, self.w))
                       for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))

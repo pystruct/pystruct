@@ -140,7 +140,7 @@ def test_graph_crf_loss_augment():
     y = y_1
     crf = GraphCRF(n_states=2, inference_method='lp')
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
-    # check that y_hat fulfulls energy + loss condition
+    # check that y_hat fulfills energy + loss condition
     assert_almost_equal(np.dot(w, crf.psi(x, y_hat)) + crf.loss(y, y_hat),
                         -energy)
 

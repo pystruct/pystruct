@@ -22,7 +22,8 @@ def test_with_crosses():
                                 inference_method=inference_method)
             clf = LatentSubgradientSSVM(problem=crf, max_iter=250, C=10. ** 5,
                                         verbose=20, learning_rate=0.0001,
-                                        show_loss_every=10)
+                                        show_loss_every=10, momentum=0.98,
+                                        decay_exponent=0)
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
             assert_array_equal(np.array(Y_pred), Y)

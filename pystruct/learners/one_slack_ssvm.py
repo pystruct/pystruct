@@ -180,14 +180,18 @@ class OneSlackSSVM(BaseSSVM):
         assert(len(self.alphas) == len(constraints))
         for constraint, alpha in zip(self.alphas, a):
             constraint.append(alpha)
+            constraint = constraint[-self.inactive_window:]
         self.old_solution = solution
 
         # prune unused constraints:
         # if the max of alpha in last 50 iterations was small, throw away
         if self.inactive_window != 0:
-            inactive = np.where([np.max(constr[-self.inactive_window:])
-                                 < self.inactive_threshold * C
-                                 for constr in self.alphas])[0]
+            max_active = [np.max(constr[-self.inactive_window:])
+                          for constr in self.alphas]
+            # find strongest constraint that is not ground truth constraint
+            strongest = np.max(max_active[1:])
+            inactive = np.where(max_active
+                                < self.inactive_threshold * strongest)[0]
 
             for i, idx in enumerate(inactive):
                 del constraints[idx - i]
@@ -344,7 +348,6 @@ class OneSlackSSVM(BaseSSVM):
             constraints = []
         self.objective_curve_ = []
         self.alphas = []  # dual solutions
-        self.blub = []
         self.last_slack_ = -1
         # append constraint given by ground truth to make our life easier
         constraints.append((np.zeros(self.problem.size_psi), 0))
@@ -375,7 +378,6 @@ class OneSlackSSVM(BaseSSVM):
 
                 self._compute_training_loss(X, Y, w, iteration)
                 constraints.append((dpsi, loss_mean))
-                self.blub.append(Y_hat)
 
                 w, objective = self._solve_1_slack_qp(constraints,
                                                       n_samples=len(X))

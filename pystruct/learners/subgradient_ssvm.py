@@ -55,8 +55,10 @@ class SubgradientStructuredSVM(BaseSSVM):
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / t ** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
+         Ignored if adagrad=True.
 
+    break_on_no_constraints : bool, default=True
+        Break when there are no new constraints found.
 
     Attributes
     ----------
@@ -72,9 +74,11 @@ class SubgradientStructuredSVM(BaseSSVM):
     """
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
-                 show_loss_every=0, decay_exponent=0):
+                 show_loss_every=0, decay_exponent=0,
+                 break_on_no_constraints=True):
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
+        self.break_on_no_constraints = break_on_no_constraints
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
@@ -128,7 +132,6 @@ class SubgradientStructuredSVM(BaseSSVM):
         """
         print("Training primal subgradient structural SVM")
         w = getattr(self, "w", np.zeros(self.problem.size_psi))
-        #constraints = []
         objective_curve = []
         n_samples = len(X)
         try:
@@ -146,8 +149,8 @@ class SubgradientStructuredSVM(BaseSSVM):
                         objective += slack
                         if slack > 0:
                             positive_slacks += 1
-                            w = self._solve_subgradient(w, delta_psi,
-                                                        n_samples)
+                        w = self._solve_subgradient(w, delta_psi,
+                                                    n_samples)
                 else:
                     # generate batches of size n_jobs
                     # to speed up inference
@@ -177,12 +180,13 @@ class SubgradientStructuredSVM(BaseSSVM):
                         w = self._solve_subgradient(w, dpsi, n_samples)
 
                 # some statistics
-                objective /= len(X)
-                objective += np.sum(w ** 2) / (self.C * n_samples) / 2.
+                objective += np.sum(w ** 2) / self.C / 2.
+                objective /= float(n_samples)
 
                 if positive_slacks == 0:
                     print("No additional constraints")
-                    break
+                    if self.break_on_no_constraints:
+                        break
                 if self.verbose > 0:
                     print(self)
                     print("iteration %d" % iteration)
@@ -200,6 +204,7 @@ class SubgradientStructuredSVM(BaseSSVM):
             pass
         self.w = w
         self.objective_curve_ = objective_curve
-        print("final objective: %f" % objective_curve[-1])
+        if objective_curve:
+            print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
