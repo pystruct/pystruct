@@ -1,4 +1,6 @@
 import itertools
+import cPickle
+
 import numpy as np
 
 
@@ -177,3 +179,22 @@ def exhaustive_inference(problem, x, w):
             best_energy = energy
             best_y = y_hat
     return best_y
+
+
+class SaveLogger(object):
+    def __init__(self, file_name, save_every=10, verbose=0):
+        self.file_name = file_name
+        self.save_every = save_every
+        self.verbose = verbose
+
+    def __call__(self, learner, iteration=0):
+        if not iteration % self.save_every:
+            if self.verbose > 0:
+                print("saving %s to file %s" % (learner, self.file_name))
+            with open(self.file_name, "wb") as f:
+                cPickle.dump(learner, f)
+
+    def load(self):
+        with open(self.file_name) as f:
+            learner = cPickle.load(f)
+        return learner

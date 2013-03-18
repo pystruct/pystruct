@@ -59,6 +59,7 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         Ignored if adagrad=True.
 
     break_on_no_constraints : bool, default=True
+        Break when there are no new constraints found.
 
 
     Attributes

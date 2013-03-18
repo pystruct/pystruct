@@ -106,7 +106,7 @@ class OneSlackSSVM(BaseSSVM):
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
                  inference_cache=0, inactive_threshold=1e-10,
-                 inactive_window=50):
+                 inactive_window=50, logger=None):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every)
@@ -118,6 +118,7 @@ class OneSlackSSVM(BaseSSVM):
         self.inference_cache = inference_cache
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
+        self.logger = logger
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
@@ -343,7 +344,7 @@ class OneSlackSSVM(BaseSSVM):
             cvxopt.solvers.options['show_progress'] = False
         else:
             cvxopt.solvers.options['show_progress'] = True
-        w = np.zeros(self.problem.size_psi)
+        self.w = np.zeros(self.problem.size_psi)
         if constraints is None:
             constraints = []
         self.objective_curve_ = []
@@ -366,29 +367,29 @@ class OneSlackSSVM(BaseSSVM):
                     print(self)
                 try:
                     Y_hat, dpsi, loss_mean = self._constraint_from_cache(
-                        X, Y, w, psi_gt, constraints)
+                        X, Y, self.w, psi_gt, constraints)
                 except NoConstraint:
                     try:
                         Y_hat, dpsi, loss_mean = self._find_new_constraint(
-                            X, Y, w, psi_gt, constraints)
+                            X, Y, self.w, psi_gt, constraints)
                         self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
                         print("no additional constraints")
                         break
 
-                self._compute_training_loss(X, Y, w, iteration)
+                self._compute_training_loss(X, Y, self.w, iteration)
                 constraints.append((dpsi, loss_mean))
 
-                w, objective = self._solve_1_slack_qp(constraints,
-                                                      n_samples=len(X))
-                self.last_slack_ = np.max([(-np.dot(w, dpsi) + loss_mean) for
-                                           dpsi, loss_mean in constraints])
+                self.w, objective = self._solve_1_slack_qp(constraints,
+                                                           n_samples=len(X))
+                self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
+                                           for dpsi, loss_mean in constraints])
                 self.last_slack_ = max(self.last_slack_, 0)
 
                 if self.verbose > 0:
                     primal_objective = (self.C * len(X)
                                         * np.max(self.last_slack_, 0)
-                                        + np.sum(w ** 2) / 2)
+                                        + np.sum(self.w ** 2) / 2)
                     print("dual objective: %f, primal objective: %f"
                           % (objective, primal_objective))
                     if (np.abs(primal_objective - objective)
@@ -398,12 +399,13 @@ class OneSlackSSVM(BaseSSVM):
                 # we only do this here because we didn't add the gt to the
                 # constraints, which makes the dual behave a bit oddly
                 self.objective_curve_.append(objective)
+                if self.logger is not None:
+                    self.logger(self, iteration)
 
                 if self.verbose > 5:
-                    print(w)
+                    print(self.w)
         except KeyboardInterrupt:
             pass
-        self.w = w
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
