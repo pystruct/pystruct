@@ -88,10 +88,11 @@ class StructuredSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, batch_size=100,
-                 tol=-10):
+                 tol=-10, logger=None):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss_every=show_loss_every)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every,
+                          logger=logger)
 
         self.positive_constraint = positive_constraint
         self.check_constraints = check_constraints
@@ -222,13 +223,12 @@ class StructuredSVM(BaseSSVM):
         else:
             cvxopt.solvers.options['show_progress'] = True
 
-        w = np.zeros(self.problem.size_psi)
+        self.w = np.zeros(self.problem.size_psi)
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
         else:
-            w, objective = self._solve_n_slack_qp(constraints,
-                                                  n_samples)
+            self.w, objective = self._solve_n_slack_qp(constraints, n_samples)
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
@@ -255,7 +255,8 @@ class StructuredSVM(BaseSSVM):
                 candidate_constraints = Parallel(n_jobs=self.n_jobs,
                                                  verbose=verbose)(
                                                      delayed(find_constraint)(
-                                                         self.problem, x, y, w)
+                                                         self.problem, x, y,
+                                                         self.w)
                                                      for x, y in zip(X_b, Y_b))
 
                 # for each slice, gather new constraints
@@ -273,7 +274,7 @@ class StructuredSVM(BaseSSVM):
                         continue
 
                     if self._check_bad_constraint(y_hat, slack, constraints[i],
-                                                  w):
+                                                  self.w):
                         continue
 
                     constraints[i].append([y_hat, delta_psi, loss])
@@ -281,8 +282,8 @@ class StructuredSVM(BaseSSVM):
 
                 # after processing the slice, solve the qp
                 if new_constraints_batch:
-                    w, objective = self._solve_n_slack_qp(constraints,
-                                                          n_samples)
+                    self.w, objective = self._solve_n_slack_qp(constraints,
+                                                               n_samples)
                     objective_curve.append(objective)
                     new_constraints += new_constraints_batch
 
@@ -290,7 +291,7 @@ class StructuredSVM(BaseSSVM):
                 print("no additional constraints")
                 break
 
-            self._compute_training_loss(X, Y, w, iteration)
+            self._compute_training_loss(X, Y, self.w, iteration)
 
             if self.verbose > 0:
                 print("new constraints: %d, "
@@ -302,9 +303,11 @@ class StructuredSVM(BaseSSVM):
                 print("objective converged.")
                 break
             if self.verbose > 5:
-                print(w)
+                print(self.w)
 
-        self.w = w
+            if self.logger is not None:
+                self.logger(self, iteration)
+
         self.constraints_ = constraints
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve

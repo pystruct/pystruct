@@ -27,7 +27,6 @@ def test_multinomial_blocks_one_slack():
 
 
 def test_svm_as_crf_pickling():
-
     iris = load_iris()
     X, y = iris.data, iris.target
 
