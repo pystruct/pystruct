@@ -203,13 +203,13 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
-        w = np.dot(a, psi_matrix)
+        self.w = np.dot(a, psi_matrix)
         # we needed to flip the sign to make the dual into a minimization
         # problem
-        return w, -solution['primal objective']
+        return -solution['primal objective']
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
-                              old_constraints, w, break_on_bad):
+                              old_constraints, break_on_bad):
         violation_difference = violation - self.last_slack_
         if self.verbose > 1:
             print("New violation: %f difference to last: %f"
@@ -229,7 +229,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.check_constraints:
             for con in old_constraints:
                 # compute violation for old constraint
-                violation_tmp = max(con[1] - np.dot(w, con[0]), 0)
+                violation_tmp = max(con[1] - np.dot(self.w, con[0]), 0)
                 if self.verbose > 5:
                     print("violation old constraint: %f" % violation_tmp)
                 # if violation of new constraint is smaller or not
@@ -269,7 +269,7 @@ class OneSlackSSVM(BaseSSVM):
             sample.append((self.problem.psi(x, y_hat),
                            self.problem.loss(y, y_hat), y_hat))
 
-    def _constraint_from_cache(self, X, Y, w, psi_gt, constraints):
+    def _constraint_from_cache(self, X, Y, psi_gt, constraints):
         if not getattr(self, 'inference_cache_', False):
             if self.verbose > 10:
                 print("Empty cache.")
@@ -279,7 +279,8 @@ class OneSlackSSVM(BaseSSVM):
         loss_mean = 0
         for cached in self.inference_cache_:
             # cached has entries of form (psi, loss, y_hat)
-            violations = [np.dot(psi, w) + loss for psi, loss, _ in cached]
+            violations = [np.dot(psi, self.w) + loss
+                          for psi, loss, _ in cached]
             psi, loss, y_hat = cached[np.argmax(violations)]
             Y_hat.append(y_hat)
             psi_acc += psi
@@ -288,33 +289,33 @@ class OneSlackSSVM(BaseSSVM):
         dpsi = (psi_gt - psi_acc) / len(X)
         loss_mean = loss_mean / len(X)
 
-        violation = loss_mean - np.dot(w, dpsi)
+        violation = loss_mean - np.dot(self.w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
-                                      w, break_on_bad=False):
+                                      break_on_bad=False):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def _find_new_constraint(self, X, Y, w, psi_gt, constraints):
+    def _find_new_constraint(self, X, Y, psi_gt, constraints):
         if self.n_jobs != 1:
             # do inference in parallel
             verbose = max(0, self.verbose - 3)
             Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
                 delayed(loss_augmented_inference)(
-                    self.problem, x, y, w, relaxed=True)
+                    self.problem, x, y, self.w, relaxed=True)
                 for x, y in zip(X, Y))
         else:
             Y_hat = self.problem.batch_loss_augmented_inference(
-                X, Y, w, relaxed=True)
+                X, Y, self.w, relaxed=True)
         # compute the mean over psis and losses
 
         dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
         loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
-        violation = loss_mean - np.dot(w, dpsi)
+        violation = loss_mean - np.dot(self.w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
-                                      w, break_on_bad=self.break_on_bad):
+                                      break_on_bad=self.break_on_bad):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
@@ -367,21 +368,21 @@ class OneSlackSSVM(BaseSSVM):
                     print(self)
                 try:
                     Y_hat, dpsi, loss_mean = self._constraint_from_cache(
-                        X, Y, self.w, psi_gt, constraints)
+                        X, Y, psi_gt, constraints)
                 except NoConstraint:
                     try:
                         Y_hat, dpsi, loss_mean = self._find_new_constraint(
-                            X, Y, self.w, psi_gt, constraints)
+                            X, Y, psi_gt, constraints)
                         self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
                         print("no additional constraints")
                         break
 
-                self._compute_training_loss(X, Y, self.w, iteration)
+                self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
-                self.w, objective = self._solve_1_slack_qp(constraints,
-                                                           n_samples=len(X))
+                objective = self._solve_1_slack_qp(constraints,
+                                                   n_samples=len(X))
                 self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
                                            for dpsi, loss_mean in constraints])
                 self.last_slack_ = max(self.last_slack_, 0)

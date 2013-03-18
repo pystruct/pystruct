@@ -101,9 +101,8 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
             Discarded. Only for API compatibility currently.
         """
         print("Training latent subgradient structural SVM")
-        #w = getattr(self, "w", np.zeros(self.problem.size_psi))
-        w = getattr(self, "w", np.random.normal(0, .001,
-                                                size=self.problem.size_psi))
+        self.w = getattr(self, "w", np.random.normal(
+            0, .001, size=self.problem.size_psi))
         #constraints = []
         objective_curve = []
         n_samples = len(X)
@@ -117,18 +116,17 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                 if self.n_jobs == 1:
                     # online learning
                     for x, y in zip(X, Y):
-                        h = self.problem.latent(x, y, w)
+                        h = self.problem.latent(x, y, self.w)
                         h_hat = self.problem.loss_augmented_inference(
-                            x, h, w, relaxed=True)
+                            x, h, self.w, relaxed=True)
                         delta_psi = (self.problem.psi(x, h)
                                      - self.problem.psi(x, h_hat))
-                        slack = (-np.dot(delta_psi, w)
+                        slack = (-np.dot(delta_psi, self.w)
                                  + self.problem.loss(h, h_hat))
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                        w = self._solve_subgradient(w, delta_psi,
-                                                    n_samples)
+                        self._solve_subgradient(delta_psi, n_samples)
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
@@ -146,7 +144,7 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                         candidate_constraints = Parallel(
                             n_jobs=self.n_jobs,
                             verbose=verbose)(delayed(find_constraint_latent)(
-                                self.problem, x, y, w)
+                                self.problem, x, y, self.w)
                                 for x, y in zip(X_b, Y_b))
                         dpsi = np.zeros(self.problem.size_psi)
                         for x, y, constraint in zip(X_b, Y_b,
@@ -157,10 +155,10 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                             if slack > 0:
                                 positive_slacks += 1
                         dpsi /= float(len(X_b))
-                        w = self._solve_subgradient(w, dpsi, n_samples)
+                        self._solve_subgradient(dpsi, n_samples)
 
                 # some statistics
-                objective += np.sum(w ** 2) / self.C / 2.
+                objective += np.sum(self.w ** 2) / self.C / 2.
                 objective /= float(n_samples)
 
                 if positive_slacks == 0:
@@ -176,13 +174,12 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                 objective_curve.append(objective)
 
                 if self.verbose > 2:
-                    print(w)
+                    print(self.w)
 
-                self._compute_training_loss(X, Y, w, iteration)
+                self._compute_training_loss(X, Y, iteration)
 
         except KeyboardInterrupt:
             pass
-        self.w = w
         self.objective_curve_ = objective_curve
         print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)

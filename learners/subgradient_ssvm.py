@@ -87,17 +87,17 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.grad_old = np.zeros(self.problem.size_psi)
         self.decay_exponent = decay_exponent
 
-    def _solve_subgradient(self, w, dpsi, n_samples):
+    def _solve_subgradient(self, dpsi, n_samples):
         """Do a single subgradient step."""
 
         #w += 1. / self.t * (psi_matrix - w / self.C / 2)
         #grad = (self.learning_rate / (self.t + 1.) ** 2
                 #* (psi_matrix - w / self.C / 2))
-        grad = (dpsi - w / (self.C * n_samples))
+        grad = (dpsi - self.w / (self.C * n_samples))
 
         if self.adagrad:
             self.grad_old += grad ** 2
-            w += self.learning_rate * grad / (1. + np.sqrt(self.grad_old))
+            self.w += self.learning_rate * grad / (1. + np.sqrt(self.grad_old))
             print("grad old %f" % np.mean(self.grad_old))
             print("effective lr %f" % (self.learning_rate /
                                        np.mean(1. + np.sqrt(self.grad_old))))
@@ -109,11 +109,9 @@ class SubgradientStructuredSVM(BaseSSVM):
             else:
                 effective_lr = (self.learning_rate
                                 / (self.t + 1) ** self.decay_exponent)
-            w += effective_lr * self.grad_old
+            self.w += effective_lr * self.grad_old
 
-        self.w = w
         self.t += 1.
-        return w
 
     def fit(self, X, Y, constraints=None):
         """Learn parameters using subgradient descent.
@@ -150,8 +148,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                         objective += slack
                         if slack > 0:
                             positive_slacks += 1
-                        self.w = self._solve_subgradient(self.w, delta_psi,
-                                                         n_samples)
+                        self._solve_subgradient(delta_psi, n_samples)
                 else:
                     # generate batches of size n_jobs
                     # to speed up inference
@@ -178,8 +175,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                                 objective += slack
                                 dpsi += delta_psi
                                 positive_slacks += 1
-                        self.w = self._solve_subgradient(self.w, dpsi,
-                                                         n_samples)
+                        self._solve_subgradient(dpsi, n_samples)
 
                 # some statistics
                 objective += np.sum(self.w ** 2) / self.C / 2.
@@ -200,7 +196,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                 if self.verbose > 2:
                     print(self.w)
 
-                self._compute_training_loss(X, Y, self.w, iteration)
+                self._compute_training_loss(X, Y, iteration)
                 if self.logger is not None:
                     self.logger(self, iteration)
 

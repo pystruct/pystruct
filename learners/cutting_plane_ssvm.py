@@ -160,10 +160,10 @@ class StructuredSVM(BaseSSVM):
             # calculate per example box constraint:
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
             print("dual objective: %f" % solution['primal objective'])
-        w = np.dot(a, psi_matrix)
-        return w, solution['primal objective']
+        self.w = np.dot(a, psi_matrix)
+        return solution['primal objective']
 
-    def _check_bad_constraint(self, y_hat, slack, old_constraints, w):
+    def _check_bad_constraint(self, y_hat, slack, old_constraints):
         if slack < 1e-5:
             return True
         y_hat_plain = unwrap_pairwise(y_hat)
@@ -181,7 +181,7 @@ class StructuredSVM(BaseSSVM):
         if self.check_constraints:
             for con in old_constraints:
                 # compute slack for old constraint
-                slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
+                slack_tmp = max(con[2] - np.dot(self.w, con[1]), 0)
                 if self.verbose > 5:
                     print("slack old constraint: %f" % slack_tmp)
                 # if slack of new constraint is smaller or not
@@ -228,7 +228,7 @@ class StructuredSVM(BaseSSVM):
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
         else:
-            self.w, objective = self._solve_n_slack_qp(constraints, n_samples)
+            objective = self._solve_n_slack_qp(constraints, n_samples)
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
@@ -273,8 +273,8 @@ class StructuredSVM(BaseSSVM):
                         # we need this here as dpsi is then != 0
                         continue
 
-                    if self._check_bad_constraint(y_hat, slack, constraints[i],
-                                                  self.w):
+                    if self._check_bad_constraint(y_hat, slack,
+                                                  constraints[i]):
                         continue
 
                     constraints[i].append([y_hat, delta_psi, loss])
@@ -282,8 +282,7 @@ class StructuredSVM(BaseSSVM):
 
                 # after processing the slice, solve the qp
                 if new_constraints_batch:
-                    self.w, objective = self._solve_n_slack_qp(constraints,
-                                                               n_samples)
+                    objective = self._solve_n_slack_qp(constraints, n_samples)
                     objective_curve.append(objective)
                     new_constraints += new_constraints_batch
 
@@ -291,7 +290,7 @@ class StructuredSVM(BaseSSVM):
                 print("no additional constraints")
                 break
 
-            self._compute_training_loss(X, Y, self.w, iteration)
+            self._compute_training_loss(X, Y, iteration)
 
             if self.verbose > 0:
                 print("new constraints: %d, "

@@ -67,13 +67,12 @@ class BaseSSVM(BaseEstimator):
         max_losses = [self.problem.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
-    def _compute_training_loss(self, X, Y, w, iteration):
+    def _compute_training_loss(self, X, Y, iteration):
         # optionally compute training loss for output / training curve
         if (self.show_loss_every != 0
                 and not iteration % self.show_loss_every):
             if not hasattr(self, 'loss_curve_'):
                 self.loss_curve_ = []
-            self.w = w
             display_loss = 1 - self.score(X, Y)
             if self.verbose > 0:
                 print("current loss: %f" % (display_loss))
