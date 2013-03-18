@@ -9,13 +9,14 @@ from ..utils import inference
 class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0):
+                 n_jobs=1, show_loss_every=0, logger=None):
         self.problem = problem
         self.max_iter = max_iter
         self.C = C
         self.verbose = verbose
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
+        self.logger = logger
 
     def predict(self, X):
         """Predict output on examples in X.

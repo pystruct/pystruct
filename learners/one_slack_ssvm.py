@@ -109,7 +109,8 @@ class OneSlackSSVM(BaseSSVM):
                  inactive_window=50, logger=None):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss_every=show_loss_every)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every,
+                          logger=logger)
 
         self.positive_constraint = positive_constraint
         self.check_constraints = check_constraints
@@ -118,7 +119,6 @@ class OneSlackSSVM(BaseSSVM):
         self.inference_cache = inference_cache
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
-        self.logger = logger
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it

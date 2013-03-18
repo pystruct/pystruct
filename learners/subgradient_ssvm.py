@@ -75,9 +75,10 @@ class SubgradientStructuredSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
-                 break_on_no_constraints=True):
+                 break_on_no_constraints=True, logger=None):
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss_every=show_loss_every)
+                          n_jobs=n_jobs, show_loss_every=show_loss_every,
+                          logger=logger)
         self.break_on_no_constraints = break_on_no_constraints
         self.momentum = momentum
         self.learning_rate = learning_rate
@@ -131,7 +132,7 @@ class SubgradientStructuredSVM(BaseSSVM):
             Discarded. Only for API compatibility currently.
         """
         print("Training primal subgradient structural SVM")
-        w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        self.w = getattr(self, "w", np.zeros(self.problem.size_psi))
         objective_curve = []
         n_samples = len(X)
         try:
@@ -145,12 +146,12 @@ class SubgradientStructuredSVM(BaseSSVM):
                     # online learning
                     for x, y in zip(X, Y):
                         y_hat, delta_psi, slack, loss = \
-                            find_constraint(self.problem, x, y, w)
+                            find_constraint(self.problem, x, y, self.w)
                         objective += slack
                         if slack > 0:
                             positive_slacks += 1
-                        w = self._solve_subgradient(w, delta_psi,
-                                                    n_samples)
+                        self.w = self._solve_subgradient(self.w, delta_psi,
+                                                         n_samples)
                 else:
                     # generate batches of size n_jobs
                     # to speed up inference
@@ -167,7 +168,7 @@ class SubgradientStructuredSVM(BaseSSVM):
                         candidate_constraints = Parallel(
                             n_jobs=self.n_jobs,
                             verbose=verbose)(delayed(find_constraint)(
-                                self.problem, x, y, w)
+                                self.problem, x, y, self.w)
                                 for x, y in zip(X_b, Y_b))
                         dpsi = np.zeros(self.problem.size_psi)
                         for x, y, constraint in zip(X_b, Y_b,
@@ -177,10 +178,11 @@ class SubgradientStructuredSVM(BaseSSVM):
                                 objective += slack
                                 dpsi += delta_psi
                                 positive_slacks += 1
-                        w = self._solve_subgradient(w, dpsi, n_samples)
+                        self.w = self._solve_subgradient(self.w, dpsi,
+                                                         n_samples)
 
                 # some statistics
-                objective += np.sum(w ** 2) / self.C / 2.
+                objective += np.sum(self.w ** 2) / self.C / 2.
                 objective /= float(n_samples)
 
                 if positive_slacks == 0:
@@ -196,13 +198,14 @@ class SubgradientStructuredSVM(BaseSSVM):
                 objective_curve.append(objective)
 
                 if self.verbose > 2:
-                    print(w)
+                    print(self.w)
 
-                self._compute_training_loss(X, Y, w, iteration)
+                self._compute_training_loss(X, Y, self.w, iteration)
+                if self.logger is not None:
+                    self.logger(self, iteration)
 
         except KeyboardInterrupt:
             pass
-        self.w = w
         self.objective_curve_ = objective_curve
         if objective_curve:
             print("final objective: %f" % objective_curve[-1])
