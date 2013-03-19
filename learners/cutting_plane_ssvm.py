@@ -161,7 +161,7 @@ class StructuredSVM(BaseSSVM):
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
             print("dual objective: %f" % solution['primal objective'])
         self.w = np.dot(a, psi_matrix)
-        return solution['primal objective']
+        return -solution['primal objective']
 
     def _check_bad_constraint(self, y_hat, slack, old_constraints):
         if slack < 1e-5:
