@@ -207,9 +207,10 @@ class OneSlackSSVM(BaseSSVM):
             inactive = np.where(max_active
                                 < self.inactive_threshold * strongest)[0]
 
-            for i, idx in enumerate(inactive):
-                del constraints[idx - i]
-                del self.alphas[idx - i]
+            for idx in reversed(inactive):
+                # if we don't reverse, we'll mess the indices up
+                del constraints[idx]
+                del self.alphas[idx]
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
                               old_constraints, break_on_bad):
