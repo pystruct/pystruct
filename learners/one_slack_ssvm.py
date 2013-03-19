@@ -176,13 +176,26 @@ class OneSlackSSVM(BaseSSVM):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
+        self.old_solution = solution
+        self.prune_constraints(constraints, a)
+
+        # Support vectors have non zero lagrange multipliers
+        sv = a > self.inactive_threshold * C
+        if self.verbose > 1:
+            print("%d support vectors out of %d points" % (np.sum(sv),
+                                                           n_constraints))
+        self.w = np.dot(a, psi_matrix)
+        # we needed to flip the sign to make the dual into a minimization
+        # problem
+        return -solution['primal objective']
+
+    def prune_constraints(self, constraints, a):
         # append list for new constraint
         self.alphas.append([])
         assert(len(self.alphas) == len(constraints))
         for constraint, alpha in zip(self.alphas, a):
             constraint.append(alpha)
             constraint = constraint[-self.inactive_window:]
-        self.old_solution = solution
 
         # prune unused constraints:
         # if the max of alpha in last 50 iterations was small, throw away
@@ -197,16 +210,6 @@ class OneSlackSSVM(BaseSSVM):
             for i, idx in enumerate(inactive):
                 del constraints[idx - i]
                 del self.alphas[idx - i]
-
-        # Support vectors have non zero lagrange multipliers
-        sv = a > self.inactive_threshold * C
-        if self.verbose > 1:
-            print("%d support vectors out of %d points" % (np.sum(sv),
-                                                           n_constraints))
-        self.w = np.dot(a, psi_matrix)
-        # we needed to flip the sign to make the dual into a minimization
-        # problem
-        return -solution['primal objective']
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
                               old_constraints, break_on_bad):
@@ -348,7 +351,7 @@ class OneSlackSSVM(BaseSSVM):
         self.w = np.zeros(self.problem.size_psi)
         if constraints is None:
             constraints = []
-        self.objective_curve_, self.primal_objective_curve = [], []
+        self.objective_curve_, self.primal_objective_curve_ = [], []
         self.alphas = []  # dual solutions
         self.last_slack_ = -1
         # append constraint given by ground truth to make our life easier
@@ -381,15 +384,13 @@ class OneSlackSSVM(BaseSSVM):
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
-                if self.verbose:
-                    # really primal objective
-                    last_slack = np.max([(-np.dot(self.w, dpsi) + loss_mean)
-                                         for dpsi, loss_mean in constraints])
-                    primal_objective = (self.C * len(X)
-                                        * np.max(last_slack, 0)
-                                        + np.sum(self.w ** 2) / 2)
-                    print("primal objective: %f" % primal_objective)
-                    self.primal_objective_curve_.append(primal_objective)
+                # really primal objective
+                last_slack = np.max([(-np.dot(self.w, dpsi) + loss_mean)
+                                     for dpsi, loss_mean in constraints])
+                primal_objective = (self.C * len(X)
+                                    * np.max(last_slack, 0)
+                                    + np.sum(self.w ** 2) / 2)
+                self.primal_objective_curve_.append(primal_objective)
 
                 objective = self._solve_1_slack_qp(constraints,
                                                    n_samples=len(X))
@@ -401,8 +402,9 @@ class OneSlackSSVM(BaseSSVM):
                     cutting_plane_objective = (self.C * len(X)
                                                * self.last_slack_
                                                + np.sum(self.w ** 2) / 2)
-                    print("dual objective: %f, cutting plane objective: %f"
-                          % (objective, cutting_plane_objective))
+                    print("dual objective: %f, cutting plane objective: %f,"
+                          " primal objective %f" % (objective,
+                          cutting_plane_objective, primal_objective))
                     if (np.abs(cutting_plane_objective - objective)
                             / np.abs(objective) > .1):
                         from IPython.core.debugger import Tracer
