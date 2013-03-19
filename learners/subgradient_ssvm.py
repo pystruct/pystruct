@@ -178,8 +178,8 @@ class SubgradientStructuredSVM(BaseSSVM):
                         self._solve_subgradient(dpsi, n_samples)
 
                 # some statistics
-                objective += np.sum(self.w ** 2) / self.C / 2.
-                objective /= float(n_samples)
+                objective *= self.C
+                objective += np.sum(self.w ** 2) / 2.
 
                 if positive_slacks == 0:
                     print("No additional constraints")
