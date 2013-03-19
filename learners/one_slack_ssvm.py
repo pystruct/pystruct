@@ -348,7 +348,7 @@ class OneSlackSSVM(BaseSSVM):
         self.w = np.zeros(self.problem.size_psi)
         if constraints is None:
             constraints = []
-        self.objective_curve_ = []
+        self.objective_curve_, self.primal_objective_curve = [], []
         self.alphas = []  # dual solutions
         self.last_slack_ = -1
         # append constraint given by ground truth to make our life easier
@@ -381,6 +381,16 @@ class OneSlackSSVM(BaseSSVM):
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
+                if self.verbose:
+                    # really primal objective
+                    last_slack = np.max([(-np.dot(self.w, dpsi) + loss_mean)
+                                         for dpsi, loss_mean in constraints])
+                    primal_objective = (self.C * len(X)
+                                        * np.max(last_slack, 0)
+                                        + np.sum(self.w ** 2) / 2)
+                    print("primal objective: %f" % primal_objective)
+                    self.primal_objective_curve_.append(primal_objective)
+
                 objective = self._solve_1_slack_qp(constraints,
                                                    n_samples=len(X))
                 self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
@@ -388,12 +398,12 @@ class OneSlackSSVM(BaseSSVM):
                 self.last_slack_ = max(self.last_slack_, 0)
 
                 if self.verbose > 0:
-                    primal_objective = (self.C * len(X)
-                                        * np.max(self.last_slack_, 0)
-                                        + np.sum(self.w ** 2) / 2)
-                    print("dual objective: %f, primal objective: %f"
-                          % (objective, primal_objective))
-                    if (np.abs(primal_objective - objective)
+                    cutting_plane_objective = (self.C * len(X)
+                                               * self.last_slack_
+                                               + np.sum(self.w ** 2) / 2)
+                    print("dual objective: %f, cutting plane objective: %f"
+                          % (objective, cutting_plane_objective))
+                    if (np.abs(cutting_plane_objective - objective)
                             / np.abs(objective) > .1):
                         from IPython.core.debugger import Tracer
                         Tracer()()
