@@ -386,8 +386,7 @@ class OneSlackSSVM(BaseSSVM):
                 constraints.append((dpsi, loss_mean))
 
                 # really primal objective
-                last_slack = np.max([(-np.dot(self.w, dpsi) + loss_mean)
-                                     for dpsi, loss_mean in constraints])
+                last_slack = -np.dot(self.w, dpsi) + loss_mean
                 primal_objective = (self.C * len(X)
                                     * np.max(last_slack, 0)
                                     + np.sum(self.w ** 2) / 2)
