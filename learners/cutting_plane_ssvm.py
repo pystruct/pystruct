@@ -69,6 +69,13 @@ class StructuredSVM(BaseSSVM):
         of the dual objective and stop only if no more constraints can be
         found.
 
+    inactive_threshold : float, default=1e-5
+        Threshold for dual variable of a constraint to be considered inactive.
+
+    inactive_window : float, default=50
+        Window for measuring inactivity. If a constraint is inactive for
+        ``inactive_window`` iterations, it will be pruned from the QP.
+        If set to 0, no constraints will be removed.
 
     Attributes
     ----------
@@ -88,7 +95,8 @@ class StructuredSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, batch_size=100,
-                 tol=-10, logger=None):
+                 tol=-10, inactive_threshold=1e-10,
+                 inactive_window=0, logger=None):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -99,6 +107,8 @@ class StructuredSVM(BaseSSVM):
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
         self.tol = tol
+        self.inactive_threshold = inactive_threshold
+        self.inactive_window = inactive_window
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
@@ -148,7 +158,7 @@ class StructuredSVM(BaseSSVM):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
-        self.alphas.append(a)
+        self.prune_constraints(constraints, a)
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
@@ -312,3 +322,31 @@ class StructuredSVM(BaseSSVM):
         self.objective_curve_ = objective_curve
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
+
+    def prune_constraints(self, constraints, a):
+        pass
+        # FIXME
+        # append list for new constraint
+        #self.alphas.extend([[] for i in xrange(len(a) - len(self.alphas))])
+        #flat_constraints = [constraint for sample in constraints for
+        #constraint #in sample]
+        #assert(len(self.alphas) == len(flat_constraints))
+        #for constraint, alpha in zip(self.alphas, a):
+            #constraint.append(alpha)
+            #constraint = constraint[-self.inactive_window:]
+
+        ## prune unused constraints:
+        ## if the max of alpha in last 50 iterations was small, throw away
+        #if self.inactive_window != 0:
+            #max_active = [np.max(constr[-self.inactive_window:])
+                          #for constr in self.alphas]
+            ## find strongest constraint that is not ground truth constraint
+            #strongest = np.max(max_active[1:])
+            #inactive = max_active < self.inactive_threshold * strongest
+            #idx = 0
+            #for sample in constraints:
+                #for i, const in reversed(list(enumerate(sample))):
+                    #if inactive[idx]:
+                        #del const[i]
+                        #del self.alphas[idx]
+                    #idx += 1
