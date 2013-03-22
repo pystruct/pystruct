@@ -301,7 +301,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def _find_new_constraint(self, X, Y, psi_gt, constraints):
+    def _find_new_constraint(self, X, Y, psi_gt, constraints, check=True):
         if self.n_jobs != 1:
             # do inference in parallel
             verbose = max(0, self.verbose - 3)
@@ -318,8 +318,9 @@ class OneSlackSSVM(BaseSSVM):
         loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
         violation = loss_mean - np.dot(self.w, dpsi)
-        if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
-                                      break_on_bad=self.break_on_bad):
+        if check and self._check_bad_constraint(
+                violation, dpsi, loss_mean, constraints,
+                break_on_bad=self.break_on_bad):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
@@ -421,4 +422,15 @@ class OneSlackSSVM(BaseSSVM):
             pass
         self.constraints_ = constraints
         print("calls to inference: %d" % self.problem.inference_calls)
+        # compute final objective:
+        Y_hat, dpsi, loss_mean = self._find_new_constraint(
+            X, Y, psi_gt, constraints, check=False)
+        last_slack = -np.dot(self.w, dpsi) + loss_mean
+        primal_objective = (self.C * len(X)
+                            * np.max(last_slack, 0)
+                            + np.sum(self.w ** 2) / 2)
+        self.primal_objective_curve_.append(primal_objective)
+        if self.verbose > 0:
+            print("final primal objective: %f gap: %f"
+                  % (primal_objective, primal_objective - objective))
         return self
