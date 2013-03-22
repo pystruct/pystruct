@@ -11,9 +11,6 @@ class BinarySVMProblem(StructuredProblem):
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
 
-    Needless to say, this implementation is only for demonstration and testing
-    purposes.
-
     Parameters
     ----------
     n_features : int
@@ -124,19 +121,31 @@ class CrammerSingerSVMProblem(StructuredProblem):
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
 
-    Needless to say, this implementation is only for demonstration and testing
-    purposes.
-
     Parameters
     ----------
     n_features : int
         Number of features of inputs x.
+
+    n_classes : int, default=2
+        Number of classes in dataset.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
     """
-    def __init__(self, n_features, n_classes=2):
+    def __init__(self, n_features, n_classes=2, class_weight=None):
         # one weight-vector per class
         self.size_psi = n_classes * n_features
         self.n_states = n_classes
         self.n_features = n_features
+        if class_weight is not None:
+            if len(class_weight) != n_classes:
+                raise ValueError("class_weight must have length n_classes or"
+                                 " be None")
+            class_weight = np.array(class_weight)
+        else:
+            class_weight = np.ones(n_classes)
+        self.class_weight = class_weight
         self.inference_calls = 0
 
     def __repr__(self):
@@ -171,6 +180,8 @@ class CrammerSingerSVMProblem(StructuredProblem):
         out = np.zeros((self.n_states, self.n_features))
         #for l in xrange(self.n_states):
             #result[l, :] = np.sum(X[Y == l, :], axis=0)
+        assert(X.shape[0] == Y.shape[0])
+        assert(X.shape[1] == self.n_features)
         crammer_singer_psi(X, Y, out)
         return out.ravel()
 
@@ -226,12 +237,12 @@ class CrammerSingerSVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
-        scores[y] -= 1
+        scores[y] -= self.class_weight[y]
         return np.argmax(scores)
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
-        scores[np.arange(X.shape[0]), Y] -= 1
+        scores[np.arange(X.shape[0]), Y] -= self.class_weight[Y]
         return np.argmax(scores, axis=1)
 
     def batch_inference(self, X, w, relaxed=None):
@@ -239,4 +250,4 @@ class CrammerSingerSVMProblem(StructuredProblem):
         return np.argmax(scores, axis=1)
 
     def batch_loss(self, Y, Y_hat):
-        return Y != Y_hat
+        return self.class_weight[Y] * (Y != Y_hat)
