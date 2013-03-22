@@ -47,6 +47,10 @@ class SubgradientStructuredSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
+    batch_size : int, default=None
+        Ignored if n_jobs > 1. If n_jobs=1, inference will be done in batches
+        of size batch_size.
+
     show_loss_every : int, default=0
         Controlls how often the hamming loss is computed (for monitoring
         purposes). Zero means never, otherwise it will be computed very
@@ -75,7 +79,7 @@ class SubgradientStructuredSVM(BaseSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
-                 break_on_no_constraints=True, logger=None):
+                 break_on_no_constraints=True, logger=None, batch_size=None):
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
@@ -86,6 +90,7 @@ class SubgradientStructuredSVM(BaseSSVM):
         self.adagrad = adagrad
         self.grad_old = np.zeros(self.problem.size_psi)
         self.decay_exponent = decay_exponent
+        self.batch_size = batch_size
 
     def _solve_subgradient(self, dpsi, n_samples):
         """Do a single subgradient step."""
@@ -132,50 +137,14 @@ class SubgradientStructuredSVM(BaseSSVM):
         print("Training primal subgradient structural SVM")
         self.w = getattr(self, "w", np.zeros(self.problem.size_psi))
         objective_curve = []
-        n_samples = len(X)
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
-                positive_slacks = 0
-                objective = 0.
-                verbose = max(0, self.verbose - 3)
-
                 if self.n_jobs == 1:
-                    # online learning
-                    for x, y in zip(X, Y):
-                        y_hat, delta_psi, slack, loss = \
-                            find_constraint(self.problem, x, y, self.w)
-                        objective += slack
-                        if slack > 0:
-                            positive_slacks += 1
-                        self._solve_subgradient(delta_psi, n_samples)
+                    objective, positive_slacks = self._sequential_learning(X,
+                                                                           Y)
                 else:
-                    # generate batches of size n_jobs
-                    # to speed up inference
-                    if self.n_jobs == -1:
-                        n_jobs = cpu_count()
-                    else:
-                        n_jobs = self.j_jobs
-
-                    n_batches = int(np.ceil(float(len(X)) / n_jobs))
-                    slices = gen_even_slices(n_samples, n_batches)
-                    for batch in slices:
-                        X_b = X[batch]
-                        Y_b = Y[batch]
-                        candidate_constraints = Parallel(
-                            n_jobs=self.n_jobs,
-                            verbose=verbose)(delayed(find_constraint)(
-                                self.problem, x, y, self.w)
-                                for x, y in zip(X_b, Y_b))
-                        dpsi = np.zeros(self.problem.size_psi)
-                        for x, y, constraint in zip(X_b, Y_b,
-                                                    candidate_constraints):
-                            y_hat, delta_psi, slack, loss = constraint
-                            if slack > 0:
-                                objective += slack
-                                dpsi += delta_psi
-                                positive_slacks += 1
-                        self._solve_subgradient(dpsi, n_samples)
+                    objective, positive_slacks = self._parallel_learning(X, Y)
 
                 # some statistics
                 objective *= self.C
@@ -207,3 +176,69 @@ class SubgradientStructuredSVM(BaseSSVM):
             print("final objective: %f" % objective_curve[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
+
+    def _parallel_learning(self, X, Y):
+        n_samples = len(X)
+        objective, positive_slacks = 0, 0
+        verbose = max(0, self.verbose - 3)
+        if self.batch_size is not None:
+            raise ValueError("If n_jobs != 1, batch_size needs to"
+                             "be None")
+        # generate batches of size n_jobs
+        # to speed up inference
+        if self.n_jobs == -1:
+            n_jobs = cpu_count()
+        else:
+            n_jobs = self.j_jobs
+
+        n_batches = int(np.ceil(float(len(X)) / n_jobs))
+        slices = gen_even_slices(n_samples, n_batches)
+        for batch in slices:
+            X_b = X[batch]
+            Y_b = Y[batch]
+            candidate_constraints = Parallel(
+                n_jobs=self.n_jobs,
+                verbose=verbose)(delayed(find_constraint)(
+                    self.problem, x, y, self.w)
+                    for x, y in zip(X_b, Y_b))
+            dpsi = np.zeros(self.problem.size_psi)
+            for x, y, constraint in zip(X_b, Y_b,
+                                        candidate_constraints):
+                y_hat, delta_psi, slack, loss = constraint
+                if slack > 0:
+                    objective += slack
+                    dpsi += delta_psi
+                    positive_slacks += 1
+            self._solve_subgradient(dpsi, n_samples)
+        return objective, positive_slacks
+
+    def _sequential_learning(self, X, Y):
+        n_samples = len(X)
+        objective, positive_slacks = 0, 0
+        if self.batch_size in [None, 1]:
+            # online learning
+            for x, y in zip(X, Y):
+                y_hat, delta_psi, slack, loss = \
+                    find_constraint(self.problem, x, y, self.w)
+                objective += slack
+                if slack > 0:
+                    positive_slacks += 1
+                self._solve_subgradient(delta_psi, n_samples)
+        else:
+            # mini batch learning
+            n_batches = int(np.ceil(float(len(X)) / self.batch_size))
+            slices = gen_even_slices(n_samples, n_batches)
+            for batch in slices:
+                X_b = X[batch]
+                Y_b = Y[batch]
+                Y_hat = self.problem.batch_loss_augmented_inference(
+                    X_b, Y_b, self.w, relaxed=True)
+                delta_psi = (self.problem.batch_psi(X_b, Y_b)
+                             - self.problem.batch_psi(X_b, Y_hat))
+                loss = np.sum(self.problem.batch_loss(Y_b, Y_hat))
+
+                violation = loss - np.dot(self.w, delta_psi)
+                objective += violation
+                positive_slacks += self.batch_size
+                self._solve_subgradient(delta_psi / len(X_b), n_samples)
+        return objective, positive_slacks
