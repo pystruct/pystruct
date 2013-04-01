@@ -18,7 +18,8 @@ def test_crammer_singer_problem():
     pbl = CrammerSingerSVMProblem(n_features=3, n_classes=3)
 
     # test inference energy
-    w = np.random.uniform(size=pbl.size_psi)
+    rng = np.random.RandomState(0)
+    w = rng.uniform(size=pbl.size_psi)
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
     assert_equal(energy, np.dot(w, pbl.psi(x, y)))
@@ -31,6 +32,14 @@ def test_crammer_singer_problem():
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
     assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
 
+    # test batch versions
+    Y_batch = pbl.batch_inference(X, w)
+    Y_ = [pbl.inference(x, w) for x in X]
+    assert_array_equal(Y_batch, Y_)
+
+    Y_batch = pbl.batch_loss_augmented_inference(X, Y, w)
+    Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
+    assert_array_equal(Y_batch, Y_)
 
 def test_crammer_singer_problem_class_weight():
     X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
@@ -40,8 +49,9 @@ def test_crammer_singer_problem_class_weight():
     pbl = CrammerSingerSVMProblem(n_features=3, n_classes=3,
                                   class_weight=[1, 2, 1])
 
+    rng = np.random.RandomState(0)
+    w = rng.uniform(size=pbl.size_psi)
     # test inference energy
-    w = np.random.uniform(size=pbl.size_psi)
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
     assert_equal(energy, np.dot(w, pbl.psi(x, y)))
@@ -53,6 +63,15 @@ def test_crammer_singer_problem_class_weight():
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
     assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+
+    # test batch versions
+    Y_batch = pbl.batch_inference(X, w)
+    Y_ = [pbl.inference(x, w) for x in X]
+    assert_array_equal(Y_batch, Y_)
+
+    Y_batch = pbl.batch_loss_augmented_inference(X, Y, w)
+    Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
+    assert_array_equal(Y_batch, Y_)
 
 
 def test_simple_1d_dataset_cutting_plane():

@@ -248,7 +248,9 @@ class CrammerSingerSVMProblem(StructuredProblem):
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
-        scores[np.arange(X.shape[0]), Y] -= self.class_weight[Y]
+        other_states = (np.arange(self.n_states) != np.vstack(Y))
+        class_weights_repeat = np.repeat(self.class_weight[np.newaxis, :], X.shape[0], axis=0)
+        scores[other_states] += class_weights_repeat[other_states]
         return np.argmax(scores, axis=1)
 
     def batch_inference(self, X, w, relaxed=None):
