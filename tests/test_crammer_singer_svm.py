@@ -1,7 +1,7 @@
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_greater
+from nose.tools import assert_greater, assert_equal
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
@@ -9,6 +9,50 @@ from sklearn.metrics import f1_score
 from pystruct.problems import CrammerSingerSVMProblem
 from pystruct.learners import (OneSlackSSVM, StructuredSVM,
                                SubgradientStructuredSVM)
+
+def test_crammer_singer_problem():
+    X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
+    # we have to add a constant 1 feature by hand :-/
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+
+    pbl = CrammerSingerSVMProblem(n_features=3, n_classes=3)
+
+    # test inference energy
+    w = np.random.uniform(size=pbl.size_psi)
+    x = X[0]
+    y, energy = pbl.inference(x, w, return_energy=True)
+    assert_equal(energy, np.dot(w, pbl.psi(x, y)))
+
+    # test inference_result:
+    energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
+    assert_equal(np.argmax(energies), y)
+
+    # test loss_augmented inference energy
+    y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
+    assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+
+
+def test_crammer_singer_problem_class_weight():
+    X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
+    # we have to add a constant 1 feature by hand :-/
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+
+    pbl = CrammerSingerSVMProblem(n_features=3, n_classes=3,
+                                  class_weight=[1, 2, 1])
+
+    # test inference energy
+    w = np.random.uniform(size=pbl.size_psi)
+    x = X[0]
+    y, energy = pbl.inference(x, w, return_energy=True)
+    assert_equal(energy, np.dot(w, pbl.psi(x, y)))
+
+    # test inference_result:
+    energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
+    assert_equal(np.argmax(energies), y)
+
+    # test loss_augmented inference energy
+    y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
+    assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
 
 
 def test_simple_1d_dataset_cutting_plane():

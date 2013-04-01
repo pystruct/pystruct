@@ -185,7 +185,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
         crammer_singer_psi(X, Y, out)
         return out.ravel()
 
-    def inference(self, x, w, relaxed=None):
+    def inference(self, x, w, relaxed=None, return_energy=False):
         """Inference for x using parameters w.
 
         Finds armin_y np.dot(w, psi(x, y)), i.e. best possible prediction.
@@ -210,9 +210,12 @@ class CrammerSingerSVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
+        if return_energy:
+            return np.argmax(scores), np.max(scores)
         return np.argmax(scores)
 
-    def loss_augmented_inference(self, x, y, w, relaxed=None):
+    def loss_augmented_inference(self, x, y, w, relaxed=None,
+                                 return_energy=False):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
@@ -237,7 +240,10 @@ class CrammerSingerSVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
-        scores[y] -= self.class_weight[y]
+        other_classes = np.arange(self.n_states) != y
+        scores[other_classes] += self.class_weight[other_classes]
+        if return_energy:
+            return np.argmax(scores), np.max(scores)
         return np.argmax(scores)
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
