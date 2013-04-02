@@ -241,16 +241,16 @@ class CrammerSingerSVMProblem(StructuredProblem):
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
         other_classes = np.arange(self.n_states) != y
-        scores[other_classes] += self.class_weight[other_classes]
+        scores[other_classes] += self.class_weight[y]
         if return_energy:
             return np.argmax(scores), np.max(scores)
         return np.argmax(scores)
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
-        other_states = (np.arange(self.n_states) != np.vstack(Y))
-        class_weights_repeat = np.repeat(self.class_weight[np.newaxis, :], X.shape[0], axis=0)
-        scores[other_states] += class_weights_repeat[other_states]
+        other_classes = (np.arange(self.n_states) != np.vstack(Y))
+        scores[other_classes] += np.repeat(self.class_weight[Y],
+                                           self.n_states - 1)
         return np.argmax(scores, axis=1)
 
     def batch_inference(self, X, w, relaxed=None):
@@ -259,3 +259,6 @@ class CrammerSingerSVMProblem(StructuredProblem):
 
     def batch_loss(self, Y, Y_hat):
         return self.class_weight[Y] * (Y != Y_hat)
+
+    def loss(self, y, y_hat):
+        return self.class_weight[y] * (y != y_hat)

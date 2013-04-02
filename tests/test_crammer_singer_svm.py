@@ -41,6 +41,10 @@ def test_crammer_singer_problem():
     Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
     assert_array_equal(Y_batch, Y_)
 
+    loss_batch = pbl.batch_loss(Y, Y_)
+    loss = [pbl.loss(y, y_) for y, y_ in zip(Y, Y_)]
+    assert_array_equal(loss_batch, loss)
+
 def test_crammer_singer_problem_class_weight():
     X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
     # we have to add a constant 1 feature by hand :-/
@@ -72,6 +76,10 @@ def test_crammer_singer_problem_class_weight():
     Y_batch = pbl.batch_loss_augmented_inference(X, Y, w)
     Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
     assert_array_equal(Y_batch, Y_)
+
+    loss_batch = pbl.batch_loss(Y, Y_)
+    loss = [pbl.loss(y, y_) for y, y_ in zip(Y, Y_)]
+    assert_array_equal(loss_batch, loss)
 
 
 def test_simple_1d_dataset_cutting_plane():
@@ -166,7 +174,7 @@ def test_class_weights():
     svm.fit(X, Y)
 
     weights = 1. / np.bincount(Y)
-    weights /= np.sum(weights)
+    weights *= len(weights) / np.sum(weights)
     pbl_class_weight = CrammerSingerSVMProblem(n_features=3, n_classes=3,
                                                class_weight=weights)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=10, C=10)
