@@ -195,7 +195,14 @@ class SaveLogger(object):
             if self.verbose > 0:
                 print("saving %s to file %s" % (learner, self.file_name))
             with open(self.file_name, "wb") as f:
-                cPickle.dump(learner, f)
+                if hasattr(learner, 'inference_cache_'):
+                    # don't store the large inference cache!
+                    learner.inference_cache_, tmp = (None,
+                                                     learner.inference_cache_)
+                    cPickle.dump(learner, f, -1)
+                    learner.inference_cache_ = tmp
+                else:
+                    cPickle.dump(learner, f, -1)
 
     def load(self):
         with open(self.file_name) as f:
