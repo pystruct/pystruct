@@ -218,7 +218,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 1:
             print("New violation: %f difference to last: %f"
                   % (violation, violation_difference))
-        if violation_difference < 0 and violation > 0:
+        if violation_difference < 0 and violation > 0 and break_on_bad:
             from IPython.core.debugger import Tracer
             Tracer()()
         if (violation_difference) < self.tol:
@@ -354,6 +354,7 @@ class OneSlackSSVM(BaseSSVM):
         if constraints is None:
             constraints = []
         self.objective_curve_, self.primal_objective_curve_ = [], []
+        self.cached_constraint_ = []
         self.alphas = []  # dual solutions
         self.last_slack_ = -1
         # append constraint given by ground truth to make our life easier
@@ -368,12 +369,14 @@ class OneSlackSSVM(BaseSSVM):
 
             for iteration in xrange(self.max_iter):
                 # main loop
+                cached_constraint = False
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
                     print(self)
                 try:
                     Y_hat, dpsi, loss_mean = self._constraint_from_cache(
                         X, Y, psi_gt, constraints)
+                    cached_constraint = True
                 except NoConstraint:
                     try:
                         Y_hat, dpsi, loss_mean = self._find_new_constraint(
@@ -392,6 +395,7 @@ class OneSlackSSVM(BaseSSVM):
                                     * np.max(last_slack, 0)
                                     + np.sum(self.w ** 2) / 2)
                 self.primal_objective_curve_.append(primal_objective)
+                self.cached_constraint_.append(cached_constraint)
 
                 objective = self._solve_1_slack_qp(constraints,
                                                    n_samples=len(X))
@@ -407,7 +411,7 @@ class OneSlackSSVM(BaseSSVM):
                           " primal objective %f" % (objective,
                           cutting_plane_objective, primal_objective))
                     if (np.abs(cutting_plane_objective - objective)
-                            / np.abs(objective) > .1):
+                            / max(np.abs(objective), 1) > .1):
                         from IPython.core.debugger import Tracer
                         Tracer()()
                 # we only do this here because we didn't add the gt to the
