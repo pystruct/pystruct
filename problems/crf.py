@@ -6,7 +6,8 @@ from ..inference import inference_dispatch
 
 class CRF(StructuredProblem):
     """Abstract base class"""
-    def __init__(self, n_states=2, n_features=None, inference_method='qpbo'):
+    def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
+                 class_weight=None):
         self.n_states = n_states
         self.inference_method = inference_method
         self.inference_calls = 0
@@ -14,6 +15,14 @@ class CRF(StructuredProblem):
             # backward compatibilty hack
             n_features = n_states
         self.n_features = n_features
+
+        if class_weight is not None:
+            if len(class_weight) != n_states:
+                raise ValueError("class_weight must have length n_states or"
+                                 " be None")
+            self.class_weight = np.array(class_weight)
+        else:
+            self.class_weight = np.ones(n_states)
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s)"
@@ -82,7 +91,8 @@ class CRF(StructuredProblem):
         for l in np.arange(self.n_states):
             # for each class, decrement features
             # for loss-agumention
-            unary_potentials[y != l, l] += 1.
+            mask = y != l
+            unary_potentials[mask, l] += self.class_weight[y][mask]
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,

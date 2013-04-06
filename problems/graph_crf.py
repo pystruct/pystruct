@@ -29,9 +29,15 @@ class GraphCRF(CRF):
             - 'dai' for LibDAI bindings (which has another parameter).
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='qpbo'):
-        CRF.__init__(self, n_states, n_features, inference_method)
+    def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
+                 class_weight=None):
+        CRF.__init__(self, n_states, n_features, inference_method,
+                     class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = (n_states * self.n_features
                          + n_states * (n_states + 1) / 2)

@@ -52,6 +52,8 @@ class StructuredProblem(object):
         # hamming loss:
         if isinstance(y_hat, tuple):
             return self.continuous_loss(y, y_hat[0])
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y] * (y != y_hat))
         return np.sum(y != y_hat)
 
     def batch_loss(self, Y, Y_hat):
@@ -65,14 +67,15 @@ class StructuredProblem(object):
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
-        y_one_hot = np.zeros_like(y_hat)
         if y.ndim == 2:
             raise ValueError("FIXME!")
         gx = np.indices(y.shape)
-        y_one_hot[gx, y] = 1
 
         # all entries minus correct ones
-        return np.prod(y.shape) - np.sum(y_one_hot * y_hat)
+        result = 1 - y_hat[gx, y]
+        if hasattr(self, 'class_weight'):
+            return self.class_weight[y] * result
+        return np.sum(result)
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         print("FALLBACK no loss augmented inference found")
