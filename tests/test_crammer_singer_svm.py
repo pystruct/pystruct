@@ -1,7 +1,7 @@
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_greater, assert_equal
+from nose.tools import assert_greater, assert_equal, assert_almost_equal
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
@@ -22,15 +22,15 @@ def test_crammer_singer_problem():
     w = rng.uniform(size=pbl.size_psi)
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
-    assert_equal(energy, np.dot(w, pbl.psi(x, y)))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)))
 
-    # test inference_result:
+    # test inference result:
     energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
     assert_equal(np.argmax(energies), y)
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)
