@@ -188,7 +188,8 @@ class SaveLogger(object):
         self.verbose = verbose
 
     def __repr__(self):
-        return '%s(file_name="%s")' % (self.__class__.__name__, self.file_name)
+        return ('%s(file_name="%s", save_every=%s)'
+                % (self.__class__.__name__, self.file_name, self.save_every))
 
     def __call__(self, learner, iteration=0):
         if iteration == 'final' or not iteration % self.save_every:
