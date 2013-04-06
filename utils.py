@@ -191,7 +191,7 @@ class SaveLogger(object):
         return '%s(file_name="%s")' % (self.__class__.__name__, self.file_name)
 
     def __call__(self, learner, iteration=0):
-        if not iteration % self.save_every:
+        if iteration == 'final' or not iteration % self.save_every:
             if self.verbose > 0:
                 print("saving %s to file %s" % (learner, self.file_name))
             with open(self.file_name, "wb") as f:

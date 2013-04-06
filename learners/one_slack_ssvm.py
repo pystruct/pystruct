@@ -251,7 +251,8 @@ class OneSlackSSVM(BaseSSVM):
         """Updated cached constraints."""
         if self.inference_cache == 0:
             return
-        if not hasattr(self, "inference_cache_"):
+        if (not hasattr(self, "inference_cache_")
+                or self.inference_cache_ is None):
             self.inference_cache_ = [[] for y in Y_hat]
 
         def constraint_equal(y_1, y_2):
@@ -324,7 +325,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def fit(self, X, Y, constraints=None):
+    def fit(self, X, Y, warm_start=False):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -344,22 +345,28 @@ class OneSlackSSVM(BaseSSVM):
             y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
             and loss is the loss for predicting y_hat instead of the true label
             y.
+
+        warm_start : bool, default=False
+            Whether we are warmstarting from a previous fit.
         """
         print("Training 1-slack dual structural SVM")
         if self.verbose < 2:
             cvxopt.solvers.options['show_progress'] = False
         else:
             cvxopt.solvers.options['show_progress'] = True
-        self.w = np.zeros(self.problem.size_psi)
-        if constraints is None:
+
+        if not warm_start:
+            self.w = np.zeros(self.problem.size_psi)
             constraints = []
-        self.objective_curve_, self.primal_objective_curve_ = [], []
-        self.cached_constraint_ = []
-        self.alphas = []  # dual solutions
-        self.last_slack_ = -1
-        # append constraint given by ground truth to make our life easier
-        constraints.append((np.zeros(self.problem.size_psi), 0))
-        self.alphas.append([self.C])
+            self.objective_curve_, self.primal_objective_curve_ = [], []
+            self.cached_constraint_ = []
+            self.alphas = []  # dual solutions
+            self.last_slack_ = -1
+            # append constraint given by ground truth to make our life easier
+            constraints.append((np.zeros(self.problem.size_psi), 0))
+            self.alphas.append([self.C])
+        else:
+            constraints = self.constraints_
 
         # get the psi of the ground truth
         psi_gt = self.problem.batch_psi(X, Y)
@@ -417,6 +424,7 @@ class OneSlackSSVM(BaseSSVM):
                 # we only do this here because we didn't add the gt to the
                 # constraints, which makes the dual behave a bit oddly
                 self.objective_curve_.append(objective)
+                self.constraints_ = constraints
                 if self.logger is not None:
                     self.logger(self, iteration)
 
@@ -424,7 +432,7 @@ class OneSlackSSVM(BaseSSVM):
                     print(self.w)
         except KeyboardInterrupt:
             pass
-        self.constraints_ = constraints
+        self.logger(self, 'final')
         print("calls to inference: %d" % self.problem.inference_calls)
         # compute final objective:
         Y_hat, dpsi, loss_mean = self._find_new_constraint(
