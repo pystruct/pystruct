@@ -74,7 +74,7 @@ class StructuredProblem(object):
         # all entries minus correct ones
         result = 1 - y_hat[gx, y]
         if hasattr(self, 'class_weight'):
-            return self.class_weight[y] * result
+            return np.sum(self.class_weight[y] * result)
         return np.sum(result)
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):

@@ -325,7 +325,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def fit(self, X, Y, warm_start=False):
+    def fit(self, X, Y, constraints=None, warm_start=False):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -338,13 +338,7 @@ class OneSlackSSVM(BaseSSVM):
             Training labels. Contains the strctured labels for inputs in X.
             Needs to have the same length as X.
 
-        contraints : iterable
-            Known constraints for warm-starts. List of same length as X.
-            Each entry is itself a list of constraints for a given instance x .
-            Each constraint is of the form [y_hat, delta_psi, loss], where
-            y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
-            and loss is the loss for predicting y_hat instead of the true label
-            y.
+        contraints : ignored
 
         warm_start : bool, default=False
             Whether we are warmstarting from a previous fit.
@@ -432,7 +426,8 @@ class OneSlackSSVM(BaseSSVM):
                     print(self.w)
         except KeyboardInterrupt:
             pass
-        self.logger(self, 'final')
+        if self.logger is not None:
+            self.logger(self, 'final')
         print("calls to inference: %d" % self.problem.inference_calls)
         # compute final objective:
         Y_hat, dpsi, loss_mean = self._find_new_constraint(
