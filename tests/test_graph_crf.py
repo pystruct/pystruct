@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 ##from nose.tools import assert_equal, assert_almost_equal, assert_raises
-from nose.tools import assert_almost_equal
+from nose.tools import assert_almost_equal, assert_equal
 
 from pystruct.problems import GraphCRF, EdgeTypeGraphCRF
 
@@ -145,3 +145,24 @@ def test_edge_type_graph_crf_energy_lp_relaxed():
                                        return_energy=True)
     assert_almost_equal(energy_lp,
                         -np.dot(w_sym, crf.psi((x, [g_1]), inf_res)))
+
+
+def test_graph_crf_class_weights():
+    # no edges
+    crf = GraphCRF(n_states=3, n_features=3, inference_method='dai')
+    w = np.array([1, 0, 0,  # unary
+                  0, 1, 0,
+                  0, 0, 1,
+                  0,        # pairwise
+                  0, 0,
+                  0, 0, 0])
+    x = (np.array([[1, 1.5, 1.1]]), np.empty((0, 2)))
+    assert_equal(crf.inference(x, w), 1)
+    # loss augmented inference picks last
+    assert_equal(crf.loss_augmented_inference(x, [1], w), 2)
+
+    # with class-weights, loss for class 1 is smaller, loss-augmented inference
+    # will find it
+    crf = GraphCRF(n_states=3, n_features=3, inference_method='dai',
+                   class_weight=[1, .1, 1])
+    assert_equal(crf.loss_augmented_inference(x, [1], w), 1)
