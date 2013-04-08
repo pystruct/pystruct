@@ -307,8 +307,8 @@ class StructuredSVM(BaseSSVM):
                       "dual objective: %f" %
                       (new_constraints,
                        objective))
-            if (iteration > 1 and objective_curve[-2]
-                    - objective_curve[-1] < self.tol):
+            if (iteration > 1 and objective_curve[-1]
+                    - objective_curve[-2] < self.tol):
                 print("objective converged.")
                 break
             if self.verbose > 5:
