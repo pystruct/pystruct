@@ -206,6 +206,6 @@ class SaveLogger(object):
                     cPickle.dump(learner, f, -1)
 
     def load(self):
-        with open(self.file_name) as f:
+        with open(self.file_name, "rb") as f:
             learner = cPickle.load(f)
         return learner

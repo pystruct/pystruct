@@ -8,7 +8,7 @@ from sklearn.cross_validation import train_test_split
 
 from pystruct.problems import CrammerSingerSVMProblem
 from pystruct.learners import (StructuredSVM, OneSlackSSVM,
-                               SubgradientStructuredSVM)
+                               SubgradientSSVM)
 
 # do a binary digit classification
 #digits = fetch_mldata("MNIST original")
@@ -29,8 +29,8 @@ n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
                             batch_size=-1, tol=1e-2)
 one_slack_svm = OneSlackSSVM(pbl, verbose=50, check_constraints=False, C=.20,
                              max_iter=10000, tol=.001, show_loss_every=10)
-subgradient_svm = SubgradientStructuredSVM(pbl, C=20, learning_rate=0.000001,
-                                           max_iter=1000, verbose=0)
+subgradient_svm = SubgradientSSVM(pbl, C=20, learning_rate=0.000001,
+                                  max_iter=1000, verbose=0)
 
 # n-slack cutting plane ssvm
 #start = time()

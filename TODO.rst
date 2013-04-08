@@ -9,3 +9,4 @@ TODO
 * organize tests
 * finish multilabel
 * handwritten sequence classification example
+* rename StructuredSVM to NSlackSSVM - or make a superclass from one-slack and n-slack?

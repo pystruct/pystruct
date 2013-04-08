@@ -5,7 +5,7 @@ from nose.tools import assert_true
 from sklearn.datasets import make_blobs
 
 from pystruct.problems import BinarySVMProblem
-from pystruct.learners import (StructuredSVM, SubgradientStructuredSVM,
+from pystruct.learners import (StructuredSVM, SubgradientSSVM,
                                OneSlackSSVM)
 
 
@@ -69,8 +69,7 @@ def test_blobs_2d_subgradient():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMProblem(n_features=3)
-    svm = SubgradientStructuredSVM(pbl, verbose=3,
-                                   C=1000)
+    svm = SubgradientSSVM(pbl, verbose=3, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))

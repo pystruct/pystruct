@@ -22,7 +22,7 @@ def main():
     #clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=100, verbose=3,
                              #check_constraints=True, n_jobs=12)
     #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10)
-    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
+    #clf = ssvm.SubgradientSSVM(problem=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,
                                         #learning_rate=0.04,
                                         #n_jobs=-1)

@@ -7,8 +7,8 @@ from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
 
 from pystruct.problems import CrammerSingerSVMProblem
-from pystruct.learners import (OneSlackSSVM, StructuredSVM,
-                               SubgradientStructuredSVM)
+from pystruct.learners import (OneSlackSSVM, StructuredSVM, SubgradientSSVM)
+
 
 def test_crammer_singer_problem():
     X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
@@ -44,6 +44,7 @@ def test_crammer_singer_problem():
     loss_batch = pbl.batch_loss(Y, Y_)
     loss = [pbl.loss(y, y_) for y, y_ in zip(Y, Y_)]
     assert_array_equal(loss_batch, loss)
+
 
 def test_crammer_singer_problem_class_weight():
     X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
@@ -133,7 +134,7 @@ def test_blobs_2d_subgradient():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMProblem(n_features=3, n_classes=3)
-    svm = SubgradientStructuredSVM(pbl, verbose=10, C=1000)
+    svm = SubgradientSSVM(pbl, verbose=10, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))

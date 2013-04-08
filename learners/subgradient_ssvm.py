@@ -7,7 +7,7 @@ from .ssvm import BaseSSVM
 from ..utils import find_constraint
 
 
-class SubgradientStructuredSVM(BaseSSVM):
+class SubgradientSSVM(BaseSSVM):
     """Structured SVM solver using subgradient descent.
 
     Implements a margin rescaled with l1 slack penalty.

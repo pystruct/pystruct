@@ -2,7 +2,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
-from pystruct.learners import LatentSSVM
+from pystruct.learners import (LatentSSVM, StructuredSVM, OneSlackSSVM,
+                               SubgradientSSVM)
 
 import pystruct.toy_datasets as toy
 
@@ -20,9 +21,10 @@ def test_with_crosses():
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 5, verbose=2,
-                             check_constraints=True, n_jobs=-1,
-                             break_on_bad=True)
+            clf = LatentSSVM(StructuredSVM(problem=crf, max_iter=50, C=10. **
+                                           5, verbose=2,
+                                           check_constraints=True, n_jobs=-1,
+                                           break_on_bad=True))
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
             assert_array_equal(np.array(Y_pred), Y)
@@ -30,15 +32,19 @@ def test_with_crosses():
 
 def test_with_crosses_base_svms():
     # very simple dataset. k-means init is perfect
-    for base_svm in ['1-slack', 'n-slack', 'subgradient']:
+    n_labels = 2
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
+                        inference_method='lp')
+    one_slack = OneSlackSSVM(crf)
+    n_slack = StructuredSVM(crf)
+    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
+
+    for base_ssvm in [one_slack, n_slack, subgradient]:
+        base_ssvm.C = 10. ** 5
+        base_ssvm.n_jobs = -1
         X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
                                     total_size=8)
-        n_labels = 2
-        crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
-                            inference_method='lp')
-        clf = LatentSSVM(problem=crf, max_iter=150, C=10. ** 5, verbose=2,
-                         check_constraints=True, n_jobs=-1, break_on_bad=True,
-                         base_svm=base_svm, learning_rate=5)
+        clf = LatentSSVM(base_ssvm=base_ssvm)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(np.array(Y_pred), Y)
@@ -51,8 +57,9 @@ def test_with_crosses_bad_init():
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
-    clf = LatentSSVM(problem=crf, max_iter=50, C=10. ** 3, verbose=2,
-                     check_constraints=True, n_jobs=-1, break_on_bad=True)
+    clf = LatentSSVM(StructuredSVM(problem=crf, max_iter=50, C=10. ** 3,
+                                   verbose=2, check_constraints=True,
+                                   n_jobs=-1, break_on_bad=True))
     H_init = crf.init_latent(X, Y)
 
     mask = np.random.uniform(size=H_init.shape) > .7
@@ -71,9 +78,9 @@ def test_directional_bars():
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSSVM(problem=crf, max_iter=500, C=10. ** 5, verbose=2,
-                         check_constraints=True, n_jobs=-1, break_on_bad=True,
-                         base_svm='1-slack')
+        clf = LatentSSVM(OneSlackSSVM(problem=crf, max_iter=500, C=10. ** 5,
+                                      verbose=2, check_constraints=True,
+                                      n_jobs=-1, break_on_bad=True))
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 

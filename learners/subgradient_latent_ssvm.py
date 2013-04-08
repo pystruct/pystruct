@@ -4,11 +4,11 @@ import numpy as np
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices
 
-from .subgradient_ssvm import SubgradientStructuredSVM
+from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
 
 
-class LatentSubgradientSSVM(SubgradientStructuredSVM):
+class LatentSubgradientSSVM(SubgradientSSVM):
     """Latent Variable Structured SVM solver using subgradient descent.
 
     Implements a margin rescaled with l1 slack penalty.
@@ -78,7 +78,7 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
                  break_on_no_constraints=True):
-        SubgradientStructuredSVM.__init__(
+        SubgradientSSVM.__init__(
             self, problem, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
             momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
@@ -186,11 +186,11 @@ class LatentSubgradientSSVM(SubgradientStructuredSVM):
         return self
 
     def predict(self, X):
-        prediction = SubgradientStructuredSVM.predict(self, X)
+        prediction = SubgradientSSVM.predict(self, X)
         return [self.problem.label_from_latent(h) for h in prediction]
 
     def predict_latent(self, X):
-        return SubgradientStructuredSVM.predict(self, X)
+        return SubgradientSSVM.predict(self, X)
 
     def score(self, X, Y):
         """Compute score as 1 - loss over whole data set.

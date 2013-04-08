@@ -79,6 +79,11 @@ class OneSlackSSVM(BaseSSVM):
         exhausted. Using inference_cache > 0 is only advisable if computation
         time is dominated by inference.
 
+    cache_tol : float, default=None
+        Tolerance when to reject a constraint from cache (and do inference).
+        If None, ``tol`` will be used. Higher values might lead to faster
+        learning.
+
     inactive_threshold : float, default=1e-5
         Threshold for dual variable of a constraint to be considered inactive.
 
@@ -106,7 +111,7 @@ class OneSlackSSVM(BaseSSVM):
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
                  inference_cache=0, inactive_threshold=1e-10,
-                 inactive_window=50, logger=None):
+                 inactive_window=50, logger=None, cache_tol=None):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -116,6 +121,7 @@ class OneSlackSSVM(BaseSSVM):
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
+        self.cache_tol = cache_tol
         self.inference_cache = inference_cache
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
@@ -213,7 +219,7 @@ class OneSlackSSVM(BaseSSVM):
                 del self.alphas[idx]
 
     def _check_bad_constraint(self, violation, dpsi_mean, loss,
-                              old_constraints, break_on_bad):
+                              old_constraints, break_on_bad, tol=None):
         violation_difference = violation - self.last_slack_
         if self.verbose > 1:
             print("New violation: %f difference to last: %f"
@@ -221,7 +227,9 @@ class OneSlackSSVM(BaseSSVM):
         if violation_difference < 0 and violation > 0 and break_on_bad:
             from IPython.core.debugger import Tracer
             Tracer()()
-        if (violation_difference) < self.tol:
+        if tol is None:
+            tol = self.tol
+        if (violation_difference) < tol:
             print("new constraint to weak.")
             return True
         equals = [True for dpsi_, loss_ in old_constraints
@@ -296,7 +304,7 @@ class OneSlackSSVM(BaseSSVM):
 
         violation = loss_mean - np.dot(self.w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
-                                      break_on_bad=False):
+                                      break_on_bad=False, tol=self.cache_tol_):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
@@ -349,6 +357,12 @@ class OneSlackSSVM(BaseSSVM):
         else:
             cvxopt.solvers.options['show_progress'] = True
 
+        # parse cache_tol parameter
+        if self.cache_tol is None or self.cache_tol == 'auto':
+            self.cache_tol_ = self.tol
+        else:
+            self.cache_tol_ = self.cache_tol
+
         if not warm_start:
             self.w = np.zeros(self.problem.size_psi)
             constraints = []
@@ -390,7 +404,7 @@ class OneSlackSSVM(BaseSSVM):
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
-                # really primal objective
+                # compute primal objective
                 last_slack = -np.dot(self.w, dpsi) + loss_mean
                 primal_objective = (self.C * len(X)
                                     * np.max(last_slack, 0)
@@ -400,6 +414,11 @@ class OneSlackSSVM(BaseSSVM):
 
                 objective = self._solve_1_slack_qp(constraints,
                                                    n_samples=len(X))
+
+                # update cache tolerance if cache_tol is auto:
+                if self.cache_tol == "auto" and not cached_constraint:
+                    self.cache_tol_ = (primal_objective - objective) / 2.
+
                 self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
                                            for dpsi, loss_mean in constraints])
                 self.last_slack_ = max(self.last_slack_, 0)

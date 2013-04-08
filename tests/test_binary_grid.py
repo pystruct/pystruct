@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from nose.tools import assert_true
 from pystruct.problems import GridCRF
-from pystruct.learners import StructuredSVM, SubgradientStructuredSVM
+from pystruct.learners import StructuredSVM, SubgradientSSVM
 import pystruct.toy_datasets as toy
 
 
@@ -35,8 +35,8 @@ def test_binary_blocks_subgradient():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=200, C=100,
-                                   verbose=10, learning_rate=0.1, n_jobs=-1)
+    clf = SubgradientSSVM(problem=crf, max_iter=200, C=100, verbose=10,
+                          learning_rate=0.1, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -46,8 +46,8 @@ def test_binary_checker_subgradient():
     #testing subgradient ssvm on non-submodular binary dataset
     X, Y = toy.generate_checker(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100, verbose=0,
-                                   momentum=.9, learning_rate=0.1, n_jobs=-1)
+    clf = SubgradientSSVM(problem=crf, max_iter=100, C=100, verbose=0,
+                          momentum=.9, learning_rate=0.1, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
