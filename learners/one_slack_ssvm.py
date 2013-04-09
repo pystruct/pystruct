@@ -287,6 +287,11 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose > 10:
                 print("Empty cache.")
             raise NoConstraint
+        if ((self.primal_objective_curve_[-1] - self.objective_curve_[-1]) <
+                self.cache_tol_):
+            # do inference if gap has become to small
+            raise NoConstraint
+
         Y_hat = []
         psi_acc = np.zeros(self.problem.size_psi)
         loss_mean = 0
@@ -417,7 +422,7 @@ class OneSlackSSVM(BaseSSVM):
 
                 # update cache tolerance if cache_tol is auto:
                 if self.cache_tol == "auto" and not cached_constraint:
-                    self.cache_tol_ = (primal_objective - objective) / 2.
+                    self.cache_tol_ = (primal_objective - objective) / 4.
 
                 self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
                                            for dpsi, loss_mean in constraints])
