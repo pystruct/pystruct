@@ -10,9 +10,46 @@
 
 import numpy as np
 
+from scipy import sparse
+from sklearn.cluster import KMeans
+
 from . import GraphCRF
 from ..inference import inference_dispatch
 #from .latent_graph_crf import kmeans_init
+
+
+def kmeans_init(X, Y, n_labels, n_hidden_states):
+    all_feats = []
+    # iterate over samples
+    for x, y in zip(X, Y):
+        # first, get neighbor counts from nodes
+        features, edges, n_hidden = x
+        n_visible = features.shape[0]
+        if np.max(edges) != n_hidden + n_visible - 1:
+            raise ValueError("Edges don't add up")
+
+        labels_one_hot = np.zeros((n_visible, n_labels), dtype=np.int)
+        y = y.ravel()
+        gx = np.ogrid[:n_visible]
+        labels_one_hot[gx, y] = 1
+
+        graph = sparse.coo_matrix((np.ones(edges.shape[0]), edges.T),
+                                  (n_visible + n_hidden, n_visible + n_hidden))
+        graph = (graph + graph.T)[-n_hidden:, :n_visible]
+
+        neighbors = graph * labels_one_hot.reshape(n_visible, -1)
+        # normalize (for borders)
+        neighbors /= np.maximum(neighbors.sum(axis=1)[:, np.newaxis], 1)
+
+        all_feats.append(neighbors)
+    all_feats_stacked = np.vstack(all_feats)
+    km = KMeans(n_clusters=n_hidden_states)
+    km.fit(all_feats_stacked)
+    H = []
+    for y, feats in zip(Y, all_feats):
+        H.append(np.hstack([y, km.predict(feats) + n_labels]))
+
+    return H
 
 
 class LatentNodeCRF(GraphCRF):
@@ -203,3 +240,8 @@ class LatentNodeCRF(GraphCRF):
         psi_vector = np.hstack([unaries_acc.ravel(),
                                 pw[np.tri(self.n_states, dtype=np.bool)]])
         return psi_vector
+
+    def init_latent(self, X, Y):
+        # treat all edges the same
+        return kmeans_init(X, Y, n_labels=self.n_labels,
+                           n_hidden_states=self.n_hidden_states)

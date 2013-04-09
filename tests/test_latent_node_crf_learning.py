@@ -63,8 +63,6 @@ def test_latent_node_boxes_standard_latent():
     # we add a latent variable for each 2x2 patch
     # that should make the problem fairly simple
 
-    # currently only works with perfect init :-/
-
     X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=2, n_features=1)
@@ -92,11 +90,9 @@ def test_latent_node_boxes_standard_latent():
         # reshape / flatten x and y
         X_flat = [x.reshape(-1, 1) for x in X]
         Y_flat = [y.ravel() for y in Y]
-        H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()])
-                  for y in Y]
 
         X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
-        latent_svm.fit(X_, Y_flat, H_init)
+        latent_svm.fit(X_, Y_flat)
 
         assert_equal(latent_svm.score(X_, Y_flat), 1)
 
@@ -131,10 +127,8 @@ def test_latent_node_boxes_latent_subgradient():
     # reshape / flatten x and y
     X_flat = [x.reshape(-1, 1) for x in X]
     Y_flat = [y.ravel() for y in Y]
-    H_init = [np.hstack([y.ravel(), np.random.randint(2, 4, size=2 * 2)])
-              for y in Y]
 
     X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
-    latent_svm.fit(X_, Y_flat, H_init)
+    latent_svm.fit(X_, Y_flat)
 
     assert_equal(latent_svm.score(X_, Y_flat), 1)
