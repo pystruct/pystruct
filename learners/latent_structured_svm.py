@@ -127,4 +127,3 @@ class LatentSSVM(BaseSSVM):
     @n_jobs.setter
     def n_jobs(self, n_jobs_):
         self.base_ssvm.n_jobs = n_jobs_
-

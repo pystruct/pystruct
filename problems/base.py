@@ -62,6 +62,8 @@ class StructuredProblem(object):
 
     def max_loss(self, y):
         # maximum possible los on y for macro averages
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y])
         return y.size
 
     def continuous_loss(self, y, y_hat):
