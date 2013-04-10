@@ -57,17 +57,24 @@ def test_with_crosses_bad_init():
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
-    clf = LatentSSVM(StructuredSVM(problem=crf, max_iter=50, C=10. ** 3,
-                                   verbose=2, check_constraints=True,
-                                   n_jobs=-1, break_on_bad=True))
     H_init = crf.init_latent(X, Y)
 
     mask = np.random.uniform(size=H_init.shape) > .7
     H_init[mask] = 2 * (H_init[mask] / 2)
-    clf.fit(X, Y, H_init=H_init)
-    Y_pred = clf.predict(X)
 
-    assert_array_equal(np.array(Y_pred), Y)
+    one_slack = OneSlackSSVM(crf)
+    n_slack = StructuredSVM(crf)
+    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
+
+    for base_ssvm in [one_slack, n_slack, subgradient]:
+        base_ssvm.C = 10. ** 3
+        base_ssvm.n_jobs = -1
+        clf = LatentSSVM(base_ssvm)
+
+        clf.fit(X, Y, H_init=H_init)
+        Y_pred = clf.predict(X)
+
+        assert_array_equal(np.array(Y_pred), Y)
 
 
 def test_directional_bars():
