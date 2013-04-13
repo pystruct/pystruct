@@ -193,9 +193,12 @@ class SaveLogger(object):
 
     def __call__(self, learner, iteration=0):
         if iteration == 'final' or not iteration % self.save_every:
+            file_name = self.file_name
+            if "%d" in file_name:
+                file_name = file_name % iteration
             if self.verbose > 0:
-                print("saving %s to file %s" % (learner, self.file_name))
-            with open(self.file_name, "wb") as f:
+                print("saving %s to file %s" % (learner, file_name))
+            with open(file_name, "wb") as f:
                 if hasattr(learner, 'inference_cache_'):
                     # don't store the large inference cache!
                     learner.inference_cache_, tmp = (None,
