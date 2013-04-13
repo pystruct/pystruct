@@ -111,7 +111,7 @@ class OneSlackSSVM(BaseSSVM):
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
                  inference_cache=0, inactive_threshold=1e-10,
-                 inactive_window=50, logger=None, cache_tol=None):
+                 inactive_window=50, logger=None, cache_tol='auto'):
 
         BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -283,13 +283,17 @@ class OneSlackSSVM(BaseSSVM):
                            self.problem.loss(y, y_hat), y_hat))
 
     def _constraint_from_cache(self, X, Y, psi_gt, constraints):
-        if not getattr(self, 'inference_cache_', False):
+        if (not getattr(self, 'inference_cache_', False) or
+                self.inference_cache_ is False):
             if self.verbose > 10:
                 print("Empty cache.")
             raise NoConstraint
-        if ((self.primal_objective_curve_[-1] - self.objective_curve_[-1]) <
-                self.cache_tol_):
+        if (self.cache_tol == 'auto' and
+                (self.primal_objective_curve_[-1] - self.objective_curve_[-1])
+                < self.cache_tol_):
             # do inference if gap has become to small
+            if self.verbose > 1:
+                print("Last gap too small, not loading constraint from cache.")
             raise NoConstraint
 
         Y_hat = []
@@ -378,6 +382,7 @@ class OneSlackSSVM(BaseSSVM):
             # append constraint given by ground truth to make our life easier
             constraints.append((np.zeros(self.problem.size_psi), 0))
             self.alphas.append([self.C])
+            self.inference_cache_ = None
         else:
             constraints = self.constraints_
 
