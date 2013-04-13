@@ -62,7 +62,8 @@ def test_with_crosses_bad_init():
     mask = np.random.uniform(size=H_init.shape) > .7
     H_init[mask] = 2 * (H_init[mask] / 2)
 
-    one_slack = OneSlackSSVM(crf)
+    one_slack = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
+                             inference_cache=50, max_iter=10000)
     n_slack = StructuredSVM(crf)
     subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
 
