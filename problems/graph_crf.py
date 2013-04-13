@@ -10,8 +10,8 @@ class GraphCRF(CRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
-    Unary evidence is given as a tuple of shape (n_nodes, n_features),
-    An instance ``x`` is represented as a tuple ``(unaries, edges)``
+    Node features are given as a tuple of shape (n_nodes, n_features),
+    An instance ``x`` is represented as a tuple ``(features, edges)``
     where edges is an array of shape (n_edges, 2), representing the graph.
 
     Labels ``y`` are given as array of shape (n_features)
@@ -20,6 +20,9 @@ class GraphCRF(CRF):
     ----------
     n_states : int, default=2
         Number of states for all variables.
+
+    n_features : int, default=None
+        Number of features per node. None means n_states.
 
     inference_method : string, default="qpbo"
         Function to call do do inference and loss-augmented inference.
