@@ -13,9 +13,10 @@ from ..utils import find_constraint
 
 
 class LatentSSVM(BaseSSVM):
-    def __init__(self, base_ssvm, latent_iter=5):
+    def __init__(self, base_ssvm, latent_iter=5, logger=None):
         self.base_ssvm = base_ssvm
         self.latent_iter = latent_iter
+        self.logger = logger
 
     def fit(self, X, Y, H_init=None):
         w = np.zeros(self.problem.size_psi)
@@ -55,6 +56,8 @@ class LatentSSVM(BaseSSVM):
             self.base_ssvm.fit(X, H, constraints=constraints)
             w = self.base_ssvm.w
             ws.append(w)
+            if self.logger is not None:
+                self.logger(self, iteration)
 
     def predict(self, X):
         prediction = self.base_ssvm.predict(X)
