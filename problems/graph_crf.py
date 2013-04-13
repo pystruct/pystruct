@@ -209,7 +209,7 @@ class EdgeTypeGraphCRF(GraphCRF):
         Parameters
         ----------
         x : tuple
-            Unary evidence.
+            Input representation.
 
         y : ndarray or tuple
             Either y is an integral ndarray of shape (n_nodes,), giving

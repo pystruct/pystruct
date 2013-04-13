@@ -89,3 +89,59 @@ class EdgeFeatureGraphCRF(GraphCRF):
         pairwise = pairwise.reshape(self.n_edge_features, -1)
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
+
+    def psi(self, x, y):
+        """Feature vector associated with instance (x, y).
+
+        Feature representation psi, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+
+        Parameters
+        ----------
+        x : tuple
+            Input representation.
+
+        y : ndarray or tuple
+            Either y is an integral ndarray, giving
+            a complete labeling for x.
+            Or it is the result of a linear programming relaxation. In this
+            case, ``y=(unary_marginals, pariwise_marginals)``.
+
+        Returns
+        -------
+        p : ndarray, shape (size_psi,)
+            Feature vector associated with state (x, y).
+
+        """
+        self._check_size_x(x)
+        features, edges = self.get_features(x), self.get_edges(x)
+        n_nodes = features.shape[0]
+        edge_features = x[2]
+
+        if isinstance(y, tuple):
+            # y is result of relaxation, tuple of unary and pairwise marginals
+            unary_marginals, pw = y
+            unary_marginals = unary_marginals.reshape(n_nodes, self.n_states)
+            # weighted accumulation of pairwise
+
+            #pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
+        else:
+            y = y.reshape(n_nodes)
+            gx = np.ogrid[:n_nodes]
+
+            #make one hot encoding
+            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
+            gx = np.ogrid[:n_nodes]
+            unary_marginals[gx, y] = 1
+
+            ## pairwise
+            pw = [np.outer(unary_marginals[edge[0]].T,
+                           unary_marginals[edge[1]]).ravel()
+                  for edge in edges]
+            pw = np.vstack(pw)
+
+        pw = np.dot(edge_features.T, pw)
+        unaries_acc = np.dot(unary_marginals.T, features)
+
+        psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
+        return psi_vector
