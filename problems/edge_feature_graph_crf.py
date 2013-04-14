@@ -6,7 +6,7 @@ from .graph_crf import GraphCRF
 class EdgeFeatureGraphCRF(GraphCRF):
     """Pairwise CRF with features/strength associated to each edge.
 
-    Pairwise potentials are a-symmetric and shared over all edges.
+    Pairwise potentials are asymmetric and shared over all edges.
     They are weighted by an edge-specific features, though.
     This allows for contrast sensitive potentials or directional potentials
     (using a {-1, +1} encoding of the direction for example).
@@ -45,15 +45,33 @@ class EdgeFeatureGraphCRF(GraphCRF):
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
+
+    symmetric_edge_features : None or list
+        Indices of edge features that are forced to be symmetric.
+        Often the direction of the edge has no immediate meaning.
+
+    antisymmetric_edge_features : None or list
+        Indices of edge features that are forced to be anti-symmetric.
+
     """
     def __init__(self, n_states=2, n_features=None, n_edge_features=1,
-                 inference_method='qpbo', class_weight=None):
+                 inference_method='qpbo', class_weight=None,
+                 symmetric_edge_features=None,
+                 antisymmetric_edge_features=None):
         GraphCRF.__init__(self, n_states, n_features, inference_method,
                           class_weight=class_weight)
         self.n_edge_features = n_edge_features
         self.size_psi = (n_states * self.n_features
                          + self.n_edge_features
                          * n_states ** 2)
+        if not set(symmetric_edge_features).isdisjoint(
+                antisymmetric_edge_features):
+            raise ValueError("symmetric_edge_features and "
+                             " antisymmetric_edge_features share an entry."
+                             " That doesn't make any sense.")
+
+        self.symmetric_edge_features = symmetric_edge_features
+        self.antisymmetric_edge_features = antisymmetric_edge_features
 
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
@@ -141,6 +159,14 @@ class EdgeFeatureGraphCRF(GraphCRF):
             pw = np.vstack(pw)
 
         pw = np.dot(edge_features.T, pw)
+        for i in self.symmetric_edge_features:
+            pw_ = pw[i].reshape(self.n_states, self.n_states)
+            pw[i] = (pw_ + pw_.T).ravel() / 2.
+
+        for i in self.antisymmetric_edge_features:
+            pw_ = pw[i].reshape(self.n_states, self.n_states)
+            pw[i] = (pw_ - pw_.T).ravel() / 2.
+
         unaries_acc = np.dot(unary_marginals.T, features)
 
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
