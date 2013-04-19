@@ -98,7 +98,10 @@ class GraphCRF(CRF):
         features, edges = self.get_features(x), self.get_edges(x)
         unary_params = w[:self.n_states * self.n_features].reshape(
             self.n_states, self.n_features)
+
         return np.dot(features, unary_params.T)
+        ## EVIL HACK!!@
+        #return features
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).

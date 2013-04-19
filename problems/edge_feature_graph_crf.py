@@ -139,10 +139,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
-            unary_marginals = unary_marginals.reshape(n_nodes, self.n_states)
-            # weighted accumulation of pairwise
 
-            #pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
         else:
             y = y.reshape(n_nodes)
             gx = np.ogrid[:n_nodes]

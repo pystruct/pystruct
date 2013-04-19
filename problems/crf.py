@@ -17,7 +17,12 @@ class CRF(StructuredProblem):
         self.n_features = n_features
 
         if class_weight is not None:
-            if len(class_weight) != n_states:
+            if hasattr(self, 'n_labels'):
+                n_things = self.n_labels
+            else:
+                n_things = n_states
+
+            if len(class_weight) != n_things:
                 raise ValueError("class_weight must have length n_states or"
                                  " be None")
             self.class_weight = np.array(class_weight)
