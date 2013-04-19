@@ -64,6 +64,8 @@ class SubgradientSSVM(BaseSSVM):
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
 
+    logger : logger object.
+
     Attributes
     ----------
     w : nd-array, shape=(problem.psi,)
@@ -136,7 +138,7 @@ class SubgradientSSVM(BaseSSVM):
         """
         print("Training primal subgradient structural SVM")
         self.w = getattr(self, "w", np.zeros(self.problem.size_psi))
-        objective_curve = []
+        self.objective_curve_ = []
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
@@ -160,7 +162,7 @@ class SubgradientSSVM(BaseSSVM):
                     print("positive slacks: %d,"
                           "objective: %f" %
                           (positive_slacks, objective))
-                objective_curve.append(objective)
+                self.objective_curve_.append(objective)
 
                 if self.verbose > 2:
                     print(self.w)
@@ -171,9 +173,8 @@ class SubgradientSSVM(BaseSSVM):
 
         except KeyboardInterrupt:
             pass
-        self.objective_curve_ = objective_curve
-        if objective_curve:
-            print("final objective: %f" % objective_curve[-1])
+        if self.objective_curve_:
+            print("final objective: %f" % self.objective_curve_[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
 

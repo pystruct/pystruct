@@ -100,7 +100,7 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
     unaries = unary_potentials.reshape(-1, n_states)
     res = AD3.general_graph(unaries, edges, pairwise_potentials,
-                            verbose=verbose)
+                            verbose=0, n_iterations=1000)
     unary_marginals, pairwise_marginals, energy = res
     #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
     #if n_fractional:

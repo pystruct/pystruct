@@ -77,12 +77,12 @@ class LatentSubgradientSSVM(SubgradientSSVM):
     def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
-                 break_on_no_constraints=True):
+                 break_on_no_constraints=True, logger=None):
         SubgradientSSVM.__init__(
             self, problem, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
             momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
-            break_on_no_constraints=break_on_no_constraints)
+            break_on_no_constraints=break_on_no_constraints, logger=logger)
 
     def fit(self, X, Y, H_init=None):
         """Learn parameters using subgradient descent.
@@ -104,7 +104,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         self.w = getattr(self, "w", np.random.normal(
             0, .001, size=self.problem.size_psi))
         #constraints = []
-        objective_curve = []
+        self.objective_curve_ = []
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
@@ -159,7 +159,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
 
                 # some statistics
                 objective += np.sum(self.w ** 2) / self.C / 2.
-                objective /= float(n_samples)
+                #objective /= float(n_samples)
 
                 if positive_slacks == 0:
                     print("No additional constraints")
@@ -168,20 +168,21 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                 if self.verbose > 0:
                     print(self)
                     print("iteration %d" % iteration)
-                    print("positive slacks: %d,"
+                    print("positive slacks: %d, "
                           "objective: %f" %
                           (positive_slacks, objective))
-                objective_curve.append(objective)
+                self.objective_curve_.append(objective)
 
                 if self.verbose > 2:
                     print(self.w)
 
                 self._compute_training_loss(X, Y, iteration)
+                if self.logger is not None:
+                    self.logger(self, iteration)
 
         except KeyboardInterrupt:
             pass
-        self.objective_curve_ = objective_curve
-        print("final objective: %f" % objective_curve[-1])
+        print("final objective: %f" % self.objective_curve_[-1])
         print("calls to inference: %d" % self.problem.inference_calls)
         return self
 
