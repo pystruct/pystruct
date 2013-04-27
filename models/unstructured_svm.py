@@ -192,19 +192,23 @@ class CrammerSingerSVMModel(StructuredModel):
 
         return result.ravel()
 
-    #def batch_psi(self, X, Y, Y_true=None):
-        #result = np.zeros((self.n_states, self.n_features))
-        #if self.rescale_C:
-            #if Y_true is None:
-                #raise ValueError("rescale_C is true, but no y_true was passed"
-                                 #" to psi.")
-        #for l in xrange(self.n_states):
-            #result[l, :] = np.sum(X[Y == l, :], axis=0)
-        #return result.ravel()
-        #assert(X.shape[0] == Y.shape[0])
-        #assert(X.shape[1] == self.n_features)
-        #crammer_singer_psi(X, Y, out)
-        #return out.ravel()
+    def batch_psi(self, X, Y, Y_true=None):
+        result = np.zeros((self.n_states, self.n_features))
+        if self.rescale_C:
+            if Y_true is None:
+                raise ValueError("rescale_C is true, but no y_true was passed"
+                                 " to psi.")
+            for l in xrange(self.n_states):
+                mask = Y == l
+                class_weight = self.class_weight[Y_true[mask]][:, np.newaxis]
+                result[l, :] = np.sum(X[mask, :] * class_weight, axis=0)
+        else:
+            # if we don't have class weights, we can use our efficient
+            # implementation
+            assert(X.shape[0] == Y.shape[0])
+            assert(X.shape[1] == self.n_features)
+            crammer_singer_psi(X, Y, result)
+        return result.ravel()
 
     def inference(self, x, w, relaxed=None, return_energy=False):
         """Inference for x using parameters w.

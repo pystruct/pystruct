@@ -185,8 +185,8 @@ def test_class_weights():
 
 
 def test_class_weights_rescale_C():
-    # check that our crammer-singer implementation with rescale_C=True
-    # is the same as LinearSVC's c-s implementation
+    # check that our crammer-singer implementation with class weights and
+    # rescale_C=True is the same as LinearSVC's c-s class_weight implementation
     from sklearn.svm import LinearSVC
     X, Y = make_blobs(n_samples=210, centers=3, random_state=1, cluster_std=3,
                       shuffle=False)
