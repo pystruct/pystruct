@@ -4,17 +4,24 @@ from .linear_programming import lp_general_graph
 
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                       inference_method, relaxed=False, return_energy=False):
+                       inference_method, relaxed=False, return_energy=False,
+                       **kwargs):
     if inference_method == "qpbo":
-        return inference_qpbo(unary_potentials, pairwise_potentials, edges)
+        return inference_qpbo(unary_potentials, pairwise_potentials, edges,
+                              **kwargs)
     elif inference_method == "dai":
-        return inference_dai(unary_potentials, pairwise_potentials, edges)
+        return inference_dai(unary_potentials, pairwise_potentials, edges,
+                             **kwargs)
     elif inference_method == "lp":
         return inference_lp(unary_potentials, pairwise_potentials, edges,
-                            relaxed, return_energy=return_energy)
+                            relaxed, return_energy=return_energy, **kwargs)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
-                             relaxed=relaxed, return_energy=return_energy)
+                             relaxed=relaxed, return_energy=return_energy,
+                             **kwargs)
+    elif inference_method == "ogm":
+        return inference_ogm(unary_potentials, pairwise_potentials, edges,
+                             return_energy=return_energy, **kwargs)
     else:
         raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo' or"
                          " 'dai', got %s" % inference_method)
@@ -34,6 +41,26 @@ def _validate_params(unary_potentials, pairwise_params, edges):
                              " got shape %s" % repr(pairwise_params.shape))
         pairwise_potentials = pairwise_params
     return n_states, pairwise_potentials
+
+
+def inference_ogm(unary_potentials, pairwise_potentials, edges,
+                  return_energy=False, alg='bp'):
+    import opengm
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+    n_nodes = len(unary_potentials)
+    gm = opengm.gm([n_states] * n_nodes)
+    for i, un in enumerate(unary_potentials):
+        gm.addFactor(gm.addFunction(-un.astype(np.float32)), i)
+    for pw, edge in zip(pairwise_potentials, edges):
+        gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
+                     edge.astype(np.uint64))
+    inference = opengm.inference.BeliefPropagation(gm)
+    inference.infer()
+    res = inference.arg()
+    if return_energy:
+        return res, gm.evaluate(res)
+    return res
 
 
 def inference_qpbo(unary_potentials, pairwise_potentials, edges):
