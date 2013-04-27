@@ -14,7 +14,7 @@ from pystruct.utils import make_grid_edges
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in ["dai", "lp", "qpbo", "ad3"]:
+    for inference_method in ["dai", "lp", "qpbo", "ad3", 'ogm']:
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
@@ -72,7 +72,7 @@ def test_standard_svm_blobs_2d_class_weight():
 
     X_graphs = [(x[np.newaxis, :], np.empty((0, 2), dtype=np.int)) for x in X]
 
-    pbl = GraphCRF(n_features=3, n_states=3)
+    pbl = GraphCRF(n_features=3, n_states=3, inference_method='dai')
     svm = OneSlackSSVM(pbl, verbose=10, check_constraints=True, C=1000)
 
     svm.fit(X_graphs, Y[:, np.newaxis])
@@ -82,7 +82,7 @@ def test_standard_svm_blobs_2d_class_weight():
 
     pbl_class_weight = GraphCRF(n_features=3, n_states=3, class_weight=weights)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=10, C=10)
-    svm_class_weight.fit(X, Y)
+    svm_class_weight.fit(X_graphs, Y)
 
-    assert_greater(f1_score(Y, svm_class_weight.predict(X)),
-                   f1_score(Y, svm.predict(X)))
+    assert_greater(f1_score(Y, svm_class_weight.predict(X_graphs)),
+                   f1_score(Y, svm.predict(X_graphs)))

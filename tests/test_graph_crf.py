@@ -18,7 +18,7 @@ w_sym = np.array([1, 0,    # unary
 
 # triangle
 x_1 = np.array([[0, 1], [1, 0], [.4, .6]])
-g_1 = np.array([[0, 1], [1, 2], [2, 0]])
+g_1 = np.array([[0, 1], [1, 2], [0, 2]])
 # expected result
 y_1 = np.array([1, 0, 1])
 
@@ -32,7 +32,7 @@ y_2 = np.array([1, 0, 0])
 def test_graph_crf_inference():
     # create two samples with different graphs
     # two states only, pairwise smoothing
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
+    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
         crf = GraphCRF(n_states=2, inference_method=inference_method)
         assert_array_equal(crf.inference((x_1, g_1), w), y_1)
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
@@ -44,7 +44,7 @@ def test_edge_type_graph_crf():
 
     # all edges are of the first type. should do the same as GraphCRF
     # if we make w symmetric
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
+    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=1)
         assert_array_equal(crf.inference((x_1, [g_1]), w_sym), y_1)
@@ -57,7 +57,7 @@ def test_edge_type_graph_crf():
                       0, .22,
                       2, -1,   # second edge type, doesn't exist
                       -1, 3])
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
+    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=2)
         assert_array_equal(crf.inference((x_1, [g_1, np.zeros((0, 2),
