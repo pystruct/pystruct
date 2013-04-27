@@ -329,8 +329,12 @@ class OneSlackSSVM(BaseSSVM):
                 X, Y, self.w, relaxed=True)
         # compute the mean over psis and losses
 
-        dpsi = (psi_gt - self.model.batch_psi(X, Y_hat)) / len(X)
-        loss_mean = np.mean(self.model.batch_loss(Y, Y_hat))
+        if getattr(self.problem, 'rescale_C', False):
+            dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat, Y)) / len(X)
+        else:
+            dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
+
+        loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
 
         violation = loss_mean - np.dot(self.w, dpsi)
         if check and self._check_bad_constraint(
@@ -384,7 +388,10 @@ class OneSlackSSVM(BaseSSVM):
             constraints = self.constraints_
 
         # get the psi of the ground truth
-        psi_gt = self.model.batch_psi(X, Y)
+        if getattr(self.problem, 'rescale_C', False):
+            psi_gt = self.problem.batch_psi(X, Y, Y)
+        else:
+            psi_gt = self.problem.batch_psi(X, Y)
 
         try:
             # catch ctrl+c to stop training

@@ -163,7 +163,6 @@ def test_equal_class_weights():
 
 
 def test_class_weights():
-    # test that equal class weight is the same as no class weight
     X, Y = make_blobs(n_samples=210, centers=3, random_state=1, cluster_std=3,
                       shuffle=False)
     X = np.hstack([X, np.ones((X.shape[0], 1))])
@@ -183,3 +182,29 @@ def test_class_weights():
 
     assert_greater(f1_score(Y, svm_class_weight.predict(X)),
                    f1_score(Y, svm.predict(X)))
+
+
+def test_class_weights_rescale_C():
+    # check that our crammer-singer implementation with rescale_C=True
+    # is the same as LinearSVC's c-s implementation
+    from sklearn.svm import LinearSVC
+    X, Y = make_blobs(n_samples=210, centers=3, random_state=1, cluster_std=3,
+                      shuffle=False)
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+    X, Y = X[:170], Y[:170]
+
+    weights = 1. / np.bincount(Y)
+    weights *= len(weights) / np.sum(weights)
+    pbl_class_weight = CrammerSingerSVMProblem(n_features=3, n_classes=3,
+                                               class_weight=weights,
+                                               rescale_C=True)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=10, C=10)
+    svm_class_weight.fit(X, Y)
+
+    linearsvm = LinearSVC(multi_class='crammer_singer', fit_intercept=False,
+                          class_weight='auto', C=10)
+    linearsvm.fit(X, Y)
+
+    #assert_greater(f1_score(Y, svm_class_weight.predict(X)),
+                   #f1_score(Y, svm.predict(X)))
+    assert_array_almost_equal(svm_class_weight.w, linearsvm.coef_.ravel(), 3)

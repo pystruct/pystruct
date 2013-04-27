@@ -27,10 +27,14 @@ class StructuredModel(object):
         # IMPLEMENT ME
         pass
 
-    def batch_psi(self, X, Y):
+    def batch_psi(self, X, Y, Y_true=None):
         psi_ = np.zeros(self.size_psi)
-        for x, y in zip(X, Y):
-            psi_ += self.psi(x, y)
+        if getattr(self, 'rescale_C', False):
+            for x, y, y_true in zip(X, Y, Y_true):
+                psi_ += self.psi(x, y, y_true)
+        else:
+            for x, y in zip(X, Y):
+                psi_ += self.psi(x, y)
         return psi_
 
     def _loss_augmented_dpsi(self, x, y, y_hat, w):
