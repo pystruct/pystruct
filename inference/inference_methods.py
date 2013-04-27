@@ -3,6 +3,15 @@ import numpy as np
 from .linear_programming import lp_general_graph
 
 
+def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+    energy = np.sum(unary_potentials[np.arange(len(labels)), labels])
+    for edge, pw in zip(edges, pairwise_potentials):
+        energy += pw[labels[edge[0]], labels[edge[1]]]
+    return energy
+
+
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, relaxed=False, return_energy=False,
                        **kwargs):
@@ -127,8 +136,8 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
     unaries = unary_potentials.reshape(-1, n_states)
     res = AD3.general_graph(unaries, edges, pairwise_potentials,
-                            verbose=0, n_iterations=1000)
-    unary_marginals, pairwise_marginals, energy = res
+                            verbose=0, n_iterations=4000)
+    unary_marginals, pairwise_marginals, energy, solver_status = res
     #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
     #if n_fractional:
         #print("fractional solutions found: %d" % n_fractional)
