@@ -19,8 +19,8 @@ class LatentSubgradientSSVM(SubgradientSSVM):
     small batches of size n_jobs are used to exploit parallel inference.
     If inference is fast, use n_jobs=1.
 
-    Parmeters
-    ---------
+    Parameters
+    ----------
     problem : StructuredProblem
         Object containing problem formulation. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.

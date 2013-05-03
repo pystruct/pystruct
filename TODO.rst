@@ -1,5 +1,6 @@
 TODO
 ================
+* setup.py / makefile in main director!
 * in subgradient ssvm: Decouple updates from shrinking w (aka commulative penalty).
 * rename positivity_constraint to negativity_constraint - or flip some signs!
 * loss computation in ssvm.py is weird. It should be acuraccy, decoupled from the loss we are optimizing.
