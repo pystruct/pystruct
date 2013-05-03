@@ -61,9 +61,6 @@ class OneSlackSSVM(BaseSSVM):
         purposes). Zero means never, otherwise it will be computed very
         show_loss_every'th epoch.
 
-    batch_size : int, default=100
-        Number of constraints after which we solve the QP again.
-
     tol : float, default=1e-5
         Convergence tolerance. If dual objective decreases less than tol,
         learning is stopped. The default corresponds to ignoring the behavior
