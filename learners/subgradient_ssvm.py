@@ -20,8 +20,8 @@ class SubgradientSSVM(BaseSSVM):
 
     Parameters
     ----------
-    problem : StructuredProblem
-        Object containing problem formulation. Has to implement
+    model : StructuredModel
+        Object containing model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
     max_iter : int, default=100
@@ -68,7 +68,7 @@ class SubgradientSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(problem.psi,)
+    w : nd-array, shape=(model.psi,)
         The learned weights of the SVM.
 
    ``loss_curve_`` : list of float
@@ -78,11 +78,11 @@ class SubgradientSSVM(BaseSSVM):
        Primal objective after each pass through the dataset.
 
     """
-    def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
                  break_on_no_constraints=True, logger=None, batch_size=None):
-        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+        BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
         self.break_on_no_constraints = break_on_no_constraints
@@ -90,7 +90,7 @@ class SubgradientSSVM(BaseSSVM):
         self.learning_rate = learning_rate
         self.t = 0
         self.adagrad = adagrad
-        self.grad_old = np.zeros(self.problem.size_psi)
+        self.grad_old = np.zeros(self.model.size_psi)
         self.decay_exponent = decay_exponent
         self.batch_size = batch_size
 
@@ -137,7 +137,7 @@ class SubgradientSSVM(BaseSSVM):
             Discarded. Only for API compatibility currently.
         """
         print("Training primal subgradient structural SVM")
-        self.w = getattr(self, "w", np.zeros(self.problem.size_psi))
+        self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         self.objective_curve_ = []
         try:
             # catch ctrl+c to stop training
@@ -175,7 +175,7 @@ class SubgradientSSVM(BaseSSVM):
             pass
         if self.objective_curve_:
             print("final objective: %f" % self.objective_curve_[-1])
-        print("calls to inference: %d" % self.problem.inference_calls)
+        print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def _parallel_learning(self, X, Y):
@@ -200,9 +200,9 @@ class SubgradientSSVM(BaseSSVM):
             candidate_constraints = Parallel(
                 n_jobs=self.n_jobs,
                 verbose=verbose)(delayed(find_constraint)(
-                    self.problem, x, y, self.w)
+                    self.model, x, y, self.w)
                     for x, y in zip(X_b, Y_b))
-            dpsi = np.zeros(self.problem.size_psi)
+            dpsi = np.zeros(self.model.size_psi)
             for x, y, constraint in zip(X_b, Y_b,
                                         candidate_constraints):
                 y_hat, delta_psi, slack, loss = constraint
@@ -220,7 +220,7 @@ class SubgradientSSVM(BaseSSVM):
             # online learning
             for x, y in zip(X, Y):
                 y_hat, delta_psi, slack, loss = \
-                    find_constraint(self.problem, x, y, self.w)
+                    find_constraint(self.model, x, y, self.w)
                 objective += slack
                 if slack > 0:
                     positive_slacks += 1
@@ -232,11 +232,11 @@ class SubgradientSSVM(BaseSSVM):
             for batch in slices:
                 X_b = X[batch]
                 Y_b = Y[batch]
-                Y_hat = self.problem.batch_loss_augmented_inference(
+                Y_hat = self.model.batch_loss_augmented_inference(
                     X_b, Y_b, self.w, relaxed=True)
-                delta_psi = (self.problem.batch_psi(X_b, Y_b)
-                             - self.problem.batch_psi(X_b, Y_hat))
-                loss = np.sum(self.problem.batch_loss(Y_b, Y_hat))
+                delta_psi = (self.model.batch_psi(X_b, Y_b)
+                             - self.model.batch_psi(X_b, Y_hat))
+                loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
 
                 violation = loss - np.dot(self.w, delta_psi)
                 objective += violation

@@ -5,7 +5,7 @@ from nose.tools import assert_greater
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
 
-from pystruct.problems import GraphCRF
+from pystruct.models import GraphCRF
 from pystruct.learners import StructuredSVM, OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
@@ -18,7 +18,7 @@ def test_binary_blocks_cutting_plane():
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+        clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                             check_constraints=True, break_on_bad=False,
                             n_jobs=1)
         x1, x2, x3 = X

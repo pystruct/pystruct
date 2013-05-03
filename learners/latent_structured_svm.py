@@ -19,11 +19,11 @@ class LatentSSVM(BaseSSVM):
         self.logger = logger
 
     def fit(self, X, Y, H_init=None):
-        w = np.zeros(self.problem.size_psi)
+        w = np.zeros(self.model.size_psi)
         constraints = None
         ws = []
         if H_init is None:
-            H_init = self.problem.init_latent(X, Y)
+            H_init = self.model.init_latent(X, Y)
         self.H_init_ = H_init
         H = H_init
 
@@ -33,7 +33,7 @@ class LatentSSVM(BaseSSVM):
             if iteration == 0:
                 pass
             else:
-                H_new = [self.problem.latent(x, y, w) for x, y in zip(X, Y)]
+                H_new = [self.model.latent(x, y, w) for x, y in zip(X, Y)]
                 changes = [np.any(h_new != h) for h_new, h in zip(H_new, H)]
                 if not np.any(changes):
                     print("no changes in latent variables of ground truth."
@@ -47,7 +47,7 @@ class LatentSSVM(BaseSSVM):
                     for sample, h, i in zip(self.base_ssvm.constraints_, H_new,
                                             np.arange(len(X))):
                         for constraint in sample:
-                            const = find_constraint(self.problem, X[i], h, w,
+                            const = find_constraint(self.model, X[i], h, w,
                                                     constraint[0])
                             y_hat, dpsi, _, loss = const
                             constraints[i].append([y_hat, dpsi, loss])
@@ -61,7 +61,7 @@ class LatentSSVM(BaseSSVM):
 
     def predict(self, X):
         prediction = self.base_ssvm.predict(X)
-        return [self.problem.label_from_latent(h) for h in prediction]
+        return [self.model.label_from_latent(h) for h in prediction]
 
     def predict_latent(self, X):
         return self.base_ssvm.predict(self, X)
@@ -69,7 +69,7 @@ class LatentSSVM(BaseSSVM):
     def score(self, X, Y):
         """Compute score as 1 - loss over whole data set.
 
-        Returns the average accuracy (in terms of problem.loss)
+        Returns the average accuracy (in terms of model.loss)
         over X and Y.
 
         Parameters
@@ -85,27 +85,27 @@ class LatentSSVM(BaseSSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        #if hasattr(self.problem, 'batch_batch_loss'):
-            #losses = self.problem.base_batch_loss(Y, self.predict(X))
+        #if hasattr(self.model, 'batch_batch_loss'):
+            #losses = self.model.base_batch_loss(Y, self.predict(X))
         #else:
-            #losses = [self.problem.base_loss(y, y_pred)
+            #losses = [self.model.base_loss(y, y_pred)
                       #for y, y_pred in zip(Y, self.predict(X))]
-        if hasattr(self.problem, 'batch_loss'):
-            losses = self.problem.batch_loss(
-                Y, self.problem.batch_inference(X, self.w))
+        if hasattr(self.model, 'batch_loss'):
+            losses = self.model.batch_loss(
+                Y, self.model.batch_inference(X, self.w))
         else:
-            losses = [self.problem.loss(y, self.problem.inference(y, self.w))
+            losses = [self.model.loss(y, self.model.inference(y, self.w))
                       for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.problem.max_loss(y) for y in Y]
+        max_losses = [self.model.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     @property
-    def problem(self):
-        return self.base_ssvm.problem
+    def model(self):
+        return self.base_ssvm.model
 
-    @problem.setter
-    def problem(self, problem_):
-        self.base_ssvm.problem = problem_
+    @model.setter
+    def model(self, model_):
+        self.base_ssvm.model = model_
 
     @property
     def w(self):

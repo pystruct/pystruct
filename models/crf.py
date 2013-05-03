@@ -1,10 +1,10 @@
 import numpy as np
 
-from .base import StructuredProblem
+from .base import StructuredModel
 from ..inference import inference_dispatch
 
 
-class CRF(StructuredProblem):
+class CRF(StructuredModel):
     """Abstract base class"""
     def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
                  class_weight=None):

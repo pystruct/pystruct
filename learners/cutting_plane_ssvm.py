@@ -26,8 +26,8 @@ class StructuredSVM(BaseSSVM):
 
     Parameters
     ----------
-    problem : StructuredProblem
-        Object containing problem formulation. Has to implement
+    model : StructuredModel
+        Object containing the model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
     max_iter : int
@@ -79,7 +79,7 @@ class StructuredSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(problem.psi,)
+    w : nd-array, shape=(model.psi,)
         The learned weights of the SVM.
 
     old_solution : dict
@@ -92,13 +92,13 @@ class StructuredSVM(BaseSSVM):
        Primal objective after each pass through the dataset.
     """
 
-    def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
+    def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, batch_size=100,
                  tol=-10, inactive_threshold=1e-10,
                  inactive_window=0, logger=None):
 
-        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+        BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
@@ -144,7 +144,7 @@ class StructuredSVM(BaseSSVM):
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
 
-        # solve QP problem
+        # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
         solution = cvxopt.solvers.qp(P, q, G, h)
         if solution['status'] != "optimal":
@@ -233,7 +233,7 @@ class StructuredSVM(BaseSSVM):
         else:
             cvxopt.solvers.options['show_progress'] = True
 
-        self.w = np.zeros(self.problem.size_psi)
+        self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
@@ -265,7 +265,7 @@ class StructuredSVM(BaseSSVM):
                 candidate_constraints = Parallel(n_jobs=self.n_jobs,
                                                  verbose=verbose)(
                                                      delayed(find_constraint)(
-                                                         self.problem, x, y,
+                                                         self.model, x, y,
                                                          self.w)
                                                      for x, y in zip(X_b, Y_b))
 
@@ -320,7 +320,7 @@ class StructuredSVM(BaseSSVM):
         self.constraints_ = constraints
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve
-        print("calls to inference: %d" % self.problem.inference_calls)
+        print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def prune_constraints(self, constraints, a):

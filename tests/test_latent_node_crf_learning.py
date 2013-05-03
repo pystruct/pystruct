@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal
-from pystruct.problems import GraphCRF, LatentNodeCRF
+from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import (StructuredSVM, LatentSSVM,
                                LatentSubgradientSSVM, OneSlackSSVM,
                                SubgradientSSVM)
@@ -17,7 +17,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     # same as GraphCRF
     X, Y = toy.generate_blocks(n_samples=3)
     crf = GraphCRF(inference_method='lp')
-    clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+    clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                         check_constraints=True, break_on_bad=False,
                         n_jobs=1)
     x1, x2, x3 = X
@@ -43,7 +43,7 @@ def test_binary_blocks_cutting_plane_latent_node():
 
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=0)
-    latent_svm = LatentSSVM(StructuredSVM(problem=latent_crf, max_iter=20,
+    latent_svm = LatentSSVM(StructuredSVM(model=latent_crf, max_iter=20,
                                           C=100, verbose=0,
                                           check_constraints=True,
                                           break_on_bad=False, n_jobs=1),
@@ -61,7 +61,7 @@ def test_latent_node_boxes_standard_latent():
     # learn the "easy" 2x2 boxes dataset.
     # a 2x2 box is placed randomly in a 4x4 grid
     # we add a latent variable for each 2x2 patch
-    # that should make the problem fairly simple
+    # that should make the model fairly simple
 
     X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
@@ -103,12 +103,12 @@ def test_latent_node_boxes_latent_subgradient():
     # learn the "easy" 2x2 boxes dataset.
     # a 2x2 box is placed randomly in a 4x4 grid
     # we add a latent variable for each 2x2 patch
-    # that should make the problem fairly simple
+    # that should make the model fairly simple
 
     X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=2, n_features=1)
-    latent_svm = LatentSubgradientSSVM(problem=latent_crf, max_iter=250, C=10,
+    latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=250, C=10,
                                        verbose=10, learning_rate=0.1,
                                        momentum=0)
 

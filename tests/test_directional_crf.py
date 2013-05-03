@@ -6,7 +6,7 @@ from nose.tools import assert_equal, assert_almost_equal
 import pystruct.toy_datasets as toy
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.utils import make_grid_edges
-from pystruct.problems import DirectionalGridCRF
+from pystruct.models import DirectionalGridCRF
 
 
 def test_inference():

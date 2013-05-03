@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 ##from nose.tools import assert_equal, assert_almost_equal, assert_raises
 from nose.tools import assert_almost_equal, assert_equal
 
-from pystruct.problems import GraphCRF, EdgeTypeGraphCRF
+from pystruct.models import GraphCRF, EdgeTypeGraphCRF
 
 w = np.array([1, 0,  # unary
               0, 1,

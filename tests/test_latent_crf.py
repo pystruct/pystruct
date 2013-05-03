@@ -5,9 +5,9 @@ from nose.tools import assert_equal, assert_almost_equal
 import pystruct.toy_datasets as toy
 from pystruct.utils import (exhaustive_loss_augmented_inference,
                             make_grid_edges, find_constraint)
-from pystruct.problems import (LatentGridCRF, LatentDirectionalGridCRF,
+from pystruct.models import (LatentGridCRF, LatentDirectionalGridCRF,
                                LatentGraphCRF)
-from pystruct.problems.latent_grid_crf import kmeans_init
+from pystruct.models.latent_grid_crf import kmeans_init
 
 
 def test_k_means_initialization():
@@ -68,7 +68,7 @@ def test_k_means_initialization_graph_crf():
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentGraphCRF(n_labels=2, n_states_per_label=1,
                          inference_method='lp')
-    # convert grid problem to graph problem
+    # convert grid model to graph model
     X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
          for x in X]
 

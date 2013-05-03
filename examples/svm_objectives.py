@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
 
-from pystruct.problems import CrammerSingerSVMProblem
+from pystruct.models import CrammerSingerSVMModel
 from pystruct.learners import (StructuredSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
@@ -21,7 +21,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 # we add a constant 1 feature for the bias
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
 
-pbl = CrammerSingerSVMProblem(n_features=X_train_bias.shape[1], n_classes=10)
+pbl = CrammerSingerSVMModel(n_features=X_train_bias.shape[1], n_classes=10)
 n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
                             max_iter=500, batch_size=10)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=20,

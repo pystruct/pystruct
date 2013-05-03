@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class StructuredProblem(object):
+class StructuredModel(object):
     """Interface definition for Structured Learners.
 
     This class defines what is necessary to use the structured svm.
@@ -12,7 +12,7 @@ class StructuredProblem(object):
                 % (type(self).__name__, self.size_psi))
 
     def __init__(self):
-        """Initialize the problem.
+        """Initialize the model.
         Needs to set self.size_psi, the dimensionalty of the joint features for
         an instance with labeling (x, y).
         """

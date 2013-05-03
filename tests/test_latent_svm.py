@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
+from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import (LatentSSVM, StructuredSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
@@ -21,7 +21,7 @@ def test_with_crosses():
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSSVM(StructuredSVM(problem=crf, max_iter=50, C=10. **
+            clf = LatentSSVM(StructuredSVM(model=crf, max_iter=50, C=10. **
                                            5, verbose=2,
                                            check_constraints=True, n_jobs=-1,
                                            break_on_bad=True))
@@ -86,7 +86,7 @@ def test_directional_bars():
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSSVM(OneSlackSSVM(problem=crf, max_iter=500, C=10. ** 5,
+        clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10. ** 5,
                                       verbose=2, check_constraints=True,
                                       n_jobs=-1, break_on_bad=True))
         clf.fit(X, Y)

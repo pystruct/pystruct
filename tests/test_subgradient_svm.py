@@ -7,7 +7,7 @@ from nose.tools import assert_less
 from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
 
-from pystruct.problems import GridCRF, GraphCRF
+from pystruct.models import GridCRF, GraphCRF
 from pystruct.learners import SubgradientSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import SaveLogger
@@ -17,7 +17,7 @@ def test_binary_blocks_subgradient_parallel():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientSSVM(problem=crf, max_iter=200, C=100, verbose=10,
+    clf = SubgradientSSVM(model=crf, max_iter=200, C=100, verbose=10,
                           momentum=.0, learning_rate=0.1, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
@@ -28,7 +28,7 @@ def test_binary_blocks_subgradient_oline():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientSSVM(problem=crf, max_iter=200, C=100, verbose=10,
+    clf = SubgradientSSVM(model=crf, max_iter=200, C=100, verbose=10,
                           momentum=.0, learning_rate=0.1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)

@@ -5,7 +5,7 @@ from tempfile import mkstemp
 from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
 
-from pystruct.problems import GraphCRF
+from pystruct.models import GraphCRF
 from pystruct.learners import StructuredSVM
 from pystruct.utils import SaveLogger
 

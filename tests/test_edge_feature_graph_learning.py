@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from pystruct.problems import EdgeFeatureGraphCRF
+from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.learners import StructuredSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
@@ -29,7 +29,7 @@ def test_multinomial_blocks_directional():
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
-        clf = StructuredSVM(problem=crf, max_iter=10, C=100, verbose=0,
+        clf = StructuredSVM(model=crf, max_iter=10, C=100, verbose=0,
                             check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -53,7 +53,7 @@ def test_multinomial_blocks_directional_anti_symmetric():
                                   n_edge_features=2,
                                   symmetric_edge_features=[0],
                                   antisymmetric_edge_features=[1])
-        clf = StructuredSVM(problem=crf, max_iter=20, C=1000, verbose=10,
+        clf = StructuredSVM(model=crf, max_iter=20, C=1000, verbose=10,
                             check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

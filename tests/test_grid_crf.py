@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.problems import GridCRF
+from pystruct.models import GridCRF
 from pystruct.utils import (find_constraint, exhaustive_inference,
                             exhaustive_loss_augmented_inference)
 

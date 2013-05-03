@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 ##from nose.tools import assert_equal, assert_almost_equal, assert_raises
 from nose.tools import assert_almost_equal, assert_equal
 
-from pystruct.problems import EdgeFeatureGraphCRF
+from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.utils import make_grid_edges
 import pystruct.toy_datasets as toy

@@ -1,10 +1,10 @@
 import numpy as np
 
-from .base import StructuredProblem
+from .base import StructuredModel
 from .utils import crammer_singer_psi
 
 
-class BinarySVMProblem(StructuredProblem):
+class BinarySVMModel(StructuredModel):
     """Formulate standard linear binary SVM in CRF framework.
 
     Inputs x are simply feature arrays, labels y are -1 or 1.
@@ -114,7 +114,7 @@ class BinarySVMProblem(StructuredProblem):
         return Y != Y_hat
 
 
-class CrammerSingerSVMProblem(StructuredProblem):
+class CrammerSingerSVMModel(StructuredModel):
     """Formulate linear multiclass SVM in C-S style in CRF framework.
 
     Inputs x are simply feature arrays, labels y are 0 to n_classes.
@@ -190,7 +190,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
 
         Finds armin_y np.dot(w, psi(x, y)), i.e. best possible prediction.
 
-        For an unstructured multi-class problem, this problem, this
+        For an unstructured multi-class model (this model), this
         can easily done by enumerating all possible y.
 
         Parameters

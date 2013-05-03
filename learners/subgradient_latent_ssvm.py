@@ -21,8 +21,8 @@ class LatentSubgradientSSVM(SubgradientSSVM):
 
     Parameters
     ----------
-    problem : StructuredProblem
-        Object containing problem formulation. Has to implement
+    model : StructuredModel
+        Object containing model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
     max_iter : int, default=100
@@ -64,7 +64,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(problem.psi,)
+    w : nd-array, shape=(model.psi,)
         The learned weights of the SVM.
 
    ``loss_curve_`` : list of float
@@ -74,12 +74,12 @@ class LatentSubgradientSSVM(SubgradientSSVM):
        Primal objective after each pass through the dataset.
 
     """
-    def __init__(self, problem, max_iter=100, C=1.0, verbose=0, momentum=0.9,
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
                  break_on_no_constraints=True, logger=None):
         SubgradientSSVM.__init__(
-            self, problem, max_iter, C, verbose=verbose, n_jobs=n_jobs,
+            self, model, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
             momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
             break_on_no_constraints=break_on_no_constraints, logger=logger)
@@ -102,7 +102,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         """
         print("Training latent subgradient structural SVM")
         self.w = getattr(self, "w", np.random.normal(
-            0, .001, size=self.problem.size_psi))
+            0, .001, size=self.model.size_psi))
         #constraints = []
         self.objective_curve_ = []
         n_samples = len(X)
@@ -116,13 +116,13 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                 if self.n_jobs == 1:
                     # online learning
                     for x, y in zip(X, Y):
-                        h = self.problem.latent(x, y, self.w)
-                        h_hat = self.problem.loss_augmented_inference(
+                        h = self.model.latent(x, y, self.w)
+                        h_hat = self.model.loss_augmented_inference(
                             x, h, self.w, relaxed=True)
-                        delta_psi = (self.problem.psi(x, h)
-                                     - self.problem.psi(x, h_hat))
+                        delta_psi = (self.model.psi(x, h)
+                                     - self.model.psi(x, h_hat))
                         slack = (-np.dot(delta_psi, self.w)
-                                 + self.problem.loss(h, h_hat))
+                                 + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
@@ -144,9 +144,9 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                         candidate_constraints = Parallel(
                             n_jobs=self.n_jobs,
                             verbose=verbose)(delayed(find_constraint_latent)(
-                                self.problem, x, y, self.w)
+                                self.model, x, y, self.w)
                                 for x, y in zip(X_b, Y_b))
-                        dpsi = np.zeros(self.problem.size_psi)
+                        dpsi = np.zeros(self.model.size_psi)
                         for x, y, constraint in zip(X_b, Y_b,
                                                     candidate_constraints):
                             y_hat, delta_psi, slack, loss = constraint
@@ -183,12 +183,12 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         except KeyboardInterrupt:
             pass
         print("final objective: %f" % self.objective_curve_[-1])
-        print("calls to inference: %d" % self.problem.inference_calls)
+        print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def predict(self, X):
         prediction = SubgradientSSVM.predict(self, X)
-        return [self.problem.label_from_latent(h) for h in prediction]
+        return [self.model.label_from_latent(h) for h in prediction]
 
     def predict_latent(self, X):
         return SubgradientSSVM.predict(self, X)
@@ -196,7 +196,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
     def score(self, X, Y):
         """Compute score as 1 - loss over whole data set.
 
-        Returns the average accuracy (in terms of problem.loss)
+        Returns the average accuracy (in terms of model.loss)
         over X and Y.
 
         Parameters
@@ -212,11 +212,11 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        if hasattr(self.problem, 'batch_loss'):
-            losses = self.problem.batch_loss(
-                Y, self.problem.batch_inference(X, self.w))
+        if hasattr(self.model, 'batch_loss'):
+            losses = self.model.batch_loss(
+                Y, self.model.batch_inference(X, self.w))
         else:
-            losses = [self.problem.loss(y, self.problem.inference(y, self.w))
+            losses = [self.model.loss(y, self.model.inference(y, self.w))
                       for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.problem.max_loss(y) for y in Y]
+        max_losses = [self.model.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))

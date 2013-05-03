@@ -29,8 +29,8 @@ class OneSlackSSVM(BaseSSVM):
 
     Parameters
     ----------
-    problem : StructuredProblem
-        Object containing problem formulation. Has to implement
+    model : StructuredModel
+        Object containing the model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
     max_iter : int
@@ -91,7 +91,7 @@ class OneSlackSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(problem.psi,)
+    w : nd-array, shape=(model.psi,)
         The learned weights of the SVM.
 
     old_solution : dict
@@ -104,13 +104,13 @@ class OneSlackSSVM(BaseSSVM):
        Primal objective after each pass through the dataset.
     """
 
-    def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
+    def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, tol=1e-5,
                  inference_cache=0, inactive_threshold=1e-10,
                  inactive_window=50, logger=None, cache_tol='auto'):
 
-        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
+        BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
@@ -153,7 +153,7 @@ class OneSlackSSVM(BaseSSVM):
         A = cvxopt.matrix(np.ones((1, n_constraints)))
         b = cvxopt.matrix([C])
 
-        # solve QP problem
+        # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
         #if hasattr(self, 'old_solution'):
             #s = self.old_solution['s']
@@ -189,7 +189,7 @@ class OneSlackSSVM(BaseSSVM):
                                                            n_constraints))
         self.w = np.dot(a, psi_matrix)
         # we needed to flip the sign to make the dual into a minimization
-        # problem
+        # model
         return -solution['primal objective']
 
     def prune_constraints(self, constraints, a):
@@ -276,8 +276,8 @@ class OneSlackSSVM(BaseSSVM):
             # this makes it a little less efficient in the caching case.
             # the idea is that if we cache, inference is way more expensive
             # and this doesn't matter much.
-            sample.append((self.problem.psi(x, y_hat),
-                           self.problem.loss(y, y_hat), y_hat))
+            sample.append((self.model.psi(x, y_hat),
+                           self.model.loss(y, y_hat), y_hat))
 
     def _constraint_from_cache(self, X, Y, psi_gt, constraints):
         if (not getattr(self, 'inference_cache_', False) or
@@ -294,7 +294,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
 
         Y_hat = []
-        psi_acc = np.zeros(self.problem.size_psi)
+        psi_acc = np.zeros(self.model.size_psi)
         loss_mean = 0
         for cached in self.inference_cache_:
             # cached has entries of form (psi, loss, y_hat)
@@ -322,15 +322,15 @@ class OneSlackSSVM(BaseSSVM):
             verbose = max(0, self.verbose - 3)
             Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
                 delayed(loss_augmented_inference)(
-                    self.problem, x, y, self.w, relaxed=True)
+                    self.model, x, y, self.w, relaxed=True)
                 for x, y in zip(X, Y))
         else:
-            Y_hat = self.problem.batch_loss_augmented_inference(
+            Y_hat = self.model.batch_loss_augmented_inference(
                 X, Y, self.w, relaxed=True)
         # compute the mean over psis and losses
 
-        dpsi = (psi_gt - self.problem.batch_psi(X, Y_hat)) / len(X)
-        loss_mean = np.mean(self.problem.batch_loss(Y, Y_hat))
+        dpsi = (psi_gt - self.model.batch_psi(X, Y_hat)) / len(X)
+        loss_mean = np.mean(self.model.batch_loss(Y, Y_hat))
 
         violation = loss_mean - np.dot(self.w, dpsi)
         if check and self._check_bad_constraint(
@@ -370,21 +370,21 @@ class OneSlackSSVM(BaseSSVM):
             self.cache_tol_ = self.cache_tol
 
         if not warm_start:
-            self.w = np.zeros(self.problem.size_psi)
+            self.w = np.zeros(self.model.size_psi)
             constraints = []
             self.objective_curve_, self.primal_objective_curve_ = [], []
             self.cached_constraint_ = []
             self.alphas = []  # dual solutions
             self.last_slack_ = -1
             # append constraint given by ground truth to make our life easier
-            constraints.append((np.zeros(self.problem.size_psi), 0))
+            constraints.append((np.zeros(self.model.size_psi), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
         else:
             constraints = self.constraints_
 
         # get the psi of the ground truth
-        psi_gt = self.problem.batch_psi(X, Y)
+        psi_gt = self.model.batch_psi(X, Y)
 
         try:
             # catch ctrl+c to stop training
@@ -454,7 +454,7 @@ class OneSlackSSVM(BaseSSVM):
             pass
         if self.logger is not None:
             self.logger(self, 'final')
-        print("calls to inference: %d" % self.problem.inference_calls)
+        print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
         Y_hat, dpsi, loss_mean = self._find_new_constraint(
             X, Y, psi_gt, constraints, check=False)

@@ -8,7 +8,7 @@ from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
 from sklearn.svm import SVC
 
-from pystruct.problems import BinarySVMProblem
+from pystruct.models import BinarySVMModel
 from pystruct.learners import (StructuredSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
@@ -24,7 +24,7 @@ X /= X.max()
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
-pbl = BinarySVMProblem(n_features=X_train.shape[1] + 1)  # add one for bias
+pbl = BinarySVMModel(n_features=X_train.shape[1] + 1)  # add one for bias
 n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=10,
                             batch_size=-1)
 one_slack_svm = OneSlackSSVM(pbl, verbose=10, check_constraints=False, C=10,

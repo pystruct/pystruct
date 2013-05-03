@@ -24,9 +24,9 @@ is also a simple perceptron.
 CRFs aka Models
 ==================
 
-Know about the problem.
+Know about the model formulation.
 
-These know about the structure of the problem, the loss and the inference. This
+These know about the structure of the model, the loss and the inference. This
 is basically the part that you have to write yourself when using the Python
 interface in SVM^struct. I am only working on pairwise models and there is
 support for grids and general graphs. I am mostly working on the grids at the
@@ -80,7 +80,7 @@ There are quite a couple of requirements, though:
 
 Learning
 ==========
-This module contains algorithms for solving the structured learning problem.
+This module contains algorithms for solving the structured learning model.
 Most are based on structured support vector machines.
 
 Currently, I advise to use the OneSlackSSVM, which solves the QP using CVXOPT.
@@ -110,9 +110,9 @@ The rest is experimental / for testing.
 
 Models
 ========
-This module contains problem formulations for several settings.
+This module contains model formulations for several settings.
 They provide the glue between the learning algorithm and the data (and inference).
-The BinarySVMProblem implements a standard SVM, the CrammerSingerSVMProblem a multi-class SVM
+The BinarySVMModel implements a standard SVM, the CrammerSingerSVMModel a multi-class SVM
 - which is surprisingly efficient and sometimes comparable to LibLinear Crammer-Singer Implementation.
 
 GraphCRF implements a simple pairwise model for arbitrary graphs, while EdgeFeatureGraphCRF allows
@@ -130,8 +130,8 @@ GridCRF is a convenience class for grid graphs.
    :toctree: generated/
    :template: class.rst
 
-    models.BinarySVMProblem
-    models.CrammerSingerSVMProblem
+    models.BinarySVMModel
+    models.CrammerSingerSVMModel
     models.GraphCRF
     models.EdgeFeatureGraphCRF
     models.LatentGraphCRF

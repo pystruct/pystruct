@@ -903,7 +903,7 @@ def setup(app):
 
     # Sphinx hack: sphinx copies generated images to the build directory
     #  each time the docs are made.  If the desired image name already
-    #  exists, it appends a digit to prevent overwrites.  The problem is,
+    #  exists, it appends a digit to prevent overwrites.  The model is,
     #  the directory is never cleared.  This means that each time you build
     #  the docs, the number of images in the directory grows.
     #

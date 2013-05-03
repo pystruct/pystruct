@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
+from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import LatentSubgradientSSVM
 
 import pystruct.toy_datasets as toy
@@ -20,7 +20,7 @@ def test_with_crosses():
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSubgradientSSVM(problem=crf, max_iter=250, C=10. ** 5,
+            clf = LatentSubgradientSSVM(model=crf, max_iter=250, C=10. ** 5,
                                         verbose=20, learning_rate=0.0001,
                                         show_loss_every=10, momentum=0.98,
                                         decay_exponent=0)
@@ -36,7 +36,7 @@ def test_with_crosses():
 #    n_labels = 2
 #    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
 #                        inference_method='lp')
-#    clf = LatentSubgradientSSVM(problem=crf, max_iter=50, C=10. ** 3,
+#    clf = LatentSubgradientSSVM(model=crf, max_iter=50, C=10. ** 3,
 #                                verbose=2)
 #    H_init = crf.init_latent(X, Y)
 
@@ -56,7 +56,7 @@ def test_directional_bars():
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSubgradientSSVM(problem=crf, max_iter=500, C=10. ** 5,
+        clf = LatentSubgradientSSVM(model=crf, max_iter=500, C=10. ** 5,
                                     verbose=2)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

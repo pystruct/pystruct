@@ -3,7 +3,7 @@ import itertools
 
 #from numpy.testing import assert_array_equal, assert_array_almost_equal
 #from nose.tools import assert_equal
-from pystruct.problems import GraphCRF, LatentNodeCRF
+from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import StructuredSVM
 from pystruct.learners import LatentSubgradientSSVM
 #from pystruct.learners import LatentSSVM
@@ -29,7 +29,7 @@ def plot_boxes(boxes, size=4):
 # learn the "easy" 2x2 boxes dataset.
 # a 2x2 box is placed randomly in a 4x4 grid
 # we add a latent variable for each 2x2 patch
-# that should make the problem fairly simple
+# that should make the model fairly simple
 
 X, Y = toy.make_simple_2x2(seed=1)
 
@@ -40,7 +40,7 @@ Y_flat = [y.ravel() for y in Y]
 
 # first, use standard graph CRF. Can't do much, high loss.
 crf = GraphCRF(n_states=2, n_features=1, inference_method='lp')
-svm = StructuredSVM(problem=crf, max_iter=200, C=1, verbose=0,
+svm = StructuredSVM(model=crf, max_iter=200, C=1, verbose=0,
                     check_constraints=True, break_on_bad=False, n_jobs=1)
 
 # make dataset from X and graph without edges
@@ -55,11 +55,11 @@ print("Training score multiclass svm CRF: %f" % svm.score(asdf, Y_flat))
 # using one latent variable for each 2x2 rectangle
 latent_crf = LatentNodeCRF(n_labels=2, n_features=1, inference_method='lp',
                            n_hidden_states=2)
-#latent_svm = LatentSSVM(problem=latent_crf, max_iter=200, C=10, verbose=10,
+#latent_svm = LatentSSVM(model=latent_crf, max_iter=200, C=10, verbose=10,
                         #check_constraints=True, break_on_bad=True, n_jobs=1,
                         #latent_iter=10, base_svm='subgradient', tol=-1,
                         #inactive_window=0, learning_rate=0.01, momentum=0)
-latent_svm = LatentSubgradientSSVM(problem=latent_crf, max_iter=200, C=100,
+latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=200, C=100,
                                    verbose=1, n_jobs=1, show_loss_every=10,
                                    learning_rate=0.01, momentum=0)
 
