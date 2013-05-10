@@ -20,7 +20,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
     elif inference_method == "dai":
         return inference_dai(unary_potentials, pairwise_potentials, edges,
-                             **kwargs)
+                             return_energy=return_energy, **kwargs)
     elif inference_method == "lp":
         return inference_lp(unary_potentials, pairwise_potentials, edges,
                             relaxed, return_energy=return_energy, **kwargs)
@@ -53,7 +53,7 @@ def _validate_params(unary_potentials, pairwise_params, edges):
 
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='bp'):
+                  return_energy=False, alg='dd', init=None):
     import opengm
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -64,7 +64,21 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     for pw, edge in zip(pairwise_potentials, edges):
         gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
                      edge.astype(np.uint64))
-    inference = opengm.inference.BeliefPropagation(gm)
+    if alg == 'bp':
+        inference = opengm.inference.BeliefPropagation(gm)
+    elif alg == 'dd':
+        inference = opengm.inference.DualDecompositionSubgradient(gm)
+    elif alg == 'trws':
+        inference = opengm.inference.TrwsExternal(gm)
+    elif alg == 'trw':
+        inference = opengm.inference.TreeReweightedBp(gm)
+    elif alg == 'gibbs':
+        inference = opengm.inference.Gibbs(gm)
+    elif alg == 'lf':
+        inference = opengm.inference.LazyFlipper(gm)
+    if init is not None:
+        inference.setStartingPoint(init)
+
     inference.infer()
     res = inference.arg()
     if return_energy:
@@ -87,7 +101,8 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
     return y.reshape(shape_org)
 
 
-def inference_dai(unary_potentials, pairwise_potentials, edges):
+def inference_dai(unary_potentials, pairwise_potentials, edges,
+                  return_energy=False):
     from daimrf import mrf
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
@@ -101,6 +116,9 @@ def inference_dai(unary_potentials, pairwise_potentials, edges):
     y = mrf(unaries, edges.astype(np.int64),
             np.exp(pairwise_potentials / max_entry), alg='jt')
     y = y.reshape(shape_org)
+    if return_energy:
+        return y, compute_energy(unary_potentials, pairwise_potentials, edges,
+                                 y)
     return y
 
 
