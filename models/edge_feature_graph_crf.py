@@ -64,6 +64,11 @@ class EdgeFeatureGraphCRF(GraphCRF):
         self.size_psi = (n_states * self.n_features
                          + self.n_edge_features
                          * n_states ** 2)
+        if symmetric_edge_features is None:
+            symmetric_edge_features = []
+        if antisymmetric_edge_features is None:
+            antisymmetric_edge_features = []
+
         if not set(symmetric_edge_features).isdisjoint(
                 antisymmetric_edge_features):
             raise ValueError("symmetric_edge_features and "
