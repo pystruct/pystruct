@@ -5,6 +5,8 @@
 # Implements structured SVM as described in Joachims et. al.
 # Cutting-Plane Training of Structural SVMs
 
+from time import time
+
 import numpy as np
 import cvxopt
 import cvxopt.solvers
@@ -384,7 +386,9 @@ class OneSlackSSVM(BaseSSVM):
             constraints.append((np.zeros(self.model.size_psi), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
+            self.timestamps_ = [time()]
         else:
+            self.last_slack_ = -1
             constraints = self.constraints_
 
         # get the psi of the ground truth
@@ -397,6 +401,7 @@ class OneSlackSSVM(BaseSSVM):
             # catch ctrl+c to stop training
 
             for iteration in xrange(self.max_iter):
+                self.timestamps_.append(time() - self.timestamps_[0])
                 # main loop
                 cached_constraint = False
                 if self.verbose > 0:
