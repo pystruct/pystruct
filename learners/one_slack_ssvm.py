@@ -226,8 +226,8 @@ class OneSlackSSVM(BaseSSVM):
             Tracer()()
         if tol is None:
             tol = self.tol
-        if (violation_difference) < tol:
-            print("new constraint to weak.")
+        if violation_difference < tol:
+            print("new constraint too weak.")
             return True
         equals = [True for dpsi_, loss_ in old_constraints
                   if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
@@ -310,7 +310,7 @@ class OneSlackSSVM(BaseSSVM):
 
         violation = loss_mean - np.dot(self.w, dpsi)
         if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
-                                      break_on_bad=False, tol=self.cache_tol_):
+                                      break_on_bad=False):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
