@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal, assert_almost_equal
+from nose.tools import assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.models import GridCRF
@@ -44,8 +44,8 @@ def test_continuous_y():
         assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
         # test loss:
-        assert_equal(crf.loss(y, const[0]),
-                     crf.continuous_loss(y, const_cont[0][0]))
+        assert_almost_equal(crf.loss(y, const[0]),
+                            crf.continuous_loss(y, const_cont[0][0]))
 
 
 def test_energy_lp():

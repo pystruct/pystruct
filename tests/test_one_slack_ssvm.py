@@ -14,13 +14,15 @@ from pystruct.utils import make_grid_edges, SaveLogger
 
 def test_multinomial_blocks_one_slack():
     #testing cutting plane ssvm on easy multinomial dataset
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0)
+    print(np.argmax(X[0], axis=-1))
     n_labels = len(np.unique(Y))
     for inference_method in ['lp']:
+        check = inference_method == "lp"
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=50, C=100, verbose=100,
-                           check_constraints=True, break_on_bad=True, tol=.1)
+        clf = OneSlackSSVM(model=crf, max_iter=50, C=1, verbose=2,
+                           check_constraints=check, break_on_bad=check, tol=.1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -107,24 +109,24 @@ def test_binary_blocks_one_slack_graph():
 
 def test_one_slack_constraint_caching():
     #testing cutting plane ssvm on easy multinomial dataset
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method='lp')
-    clf = OneSlackSSVM(model=crf, max_iter=50, C=100, verbose=100,
+    clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=2,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
     assert_equal(len(clf.inference_cache_), len(X))
-    # there should be 9 constraints, which are less than the 16 iterations
+    # there should be 14 constraints, which are less than the 90 iterations
     # that are done
-    assert_equal(len(clf.inference_cache_[0]), 6)
+    assert_equal(len(clf.inference_cache_[0]), 23)
     # check that we didn't change the behavior of how we construct the cache
     constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
-    assert_equal(np.max(constraints_per_sample), 6)
-    assert_equal(np.min(constraints_per_sample), 6)
+    assert_equal(np.max(constraints_per_sample), 23)
+    assert_equal(np.min(constraints_per_sample), 23)
 
 
 def test_one_slack_attractive_potentials():

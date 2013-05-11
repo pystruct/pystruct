@@ -262,5 +262,5 @@ def test_continuous_y():
         assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
         # test loss:
-        assert_equal(crf.loss(y, const[0]),
-                     crf.continuous_loss(y, const_cont[0][0]))
+        assert_almost_equal(crf.loss(y, const[0]),
+                            crf.continuous_loss(y, const_cont[0][0]))
