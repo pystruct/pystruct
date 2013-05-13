@@ -120,7 +120,7 @@ class SubgradientSSVM(BaseSSVM):
 
         self.t += 1.
 
-    def fit(self, X, Y, constraints=None):
+    def fit(self, X, Y, constraints=None, warm_start=False):
         """Learn parameters using subgradient descent.
 
         Parameters
@@ -135,10 +135,14 @@ class SubgradientSSVM(BaseSSVM):
 
         constraints : None
             Discarded. Only for API compatibility currently.
+
+        warm_start : boolean, default=False
+            Whether to restart a previous fit.
         """
         print("Training primal subgradient structural SVM")
-        self.w = getattr(self, "w", np.zeros(self.model.size_psi))
-        self.objective_curve_ = []
+        if not warm_start:
+            self.w = getattr(self, "w", np.zeros(self.model.size_psi))
+            self.objective_curve_ = []
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):

@@ -104,6 +104,9 @@ class OneSlackSSVM(BaseSSVM):
 
    ``objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
+
+    ``timestamps_`` : list of int
+        Total training time stored before each iteration.
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
