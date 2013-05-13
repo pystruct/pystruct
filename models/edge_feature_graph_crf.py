@@ -78,6 +78,12 @@ class EdgeFeatureGraphCRF(GraphCRF):
         self.symmetric_edge_features = symmetric_edge_features
         self.antisymmetric_edge_features = antisymmetric_edge_features
 
+    def __repr__(self):
+        return ("%s(n_states: %d, inference_method: %s, n_features: %d, "
+                "n_edge_features: %d)"
+                % (type(self).__name__, self.n_states, self.inference_method,
+                   self.n_features, self.n_edge_features))
+
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
 
