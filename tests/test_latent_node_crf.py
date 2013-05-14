@@ -5,8 +5,8 @@ from nose.tools import assert_equal, assert_almost_equal
 #import pystruct.toy_datasets as toy
 #from pystruct.utils import (exhaustive_loss_augmented_inference,
                             #make_grid_edges, find_constraint)
-from pystruct.problems import LatentNodeCRF
-#from pystruct.problems.latent_grid_crf import kmeans_init
+from pystruct.models import LatentNodeCRF
+#from pystruct.models.latent_grid_crf import kmeans_init
 
 
 def test_inference_trivial():

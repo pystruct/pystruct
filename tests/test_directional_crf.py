@@ -6,7 +6,7 @@ from nose.tools import assert_equal, assert_almost_equal
 import pystruct.toy_datasets as toy
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.utils import make_grid_edges
-from pystruct.problems import DirectionalGridCRF
+from pystruct.models import DirectionalGridCRF
 
 
 def test_inference():
@@ -15,7 +15,6 @@ def test_inference():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
-    edges = make_grid_edges(x, neighborhood=4)
 
     edge_list = make_grid_edges(x, 4, return_lists=True)
     edges = np.vstack(edge_list)

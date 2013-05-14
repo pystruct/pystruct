@@ -3,8 +3,10 @@ import itertools
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal
-from pystruct.problems import GraphCRF, LatentNodeCRF
-from pystruct.learners import StructuredSVM, LatentSSVM, LatentSubgradientSSVM
+from pystruct.models import GraphCRF, LatentNodeCRF
+from pystruct.learners import (StructuredSVM, LatentSSVM,
+                               LatentSubgradientSSVM, OneSlackSSVM,
+                               SubgradientSSVM)
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
 
@@ -15,7 +17,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     # same as GraphCRF
     X, Y = toy.generate_blocks(n_samples=3)
     crf = GraphCRF(inference_method='lp')
-    clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+    clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                         check_constraints=True, break_on_bad=False,
                         n_jobs=1)
     x1, x2, x3 = X
@@ -41,9 +43,11 @@ def test_binary_blocks_cutting_plane_latent_node():
 
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=0)
-    latent_svm = LatentSSVM(problem=latent_crf, max_iter=20, C=100, verbose=0,
-                            check_constraints=True, break_on_bad=False,
-                            n_jobs=1, latent_iter=3)
+    latent_svm = LatentSSVM(StructuredSVM(model=latent_crf, max_iter=20,
+                                          C=100, verbose=0,
+                                          check_constraints=True,
+                                          break_on_bad=False, n_jobs=1),
+                            latent_iter=3)
     X_latent = zip(X_, G, np.zeros(len(X_)))
     latent_svm.fit(X_latent, Y, H_init=Y)
     Y_pred = latent_svm.predict(X_latent)
@@ -57,19 +61,19 @@ def test_latent_node_boxes_standard_latent():
     # learn the "easy" 2x2 boxes dataset.
     # a 2x2 box is placed randomly in a 4x4 grid
     # we add a latent variable for each 2x2 patch
-    # that should make the problem fairly simple
-
-    # currently only works with perfect init :-/
+    # that should make the model fairly simple
 
     X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=2, n_features=1)
-    for base_svm in ['1-slack', 'n-slack', 'subgradient']:
-        latent_svm = LatentSSVM(problem=latent_crf, max_iter=50, C=10,
-                                verbose=10, check_constraints=True,
-                                break_on_bad=True, n_jobs=1, latent_iter=10,
-                                base_svm=base_svm, tol=-1, inactive_window=0,
-                                learning_rate=0.01, momentum=0)
+    one_slack = OneSlackSSVM(latent_crf)
+    n_slack = StructuredSVM(latent_crf)
+    subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
+                                  momentum=0)
+    for base_svm in [one_slack, n_slack, subgradient]:
+        base_svm.C = 10
+        latent_svm = LatentSSVM(base_svm,
+                                latent_iter=10)
 
         G = [make_grid_edges(x) for x in X]
 
@@ -86,11 +90,9 @@ def test_latent_node_boxes_standard_latent():
         # reshape / flatten x and y
         X_flat = [x.reshape(-1, 1) for x in X]
         Y_flat = [y.ravel() for y in Y]
-        H_init = [np.hstack([y.ravel(), 2 + y[1: -1, 1: -1].ravel()])
-                  for y in Y]
 
-        X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
-        latent_svm.fit(X_, Y_flat, H_init)
+        X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
+        latent_svm.fit(X_, Y_flat)
 
         assert_equal(latent_svm.score(X_, Y_flat), 1)
 
@@ -101,12 +103,12 @@ def test_latent_node_boxes_latent_subgradient():
     # learn the "easy" 2x2 boxes dataset.
     # a 2x2 box is placed randomly in a 4x4 grid
     # we add a latent variable for each 2x2 patch
-    # that should make the problem fairly simple
+    # that should make the model fairly simple
 
     X, Y = toy.make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=2, n_features=1)
-    latent_svm = LatentSubgradientSSVM(problem=latent_crf, max_iter=250, C=10,
+    latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=250, C=10,
                                        verbose=10, learning_rate=0.1,
                                        momentum=0)
 
@@ -125,10 +127,8 @@ def test_latent_node_boxes_latent_subgradient():
     # reshape / flatten x and y
     X_flat = [x.reshape(-1, 1) for x in X]
     Y_flat = [y.ravel() for y in Y]
-    H_init = [np.hstack([y.ravel(), np.random.randint(2, 4, size=2 * 2)])
-              for y in Y]
 
     X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
-    latent_svm.fit(X_, Y_flat, H_init)
+    latent_svm.fit(X_, Y_flat)
 
     assert_equal(latent_svm.score(X_, Y_flat), 1)

@@ -4,18 +4,18 @@ from nose.tools import assert_true
 
 from sklearn.datasets import make_blobs
 
-from pystruct.problems import BinarySVMProblem
-from pystruct.learners import (StructuredSVM, SubgradientStructuredSVM,
+from pystruct.models import BinarySVMModel
+from pystruct.learners import (StructuredSVM, SubgradientSSVM,
                                OneSlackSSVM)
 
 
-def test_problem_1d():
+def test_model_1d():
     # 10 1d datapoints between -1 and 1
     np.random.seed(0)
     X = np.random.uniform(size=(10, 1))
     # linearly separable labels
     Y = 1 - 2 * (X.ravel() < .5)
-    pbl = BinarySVMProblem(n_features=2)
+    pbl = BinarySVMModel(n_features=2)
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     w = [1, -.5]
@@ -39,7 +39,7 @@ def test_simple_1d_dataset_cutting_plane():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
-    pbl = BinarySVMProblem(n_features=2)
+    pbl = BinarySVMModel(n_features=2)
     svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
@@ -53,7 +53,7 @@ def test_blobs_2d_cutting_plane():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMProblem(n_features=3)
+    pbl = BinarySVMModel(n_features=3)
     svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -68,9 +68,8 @@ def test_blobs_2d_subgradient():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMProblem(n_features=3)
-    svm = SubgradientStructuredSVM(pbl, verbose=3,
-                                   C=1000)
+    pbl = BinarySVMModel(n_features=3)
+    svm = SubgradientSSVM(pbl, verbose=3, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -84,7 +83,7 @@ def test_blobs_2d_one_slack():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMProblem(n_features=3)
+    pbl = BinarySVMModel(n_features=3)
     svm = OneSlackSSVM(pbl, verbose=30, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -96,7 +95,7 @@ def test_blobs_batch():
     X, Y = make_blobs(n_samples=80, centers=2, random_state=1)
     Y = 2 * Y - 1
 
-    pbl = BinarySVMProblem(n_features=2)
+    pbl = BinarySVMModel(n_features=2)
 
     # test psi
     psi_mean = pbl.batch_psi(X, Y)

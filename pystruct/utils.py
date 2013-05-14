@@ -1,4 +1,6 @@
 import itertools
+import cPickle
+
 import numpy as np
 
 
@@ -79,7 +81,7 @@ def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
 
 
 ## global functions for easy parallelization
-def find_constraint(problem, x, y, w, y_hat=None, relaxed=True,
+def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
                     compute_difference=True):
     """Find most violated constraint, or, given y_hat,
     find slack and dpsi for this constraing.
@@ -90,53 +92,53 @@ def find_constraint(problem, x, y, w, y_hat=None, relaxed=True,
     """
 
     if y_hat is None:
-        y_hat = problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
-    psi = problem.psi
+        y_hat = model.loss_augmented_inference(x, y, w, relaxed=relaxed)
+    psi = model.psi
     if compute_difference:
         delta_psi = psi(x, y) - psi(x, y_hat)
     else:
         delta_psi = -psi(x, y_hat)
     if isinstance(y_hat, tuple):
         # continuous label
-        loss = problem.continuous_loss(y, y_hat[0])
+        loss = model.continuous_loss(y, y_hat[0])
     else:
-        loss = problem.loss(y, y_hat)
+        loss = model.loss(y, y_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return y_hat, delta_psi, slack, loss
 
 
-def find_constraint_latent(problem, x, y, w, relaxed=True):
+def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
     As for finding the most violated constraint, it is enough to compute
     psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
     using compute_differences=False
     """
-    h = problem.latent(x, y, w)
-    h_hat = problem.loss_augmented_inference(x, h, w, relaxed=relaxed)
-    psi = problem.psi
+    h = model.latent(x, y, w)
+    h_hat = model.loss_augmented_inference(x, h, w, relaxed=relaxed)
+    psi = model.psi
     delta_psi = psi(x, h) - psi(x, h_hat)
 
-    loss = problem.loss(y, h_hat)
+    loss = model.loss(y, h_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return h_hat, delta_psi, slack, loss
 
 
-def inference(problem, x, w):
-    return problem.inference(x, w)
+def inference(model, x, w):
+    return model.inference(x, w)
 
 
-def loss_augmented_inference(problem, x, y, w, relaxed=True):
-    return problem.loss_augmented_inference(x, y, w, relaxed=relaxed)
+def loss_augmented_inference(model, x, y, w, relaxed=True):
+    return model.loss_augmented_inference(x, y, w, relaxed=relaxed)
 
 
 # easy debugging
-def objective_primal(problem, w, X, Y, C):
+def objective_primal(model, w, X, Y, C):
     objective = 0
-    psi = problem.psi
+    psi = model.psi
     for x, y in zip(X, Y):
-        y_hat = problem.loss_augmented_inference(x, y, w)
-        loss = problem.loss(y, y_hat)
+        y_hat = model.loss_augmented_inference(x, y, w)
+        loss = model.loss(y, y_hat)
         delta_psi = psi(x, y) - psi(x, y_hat)
         objective += loss - np.dot(w, delta_psi)
     objective /= float(len(X))
@@ -144,36 +146,69 @@ def objective_primal(problem, w, X, Y, C):
     return objective
 
 
-def exhaustive_loss_augmented_inference(problem, x, y, w):
+def exhaustive_loss_augmented_inference(model, x, y, w):
     size = y.size
     best_y = None
     best_energy = np.inf
-    for y_hat in itertools.product(range(problem.n_states), repeat=size):
+    for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(y.shape)
         #print("trying %s" % repr(y_hat))
-        psi = problem.psi(x, y_hat)
-        energy = -problem.loss(y, y_hat) - np.dot(w, psi)
+        psi = model.psi(x, y_hat)
+        energy = -model.loss(y, y_hat) - np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat
     return best_y
 
 
-def exhaustive_inference(problem, x, w):
+def exhaustive_inference(model, x, w):
     # hack to get the grid shape of x
     if isinstance(x, np.ndarray):
         feats = x
     else:
-        feats = problem.get_features(x)
+        feats = model.get_features(x)
     size = np.prod(feats.shape[:-1])
     best_y = None
     best_energy = np.inf
-    for y_hat in itertools.product(range(problem.n_states), repeat=size):
+    for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(feats.shape[:-1])
         #print("trying %s" % repr(y_hat))
-        psi = problem.psi(x, y_hat)
+        psi = model.psi(x, y_hat)
         energy = -np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat
     return best_y
+
+
+class SaveLogger(object):
+    def __init__(self, file_name, save_every=10, verbose=0):
+        self.file_name = file_name
+        self.save_every = save_every
+        self.verbose = verbose
+
+    def __repr__(self):
+        return ('%s(file_name="%s", save_every=%s)'
+                % (self.__class__.__name__, self.file_name, self.save_every))
+
+    def __call__(self, learner, iteration=0):
+        if iteration == 'final' or not iteration % self.save_every:
+            file_name = self.file_name
+            if "%d" in file_name:
+                file_name = file_name % iteration
+            if self.verbose > 0:
+                print("saving %s to file %s" % (learner, file_name))
+            with open(file_name, "wb") as f:
+                if hasattr(learner, 'inference_cache_'):
+                    # don't store the large inference cache!
+                    learner.inference_cache_, tmp = (None,
+                                                     learner.inference_cache_)
+                    cPickle.dump(learner, f, -1)
+                    learner.inference_cache_ = tmp
+                else:
+                    cPickle.dump(learner, f, -1)
+
+    def load(self):
+        with open(self.file_name, "rb") as f:
+            learner = cPickle.load(f)
+        return learner

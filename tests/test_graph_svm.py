@@ -1,8 +1,12 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-#from nose.tools import assert_true
-from pystruct.problems import GraphCRF
-from pystruct.learners import StructuredSVM
+from nose.tools import assert_greater
+
+from sklearn.datasets import make_blobs
+from sklearn.metrics import f1_score
+
+from pystruct.models import GraphCRF
+from pystruct.learners import StructuredSVM, OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
 
@@ -10,11 +14,11 @@ from pystruct.utils import make_grid_edges
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in ["dai", "lp", "qpbo", "ad3"]:
+    for inference_method in ["dai", "lp", "qpbo", "ad3", 'ogm']:
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+        clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                             check_constraints=True, break_on_bad=False,
                             n_jobs=1)
         x1, x2, x3 = X
@@ -37,3 +41,50 @@ def test_binary_blocks_cutting_plane():
         Y_pred = clf.predict(X)
         for y, y_pred in zip(Y, Y_pred):
             assert_array_equal(y, y_pred)
+
+
+def test_standard_svm_blobs_2d():
+    # no edges, reduce to crammer-singer svm
+    X, Y = make_blobs(n_samples=80, centers=3, random_state=42)
+    # we have to add a constant 1 feature by hand :-/
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+
+    X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
+    X_train_graphs = [(x[np.newaxis, :], np.empty((0, 2), dtype=np.int))
+                      for x in X_train]
+
+    X_test_graphs = [(x[np.newaxis, :], np.empty((0, 2), dtype=np.int))
+                     for x in X_test]
+
+    pbl = GraphCRF(n_features=3, n_states=3)
+    svm = OneSlackSSVM(pbl, verbose=10, check_constraints=True, C=1000)
+
+    svm.fit(X_train_graphs, Y_train[:, np.newaxis])
+    assert_array_equal(Y_test, np.hstack(svm.predict(X_test_graphs)))
+
+
+def test_standard_svm_blobs_2d_class_weight():
+    # no edges, reduce to crammer-singer svm
+    X, Y = make_blobs(n_samples=210, centers=3, random_state=1, cluster_std=3,
+                      shuffle=False)
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+    X, Y = X[:170], Y[:170]
+
+    X_graphs = [(x[np.newaxis, :], np.empty((0, 2), dtype=np.int)) for x in X]
+
+    pbl = GraphCRF(n_features=3, n_states=3, inference_method='dai')
+    svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=1000)
+
+    svm.fit(X_graphs, Y[:, np.newaxis])
+
+    weights = 1. / np.bincount(Y)
+    weights *= len(weights) / np.sum(weights)
+
+    pbl_class_weight = GraphCRF(n_features=3, n_states=3, class_weight=weights)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=0, C=10,
+                                    check_constraints=False,
+                                    break_on_bad=False)
+    svm_class_weight.fit(X_graphs, Y[:, np.newaxis])
+
+    assert_greater(f1_score(Y, svm_class_weight.predict(X_graphs)),
+                   f1_score(Y, svm.predict(X_graphs)))

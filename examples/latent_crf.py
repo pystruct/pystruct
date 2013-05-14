@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.cross_validation import train_test_split
 
-from pystruct.problems import LatentGridCRF
+from pystruct.models import LatentGridCRF
 #from pystruct.learners import LatentSSVM
 from pystruct.learners import LatentSubgradientSSVM
 
@@ -17,11 +17,11 @@ def main():
     n_labels = len(np.unique(Y_train))
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
                         inference_method='lp')
-    #clf = LatentSSVM(problem=crf, max_iter=500, C=1000., verbose=2,
+    #clf = LatentSSVM(model=crf, max_iter=500, C=1000., verbose=2,
                      #check_constraints=True, n_jobs=-1, break_on_bad=True,
                      #base_svm='1-slack', inference_cache=20, tol=.1)
     clf = LatentSubgradientSSVM(
-        problem=crf, max_iter=500, C=1000., verbose=2,
+        model=crf, max_iter=500, C=1000., verbose=2,
         n_jobs=-1, learning_rate=0.1, show_loss_every=10)
     clf.fit(X_train, Y_train)
 

@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 from nose.tools import assert_true
-from pystruct.problems import GridCRF
-from pystruct.learners import StructuredSVM, SubgradientStructuredSVM
+from pystruct.models import GridCRF
+from pystruct.learners import StructuredSVM, SubgradientSSVM
 import pystruct.toy_datasets as toy
 
 
@@ -11,7 +11,7 @@ def test_binary_blocks_cutting_plane():
     for inference_method in ["dai", "lp", "qpbo", "ad3"]:
         X, Y = toy.generate_blocks(n_samples=5)
         crf = GridCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+        clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                             check_constraints=True, break_on_bad=False,
                             n_jobs=-1)
         clf.fit(X, Y)
@@ -23,7 +23,7 @@ def test_binary_blocks_batches_n_slack():
     #testing cutting plane ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=5)
     crf = GridCRF(inference_method='lp')
-    clf = StructuredSVM(problem=crf, max_iter=20, C=100, verbose=0,
+    clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
                         check_constraints=True, break_on_bad=False,
                         n_jobs=1, batch_size=1)
     clf.fit(X, Y)
@@ -35,8 +35,8 @@ def test_binary_blocks_subgradient():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=200, C=100,
-                                   verbose=10, learning_rate=0.1, n_jobs=-1)
+    clf = SubgradientSSVM(model=crf, max_iter=200, C=100, verbose=10,
+                          learning_rate=0.1, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -46,8 +46,8 @@ def test_binary_checker_subgradient():
     #testing subgradient ssvm on non-submodular binary dataset
     X, Y = toy.generate_checker(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientStructuredSVM(problem=crf, max_iter=100, C=100, verbose=0,
-                                   momentum=.9, learning_rate=0.1, n_jobs=-1)
+    clf = SubgradientSSVM(model=crf, max_iter=100, C=100, verbose=0,
+                          momentum=.9, learning_rate=0.1, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -59,14 +59,14 @@ def test_binary_ssvm_repellent_potentials():
     X, Y = toy.generate_checker()
     for inference_method in ["lp", "qpbo", "ad3"]:
         crf = GridCRF(inference_method=inference_method)
-        clf = StructuredSVM(problem=crf, max_iter=10, C=100, verbose=0,
+        clf = StructuredSVM(model=crf, max_iter=10, C=100, verbose=0,
                             check_constraints=True, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         # standard crf can predict perfectly
         assert_array_equal(Y, Y_pred)
 
-        submodular_clf = StructuredSVM(problem=crf, max_iter=10, C=100,
+        submodular_clf = StructuredSVM(model=crf, max_iter=10, C=100,
                                        verbose=0, check_constraints=True,
                                        positive_constraint=[4, 5, 6],
                                        n_jobs=-1)
@@ -82,7 +82,7 @@ def test_binary_ssvm_attractive_potentials():
     # test that submodular SSVM can learn the block dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    submodular_clf = StructuredSVM(problem=crf, max_iter=200, C=100,
+    submodular_clf = StructuredSVM(model=crf, max_iter=200, C=100,
                                    verbose=1, check_constraints=True,
                                    positive_constraint=[5], n_jobs=-1)
     submodular_clf.fit(X, Y)

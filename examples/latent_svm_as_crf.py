@@ -1,12 +1,12 @@
 # a Latent CRF with one node is the same as a latent multiclass SVM
-# Using the latent variables, we can learn non-linear problems
+# Using the latent variables, we can learn non-linear models
 
 import numpy as np
 
 from sklearn.cross_validation import train_test_split
 from sklearn.datasets import load_digits
 
-from pystruct.problems import GraphCRF, LatentGraphCRF
+from pystruct.models import GraphCRF, LatentGraphCRF
 from pystruct.learners import StructuredSVM, LatentSubgradientSSVM
 
 # do a binary digit classification
@@ -39,7 +39,7 @@ print(svm.score(X_test_, y_test))
 # now with latent CRF SVM
 latent_pbl = LatentGraphCRF(n_features=64, n_labels=2, n_states_per_label=5,
                             inference_method='dai')
-latent_svm = LatentSubgradientSSVM(problem=latent_pbl, max_iter=5000, C=1,
+latent_svm = LatentSubgradientSSVM(model=latent_pbl, max_iter=5000, C=1,
                                    verbose=2, n_jobs=1, learning_rate=0.1,
                                    show_loss_every=10, momentum=0.0,
                                    decay_exponent=0.5)

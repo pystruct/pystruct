@@ -26,8 +26,8 @@ class StructuredSVM(BaseSSVM):
 
     Parameters
     ----------
-    problem : StructuredProblem
-        Object containing problem formulation. Has to implement
+    model : StructuredModel
+        Object containing the model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
     max_iter : int
@@ -69,10 +69,17 @@ class StructuredSVM(BaseSSVM):
         of the dual objective and stop only if no more constraints can be
         found.
 
+    inactive_threshold : float, default=1e-5
+        Threshold for dual variable of a constraint to be considered inactive.
+
+    inactive_window : float, default=50
+        Window for measuring inactivity. If a constraint is inactive for
+        ``inactive_window`` iterations, it will be pruned from the QP.
+        If set to 0, no constraints will be removed.
 
     Attributes
     ----------
-    w : nd-array, shape=(problem.psi,)
+    w : nd-array, shape=(model.psi,)
         The learned weights of the SVM.
 
     old_solution : dict
@@ -85,19 +92,23 @@ class StructuredSVM(BaseSSVM):
        Primal objective after each pass through the dataset.
     """
 
-    def __init__(self, problem, max_iter=100, C=1.0, check_constraints=True,
+    def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
                  break_on_bad=True, show_loss_every=0, batch_size=100,
-                 tol=-10):
+                 tol=-10, inactive_threshold=1e-10,
+                 inactive_window=0, logger=None):
 
-        BaseSSVM.__init__(self, problem, max_iter, C, verbose=verbose,
-                          n_jobs=n_jobs, show_loss_every=show_loss_every)
+        BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
+                          n_jobs=n_jobs, show_loss_every=show_loss_every,
+                          logger=logger)
 
         self.positive_constraint = positive_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
         self.tol = tol
+        self.inactive_threshold = inactive_threshold
+        self.inactive_window = inactive_window
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
@@ -133,7 +144,7 @@ class StructuredSVM(BaseSSVM):
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
 
-        # solve QP problem
+        # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
         solution = cvxopt.solvers.qp(P, q, G, h)
         if solution['status'] != "optimal":
@@ -147,7 +158,7 @@ class StructuredSVM(BaseSSVM):
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
-        self.alphas.append(a)
+        self.prune_constraints(constraints, a)
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
@@ -159,10 +170,10 @@ class StructuredSVM(BaseSSVM):
             # calculate per example box constraint:
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
             print("dual objective: %f" % solution['primal objective'])
-        w = np.dot(a, psi_matrix)
-        return w, solution['primal objective']
+        self.w = np.dot(a, psi_matrix)
+        return -solution['primal objective']
 
-    def _check_bad_constraint(self, y_hat, slack, old_constraints, w):
+    def _check_bad_constraint(self, y_hat, slack, old_constraints):
         if slack < 1e-5:
             return True
         y_hat_plain = unwrap_pairwise(y_hat)
@@ -180,7 +191,7 @@ class StructuredSVM(BaseSSVM):
         if self.check_constraints:
             for con in old_constraints:
                 # compute slack for old constraint
-                slack_tmp = max(con[2] - np.dot(w, con[1]), 0)
+                slack_tmp = max(con[2] - np.dot(self.w, con[1]), 0)
                 if self.verbose > 5:
                     print("slack old constraint: %f" % slack_tmp)
                 # if slack of new constraint is smaller or not
@@ -222,13 +233,12 @@ class StructuredSVM(BaseSSVM):
         else:
             cvxopt.solvers.options['show_progress'] = True
 
-        w = np.zeros(self.problem.size_psi)
+        self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         if constraints is None:
             constraints = [[] for i in xrange(n_samples)]
         else:
-            w, objective = self._solve_n_slack_qp(constraints,
-                                                  n_samples)
+            objective = self._solve_n_slack_qp(constraints, n_samples)
         loss_curve = []
         objective_curve = []
         self.alphas = []  # dual solutions
@@ -255,7 +265,8 @@ class StructuredSVM(BaseSSVM):
                 candidate_constraints = Parallel(n_jobs=self.n_jobs,
                                                  verbose=verbose)(
                                                      delayed(find_constraint)(
-                                                         self.problem, x, y, w)
+                                                         self.model, x, y,
+                                                         self.w)
                                                      for x, y in zip(X_b, Y_b))
 
                 # for each slice, gather new constraints
@@ -272,8 +283,8 @@ class StructuredSVM(BaseSSVM):
                         # we need this here as dpsi is then != 0
                         continue
 
-                    if self._check_bad_constraint(y_hat, slack, constraints[i],
-                                                  w):
+                    if self._check_bad_constraint(y_hat, slack,
+                                                  constraints[i]):
                         continue
 
                     constraints[i].append([y_hat, delta_psi, loss])
@@ -281,8 +292,7 @@ class StructuredSVM(BaseSSVM):
 
                 # after processing the slice, solve the qp
                 if new_constraints_batch:
-                    w, objective = self._solve_n_slack_qp(constraints,
-                                                          n_samples)
+                    objective = self._solve_n_slack_qp(constraints, n_samples)
                     objective_curve.append(objective)
                     new_constraints += new_constraints_batch
 
@@ -290,23 +300,53 @@ class StructuredSVM(BaseSSVM):
                 print("no additional constraints")
                 break
 
-            self._compute_training_loss(X, Y, w, iteration)
+            self._compute_training_loss(X, Y, iteration)
 
             if self.verbose > 0:
                 print("new constraints: %d, "
                       "dual objective: %f" %
                       (new_constraints,
                        objective))
-            if (iteration > 1 and objective_curve[-2]
-                    - objective_curve[-1] < self.tol):
+            if (iteration > 1 and objective_curve[-1]
+                    - objective_curve[-2] < self.tol):
                 print("objective converged.")
                 break
             if self.verbose > 5:
-                print(w)
+                print(self.w)
 
-        self.w = w
+            if self.logger is not None:
+                self.logger(self, iteration)
+
         self.constraints_ = constraints
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve
-        print("calls to inference: %d" % self.problem.inference_calls)
+        print("calls to inference: %d" % self.model.inference_calls)
         return self
+
+    def prune_constraints(self, constraints, a):
+        pass
+        # FIXME
+        # append list for new constraint
+        #self.alphas.extend([[] for i in xrange(len(a) - len(self.alphas))])
+        #flat_constraints = [constraint for sample in constraints for
+        #constraint #in sample]
+        #assert(len(self.alphas) == len(flat_constraints))
+        #for constraint, alpha in zip(self.alphas, a):
+            #constraint.append(alpha)
+            #constraint = constraint[-self.inactive_window:]
+
+        ## prune unused constraints:
+        ## if the max of alpha in last 50 iterations was small, throw away
+        #if self.inactive_window != 0:
+            #max_active = [np.max(constr[-self.inactive_window:])
+                          #for constr in self.alphas]
+            ## find strongest constraint that is not ground truth constraint
+            #strongest = np.max(max_active[1:])
+            #inactive = max_active < self.inactive_threshold * strongest
+            #idx = 0
+            #for sample in constraints:
+                #for i, const in reversed(list(enumerate(sample))):
+                    #if inactive[idx]:
+                        #del const[i]
+                        #del self.alphas[idx]
+                    #idx += 1

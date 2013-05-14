@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pystruct.problems import DirectionalGridCRF
-#from pystruct.problems import GridCRF
+from pystruct.models import DirectionalGridCRF
+#from pystruct.models import GridCRF
 #from structured_perceptron import StructuredPerceptron
 import pystruct.learners as ssvm
 import pystruct.toy_datasets as toy
@@ -16,13 +16,13 @@ def main():
     n_labels = len(np.unique(Y))
     crf = DirectionalGridCRF(n_states=n_labels, inference_method="lp",
                              neighborhood=4)
-    clf = ssvm.OneSlackSSVM(problem=crf, max_iter=1000, C=100, verbose=2,
+    clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=100, verbose=2,
                             check_constraints=True, n_jobs=-1,
                             inference_cache=100, inactive_window=50, tol=.1)
-    #clf = ssvm.StructuredSVM(problem=crf, max_iter=100, C=100, verbose=3,
+    #clf = ssvm.StructuredSVM(model=crf, max_iter=100, C=100, verbose=3,
                              #check_constraints=True, n_jobs=12)
-    #clf = StructuredPerceptron(problem=crf, max_iter=1000, verbose=10)
-    #clf = ssvm.SubgradientStructuredSVM(problem=crf, max_iter=50, C=100,
+    #clf = StructuredPerceptron(model=crf, max_iter=1000, verbose=10)
+    #clf = ssvm.SubgradientSSVM(model=crf, max_iter=50, C=100,
                                         #verbose=10, momentum=.9,
                                         #learning_rate=0.04,
                                         #n_jobs=-1)
@@ -46,7 +46,7 @@ def main():
         plots[1].set_title("unaries only")
         plots[2].matshow(y_pred)
         plots[2].set_title("prediction")
-        loss_augmented = clf.problem.loss_augmented_inference(x, y, clf.w)
+        loss_augmented = clf.model.loss_augmented_inference(x, y, clf.w)
         loss_augmented = loss_augmented.reshape(y.shape)
         plots[3].matshow(loss_augmented)
         plots[3].set_title("loss augmented")

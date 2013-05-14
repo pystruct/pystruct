@@ -8,14 +8,15 @@ from ..utils import inference
 
 class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
-    def __init__(self, problem, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0):
-        self.problem = problem
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0,
+                 n_jobs=1, show_loss_every=0, logger=None):
+        self.model = model
         self.max_iter = max_iter
         self.C = C
         self.verbose = verbose
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
+        self.logger = logger
 
     def predict(self, X):
         """Predict output on examples in X.
@@ -32,17 +33,17 @@ class BaseSSVM(BaseEstimator):
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:
             prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(inference)(self.problem, x, self.w) for x in X)
+                delayed(inference)(self.model, x, self.w) for x in X)
             return prediction
         else:
-            if hasattr(self.problem, 'batch_inference'):
-                return self.problem.batch_inference(X, self.w)
-            return [self.problem.inference(x, self.w) for x in X]
+            if hasattr(self.model, 'batch_inference'):
+                return self.model.batch_inference(X, self.w)
+            return [self.model.inference(x, self.w) for x in X]
 
     def score(self, X, Y):
         """Compute score as 1 - loss over whole data set.
 
-        Returns the average accuracy (in terms of problem.loss)
+        Returns the average accuracy (in terms of model.loss)
         over X and Y.
 
         Parameters
@@ -58,21 +59,20 @@ class BaseSSVM(BaseEstimator):
         score : float
             Average of 1 - loss over training examples.
         """
-        if hasattr(self.problem, 'batch_loss'):
-            losses = self.problem.batch_loss(Y, self.predict(X))
+        if hasattr(self.model, 'batch_loss'):
+            losses = self.model.batch_loss(Y, self.predict(X))
         else:
-            losses = [self.problem.loss(y, y_pred)
+            losses = [self.model.loss(y, y_pred)
                       for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.problem.max_loss(y) for y in Y]
+        max_losses = [self.model.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
-    def _compute_training_loss(self, X, Y, w, iteration):
+    def _compute_training_loss(self, X, Y, iteration):
         # optionally compute training loss for output / training curve
         if (self.show_loss_every != 0
                 and not iteration % self.show_loss_every):
             if not hasattr(self, 'loss_curve_'):
                 self.loss_curve_ = []
-            self.w = w
             display_loss = 1 - self.score(X, Y)
             if self.verbose > 0:
                 print("current loss: %f" % (display_loss))

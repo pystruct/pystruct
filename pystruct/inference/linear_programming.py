@@ -110,7 +110,7 @@ def solve_lp(unaries, edges, pairwise):
 def main():
     import pystruct.toy_datasets as toy
     import matplotlib.pyplot as plt
-    # create mrf problem:
+    # create mrf model:
     pairwise = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
 
     X, Y = toy.generate_blocks_multinomial(n_samples=1, noise=.5)

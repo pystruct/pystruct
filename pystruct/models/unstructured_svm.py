@@ -1,18 +1,15 @@
 import numpy as np
 
-from .base import StructuredProblem
-from .utilities import crammer_singer_psi
+from .base import StructuredModel
+from .utils import crammer_singer_psi
 
 
-class BinarySVMProblem(StructuredProblem):
+class BinarySVMModel(StructuredModel):
     """Formulate standard linear binary SVM in CRF framework.
 
     Inputs x are simply feature arrays, labels y are -1 or 1.
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
-
-    Needless to say, this implementation is only for demonstration and testing
-    purposes.
 
     Parameters
     ----------
@@ -117,33 +114,51 @@ class BinarySVMProblem(StructuredProblem):
         return Y != Y_hat
 
 
-class CrammerSingerSVMProblem(StructuredProblem):
+class CrammerSingerSVMModel(StructuredModel):
     """Formulate linear multiclass SVM in C-S style in CRF framework.
 
     Inputs x are simply feature arrays, labels y are 0 to n_classes.
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
 
-    Needless to say, this implementation is only for demonstration and testing
-    purposes.
-
     Parameters
     ----------
     n_features : int
         Number of features of inputs x.
+
+    n_classes : int, default=2
+        Number of classes in dataset.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
+
+    rescale_C : bool, default=False
+        Whether the class-weights should be used to rescale C (liblinear-style)
+        or just rescale the loss.
     """
-    def __init__(self, n_features, n_classes=2):
+    def __init__(self, n_features, n_classes=2, class_weight=None,
+                 rescale_C=False):
         # one weight-vector per class
         self.size_psi = n_classes * n_features
         self.n_states = n_classes
         self.n_features = n_features
+        self.rescale_C = rescale_C
+        if class_weight is not None:
+            if len(class_weight) != n_classes:
+                raise ValueError("class_weight must have length n_classes or"
+                                 " be None")
+            class_weight = np.array(class_weight)
+        else:
+            class_weight = np.ones(n_classes)
+        self.class_weight = class_weight
         self.inference_calls = 0
 
     def __repr__(self):
         return ("%s(n_features=%d, n_classes=%d)"
                 % (type(self).__name__, self.n_features, self.n_states))
 
-    def psi(self, x, y):
+    def psi(self, x, y, y_true=None):
         """Compute joint feature vector of x and y.
 
         Feature representation psi, such that the energy of the configuration
@@ -157,6 +172,10 @@ class CrammerSingerSVMProblem(StructuredProblem):
         y : int
             Class label. Between 0 and n_classes.
 
+        y_true : int
+            True class label. Needed if rescale_C==True.
+
+
         Returns
         -------
         p : ndarray, shape (size_psi,)
@@ -165,21 +184,38 @@ class CrammerSingerSVMProblem(StructuredProblem):
         # put feature vector in the place of the weights corresponding to y
         result = np.zeros((self.n_states, self.n_features))
         result[y, :] = x
+        if self.rescale_C:
+            if y_true is None:
+                raise ValueError("rescale_C is true, but no y_true was passed"
+                                 " to psi.")
+            result *= self.class_weight[y_true]
+
         return result.ravel()
 
-    def batch_psi(self, X, Y):
-        out = np.zeros((self.n_states, self.n_features))
-        #for l in xrange(self.n_states):
-            #result[l, :] = np.sum(X[Y == l, :], axis=0)
-        crammer_singer_psi(X, Y, out)
-        return out.ravel()
+    def batch_psi(self, X, Y, Y_true=None):
+        result = np.zeros((self.n_states, self.n_features))
+        if self.rescale_C:
+            if Y_true is None:
+                raise ValueError("rescale_C is true, but no y_true was passed"
+                                 " to psi.")
+            for l in xrange(self.n_states):
+                mask = Y == l
+                class_weight = self.class_weight[Y_true[mask]][:, np.newaxis]
+                result[l, :] = np.sum(X[mask, :] * class_weight, axis=0)
+        else:
+            # if we don't have class weights, we can use our efficient
+            # implementation
+            assert(X.shape[0] == Y.shape[0])
+            assert(X.shape[1] == self.n_features)
+            crammer_singer_psi(X, Y, result)
+        return result.ravel()
 
-    def inference(self, x, w, relaxed=None):
+    def inference(self, x, w, relaxed=None, return_energy=False):
         """Inference for x using parameters w.
 
         Finds armin_y np.dot(w, psi(x, y)), i.e. best possible prediction.
 
-        For an unstructured multi-class problem, this problem, this
+        For an unstructured multi-class model (this model), this
         can easily done by enumerating all possible y.
 
         Parameters
@@ -199,9 +235,12 @@ class CrammerSingerSVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
+        if return_energy:
+            return np.argmax(scores), np.max(scores)
         return np.argmax(scores)
 
-    def loss_augmented_inference(self, x, y, w, relaxed=None):
+    def loss_augmented_inference(self, x, y, w, relaxed=None,
+                                 return_energy=False):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
@@ -226,12 +265,23 @@ class CrammerSingerSVMProblem(StructuredProblem):
         """
         self.inference_calls += 1
         scores = np.dot(w.reshape(self.n_states, -1), x)
-        scores[y] -= 1
+        other_classes = np.arange(self.n_states) != y
+        if self.rescale_C:
+            scores[other_classes] += 1
+        else:
+            scores[other_classes] += self.class_weight[y]
+        if return_energy:
+            return np.argmax(scores), np.max(scores)
         return np.argmax(scores)
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
-        scores[np.arange(X.shape[0]), Y] -= 1
+        other_classes = (np.arange(self.n_states) != np.vstack(Y))
+        if self.rescale_C:
+            scores[other_classes] += 1
+        else:
+            scores[other_classes] += np.repeat(self.class_weight[Y],
+                                               self.n_states - 1)
         return np.argmax(scores, axis=1)
 
     def batch_inference(self, X, w, relaxed=None):
@@ -239,4 +289,7 @@ class CrammerSingerSVMProblem(StructuredProblem):
         return np.argmax(scores, axis=1)
 
     def batch_loss(self, Y, Y_hat):
-        return Y != Y_hat
+        return self.class_weight[Y] * (Y != Y_hat)
+
+    def loss(self, y, y_hat):
+        return self.class_weight[y] * (y != y_hat)

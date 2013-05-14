@@ -2,7 +2,7 @@ import numpy as np
 from .crf import CRF
 
 
-class MultiLabelProblem(CRF):
+class MultiLabelModel(CRF):
     def __init__(self, n_labels, n_features, edges, inference_method='lp'):
         CRF.__init__(self, 2, n_features, inference_method)
         self.n_labels = n_labels
@@ -25,8 +25,8 @@ class MultiLabelProblem(CRF):
 
     def psi(self, x, y):
         if isinstance(y, tuple):
-            #from IPython.core.debugger import Tracer
-            #Tracer()()
+            from IPython.core.debugger import Tracer
+            Tracer()()
             unary_marginals, pw = y
             unary_marginals = unary_marginals.reshape(self.edges.shape[0],
                                                       self.n_states)

@@ -1,8 +1,9 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+from nose.tools import assert_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from pystruct.problems import LatentGridCRF, LatentDirectionalGridCRF
-from pystruct.learners import LatentSubgradientSSVM
+from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF, GridCRF
+from pystruct.learners import LatentSubgradientSSVM, SubgradientSSVM
 
 import pystruct.toy_datasets as toy
 
@@ -20,13 +21,37 @@ def test_with_crosses():
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSubgradientSSVM(problem=crf, max_iter=250, C=10. ** 5,
-                                        verbose=20, learning_rate=0.0001,
+            clf = LatentSubgradientSSVM(model=crf, max_iter=250, C=10. ** 5,
+                                        verbose=20, learning_rate=0.00001,
                                         show_loss_every=10, momentum=0.98,
                                         decay_exponent=0)
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
             assert_array_equal(np.array(Y_pred), Y)
+
+
+def test_objective():
+    # test that LatentSubgradientSSVM does the same as SubgradientSVM,
+    # in particular that it has the same loss, if there are no latent states.
+    X, Y = toy.generate_blocks_multinomial(n_samples=10)
+    n_labels = 3
+    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
+                         inference_method='ad3')
+    clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10. ** 2,
+                                 verbose=20, learning_rate=0.001,
+                                 show_loss_every=10, momentum=0.98,
+                                 decay_exponent=0)
+    clfl.w = np.zeros(crfl.size_psi)  # this disables random init
+    clfl.fit(X, Y)
+
+    crf = GridCRF(n_states=n_labels, inference_method='ad3')
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10. ** 2, verbose=20,
+                          learning_rate=0.001, show_loss_every=10,
+                          momentum=0.98, decay_exponent=0)
+    clf.fit(X, Y)
+    assert_array_almost_equal(clf.w, clfl.w)
+    assert_array_equal(clf.predict(X), Y)
+    assert_almost_equal(clf.objective_curve_[-1], clfl.objective_curve_[-1])
 
 
 #def test_with_crosses_bad_init():
@@ -36,7 +61,7 @@ def test_with_crosses():
 #    n_labels = 2
 #    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
 #                        inference_method='lp')
-#    clf = LatentSubgradientSSVM(problem=crf, max_iter=50, C=10. ** 3,
+#    clf = LatentSubgradientSSVM(model=crf, max_iter=50, C=10. ** 3,
 #                                verbose=2)
 #    H_init = crf.init_latent(X, Y)
 
@@ -56,7 +81,7 @@ def test_directional_bars():
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSubgradientSSVM(problem=crf, max_iter=500, C=10. ** 5,
+        clf = LatentSubgradientSSVM(model=crf, max_iter=500, C=10. ** 5,
                                     verbose=2)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

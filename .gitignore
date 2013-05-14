@@ -2,3 +2,5 @@
 *.swp
 *.pyc
 cover
+doc/_build
+doc/generated

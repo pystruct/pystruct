@@ -19,11 +19,11 @@ possible to put positivity constraints on certain weight.
 There is also a simple perceptron.
 
 
-CRFs aka Problems
+CRFs aka Models
 -----------------
-Knows about the problem.
+Knows about the model.
 
-These know about the structure of the problem, the loss and the inference.
+These know about the structure of the model, the loss and the inference.
 This is basically the part that you have to write yourself when using the
 Python interface in SVM^struct.
 I am only working on pairwise models and there is support for grids and

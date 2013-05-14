@@ -1,5 +1,5 @@
 #from crf import BinaryGridCRF
-#from structured_svm import StructuredSVM, SubgradientStructuredSVM
+#from structured_svm import StructuredSVM, SubgradientSSVM
 #from structured_svm import objective_primal, PrimalDSStructuredSVM
 #from toy_datasets import binary
 
@@ -12,13 +12,13 @@
         #for dataset in binary:
             #X, Y = dataset(n_samples=1)
             #crf = BinaryGridCRF()
-            #clf = StructuredSVM(problem=crf, max_iter=200, C=C, verbose=0,
+            #clf = StructuredSVM(model=crf, max_iter=200, C=C, verbose=0,
                     #check_constraints=True)
             #clf.fit(X, Y)
-            #clf2 = SubgradientStructuredSVM(problem=crf, max_iter=200, C=C,
+            #clf2 = SubgradientSSVM(model=crf, max_iter=200, C=C,
                     #verbose=0)
             #clf2.fit(X, Y)
-            #clf3 = PrimalDSStructuredSVM(problem=crf, max_iter=200, C=C,
+            #clf3 = PrimalDSStructuredSVM(model=crf, max_iter=200, C=C,
                     #verbose=0)
             #clf3.fit(X, Y)
             #obj = objective_primal(crf, clf.w, X, Y, C)

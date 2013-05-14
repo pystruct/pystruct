@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class StructuredProblem(object):
+class StructuredModel(object):
     """Interface definition for Structured Learners.
 
     This class defines what is necessary to use the structured svm.
@@ -12,7 +12,7 @@ class StructuredProblem(object):
                 % (type(self).__name__, self.size_psi))
 
     def __init__(self):
-        """Initialize the problem.
+        """Initialize the model.
         Needs to set self.size_psi, the dimensionalty of the joint features for
         an instance with labeling (x, y).
         """
@@ -27,10 +27,14 @@ class StructuredProblem(object):
         # IMPLEMENT ME
         pass
 
-    def batch_psi(self, X, Y):
+    def batch_psi(self, X, Y, Y_true=None):
         psi_ = np.zeros(self.size_psi)
-        for x, y in zip(X, Y):
-            psi_ += self.psi(x, y)
+        if getattr(self, 'rescale_C', False):
+            for x, y, y_true in zip(X, Y, Y_true):
+                psi_ += self.psi(x, y, y_true)
+        else:
+            for x, y in zip(X, Y):
+                psi_ += self.psi(x, y)
         return psi_
 
     def _loss_augmented_dpsi(self, x, y, y_hat, w):
@@ -52,6 +56,8 @@ class StructuredProblem(object):
         # hamming loss:
         if isinstance(y_hat, tuple):
             return self.continuous_loss(y, y_hat[0])
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y] * (y != y_hat))
         return np.sum(y != y_hat)
 
     def batch_loss(self, Y, Y_hat):
@@ -60,19 +66,22 @@ class StructuredProblem(object):
 
     def max_loss(self, y):
         # maximum possible los on y for macro averages
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y])
         return y.size
 
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
-        y_one_hot = np.zeros_like(y_hat)
         if y.ndim == 2:
             raise ValueError("FIXME!")
         gx = np.indices(y.shape)
-        y_one_hot[gx, y] = 1
 
         # all entries minus correct ones
-        return np.prod(y.shape) - np.sum(y_one_hot * y_hat)
+        result = 1 - y_hat[gx, y]
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y] * result)
+        return np.sum(result)
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         print("FALLBACK no loss augmented inference found")

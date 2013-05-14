@@ -1,9 +1,9 @@
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal, assert_almost_equal
+from nose.tools import assert_almost_equal
 
 import pystruct.toy_datasets as toy
-from pystruct.problems import GridCRF
+from pystruct.models import GridCRF
 from pystruct.utils import (find_constraint, exhaustive_inference,
                             exhaustive_loss_augmented_inference)
 
@@ -44,8 +44,8 @@ def test_continuous_y():
         assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
         # test loss:
-        assert_equal(crf.loss(y, const[0]),
-                     crf.continuous_loss(y, const_cont[0][0]))
+        assert_almost_equal(crf.loss(y, const[0]),
+                            crf.continuous_loss(y, const_cont[0][0]))
 
 
 def test_energy_lp():
@@ -85,7 +85,7 @@ def test_binary_blocks_crf():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
+    for inference_method in ['dai', 'qpbo', 'lp', 'ad3', 'ogm']:
         crf = GridCRF(inference_method=inference_method)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
@@ -112,7 +112,7 @@ def test_blocks_multinomial_crf():
                  .4,           # pairwise
                  -.3, .3,
                  -.5, -.1, .3])
-    for inference_method in ['dai', 'qpbo', 'lp', 'ad3']:
+    for inference_method in ['dai', 'qpbo', 'lp', 'ad3', 'ogm']:
         crf = GridCRF(n_states=3, inference_method=inference_method)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
@@ -123,7 +123,8 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
+        for inference_method in ['qpbo', 'lp', 'ad3', 'ogm']:
+            # dai is to expensive
             crf = GridCRF(inference_method=inference_method)
             w_unaries_only = np.zeros(7)
             w_unaries_only[:4] = np.eye(2).ravel()
@@ -154,7 +155,8 @@ def test_multinomial_grid_unaries():
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
-        for inference_method in ['qpbo', 'lp', 'ad3']:  # dai is to expensive
+        for inference_method in ['qpbo', 'lp', 'ad3', 'ogm']:
+            # dai is to expensive
             crf = GridCRF(n_states=n_labels, inference_method=inference_method)
             w_unaries_only = np.zeros(crf.size_psi)
             w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
@@ -206,9 +208,3 @@ def test_binary_crf_exhaustive_loss_augmented():
             #print(y_ex)
             #print("++++++++++++++++++++++")
             assert_array_equal(y_hat, y_ex)
-
-if __name__ == "__main__":
-    test_binary_crf_exhaustive()
-    test_binary_crf_exhaustive_loss_augmented()
-    test_binary_grid_unaries()
-    test_multinomial_grid_unaries()

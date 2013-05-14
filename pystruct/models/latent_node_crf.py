@@ -10,18 +10,81 @@
 
 import numpy as np
 
+from scipy import sparse
+from sklearn.cluster import KMeans
+
 from . import GraphCRF
 from ..inference import inference_dispatch
 #from .latent_graph_crf import kmeans_init
 
 
+def kmeans_init(X, Y, n_labels, n_hidden_states):
+    all_feats = []
+    # iterate over samples
+    for x, y in zip(X, Y):
+        # first, get neighbor counts from nodes
+        features, edges, n_hidden = x
+        n_visible = features.shape[0]
+        if np.max(edges) != n_hidden + n_visible - 1:
+            raise ValueError("Edges don't add up")
+
+        labels_one_hot = np.zeros((n_visible, n_labels), dtype=np.int)
+        y = y.ravel()
+        gx = np.ogrid[:n_visible]
+        labels_one_hot[gx, y] = 1
+
+        graph = sparse.coo_matrix((np.ones(edges.shape[0]), edges.T),
+                                  (n_visible + n_hidden, n_visible + n_hidden))
+        graph = (graph + graph.T)[-n_hidden:, :n_visible]
+
+        neighbors = graph * labels_one_hot.reshape(n_visible, -1)
+        # normalize (for borders)
+        neighbors /= np.maximum(neighbors.sum(axis=1)[:, np.newaxis], 1)
+
+        all_feats.append(neighbors)
+    all_feats_stacked = np.vstack(all_feats)
+    km = KMeans(n_clusters=n_hidden_states)
+    km.fit(all_feats_stacked)
+    H = []
+    for y, feats in zip(Y, all_feats):
+        H.append(np.hstack([y, km.predict(feats) + n_labels]))
+
+    return H
+
+
 class LatentNodeCRF(GraphCRF):
-    """Latent variable CRF with 2d grid graph.
+    """Latent variable CRF with general graph.
     Input x is tuple (features, edges, n_hidden)
     First features.shape[0] nodes are observed, then n_hidden unobserved nodes.
+
+    Currently unobserved nodes don't have features.
+
+    Parameters
+    ----------
+    n_labels : int, default=2
+        Number of states for observed variables.
+
+    n_hidden_states : int, default=2
+        Number of states for hidden variables.
+
+    n_features : int, default=None
+        Number of features per node. None means n_states.
+
+    inference_method : string, default="qpbo"
+        Function to call do do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
     """
-    def __init__(self, n_labels, n_features=None, n_hidden_states=2,
-                 inference_method='lp'):
+    def __init__(self, n_labels=2, n_features=None, n_hidden_states=2,
+                 inference_method='lp', class_weight=None):
         self.n_labels = n_labels
         if n_features is None:
             n_features = n_labels
@@ -30,7 +93,8 @@ class LatentNodeCRF(GraphCRF):
         n_states = n_hidden_states + n_labels
 
         GraphCRF.__init__(self, n_states, n_features,
-                          inference_method=inference_method)
+                          inference_method=inference_method,
+                          class_weight=class_weight)
 
         self.size_psi = (n_labels * self.n_features
                          + n_states * (n_states + 1) / 2)
@@ -113,8 +177,9 @@ class LatentNodeCRF(GraphCRF):
         for l in np.arange(self.n_states):
             # for each class, decrement features
             # for loss-agumention
-            unary_potentials[np.where(self.label_from_latent(h)
-                             != l)[0], l] += 1.
+            inds = np.where(self.label_from_latent(h) != l)[0]
+            unary_potentials[inds, l] += self.class_weight[
+                self.label_from_latent(h)][inds]
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
@@ -203,3 +268,15 @@ class LatentNodeCRF(GraphCRF):
         psi_vector = np.hstack([unaries_acc.ravel(),
                                 pw[np.tri(self.n_states, dtype=np.bool)]])
         return psi_vector
+
+    def init_latent(self, X, Y):
+        # treat all edges the same
+        return kmeans_init(X, Y, n_labels=self.n_labels,
+                           n_hidden_states=self.n_hidden_states)
+
+    def max_loss(self, h):
+        # maximum possible los on y for macro averages
+        y = self.label_from_latent(h)
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y])
+        return y.size
