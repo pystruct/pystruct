@@ -1,3 +1,4 @@
+from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
@@ -77,6 +78,8 @@ class SubgradientSSVM(BaseSSVM):
    ``objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
 
+    ``timestamps_`` : list of int
+        Total training time stored before each iteration.
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
@@ -143,9 +146,13 @@ class SubgradientSSVM(BaseSSVM):
         if not warm_start:
             self.w = getattr(self, "w", np.zeros(self.model.size_psi))
             self.objective_curve_ = []
+            self.timestamps_ = [time()]
+        else:
+            self.timestamps_ = (np.array(self.timestamps()) - time()).tolist()
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
+                self.timestamps_.append(time() - self.timestamps_[0])
                 if self.n_jobs == 1:
                     objective, positive_slacks = self._sequential_learning(X,
                                                                            Y)
