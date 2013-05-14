@@ -116,6 +116,9 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                 0, .001, size=self.model.size_psi))
             self.timestamps_ = [time()]
             self.objective_curve_ = []
+        else:
+            # hackety hack
+            self.timestamps_[0] = time() - self.timestamps_[-1]
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
@@ -170,7 +173,8 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                         self._solve_subgradient(dpsi, n_samples)
 
                 # some statistics
-                objective += np.sum(self.w ** 2) / self.C / 2.
+                objective *= self.C
+                objective += np.sum(self.w ** 2) / 2.
                 #objective /= float(n_samples)
 
                 if positive_slacks == 0:
