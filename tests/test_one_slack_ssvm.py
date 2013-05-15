@@ -7,14 +7,7 @@ from pystruct.models import GridCRF, GraphCRF, BinarySVMModel
 from pystruct.learners import OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges, SaveLogger
-from nose.tools import assert_true, assert_equal
-
-try:
-  from nose.tools import assert_less
-except ImportError:
-  def assert_less(a, b):
-    assert a < b, '%r was not less than %r' % (a,b)
-
+from sklearn.utils.testing import assert_true, assert_equal, assert_less
 
 def test_multinomial_blocks_one_slack():
     #testing cutting plane ssvm on easy multinomial dataset

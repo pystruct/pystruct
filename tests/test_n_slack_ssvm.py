@@ -8,13 +8,7 @@ from pystruct.models import GraphCRF
 from pystruct.learners import StructuredSVM
 from pystruct.utils import SaveLogger
 
-try:
-  from nose.tools import assert_less
-except ImportError:
-  def assert_less(a, b):
-    assert a < b, '%r was not less than %r' % (a,b)
-
-
+from sklearn.utils.testing import assert_less
 
 
 def test_n_slack_svm_as_crf_pickling():
