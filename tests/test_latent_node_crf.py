@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_equal, assert_almost_equal
+from sklearn.utils.testing import assert_equal, assert_almost_equal
 
 #import pystruct.toy_datasets as toy
 #from pystruct.utils import (exhaustive_loss_augmented_inference,

@@ -4,7 +4,6 @@ from sklearn.datasets import fetch_mldata
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelModel
 
-
 def test_multilabel_yeast_independent():
     # WORK IN PROGRESS!!
     #yeast = fetch_mldata("yeast")
@@ -17,3 +16,4 @@ def test_multilabel_yeast_independent():
     #ssvm = OneSlackSSVM(pbl, verbose=10)
     #ssvm.fit(X, y)
     pass
+

@@ -2,7 +2,7 @@ from tempfile import mkstemp
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_less
+from sklearn.utils.testing import assert_less
 
 from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
@@ -11,6 +11,7 @@ from pystruct.models import GridCRF, GraphCRF
 from pystruct.learners import SubgradientSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import SaveLogger
+
 
 
 def test_binary_blocks_subgradient_parallel():

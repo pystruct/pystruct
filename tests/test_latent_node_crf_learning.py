@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal
+from sklearn.utils.testing import assert_equal
 from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import (StructuredSVM, LatentSSVM,
                                LatentSubgradientSSVM, OneSlackSSVM,
