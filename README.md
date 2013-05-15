@@ -82,14 +82,20 @@ There are quite a couple of requirements, though:
 
 Once you have all that installed you can run
 
+```bash
 > python setup.py 
+```
 
 And then you can run the tests
 
+```bash
 > make
+```
 
 And the examples
 
+```bash
 > python examples/binary_svm.py
 > python examples/grid_crf.py
 > ...
+```
