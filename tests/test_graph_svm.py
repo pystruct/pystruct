@@ -1,6 +1,11 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_greater
+
+try:
+  from nose.tools import assert_greater
+except ImportError:
+  def assert_less(a, b):
+    assert a > b, '%r was not greater than %r' % (a,b)
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score

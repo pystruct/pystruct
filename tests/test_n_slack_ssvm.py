@@ -1,5 +1,4 @@
 import numpy as np
-from nose.tools import assert_less
 from tempfile import mkstemp
 
 from sklearn.datasets import load_iris
@@ -8,6 +7,14 @@ from sklearn.cross_validation import train_test_split
 from pystruct.models import GraphCRF
 from pystruct.learners import StructuredSVM
 from pystruct.utils import SaveLogger
+
+try:
+  from nose.tools import assert_less
+except ImportError:
+  def assert_less(a, b):
+    assert a < b, '%r was not less than %r' % (a,b)
+
+
 
 
 def test_n_slack_svm_as_crf_pickling():

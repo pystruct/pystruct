@@ -7,17 +7,15 @@ from pystruct.models import GridCRF, GraphCRF, BinarySVMModel
 from pystruct.learners import OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges, SaveLogger
+from nose.tools import assert_true, assert_equal
 
 
 try:
-  from nose.tools import assert_equal, assert_less, assert_true
+  from nose.tools import assert_less
 except ImportError:
-  def assert_equal(a, b):
-    assert a == b, '%r was not equal to %r' % (a, b)
   def assert_less(a, b):
     assert a < b, '%r was not less than %r' % (a,b)
-  def assert_true(a) :
-    assert a is True
+
 
 
 

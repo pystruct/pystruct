@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 ##from nose.tools import assert_equal, assert_almost_equal, assert_raises
 from nose.tools import assert_almost_equal, assert_equal
 
-from pystruct.problems import GraphCRF, EdgeTypeGraphCRF, EdgeFeatureGraphCRF
+from pystruct.models import GraphCRF, EdgeTypeGraphCRF, EdgeFeatureGraphCRF
 
 
 w = np.array([1, 0,  # unary
@@ -76,16 +76,6 @@ def test_edge_type_graph_crf():
 
     # same, only with two edge types and no edges of second type
     w_sym_ = np.array([1, 0,    # unary
-<<<<<<< HEAD
-                       0, 1,
-                       .22, 0,  # pairwise
-                       0, .22,
-                       2, -1,   # second edge type, doesn't exist
-                       -1, 3])
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai']:
-        crf = EdgeTypeGraphCRF(n_states=2,
-                               inference_method=inference_method,
-=======
                       0, 1,
                       .22, 0,  # pairwise
                       0, .22,
@@ -93,7 +83,6 @@ def test_edge_type_graph_crf():
                       -1, 3])
     for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
->>>>>>> b5f3e5431e21ffd7ceed4b3d6b345c11818c90fc
                                n_edge_types=2)
         assert_array_equal(crf.inference((x_1,
                                           [g_1, np.zeros((0, 2),
