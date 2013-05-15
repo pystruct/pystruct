@@ -4,5 +4,5 @@ from Cython.Distutils import build_ext
 
 setup(
     cmdclass = {'build_ext': build_ext},
-    ext_modules = [Extension("pystruct.problems.utilities", ["src/utilities.pyx"])]
+    ext_modules = [Extension("pystruct.models.utils", ["src/utils.pyx"])]
 )

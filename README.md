@@ -78,3 +78,18 @@ There are quite a couple of requirements, though:
 
   AD3
     https://github.com/amueller/AD3
+
+
+Once you have all that installed you can run
+
+> python setup.py 
+
+And then you can run the tests
+
+> make
+
+And the examples
+
+> python examples/binary_svm.py
+> python examples/grid_crf.py
+> ...
