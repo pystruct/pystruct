@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_equal, assert_almost_equal
+from sklearn.utils.testing import assert_equal, assert_almost_equal
 
 import pystruct.toy_datasets as toy
 from pystruct.inference.linear_programming import lp_general_graph

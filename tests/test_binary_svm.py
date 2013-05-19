@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from nose.tools import assert_true
+from sklearn.utils.testing import assert_true
 
 from sklearn.datasets import make_blobs
 

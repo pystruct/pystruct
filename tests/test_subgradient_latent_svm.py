@@ -1,5 +1,5 @@
 import numpy as np
-from nose.tools import assert_almost_equal
+from sklearn.utils.testing import assert_almost_equal
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF, GridCRF

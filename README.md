@@ -61,10 +61,10 @@ Installation
 There is no need to compile anything, this pure Python.
 There are quite a couple of requirements, though:
 
-* You need cvxopt for the cutting plane SVM solver and linear programming inference.
+* You need [cvxopt](http://abel.ee.ucla.edu/cvxopt/install/index.html) for the cutting plane SVM solver and linear programming inference.
   By default I use the glpk solver for the LP, so you need that, too, if you want to use LP inference.
 
-* You need sklearn for some tidbits here and there, also I import joblib from sklearn.
+* You need [scikit-learn](http://scikit-learn.org/stable/) for some tidbits here and there, also I import [joblib](https://pypi.python.org/pypi/joblib) from sklearn.
 
 * For the other inference algorithms that are wrapped in the inference folder,
   you need the following of my repositories. You can just pick and choose from
@@ -78,3 +78,24 @@ There are quite a couple of requirements, though:
 
   AD3
     https://github.com/amueller/AD3
+
+
+Once you have all that installed you can run
+
+```bash
+> python setup.py 
+```
+
+And then you can run the tests
+
+```bash
+> make
+```
+
+And the examples
+
+```bash
+> python examples/binary_svm.py
+> python examples/grid_crf.py
+> ...
+```
