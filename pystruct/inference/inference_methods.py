@@ -95,7 +95,7 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
     unary_potentials = (-1000 * unary_potentials).copy().astype(np.int32)
     unary_potentials = unary_potentials.reshape(-1, n_states)
     pairwise_potentials = (-1000 * pairwise_potentials).copy().astype(np.int32)
-    edges = edges.astype(np.int32)
+    edges = edges.astype(np.int32).copy()
     y = alpha_expansion_general_graph(edges, unary_potentials,
                                       pairwise_potentials, random_seed=1)
     return y.reshape(shape_org)
