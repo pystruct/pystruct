@@ -47,7 +47,7 @@ class StructuredSVM(BaseSSVM):
     positive_constraint: list of ints
         Indices of parmeters that are constraint to be positive.
 
-    break_on_bad: bool (default=True)
+    break_on_bad: bool (default=False)
         Whether to break (start debug mode) when inference was approximate.
 
     n_jobs : int, default=1
@@ -94,7 +94,7 @@ class StructuredSVM(BaseSSVM):
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=1, positive_constraint=None, n_jobs=1,
-                 break_on_bad=True, show_loss_every=0, batch_size=100,
+                 break_on_bad=False, show_loss_every=0, batch_size=100,
                  tol=-10, inactive_threshold=1e-10,
                  inactive_window=0, logger=None):
 
