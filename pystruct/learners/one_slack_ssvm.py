@@ -495,4 +495,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
                   % (primal_objective, primal_objective - objective))
+        if hasattr(self.model, 'inference_method_'):
+            self.model.inference_method = self.model.inference_method_
+
         return self
