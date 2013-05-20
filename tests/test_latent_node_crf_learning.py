@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sklearn.utils.testing import assert_equal
+from sklearn.utils.testing import assert_equal, assert_true
 from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import (StructuredSVM, LatentSSVM,
                                LatentSubgradientSSVM, OneSlackSSVM,
@@ -63,7 +63,7 @@ def test_latent_node_boxes_standard_latent():
     # we add a latent variable for each 2x2 patch
     # that should make the model fairly simple
 
-    X, Y = toy.make_simple_2x2(seed=1)
+    X, Y = toy.make_simple_2x2(seed=1, n_samples=40)
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='lp',
                                n_hidden_states=2, n_features=1)
     one_slack = OneSlackSSVM(latent_crf)
@@ -92,9 +92,13 @@ def test_latent_node_boxes_standard_latent():
         Y_flat = [y.ravel() for y in Y]
 
         X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
-        latent_svm.fit(X_, Y_flat)
+        latent_svm.fit(X_[:20], Y_flat[:20])
 
-        assert_equal(latent_svm.score(X_, Y_flat), 1)
+        assert_array_equal(latent_svm.predict(X_[:20]), Y_flat[:20])
+        assert_equal(latent_svm.score(X_[:20], Y_flat[:20]), 1)
+
+        # test that score is not always 1
+        assert_true(.98 < latent_svm.score(X_[20:], Y_flat[20:]) < 1)
 
 
 def test_latent_node_boxes_latent_subgradient():

@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
+from sklearn.utils.testing import assert_equal, assert_true
 
 from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import (LatentSSVM, StructuredSVM, OneSlackSSVM,
@@ -8,26 +9,26 @@ from pystruct.learners import (LatentSSVM, StructuredSVM, OneSlackSSVM,
 import pystruct.toy_datasets as toy
 
 
-def test_with_crosses():
+def test_with_crosses_perfect_init():
     # very simple dataset. k-means init is perfect
     for n_states_per_label in [2, [1, 2]]:
         # test with 2 states for both foreground and background,
         # as well as with single background state
         #for inference_method in ['ad3', 'qpbo', 'lp']:
-        for inference_method in ['lp']:
+        for inference_method in ['ad3']:
             X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
                                         total_size=8)
             n_labels = 2
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSSVM(StructuredSVM(model=crf, max_iter=50, C=10. **
-                                           5, verbose=2,
-                                           check_constraints=True, n_jobs=-1,
-                                           break_on_bad=True))
+            clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=50, C=10. ** 5,
+                                          verbose=2, check_constraints=True,
+                                          n_jobs=-1, break_on_bad=True))
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
             assert_array_equal(np.array(Y_pred), Y)
+            assert_equal(clf.score(X, Y), 1)
 
 
 def test_with_crosses_base_svms():
@@ -48,12 +49,15 @@ def test_with_crosses_base_svms():
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(np.array(Y_pred), Y)
+        assert_equal(clf.score(X, Y), 1)
 
 
 def test_with_crosses_bad_init():
     # use less perfect initialization
-    X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+    X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
                                 total_size=8)
+    X_test, Y_test = X[10:], Y[10:]
+    X, Y = X[:10], Y[:10]
     n_labels = 2
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
                         inference_method='lp')
@@ -76,6 +80,8 @@ def test_with_crosses_bad_init():
         Y_pred = clf.predict(X)
 
         assert_array_equal(np.array(Y_pred), Y)
+        # test that score is not always 1
+        assert_true(.98 < clf.score(X_test, Y_test) < 1)
 
 
 def test_directional_bars():

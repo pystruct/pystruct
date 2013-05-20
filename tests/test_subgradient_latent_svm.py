@@ -10,20 +10,21 @@ import pystruct.toy_datasets as toy
 
 def test_with_crosses():
     # very simple dataset. k-means init is perfect
-    for n_states_per_label in [2, [1, 2]]:
+    #for n_states_per_label in [2, [1, 2]]:
+    for n_states_per_label in [2]:
         # test with 2 states for both foreground and background,
         # as well as with single background state
         #for inference_method in ['ad3', 'qpbo', 'lp']:
-        for inference_method in ['lp']:
+        for inference_method in ['qpbo']:
             X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                        total_size=8)
+                                        total_size=8, seed=0)
             n_labels = 2
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSubgradientSSVM(model=crf, max_iter=250, C=10. ** 5,
+            clf = LatentSubgradientSSVM(model=crf, max_iter=2250, C=10. ** 5,
                                         verbose=20, learning_rate=0.00001,
-                                        show_loss_every=10, momentum=0.98,
+                                        show_loss_every=10, momentum=0.0,
                                         decay_exponent=0)
             clf.fit(X, Y)
             Y_pred = clf.predict(X)

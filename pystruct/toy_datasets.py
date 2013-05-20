@@ -43,9 +43,8 @@ def generate_big_checker(n_samples=20, noise=.5, n_fields=3, field_size=3):
     return X, Y
 
 
-def make_simple_2x2(seed=0, n_flips=4):
+def make_simple_2x2(seed=0, n_flips=4, n_samples=20):
     np.random.seed(seed)
-    n_samples = 20
     X = []
     Y = []
     for i in xrange(n_samples):
@@ -146,8 +145,9 @@ def generate_square_with_hole(n_samples=5, noise=5, total_size=8):
     return X, Y
 
 
-def generate_crosses(n_samples=5, noise=30, total_size=10, n_crosses=2):
-    np.random.seed(0)
+def generate_crosses(n_samples=5, noise=30, total_size=10, n_crosses=2,
+                     seed=0):
+    np.random.seed(seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
     for i in xrange(n_samples):
         t_old, l_old = -3, -3

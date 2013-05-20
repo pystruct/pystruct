@@ -195,9 +195,9 @@ def test_class_weights_rescale_C():
 
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
-    pbl_class_weight = CrammerSingerSVMProblem(n_features=3, n_classes=3,
-                                               class_weight=weights,
-                                               rescale_C=True)
+    pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
+                                             class_weight=weights,
+                                             rescale_C=True)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=10, C=10)
     svm_class_weight.fit(X, Y)
 

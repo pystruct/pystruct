@@ -210,6 +210,11 @@ class LatentNodeCRF(GraphCRF):
         return GraphCRF.loss(self, self.label_from_latent(h),
                              self.label_from_latent(h_hat))
 
+    def base_loss(self, y, y_hat):
+        if isinstance(y_hat, tuple):
+            return GraphCRF.continuous_loss(self, y, y_hat)
+        return GraphCRF.loss(self, y, y_hat)
+
     def continuous_loss(self, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming

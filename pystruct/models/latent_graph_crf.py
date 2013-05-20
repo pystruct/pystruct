@@ -153,3 +153,8 @@ class LatentGraphCRF(GraphCRF):
             y_hat_org[:, self._states_map[s]] += y_hat[:, s]
         y_org = self.label_from_latent(y)
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
+
+    def base_loss(self, y, y_hat):
+        if isinstance(y_hat, tuple):
+            return GraphCRF.continuous_loss(self, y, y_hat)
+        return GraphCRF.loss(self, y, y_hat)
