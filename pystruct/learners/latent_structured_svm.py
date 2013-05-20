@@ -64,7 +64,7 @@ class LatentSSVM(BaseSSVM):
         return [self.model.label_from_latent(h) for h in prediction]
 
     def predict_latent(self, X):
-        return self.base_ssvm.predict(self, X)
+        return self.base_ssvm.predict(X)
 
     def score(self, X, Y):
         """Compute score as 1 - loss over whole data set.
@@ -85,17 +85,8 @@ class LatentSSVM(BaseSSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        #if hasattr(self.model, 'batch_batch_loss'):
-            #losses = self.model.base_batch_loss(Y, self.predict(X))
-        #else:
-            #losses = [self.model.base_loss(y, y_pred)
-                      #for y, y_pred in zip(Y, self.predict(X))]
-        if hasattr(self.model, 'batch_loss'):
-            losses = self.model.batch_loss(
-                Y, self.model.batch_inference(X, self.w))
-        else:
-            losses = [self.model.loss(y, self.model.inference(y, self.w))
-                      for y, y_pred in zip(Y, self.predict(X))]
+        losses = [self.model.base_loss(y, y_pred)
+                  for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.model.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
