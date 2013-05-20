@@ -206,7 +206,7 @@ class StructuredSVM(BaseSSVM):
 
         return False
 
-    def fit(self, X, Y, constraints=None):
+    def fit(self, X, Y, constraints=None, warm_start=None):
         """Learn parameters using cutting plane method.
 
         Parameters

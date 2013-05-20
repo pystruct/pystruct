@@ -52,8 +52,11 @@ class LatentSSVM(BaseSSVM):
                             y_hat, dpsi, _, loss = const
                             constraints[i].append([y_hat, dpsi, loss])
                 H = H_new
-
-            self.base_ssvm.fit(X, H, constraints=constraints)
+            if iteration > 0:
+                self.base_ssvm.fit(X, H, constraints=constraints,
+                                   warm_start="soft")
+            else:
+                self.base_ssvm.fit(X, H, constraints=constraints)
             w = self.base_ssvm.w
             ws.append(w)
             if self.logger is not None:

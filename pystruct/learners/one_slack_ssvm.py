@@ -391,15 +391,23 @@ class OneSlackSSVM(BaseSSVM):
             self.objective_curve_, self.primal_objective_curve_ = [], []
             self.cached_constraint_ = []
             self.alphas = []  # dual solutions
-            self.last_slack_ = -1
             # append constraint given by ground truth to make our life easier
             constraints.append((np.zeros(self.model.size_psi), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
             self.timestamps_ = [time()]
+        elif warm_start == "soft":
+            self.w = np.zeros(self.model.size_psi)
+            constraints = []
+            self.alphas = []  # dual solutions
+            # append constraint given by ground truth to make our life easier
+            constraints.append((np.zeros(self.model.size_psi), 0))
+            self.alphas.append([self.C])
+
         else:
-            self.last_slack_ = -1
             constraints = self.constraints_
+
+        self.last_slack_ = -1
 
         # get the psi of the ground truth
         if getattr(self.model, 'rescale_C', False):
@@ -492,6 +500,7 @@ class OneSlackSSVM(BaseSSVM):
                             * np.max(last_slack, 0)
                             + np.sum(self.w ** 2) / 2)
         self.primal_objective_curve_.append(primal_objective)
+        self.primal_objective_curve_.pop(0)
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
                   % (primal_objective, primal_objective - objective))
