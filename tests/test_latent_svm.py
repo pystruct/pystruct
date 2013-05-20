@@ -99,3 +99,35 @@ def test_directional_bars():
         Y_pred = clf.predict(X)
 
         assert_array_equal(np.array(Y_pred), Y)
+
+
+def test_switch_to_ad3():
+    # smoketest only
+    # test if switching between qpbo and ad3 works inside latent svm
+    # use less perfect initialization
+    X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
+                                total_size=8)
+    X_test, Y_test = X[10:], Y[10:]
+    X, Y = X[:10], Y[:10]
+    n_labels = 2
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
+                        inference_method='qpbo')
+    H_init = crf.init_latent(X, Y)
+
+    mask = np.random.uniform(size=H_init.shape) > .7
+    H_init[mask] = 2 * (H_init[mask] / 2)
+
+    base_ssvm = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
+                             inference_cache=50, max_iter=10000,
+                             switch_to_ad3=True)
+    base_ssvm.C = 10. ** 3
+    base_ssvm.n_jobs = -1
+    clf = LatentSSVM(base_ssvm)
+
+    clf.fit(X, Y, H_init=H_init)
+    Y_pred = clf.predict(X)
+
+    assert_array_equal(np.array(Y_pred), Y)
+    # test that score is not always 1
+    assert_true(.98 < clf.score(X_test, Y_test) < 1)
+    assert_equal(clf.model.inference_method, "qpbo")
