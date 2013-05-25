@@ -1,8 +1,8 @@
 import numpy as np
-from numpy.testing import assert_array_equal, assert_greater
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
+from sklearn.utils.testing import assert_array_equal, assert_greater
 
 from pystruct.models import GraphCRF
 from pystruct.learners import StructuredSVM, OneSlackSSVM
@@ -85,5 +85,5 @@ def test_standard_svm_blobs_2d_class_weight():
                                     break_on_bad=False)
     svm_class_weight.fit(X_graphs, Y[:, np.newaxis])
 
-    assert_greater(f1_score(Y, svm_class_weight.predict(X_graphs)),
-                   f1_score(Y, svm.predict(X_graphs)))
+    assert_greater(f1_score(Y, np.hstack(svm_class_weight.predict(X_graphs))),
+                   f1_score(Y, np.hstack(svm.predict(X_graphs))))
