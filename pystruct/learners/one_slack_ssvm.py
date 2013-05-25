@@ -38,7 +38,7 @@ class OneSlackSSVM(BaseSSVM):
     max_iter : int
         Maximum number of passes over dataset to find constraints.
 
-    C : float
+    C : float (default=1)
         Regularization parameter
 
     check_constraints : bool
