@@ -15,7 +15,6 @@ from sklearn.cluster import KMeans
 
 from . import GraphCRF
 from ..inference import inference_dispatch
-#from .latent_graph_crf import kmeans_init
 
 
 def kmeans_init(X, Y, n_labels, n_hidden_states):

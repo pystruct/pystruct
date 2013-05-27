@@ -149,6 +149,7 @@ GridCRF is a convenience class for grid graphs.
     models.GraphCRF
     models.EdgeFeatureGraphCRF
     models.LatentGraphCRF
+    models.LatentNodeCRF
     models.GridCRF
     models.DirectionalGridCRF
 
