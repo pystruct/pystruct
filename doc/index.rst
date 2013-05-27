@@ -35,7 +35,7 @@ moment.
 
 Inference Solvers
 ==================
-Doe the inference.
+Do the inference.
 
 There are some options to use different solvers for inference. A linear
 programming solver using GLPK is included. I have Python interfaces for several
@@ -43,7 +43,11 @@ other methods on github, including LibDAI, QPBO, AD3 and GCO (submodular graph
 cuts).
 
 This is where the heavy lifting is done and in some sense these backends are
-exchangeable. I'm hoping to unify stuff a bit more here.
+interchangeable.
+
+Currently I would recommend AD3 for very accurate solutions and QPBO for larger models.
+The OneSlackSSVM includes an option (``switch_to_ad3``) to switch the solver to AD3 when no
+constraints can be found using the previous solver (which should be a faster undergenerating solver, such as QPBO).
 
 Remarks
 =======
