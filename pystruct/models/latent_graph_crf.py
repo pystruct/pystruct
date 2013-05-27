@@ -62,7 +62,36 @@ def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
 
 
 class LatentGraphCRF(GraphCRF):
-    """Latent variable CRF with arbitrary graph.
+    """CRF with latent states for variables.
+
+    This is also called "hidden dynamics CRF".
+    For each output variable there is an additional variable which
+    can encode additional states and interactions.
+
+    Parameters
+    ----------
+    n_labels : int
+        Number of states of output variables.
+
+    n_featues : int or None (default=None).
+        Number of input features per input variable.
+        ``None`` means it is equal to ``n_labels``.
+
+    n_states_per_label : int or list (default=2)
+        Number of latent states associated with each observable state.
+        Can be either an integer, which means the same number
+        of hidden states will be used for all observable states, or a list
+        of integers of length ``n_labels``.
+
+    inference_method : string, default="qpbo"
+        Function to call to do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
                  inference_method='qpbo'):

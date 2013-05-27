@@ -52,7 +52,8 @@ def kmeans_init(X, Y, n_labels, n_hidden_states):
 
 
 class LatentNodeCRF(GraphCRF):
-    """Latent variable CRF with general graph.
+    """CRF with latent variables.
+
     Input x is tuple (features, edges, n_hidden)
     First features.shape[0] nodes are observed, then n_hidden unobserved nodes.
 
@@ -70,7 +71,7 @@ class LatentNodeCRF(GraphCRF):
         Number of features per node. None means n_states.
 
     inference_method : string, default="qpbo"
-        Function to call do do inference and loss-augmented inference.
+        Function to call to do inference and loss-augmented inference.
         Possible values are:
 
             - 'qpbo' for QPBO + alpha expansion.
