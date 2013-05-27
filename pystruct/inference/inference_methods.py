@@ -4,6 +4,31 @@ from .linear_programming import lp_general_graph
 
 
 def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
+    """Compute energy of labels for given energy function.
+
+    Convenience function with same interface as inference functions to easily
+    compare solutions.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    labels : nd-array
+        Variable assignment to evaluate.
+
+    Returns
+    -------
+    energy : float
+        Energy of assignment.
+    """
+
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
     energy = np.sum(unary_potentials[np.arange(len(labels)), labels])
@@ -15,6 +40,44 @@ def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, relaxed=False, return_energy=False,
                        **kwargs):
+    """Wrapper function to dispatch between inference method by string.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    inference_method : string
+        Possible choices currently are:
+            * 'qpbo' for QPBO alpha-expansion (fast but approximate).
+            * 'dai' for libDAI wrappers (default to junction tree).
+            * 'lp' for build-in lp relaxation via GLPK (slow).
+            * 'ad3' for AD^3 subgradient based dual solution of LP.
+            * 'ogm' for OpenGM wrappers.
+
+    relaxed : bool (default=False)
+        Whether to return a relaxed solution (when appropriate)
+        or round to the nearest integer solution. Only used for 'lp' and 'ad3'
+        inference methods.
+
+    return_energy : bool (default=False)
+        Additionally return the energy of the returned solution (according to
+        the solver).  If relaxed=False, this is the energy of the relaxed, not
+        the rounded solution.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=True, this is a tuple of unary and pairwise "marginals"
+        from the LP relaxation.
+    """
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
@@ -32,8 +95,8 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
     else:
-        raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo' or"
-                         " 'dai', got %s" % inference_method)
+        raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo', 'ogm'"
+                         " or 'dai', got %s" % inference_method)
 
 
 def _validate_params(unary_potentials, pairwise_params, edges):
@@ -54,6 +117,36 @@ def _validate_params(unary_potentials, pairwise_params, edges):
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
                   return_energy=False, alg='dd', init=None):
+    """Inference with OpenGM backend.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    alg : string
+        Possible choices currently are:
+            * 'bp' for Loopy Belief Propagation.
+            * 'dd' for Dual Decomposition via Subgradients.
+            * 'trws' for Vladimirs TRWs implementation.
+            * 'gibbs' for Gibbs sampling.
+            * 'lf' for Lazy Flipper
+
+    init : nd-array
+        Initial solution for starting inference (ignored by some algorithms).
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+    """
+
     import opengm
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -87,6 +180,27 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
 
 def inference_qpbo(unary_potentials, pairwise_potentials, edges):
+    """Inference with PyQPBO backend.
+
+    Used QPBO-I based move-making for undergenerating inference.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+    """
+
     from pyqpbo import alpha_expansion_general_graph
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
@@ -102,7 +216,29 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
 
 
 def inference_dai(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False):
+                  return_energy=False, alg='jt'):
+    """Inference with LibDAI backend.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    alg : string, (default='jt')
+        Inference algorithm to use.
+        Defaults to Junction Tree. THIS WILL BLOW UP for loopy graphs.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+    """
     from daimrf import mrf
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
@@ -114,7 +250,7 @@ def inference_dai(unary_potentials, pairwise_potentials, edges,
     unaries = np.exp(log_unaries / max_entry)
 
     y = mrf(unaries, edges.astype(np.int64),
-            np.exp(pairwise_potentials / max_entry), alg='jt')
+            np.exp(pairwise_potentials / max_entry), alg=alg)
     y = y.reshape(shape_org)
     if return_energy:
         return y, compute_energy(unary_potentials, pairwise_potentials, edges,
@@ -124,6 +260,34 @@ def inference_dai(unary_potentials, pairwise_potentials, edges,
 
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
                  return_energy=False):
+    """Inference with build-in LP solver using GLPK backend.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    relaxed : bool (default=False)
+        Whether to return the relaxed solution (``True``) or round to the next
+        integer solution (``False``).
+
+    return_energy : bool (default=False)
+        Additionally return the energy of the returned solution (according to
+        the solver).  If relaxed=False, this is the energy of the relaxed, not
+        the rounded solution.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=False, this is a tuple of unary and edge 'marginals'.
+    """
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -147,6 +311,37 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
                   verbose=0, return_energy=False):
+    """Inference with AD3 dual decomposition subgradient solver.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    relaxed : bool (default=False)
+        Whether to return the relaxed solution (``True``) or round to the next
+        integer solution (``False``).
+
+    verbose : int (default=0)
+        Degree of verbosity for solver.
+
+    return_energy : bool (default=False)
+        Additionally return the energy of the returned solution (according to
+        the solver).  If relaxed=False, this is the energy of the relaxed, not
+        the rounded solution.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=False, this is a tuple of unary and edge 'marginals'.
+    """
     import AD3
     shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
