@@ -6,4 +6,5 @@
 cover
 doc/_build
 doc/generated
+doc/auto_examples
 build/
