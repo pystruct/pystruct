@@ -1,4 +1,9 @@
-# showing the relation between cutting plane and primal objectives
+"""
+====================
+SVM objective values
+====================
+Showing the relation between cutting plane and primal objectives
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt

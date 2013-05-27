@@ -1,5 +1,10 @@
-# a CRF with one node is the same as a multiclass SVM
-# evaluation on iris dataset (really easy)
+"""
+===========
+SVM as CRF
+===========
+A CRF with one node is the same as a multiclass SVM.
+Evaluation on iris dataset (really easy).
+"""
 
 from time import time
 import numpy as np

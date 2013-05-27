@@ -1,3 +1,10 @@
+"""
+==================================
+Learning interactions on a 2d grid
+==================================
+Simple pairwise model with arbitrary interactions on a 4-connected grid.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

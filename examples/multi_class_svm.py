@@ -1,3 +1,11 @@
+"""
+==============================
+Crammer-Singer Multi-Class SVM
+==============================
+
+Comparing different solvers on a standard multi-class SVM problem.
+"""
+
 from time import time
 import numpy as np
 

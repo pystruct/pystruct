@@ -1,3 +1,11 @@
+"""
+===================
+Latent Dynamics CRF
+===================
+
+Solving a 2d gid problem by introducing latent variable interactions.
+
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 

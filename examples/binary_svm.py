@@ -1,5 +1,10 @@
-# Example of training binary SVM using n-slack QP, 1-slack QP, SGD and
-# SMO (libsvm).  Our 1-slack QP does surprisingly well!
+"""
+==================
+Binary SVM as SSVM
+==================
+Example of training binary SVM using n-slack QP, 1-slack QP, SGD and
+SMO (libsvm).  Our 1-slack QP does surprisingly well!
+"""
 
 from time import time
 import numpy as np
