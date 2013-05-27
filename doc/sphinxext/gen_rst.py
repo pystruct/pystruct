@@ -1,5 +1,5 @@
 """
-Example generation for the scikit learn
+Example generation for pystruct. Stolen from scikit-learn.
 
 Generate the rst files for the examples by iterating over the python
 example files.
@@ -306,7 +306,7 @@ class SphinxDocLinkResolver(object):
 ###############################################################################
 rst_template = """
 
-.. _example_%(short_fname)s:
+.. _%(short_fname)s:
 
 %(docstring)s
 
@@ -415,8 +415,7 @@ def generate_example_rst(app):
 
     .figure {
         float: left;
-        margin: 10px;
-        position: absolute;
+        margin: 65px;
         top: 0;
         left: 0;
         -webkit-border-radius: 10px; /* Saf3-4, iOS 1-3.2, Android <1.6 */
@@ -542,7 +541,7 @@ def generate_dir_rst(dir, fhindex, example_dir, root_dir, plot_gallery):
                                                                fname[:-3]))
             else:
                 fhindex.write('   :target: ./%s.html\n\n' % link_name[:-3])
-            fhindex.write("""   :ref:`example_%s`
+            fhindex.write("""   :ref:`%s`
 
 
 .. raw:: html

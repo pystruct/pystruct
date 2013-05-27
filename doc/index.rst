@@ -49,6 +49,14 @@ Currently I would recommend AD3 for very accurate solutions and QPBO for larger 
 The OneSlackSSVM includes an option (``switch_to_ad3``) to switch the solver to AD3 when no
 constraints can be found using the previous solver (which should be a faster undergenerating solver, such as QPBO).
 
+Examples
+=========
+See the example gallery:
+
+.. toctree::
+
+    auto_examples/index
+
 Remarks
 =======
 
@@ -59,7 +67,9 @@ For updates, read my blog at http://peekaboo-vision.blogspot.com
 There are not publications yet that you can cite for this, I'm hoping there will be some in the future.
 
 Btw: this is research with unit tests!
+
 Installation
+=============
 
 There is no need to compile anything, this pure Python. (FIXME, Crammer-Singer has a cython part!)
 
@@ -175,12 +185,4 @@ Utilities
    :template: class_with_call.rst
 
     utils.SaveLogger
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
 

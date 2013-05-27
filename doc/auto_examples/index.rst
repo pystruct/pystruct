@@ -10,8 +10,7 @@
 
     .figure {
         float: left;
-        margin: 10px;
-        position: absolute;
+        margin: 65px;
         top: 0;
         left: 0;
         -webkit-border-radius: 10px; /* Saf3-4, iOS 1-3.2, Android <1.6 */
@@ -46,3 +45,198 @@ Examples
 ========
 
 .. _examples-index:
+
+
+
+
+
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/svm_objectives.png
+   :target: ./svm_objectives.html
+
+   :ref:`svm_objectives.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./svm_objectives
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/svm_as_crf.png
+   :target: ./svm_as_crf.html
+
+   :ref:`svm_as_crf.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./svm_as_crf
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/multi_class_svm.png
+   :target: ./multi_class_svm.html
+
+   :ref:`multi_class_svm.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./multi_class_svm
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/latent_svm_as_crf.png
+   :target: ./latent_svm_as_crf.html
+
+   :ref:`latent_svm_as_crf.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./latent_svm_as_crf
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/binary_svm.png
+   :target: ./binary_svm.html
+
+   :ref:`binary_svm.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./binary_svm
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/plot_grid_crf.png
+   :target: ./plot_grid_crf.html
+
+   :ref:`plot_grid_crf.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./plot_grid_crf
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/latent_crf.png
+   :target: ./latent_crf.html
+
+   :ref:`latent_crf.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./latent_crf
+
+
+
+.. raw:: html
+
+    <div class="thumbnailContainer">
+
+
+.. figure:: ./images/thumb/latent_node.png
+   :target: ./latent_node.html
+
+   :ref:`latent_node.py`
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   ./latent_node
+
+
+.. raw:: html
+
+    <div style="clear: both"></div>
+    
