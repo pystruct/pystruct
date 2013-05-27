@@ -18,7 +18,7 @@ from ..utils import unwrap_pairwise, find_constraint
 
 
 class StructuredSVM(BaseSSVM):
-    """Structured SVM training with l1 slack penalty.
+    """Structured SVM solver for the n-slack QP with l1 slack penalty.
 
     Implements margin rescaled structural SVM using
     the n-slack formulation and cutting plane method, solved using CVXOPT.

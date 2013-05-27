@@ -23,7 +23,7 @@ class NoConstraint(Exception):
 
 
 class OneSlackSSVM(BaseSSVM):
-    """Structured SVM training with l1 slack penalty.
+    """Structured SVM solver for the 1-slack QP with l1 slack penalty.
 
     Implements margin rescaled structural SVM using
     the 1-slack formulation and cutting plane method, solved using CVXOPT.

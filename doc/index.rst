@@ -158,7 +158,19 @@ Inference
    inference.inference_lp
    inference.inference_ad3
 
-Contents:
+Utilities
+===========
+.. automodule:: pystruct.utils
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pystruct
+
+.. autosummary::
+   :toctree: generated/
+   :template: class_with_call.rst
+
+    utils.SaveLogger
 
 Indices and tables
 ==================

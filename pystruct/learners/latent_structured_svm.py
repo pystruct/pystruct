@@ -1,11 +1,10 @@
 ######################
 # (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
-# ALL RIGHTS RESERVED.
 #
 #
+
 
 import numpy as np
-
 
 from .ssvm import BaseSSVM
 from .cutting_plane_ssvm import StructuredSVM
@@ -13,6 +12,36 @@ from ..utils import find_constraint
 
 
 class LatentSSVM(BaseSSVM):
+    """Stuctured SVM solver for latent-variable models.
+
+    Alternates between doing latent variale completion and solving the
+    completed SSVM problem using the ``base_ssvm`` solver.
+
+    The model is expected to know how to initialize itself
+    - it should provide a ``init_latent`` procedure.
+
+    If the base_ssvm is an n-slack SSVM, the current constraints
+    will be adjusted after recomputing the latent variables H.
+    If the base_ssvm is a 1-slack SSVM, the inference cache will
+    be reused. Both methods drastically speed up learning.
+
+    Parameters
+    ----------
+    base_ssvm : object
+        SSVM solver instance for solving the completed problem.
+
+    latent_iter : int (default=5)
+        Number of iterations in the completion / refit loop.
+
+    logger : object
+        Logger instance.
+
+    Attributes
+    ----------
+    w : nd-array, shape=(model.psi,)
+        The learned weights of the SVM.
+    """
+
     def __init__(self, base_ssvm, latent_iter=5, logger=None):
         self.base_ssvm = base_ssvm
         self.latent_iter = latent_iter
