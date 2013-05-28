@@ -82,9 +82,15 @@ class LatentNodeCRF(GraphCRF):
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
+
+    latent_node_features : bool, default=False
+        Whether latent nodes have features. We assume that if True,
+        the number of features is the same as for visible nodes.
     """
     def __init__(self, n_labels=2, n_features=None, n_hidden_states=2,
-                 inference_method='lp', class_weight=None):
+                 inference_method='lp', class_weight=None,
+                 latent_node_features=False):
+
         self.n_labels = n_labels
         if n_features is None:
             n_features = n_labels
@@ -95,9 +101,14 @@ class LatentNodeCRF(GraphCRF):
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method,
                           class_weight=class_weight)
-
-        self.size_psi = (n_labels * self.n_features
+        if latent_node_features:
+            n_input_states = n_states
+        else:
+            n_input_states = n_labels
+        self.n_input_states = n_input_states
+        self.size_psi = (n_input_states * self.n_features
                          + n_states * (n_states + 1) / 2)
+        self.latent_node_features = latent_node_features
 
     def get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
@@ -117,7 +128,7 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_flat = np.asarray(w[self.n_labels * self.n_features:])
+        pairwise_flat = np.asarray(w[self.n_input_states * self.n_features:])
         pairwise_params = np.zeros((self.n_states, self.n_states))
         # set lower triangle of matrix, then make symmetric
         # we could try to redo this using ``scipy.spatial.distance`` somehow
@@ -144,27 +155,27 @@ class LatentNodeCRF(GraphCRF):
         self._check_size_w(w)
         self._check_size_x(x)
         features, edges = self.get_features(x), self.get_edges(x)
-        n_visible, n_hidden = features.shape[0], x[2]
-        # assemble unary potentials for all nodes from observed evidence
-        unaries = np.zeros((n_visible + n_hidden, self.n_states))
-        unary_params = w[:self.n_labels * self.n_features].reshape(
-            self.n_labels, self.n_features)
-        unaries_observed = np.dot(features, unary_params.T)
-        # paste observed into large matrix
-        unaries[:n_visible, :self.n_labels] = unaries_observed
+        unary_params = w[:self.n_input_states * self.n_features].reshape(
+            self.n_input_states, self.n_features)
+
+        if self.latent_node_features:
+            unaries = np.dot(features, unary_params.T)
+            n_hidden = x[2]
+            n_visible = features.shape[0] - n_hidden
+        else:
+            # we only have features for visible nodes
+            n_visible, n_hidden = features.shape[0], x[2]
+            # assemble unary potentials for all nodes from observed evidence
+            unaries = np.zeros((n_visible + n_hidden, self.n_states))
+            unaries_observed = np.dot(features, unary_params.T)
+            # paste observed into large matrix
+            unaries[:n_visible, :self.n_labels] = unaries_observed
         # forbid latent states for observable nodes
-        max_entry = np.maximum(np.max(unaries_observed), 1)
+        max_entry = np.maximum(np.max(unaries), 1)
         unaries[:n_visible, self.n_labels:] = -1e2 * max_entry
         # forbid observed states for latent nodes
         unaries[n_visible:, :self.n_labels] = -1e2 * max_entry
         return unaries
-
-    #def init_latent(self, X, Y):
-        ## treat all edges the same
-        #edges = [[self.get_edges(x)] for x in X]
-        #features = np.array([self.get_features(x) for x in X])
-        #return kmeans_init(features, Y, edges, n_labels=self.n_labels,
-                           #n_states_per_label=self.n_states_per_label)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False,
                                  return_energy=False):
@@ -266,8 +277,8 @@ class LatentNodeCRF(GraphCRF):
             pw = np.dot(unary_marginals[edges[:, 0]].T,
                         unary_marginals[edges[:, 1]])
         n_visible = features.shape[0]
-        unaries_acc = np.dot(unary_marginals[:n_visible, :self.n_labels].T,
-                             features)
+        unaries_acc = np.dot(unary_marginals[:n_visible,
+                                             :self.n_input_states].T, features)
         pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
         psi_vector = np.hstack([unaries_acc.ravel(),
