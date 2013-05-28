@@ -461,7 +461,7 @@ class OneSlackSSVM(BaseSSVM):
 
                 # update cache tolerance if cache_tol is auto:
                 if self.cache_tol == "auto" and not cached_constraint:
-                    self.cache_tol_ = (primal_objective - objective) / 4.
+                    self.cache_tol_ = (primal_objective - objective) / 4
 
                 self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
                                            for dpsi, loss_mean in constraints])
@@ -499,8 +499,13 @@ class OneSlackSSVM(BaseSSVM):
         primal_objective = (self.C * len(X)
                             * np.max(last_slack, 0)
                             + np.sum(self.w ** 2) / 2)
+        # we recompute the primal using inference
         self.primal_objective_curve_.append(primal_objective)
-        self.primal_objective_curve_.pop(0)
+        # add dummy points to objective_curve and timestamps
+        self.objective_curve_.append(objective)
+        self.cached_constraint_.append(False)
+        self.timestamps_.append(time() - self.timestamps_[0])
+
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
                   % (primal_objective, primal_objective - objective))

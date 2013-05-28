@@ -156,7 +156,7 @@ class SubgradientSSVM(BaseSSVM):
             self.objective_curve_ = []
             self.timestamps_ = [time()]
         else:
-            self.timestamps_ = (np.array(self.timestamps()) - time()).tolist()
+            self.timestamps_ = (np.array(self.timestamps_) - time()).tolist()
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
