@@ -17,13 +17,15 @@ from . import GraphCRF
 from ..inference import inference_dispatch
 
 
-def kmeans_init(X, Y, n_labels, n_hidden_states):
+def kmeans_init(X, Y, n_labels, n_hidden_states, latent_node_features=False):
     all_feats = []
     # iterate over samples
     for x, y in zip(X, Y):
         # first, get neighbor counts from nodes
         features, edges, n_hidden = x
         n_visible = features.shape[0]
+        if latent_node_features:
+            n_visible -= n_hidden
         if np.max(edges) != n_hidden + n_visible - 1:
             raise ValueError("Edges don't add up")
 
@@ -288,7 +290,8 @@ class LatentNodeCRF(GraphCRF):
     def init_latent(self, X, Y):
         # treat all edges the same
         return kmeans_init(X, Y, n_labels=self.n_labels,
-                           n_hidden_states=self.n_hidden_states)
+                           n_hidden_states=self.n_hidden_states,
+                           latent_node_features=self.latent_node_features)
 
     def max_loss(self, h):
         # maximum possible los on y for macro averages
