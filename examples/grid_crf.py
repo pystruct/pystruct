@@ -3,6 +3,10 @@
 Learning interactions on a 2d grid
 ==================================
 Simple pairwise model with arbitrary interactions on a 4-connected grid.
+All the examples are basically the same, three vertical stripes.
+Only the noise differs.
+The CRF learns that it can smooth strongly along the vertical axis and that
+there is a specific order in the horizontal direction.
 """
 
 import numpy as np

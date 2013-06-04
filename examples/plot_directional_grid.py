@@ -27,12 +27,12 @@ clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=1, verbose=0,
                         inference_cache=100, inactive_window=50, tol=.1)
 clf.fit(X, Y)
 Y_pred = np.array(clf.predict(X))
-
+print("overall accuracy (training set): %f" % clf.score(X, Y))
 
 # plot one example
 x, y, y_pred = X[0], Y[0], Y_pred[0]
 y_pred = y_pred.reshape(x.shape[:2])
-fig, plots = plt.subplots(1, 4)
+fig, plots = plt.subplots(1, 4, figsize=(12, 4))
 plots[0].matshow(y)
 plots[0].set_title("ground truth")
 plots[1].matshow(np.argmax(x, axis=-1))
@@ -49,7 +49,7 @@ for p in plots:
 
 # visualize weights
 w = clf.w.reshape(3, 3, 3)
-fig, plots = plt.subplots(1, 3)
+fig, plots = plt.subplots(1, 3, figsize=(12, 4))
 plots[0].matshow(w[0], cmap='gray', vmin=-5, vmax=5)
 plots[0].set_title("Unary weights")
 plots[1].matshow(w[1], cmap='gray', vmin=-5, vmax=5)
@@ -59,5 +59,4 @@ plots[2].set_title("Vertical weights")
 for p in plots:
     p.set_xticks(())
     p.set_yticks(())
-print("overall accuracy: %f" % clf.score(X, Y))
 plt.show()

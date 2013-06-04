@@ -318,7 +318,7 @@ rst_template = """
 
 plot_rst_template = """
 
-.. _example_%(short_fname)s:
+.. _%(short_fname)s:
 
 %(docstring)s
 
