@@ -10,5 +10,3 @@ TODO
 * finish multilabel
 * handwritten sequence classification example
 * rename StructuredSVM to NSlackSSVM - or make a superclass from one-slack and n-slack?
-* doc examples / autogenerate
-* merge AD3 update, option for branch-and-bound, verbosity control for exact / approximate inference.

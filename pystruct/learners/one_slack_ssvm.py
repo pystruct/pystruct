@@ -492,7 +492,8 @@ class OneSlackSSVM(BaseSSVM):
             pass
         if self.logger is not None:
             self.logger(self, 'final')
-        print("calls to inference: %d" % self.model.inference_calls)
+        if self.verbose and self.n_jobs == 1:
+            print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
         Y_hat, dpsi, loss_mean = self._find_new_constraint(
             X, Y, psi_gt, constraints, check=False)

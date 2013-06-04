@@ -320,7 +320,8 @@ class StructuredSVM(BaseSSVM):
         self.constraints_ = constraints
         self.loss_curve_ = loss_curve
         self.objective_curve_ = objective_curve
-        print("calls to inference: %d" % self.model.inference_calls)
+        if self.verbose and self.n_jobs == 1:
+            print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def prune_constraints(self, constraints, a):
