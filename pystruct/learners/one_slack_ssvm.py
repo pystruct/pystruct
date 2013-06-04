@@ -442,6 +442,7 @@ class OneSlackSSVM(BaseSSVM):
                             self.model.inference_method_ = \
                                 self.model.inference_method
                             self.model.inference_method = "ad3"
+                            continue
                         else:
                             break
 
