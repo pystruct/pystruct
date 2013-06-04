@@ -8,7 +8,9 @@ SMO (libsvm). Our 1-slack QP does surprisingly well.
 There are many parameters to tune and we can make 1-slack as good as the rest
 for the price of higher runtime, we can also try to make the others faster.
 We don't really have a chance to beat LibSVM but that's ok ;)
+
 """
+print __doc__
 
 from time import time
 import numpy as np
