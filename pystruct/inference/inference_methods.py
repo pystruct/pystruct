@@ -310,7 +310,7 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False):
+                  verbose=0, return_energy=False, branch_and_bound=False):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -336,6 +336,10 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         the solver).  If relaxed=False, this is the energy of the relaxed, not
         the rounded solution.
 
+    branch_and_bound : bool (default=False)
+        Whether to attempt to produce an integral solution using
+        branch-and-bound.
+
     Returns
     -------
     labels : nd-array
@@ -343,23 +347,19 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
     """
     import AD3
-    shape_org = unary_potentials.shape[:-1]
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
 
     unaries = unary_potentials.reshape(-1, n_states)
-    res = AD3.general_graph(unaries, edges, pairwise_potentials,
-                            verbose=0, n_iterations=4000)
+    res = AD3.general_graph(unaries, edges, pairwise_potentials, verbose=1,
+                            n_iterations=4000, exact=branch_and_bound)
     unary_marginals, pairwise_marginals, energy, solver_status = res
-    #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
-    #if n_fractional:
-        #print("fractional solutions found: %d" % n_fractional)
-    if relaxed:
+    if verbose:
+        print solver_status[0],
+
+    if solver_status in ["fractional", "unsolved"] and relaxed:
         unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
-        y = y.reshape(shape_org)
-    if return_energy:
-        return y, -energy
     return y
