@@ -1,13 +1,17 @@
-Welcome to pystruct's documentation!
-====================================
+PyStruct - Structured Learning in Python
+========================================
 
-This is my humble structural SVM and CRF implementation. I use it for my research and hope you find it helpful. Be aware that it might change drastically.
+This is my humble structural SVM and CRF implementation. I use it for my
+research and hope you find it helpful. 
 
-There are three basic parts to the implementation.
+
+Introduction
+=============
+There are three basic concepts in the implementation.
 
 
 Structural SVMs
-================
+-----------------
 Know about learning.
 
 These implement max margin learning, similar to SVM^struct. There is a
@@ -17,7 +21,7 @@ an issue. It is possible to put positivity constraints on certain weight. There
 is also a simple perceptron.
 
 CRFs aka Models
-==================
+-------------------
 
 Know about the model formulation.
 
@@ -29,7 +33,7 @@ moment.
 
 
 Inference Solvers
-==================
+-------------------
 Do the inference.
 
 There are some options to use different solvers for inference. A linear
@@ -41,8 +45,9 @@ This is where the heavy lifting is done and in some sense these backends are
 interchangeable.
 
 Currently I would recommend AD3 for very accurate solutions and QPBO for larger models.
-The OneSlackSSVM includes an option (``switch_to_ad3``) to switch the solver to AD3 when no
-constraints can be found using the previous solver (which should be a faster undergenerating solver, such as QPBO).
+The OneSlackSSVM includes an option (``switch_to_ad3``) to switch the solver to
+AD3 when no constraints can be found using the previous solver (which should be
+a faster undergenerating solver, such as QPBO).
 
 Examples
 =========
@@ -54,8 +59,6 @@ See the example gallery:
 
 Remarks
 =======
-
-There is also some stuff on latent SVMs here that is my current research and I'd ask you not to steal it ;)
 
 For updates, read my blog at http://peekaboo-vision.blogspot.com
 
