@@ -3,8 +3,11 @@
 Learning interactions on a 2d grid
 ==================================
 Simple pairwise model with arbitrary interactions on a 4-connected grid.
-The inputs contain a cross-pattern with a separate state for the center.
+The inputs contain a cross pattern with a separate state for the center.
 The crosses are placed randomly in the image and noise is added.
+
+The center state is not encoded in the input, so that the task can not be
+solved without pairwise interactions.
 """
 
 import numpy as np
