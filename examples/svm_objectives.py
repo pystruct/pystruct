@@ -12,7 +12,7 @@ from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
 
 from pystruct.models import CrammerSingerSVMModel
-from pystruct.learners import (StructuredSVM, OneSlackSSVM,
+from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
 # do a binary digit classification
@@ -27,7 +27,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
 
 pbl = CrammerSingerSVMModel(n_features=X_train_bias.shape[1], n_classes=10)
-n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=20,
+n_slack_svm = NSlackSSVM(pbl, verbose=0, check_constraints=False, C=20,
                             max_iter=500, batch_size=10)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=20,
                              max_iter=1000, tol=0.001)

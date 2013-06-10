@@ -9,7 +9,7 @@ Most are based on structured support vector machines.
 Currently, I advise to use the OneSlackSSVM, which solves the QP using CVXOPT.
 SubgradientSSVM is a very simple implementation, that also might be interesting.
 
-StructuredSVM is the n-slack formulation of the QP and should work reliably,
+NSlackSSVM is the n-slack formulation of the QP and should work reliably,
 but is not as optimized as OneSlackSSVM.
 The rest is experimental / for testing.
 
@@ -24,7 +24,7 @@ The rest is experimental / for testing.
    :template: class.rst
 
     learners.OneSlackSSVM
-    learners.StructuredSVM
+    learners.NSlackSSVM
     learners.SubgradientSSVM
     learners.StructuredPerceptron
     learners.LatentSSVM

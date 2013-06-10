@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sklearn.utils.testing import assert_equal, assert_true
 from pystruct.models import GraphCRF, LatentNodeCRF
-from pystruct.learners import (StructuredSVM, LatentSSVM,
+from pystruct.learners import (NSlackSSVM, LatentSSVM,
                                LatentSubgradientSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 import pystruct.toy_datasets as toy
@@ -27,7 +27,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     # same as GraphCRF
     X, Y = toy.generate_blocks(n_samples=3)
     crf = GraphCRF(inference_method='ad3')
-    clf = StructuredSVM(model=crf, max_iter=20, C=100, verbose=0,
+    clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
                         check_constraints=True, break_on_bad=False,
                         n_jobs=1)
     x1, x2, x3 = X
@@ -53,7 +53,7 @@ def test_binary_blocks_cutting_plane_latent_node():
 
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
                                n_hidden_states=0)
-    latent_svm = LatentSSVM(StructuredSVM(model=latent_crf, max_iter=20,
+    latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20,
                                           C=100, verbose=0,
                                           check_constraints=True,
                                           break_on_bad=False, n_jobs=1),
@@ -77,7 +77,7 @@ def test_latent_node_boxes_standard_latent():
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
                                n_hidden_states=2, n_features=1)
     one_slack = OneSlackSSVM(latent_crf)
-    n_slack = StructuredSVM(latent_crf)
+    n_slack = NSlackSSVM(latent_crf)
     subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
                                   momentum=0)
     for base_svm in [one_slack, n_slack, subgradient]:
@@ -141,7 +141,7 @@ def test_latent_node_boxes_standard_latent_features():
                                n_hidden_states=2, n_features=1,
                                latent_node_features=True)
     one_slack = OneSlackSSVM(latent_crf)
-    n_slack = StructuredSVM(latent_crf)
+    n_slack = NSlackSSVM(latent_crf)
     subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
                                   momentum=0)
     for base_svm in [one_slack, n_slack, subgradient]:

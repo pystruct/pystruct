@@ -21,7 +21,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn.svm import SVC
 
 from pystruct.models import BinarySVMModel
-from pystruct.learners import (StructuredSVM, OneSlackSSVM,
+from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
 # do a binary digit classification
@@ -37,7 +37,7 @@ X /= X.max()
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 pbl = BinarySVMModel(n_features=X_train.shape[1] + 1)  # add one for bias
-n_slack_svm = StructuredSVM(pbl, verbose=0, check_constraints=False, C=10,
+n_slack_svm = NSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
                             batch_size=-1)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
                              max_iter=1000, tol=0.1)

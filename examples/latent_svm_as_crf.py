@@ -15,7 +15,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn.datasets import load_digits
 
 from pystruct.models import GraphCRF, LatentGraphCRF
-from pystruct.learners import StructuredSVM, LatentSubgradientSSVM
+from pystruct.learners import NSlackSSVM, LatentSubgradientSSVM
 
 # do a binary digit classification
 digits = load_digits()
@@ -35,7 +35,7 @@ X_train_, X_test_, X_train, X_test, y_train, y_test, y_org_train, y_org_test =\
 
 # first, do it with a standard CRF / SVM
 pbl = GraphCRF(n_features=64, n_states=2, inference_method='lp')
-svm = StructuredSVM(pbl, verbose=1, check_constraints=True, C=1000, n_jobs=1,
+svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000, n_jobs=1,
                     batch_size=-1)
 
 svm.fit(X_train_, y_train)

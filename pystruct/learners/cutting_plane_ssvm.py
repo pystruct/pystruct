@@ -17,7 +17,7 @@ from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
 
 
-class StructuredSVM(BaseSSVM):
+class NSlackSSVM(BaseSSVM):
     """Structured SVM solver for the n-slack QP with l1 slack penalty.
 
     Implements margin rescaled structural SVM using

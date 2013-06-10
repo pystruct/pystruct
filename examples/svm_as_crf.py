@@ -13,7 +13,7 @@ from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GraphCRF
-from pystruct.learners import StructuredSVM
+from pystruct.learners import NSlackSSVM
 
 iris = load_iris()
 X, y = iris.data, iris.target
@@ -26,7 +26,7 @@ Y = y.reshape(-1, 1)
 X_train, X_test, y_train, y_test = train_test_split(X_, Y)
 
 pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
-svm = StructuredSVM(pbl, verbose=1, check_constraints=True, C=100, n_jobs=1)
+svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=100, n_jobs=1)
 
 
 start = time()

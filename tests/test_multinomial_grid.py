@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from pystruct.models import GridCRF, DirectionalGridCRF
-from pystruct.learners import StructuredSVM, SubgradientSSVM
+from pystruct.learners import NSlackSSVM, SubgradientSSVM
 import pystruct.toy_datasets as toy
 
 
@@ -13,7 +13,7 @@ def test_multinomial_blocks_cutting_plane():
     n_labels = len(np.unique(Y))
     for inference_method in ['lp', 'qpbo', 'ad3']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = StructuredSVM(model=crf, max_iter=10, C=100, verbose=0,
+        clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
                             check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -29,7 +29,7 @@ def test_multinomial_blocks_directional():
     for inference_method in ['lp', 'ad3']:
         crf = DirectionalGridCRF(n_states=n_labels,
                                  inference_method=inference_method)
-        clf = StructuredSVM(model=crf, max_iter=10, C=100, verbose=0,
+        clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
                             check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -53,7 +53,7 @@ def test_multinomial_checker_cutting_plane():
     X, Y = toy.generate_checker_multinomial(n_samples=10, noise=.1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
-    clf = StructuredSVM(model=crf, max_iter=20, C=100000, verbose=0,
+    clf = NSlackSSVM(model=crf, max_iter=20, C=100000, verbose=0,
                         check_constraints=True, n_jobs=-1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)

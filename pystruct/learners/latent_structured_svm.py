@@ -7,7 +7,7 @@
 import numpy as np
 
 from .ssvm import BaseSSVM
-from .cutting_plane_ssvm import StructuredSVM
+from .cutting_plane_ssvm import NSlackSSVM
 from ..utils import find_constraint
 
 
@@ -71,7 +71,7 @@ class LatentSSVM(BaseSSVM):
                 print("changes in H: %d" % np.sum(changes))
 
                 # update constraints:
-                if isinstance(self.base_ssvm, StructuredSVM):
+                if isinstance(self.base_ssvm, NSlackSSVM):
                     constraints = [[] for i in xrange(len(X))]
                     for sample, h, i in zip(self.base_ssvm.constraints_, H_new,
                                             np.arange(len(X))):

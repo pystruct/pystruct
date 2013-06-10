@@ -7,7 +7,7 @@ from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
 
 from pystruct.models import CrammerSingerSVMModel
-from pystruct.learners import (OneSlackSSVM, StructuredSVM, SubgradientSSVM)
+from pystruct.learners import (OneSlackSSVM, NSlackSSVM, SubgradientSSVM)
 
 
 def test_crammer_singer_model():
@@ -90,7 +90,7 @@ def test_simple_1d_dataset_cutting_plane():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     pbl = CrammerSingerSVMModel(n_features=2)
-    svm = StructuredSVM(pbl, verbose=10, check_constraints=True, C=10000)
+    svm = NSlackSSVM(pbl, verbose=10, check_constraints=True, C=10000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
 
@@ -104,7 +104,7 @@ def test_blobs_2d_cutting_plane():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = StructuredSVM(pbl, verbose=10, check_constraints=True, C=1000,
+    svm = NSlackSSVM(pbl, verbose=10, check_constraints=True, C=1000,
                         batch_size=1)
 
     svm.fit(X_train, Y_train)

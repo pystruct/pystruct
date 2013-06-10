@@ -1,5 +1,5 @@
 #from crf import BinaryGridCRF
-#from structured_svm import StructuredSVM, SubgradientSSVM
+#from structured_svm import NSlackSSVM, SubgradientSSVM
 #from structured_svm import objective_primal, PrimalDSStructuredSVM
 #from toy_datasets import binary
 
@@ -12,7 +12,7 @@
         #for dataset in binary:
             #X, Y = dataset(n_samples=1)
             #crf = BinaryGridCRF()
-            #clf = StructuredSVM(model=crf, max_iter=200, C=C, verbose=0,
+            #clf = NSlackSSVM(model=crf, max_iter=200, C=C, verbose=0,
                     #check_constraints=True)
             #clf.fit(X, Y)
             #clf2 = SubgradientSSVM(model=crf, max_iter=200, C=C,

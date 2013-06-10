@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal
 from sklearn.utils.testing import assert_equal, assert_true
 
 from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
-from pystruct.learners import (LatentSSVM, StructuredSVM, OneSlackSSVM,
+from pystruct.learners import (LatentSSVM, NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
 import pystruct.toy_datasets as toy
@@ -37,7 +37,7 @@ def test_with_crosses_base_svms():
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
                         inference_method='lp')
     one_slack = OneSlackSSVM(crf)
-    n_slack = StructuredSVM(crf)
+    n_slack = NSlackSSVM(crf)
     subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
@@ -68,7 +68,7 @@ def test_with_crosses_bad_init():
 
     one_slack = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000)
-    n_slack = StructuredSVM(crf)
+    n_slack = NSlackSSVM(crf)
     subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:

@@ -11,7 +11,7 @@ import itertools
 #from numpy.testing import assert_array_equal, assert_array_almost_equal
 #from nose.tools import assert_equal
 from pystruct.models import GraphCRF, LatentNodeCRF
-from pystruct.learners import StructuredSVM
+from pystruct.learners import NSlackSSVM
 from pystruct.learners import LatentSubgradientSSVM
 #from pystruct.learners import LatentSSVM
 import pystruct.toy_datasets as toy
@@ -47,7 +47,7 @@ Y_flat = [y.ravel() for y in Y]
 
 # first, use standard graph CRF. Can't do much, high loss.
 crf = GraphCRF(n_states=2, n_features=1, inference_method='lp')
-svm = StructuredSVM(model=crf, max_iter=200, C=1, verbose=0,
+svm = NSlackSSVM(model=crf, max_iter=200, C=1, verbose=0,
                     check_constraints=True, break_on_bad=False, n_jobs=1)
 
 # make dataset from X and graph without edges

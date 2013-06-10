@@ -5,7 +5,7 @@ from sklearn.utils.testing import assert_true
 from sklearn.datasets import make_blobs
 
 from pystruct.models import BinarySVMModel
-from pystruct.learners import (StructuredSVM, SubgradientSSVM,
+from pystruct.learners import (NSlackSSVM, SubgradientSSVM,
                                OneSlackSSVM)
 
 
@@ -40,7 +40,7 @@ def test_simple_1d_dataset_cutting_plane():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
     pbl = BinarySVMModel(n_features=2)
-    svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
+    svm = NSlackSSVM(pbl, verbose=3, check_constraints=True, C=1000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
 
@@ -54,7 +54,7 @@ def test_blobs_2d_cutting_plane():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMModel(n_features=3)
-    svm = StructuredSVM(pbl, verbose=3, check_constraints=True, C=1000)
+    svm = NSlackSSVM(pbl, verbose=3, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))

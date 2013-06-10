@@ -5,7 +5,7 @@ from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GraphCRF
-from pystruct.learners import StructuredSVM
+from pystruct.learners import NSlackSSVM
 from pystruct.utils import SaveLogger
 
 from sklearn.utils.testing import assert_less
@@ -23,7 +23,7 @@ def test_n_slack_svm_as_crf_pickling():
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
     logger = SaveLogger(file_name, verbose=1)
-    svm = StructuredSVM(pbl, verbose=0, C=100, n_jobs=1, logger=logger)
+    svm = NSlackSSVM(pbl, verbose=0, C=100, n_jobs=1, logger=logger)
     svm.fit(X_train, y_train)
 
     assert_less(.97, svm.score(X_test, y_test))
