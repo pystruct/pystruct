@@ -38,7 +38,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 pbl = BinarySVMModel(n_features=X_train.shape[1] + 1)  # add one for bias
 n_slack_svm = NSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
-                            batch_size=-1)
+                         batch_size=-1)
 one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
                              max_iter=1000, tol=0.1)
 subgradient_svm = SubgradientSSVM(pbl, C=10, learning_rate=0.1, max_iter=100,

@@ -34,7 +34,7 @@ X_test_bias = np.hstack([X_test, np.ones((X_test.shape[0], 1))])
 
 pbl = CrammerSingerSVMModel(n_features=X_train_bias.shape[1], n_classes=10)
 n_slack_svm = NSlackSSVM(pbl, verbose=0, check_constraints=False, C=20,
-                            batch_size=-1, tol=1e-2)
+                         batch_size=-1, tol=1e-2)
 one_slack_svm = OneSlackSSVM(pbl, verbose=50, check_constraints=False, C=.20,
                              max_iter=10000, tol=.001, show_loss_every=10)
 subgradient_svm = SubgradientSSVM(pbl, C=20, learning_rate=0.000001,

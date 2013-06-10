@@ -12,8 +12,7 @@ def test_binary_blocks_cutting_plane():
         X, Y = toy.generate_blocks(n_samples=5)
         crf = GridCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                            check_constraints=True, break_on_bad=False,
-                            n_jobs=-1)
+                         check_constraints=True, break_on_bad=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -24,8 +23,8 @@ def test_binary_blocks_batches_n_slack():
     X, Y = toy.generate_blocks(n_samples=5)
     crf = GridCRF(inference_method='lp')
     clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                        check_constraints=True, break_on_bad=False,
-                        n_jobs=1, batch_size=1)
+                     check_constraints=True, break_on_bad=False, n_jobs=1,
+                     batch_size=1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -60,16 +59,15 @@ def test_binary_ssvm_repellent_potentials():
     for inference_method in ["lp", "qpbo", "ad3"]:
         crf = GridCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
-                            check_constraints=True, n_jobs=-1)
+                         check_constraints=True, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         # standard crf can predict perfectly
         assert_array_equal(Y, Y_pred)
 
-        submodular_clf = NSlackSSVM(model=crf, max_iter=10, C=100,
-                                       verbose=0, check_constraints=True,
-                                       positive_constraint=[4, 5, 6],
-                                       n_jobs=-1)
+        submodular_clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
+                                    check_constraints=True,
+                                    positive_constraint=[4, 5, 6], n_jobs=-1)
         submodular_clf.fit(X, Y)
         Y_pred = submodular_clf.predict(X)
         # submodular crf can not do better than unaries
@@ -82,9 +80,9 @@ def test_binary_ssvm_attractive_potentials():
     # test that submodular SSVM can learn the block dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    submodular_clf = NSlackSSVM(model=crf, max_iter=200, C=100,
-                                   verbose=1, check_constraints=True,
-                                   positive_constraint=[5], n_jobs=-1)
+    submodular_clf = NSlackSSVM(model=crf, max_iter=200, C=100, verbose=1,
+                                check_constraints=True,
+                                positive_constraint=[5], n_jobs=-1)
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
