@@ -100,8 +100,6 @@ class GraphCRF(CRF):
             self.n_states, self.n_features)
 
         return np.dot(features, unary_params.T)
-        ## EVIL HACK!!@
-        #return features
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
