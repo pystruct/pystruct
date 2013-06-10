@@ -1,4 +1,4 @@
-from .cutting_plane_ssvm import NSlackSSVM
+from .n_slack_ssvm import NSlackSSVM
 from .subgradient_ssvm import SubgradientSSVM
 from .downhill_simplex_ssvm import PrimalDSStructuredSVM
 from .structured_perceptron import StructuredPerceptron

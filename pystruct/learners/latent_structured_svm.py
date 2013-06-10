@@ -7,7 +7,7 @@
 import numpy as np
 
 from .ssvm import BaseSSVM
-from .cutting_plane_ssvm import NSlackSSVM
+from .n_slack_ssvm import NSlackSSVM
 from ..utils import find_constraint
 
 

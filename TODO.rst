@@ -7,7 +7,6 @@ TODO
 * constraint pruning in n-slack SSVM
 * organize tests
 * finish multilabel
-* rename StructuredSVM to NSlackSSVM - or make a superclass from one-slack and n-slack?
 * missing examples:
     * handwritten sequence classification example
     * more chain CRFs - POS tagging?

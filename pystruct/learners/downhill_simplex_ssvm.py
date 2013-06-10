@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.optimize import fmin
 
-from .cutting_plane_ssvm import NSlackSSVM
+from .ssvm import BaseSSVM
 from ..utils import find_constraint
 
 
-class PrimalDSNSlackSSVM(NSlackSSVM):
+class PrimalDSStructuredSVM(BaseSSVM):
     """Uses downhill simplex for optimizing an unconstraint primal.
 
     This is basically a sanity check on all other implementations,
