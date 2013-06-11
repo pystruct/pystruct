@@ -415,7 +415,7 @@ def generate_example_rst(app):
 
     .figure {
         float: left;
-        margin: 65px;
+        margin: 20px;
         top: 0;
         left: 0;
         -webkit-border-radius: 10px; /* Saf3-4, iOS 1-3.2, Android <1.6 */
@@ -430,7 +430,6 @@ def generate_example_rst(app):
         background-repeat: no-repeat;
         /* --> Thumbnail image size */
         width: 150px;
-        height: 100px;
         -webkit-background-size: 150px 100px; /* Saf3-4 */
         -moz-background-size: 150px 100px; /* FF3.6 */
         background-size: 150px 100px; /* Opera, IE9, Saf5, Chrome, FF4 */
