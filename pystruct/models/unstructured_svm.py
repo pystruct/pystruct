@@ -8,8 +8,15 @@ class BinarySVMModel(StructuredModel):
     """Formulate standard linear binary SVM in CRF framework.
 
     Inputs x are simply feature arrays, labels y are -1 or 1.
+
+    Notes
+    -----
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
+
+    It is also highly recommended to use n_jobs=1 in the learner when using
+    this model. Trying to parallelize the trivial inference will slow
+    the infernce down a lot!
 
     Parameters
     ----------
@@ -118,8 +125,15 @@ class CrammerSingerSVMModel(StructuredModel):
     """Formulate linear multiclass SVM in C-S style in CRF framework.
 
     Inputs x are simply feature arrays, labels y are 0 to n_classes.
+
+    Notes
+    ------
     No bias / intercept is learned. It is recommended to add a constant one
     feature to the data.
+
+    It is also highly recommended to use n_jobs=1 in the learner when using
+    this model. Trying to parallelize the trivial inference will slow
+    the infernce down a lot!
 
     Parameters
     ----------
