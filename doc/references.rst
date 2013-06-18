@@ -96,3 +96,17 @@ Utilities
 
     utils.SaveLogger
 
+plot_learning
+-------------
+
+.. automodule:: pystruct.plot_learning
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pystruct
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    plot_learning.plot_learning
