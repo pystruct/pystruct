@@ -469,16 +469,10 @@ class OneSlackSSVM(BaseSSVM):
                 self.last_slack_ = max(self.last_slack_, 0)
 
                 if self.verbose > 0:
-                    cutting_plane_objective = (self.C * len(X)
-                                               * self.last_slack_
-                                               + np.sum(self.w ** 2) / 2)
-                    print("dual objective: %f, cutting plane objective: %f,"
-                          " primal objective %f" % (objective,
-                          cutting_plane_objective, primal_objective))
-                    if (np.abs(cutting_plane_objective - objective)
-                            / max(np.abs(objective), 1) > .1):
-                        from IPython.core.debugger import Tracer
-                        Tracer()()
+                    # the cutting plane objective can also be computed as
+                    # self.C * len(X) * self.last_slack_ + np.sum(self.w**2)/2
+                    print("cutting plane objective: %f, primal objective %f"
+                          % (objective, primal_objective))
                 # we only do this here because we didn't add the gt to the
                 # constraints, which makes the dual behave a bit oddly
                 self.objective_curve_.append(objective)
