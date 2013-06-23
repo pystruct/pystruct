@@ -1,12 +1,20 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sklearn.utils.testing import assert_equal, assert_almost_equal
 
-#import pystruct.toy_datasets as toy
-#from pystruct.utils import (exhaustive_loss_augmented_inference,
-                            #make_grid_edges, find_constraint)
-from pystruct.models import LatentNodeCRF
+import pystruct.toy_datasets as toy
+from pystruct.inference.linear_programming import lp_general_graph
+from pystruct.utils import make_grid_edges
+from pystruct.models import LatentNodeCRF, EdgeFeatureLatentNodeCRF
 #from pystruct.models.latent_grid_crf import kmeans_init
+
+
+def edge_list_to_features(edge_list):
+    edges = np.vstack(edge_list)
+    edge_features = np.zeros((edges.shape[0], 2))
+    edge_features[:len(edge_list[0]), 0] = 1
+    edge_features[len(edge_list[0]):, 1] = 1
+    return edge_features
 
 
 def test_inference_trivial():
@@ -161,3 +169,64 @@ def test_inference_trivial_features():
     #print(h_hat)
     #print(h)
     #print(crf.loss(h_hat, h))
+
+
+def test_edge_feature_latent_node_crf_no_latent():
+    # no latent nodes
+
+    # Test inference with different weights in different directions
+
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    x, y = X[0], Y[0]
+    n_states = x.shape[-1]
+
+    edge_list = make_grid_edges(x, 4, return_lists=True)
+    edges = np.vstack(edge_list)
+
+    pw_horz = -1 * np.eye(n_states + 5)
+    xx, yy = np.indices(pw_horz.shape)
+    # linear ordering constraint horizontally
+    pw_horz[xx > yy] = 1
+
+    # high cost for unequal labels vertically
+    pw_vert = -1 * np.eye(n_states + 5)
+    pw_vert[xx != yy] = 1
+    pw_vert *= 10
+
+    # generate edge weights
+    edge_weights_horizontal = np.repeat(pw_horz[np.newaxis, :, :],
+                                        edge_list[0].shape[0], axis=0)
+    edge_weights_vertical = np.repeat(pw_vert[np.newaxis, :, :],
+                                      edge_list[1].shape[0], axis=0)
+    edge_weights = np.vstack([edge_weights_horizontal, edge_weights_vertical])
+
+    # do inference
+    # pad x for hidden states...
+    x_padded = -100 * np.ones((x.shape[0], x.shape[1], x.shape[2] + 5))
+    x_padded[:, :, :x.shape[2]] = x
+    res = lp_general_graph(-x_padded.reshape(-1, n_states + 5), edges,
+                           edge_weights)
+
+    edge_features = edge_list_to_features(edge_list)
+    x = (x.reshape(-1, n_states), edges, edge_features, 0)
+    y = y.ravel()
+
+    for inference_method in ["lp"]:
+        # same inference through CRF inferface
+        crf = EdgeFeatureLatentNodeCRF(n_labels=3,
+                                       inference_method=inference_method,
+                                       n_edge_features=2, n_hidden_states=5)
+        w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+        y_pred = crf.inference(x, w, relaxed=True)
+        assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states + 5))
+        assert_array_almost_equal(res[1], y_pred[1])
+        assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
+
+    for inference_method in ["lp", "ad3", "qpbo"]:
+        # again, this time discrete predictions only
+        crf = EdgeFeatureLatentNodeCRF(n_labels=3,
+                                       inference_method=inference_method,
+                                       n_edge_features=2, n_hidden_states=5)
+        w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+        y_pred = crf.inference(x, w, relaxed=False)
+        assert_array_equal(y, y_pred)

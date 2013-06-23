@@ -373,7 +373,6 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
 
         self.n_input_states = n_input_states
         self.size_psi = (n_input_states * self.n_features
-                         + n_states * (n_states + 1) / 2
                          + self.n_edge_features
                          * n_states ** 2)
         self.latent_node_features = latent_node_features
@@ -395,7 +394,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
 
-        _, edges, edge_features = x
+        _, edges, edge_features, n_hidden = x
         if edges.shape[0] != edge_features.shape[0]:
             raise ValueError("Got %d edges but %d edge features."
                              % (edges.shape[0], edge_features.shape[0]))
@@ -422,7 +421,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         self._check_size_w(w)
         self._check_size_x(x)
         edge_features = x[2]
-        pairwise = np.asarray(w[self.n_states * self.n_features:])
+        pairwise = np.asarray(w[self.n_input_states * self.n_features:])
         pairwise = pairwise.reshape(self.n_edge_features, -1)
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
