@@ -298,4 +298,294 @@ class LatentNodeCRF(GraphCRF):
         y = self.label_from_latent(h)
         if hasattr(self, 'class_weight'):
             return np.sum(self.class_weight[y])
+
+
+class EdgeFeatureLatentNodeCRF(GraphCRF):
+    """CRF with latent variables and edge features.
+
+    Yeah that's totally not a mess.
+
+    Input x is tuple (features, edges, edge_features, n_hidden)
+    First features.shape[0] nodes are observed, then n_hidden unobserved nodes.
+
+    Currently unobserved nodes don't have features.
+
+    Parameters
+    ----------
+    n_labels : int, default=2
+        Number of states for observed variables.
+
+    n_hidden_states : int, default=2
+        Number of states for hidden variables.
+
+    n_edge_features : int, default=1
+        Number of features per edge.
+
+    n_features : int, default=None
+        Number of features per node. None means n_states.
+
+    inference_method : string, default="qpbo"
+        Function to call to do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'ad3' for AD3 dual decomposition.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
+
+    latent_node_features : bool, default=False
+        Whether latent nodes have features. We assume that if True,
+        the number of features is the same as for visible nodes.
+
+    symmetric_edge_features : None or list
+        Indices of edge features that are forced to be symmetric.
+        Often the direction of the edge has no immediate meaning.
+
+    antisymmetric_edge_features : None or list
+        Indices of edge features that are forced to be anti-symmetric.
+
+    """
+    def __init__(self, n_labels=2, n_features=None, n_edge_features=1,
+                 n_hidden_states=2, inference_method='lp', class_weight=None,
+                 latent_node_features=False, symmetric_edge_features=None,
+                 antisymmetric_edge_features=None):
+
+        self.n_labels = n_labels
+        if n_features is None:
+            n_features = n_labels
+
+        self.n_hidden_states = n_hidden_states
+        n_states = n_hidden_states + n_labels
+        self.n_edge_features = n_edge_features
+
+        GraphCRF.__init__(self, n_states, n_features,
+                          inference_method=inference_method,
+                          class_weight=class_weight)
+
+        if latent_node_features:
+            n_input_states = n_states
+        else:
+            n_input_states = n_labels
+
+        self.n_input_states = n_input_states
+        self.size_psi = (n_input_states * self.n_features
+                         + n_states * (n_states + 1) / 2
+                         + self.n_edge_features
+                         * n_states ** 2)
+        self.latent_node_features = latent_node_features
+
+        if symmetric_edge_features is None:
+            symmetric_edge_features = []
+        if antisymmetric_edge_features is None:
+            antisymmetric_edge_features = []
+
+        if not set(symmetric_edge_features).isdisjoint(
+                antisymmetric_edge_features):
+            raise ValueError("symmetric_edge_features and "
+                             " antisymmetric_edge_features share an entry."
+                             " That doesn't make any sense.")
+
+        self.symmetric_edge_features = symmetric_edge_features
+        self.antisymmetric_edge_features = antisymmetric_edge_features
+
+    def _check_size_x(self, x):
+        GraphCRF._check_size_x(self, x)
+
+        _, edges, edge_features = x
+        if edges.shape[0] != edge_features.shape[0]:
+            raise ValueError("Got %d edges but %d edge features."
+                             % (edges.shape[0], edge_features.shape[0]))
+        if edge_features.shape[1] != self.n_edge_features:
+            raise ValueError("Got edge features of size %d, but expected %d."
+                             % (edge_features.shape[1], self.n_edge_features))
+
+    def get_pairwise_potentials(self, x, w):
+        """Computes pairwise potentials for x and w.
+
+        Parameters
+        ----------
+        x : tuple
+            Instance Representation.
+
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        pairwise : ndarray, shape=(n_states, n_states)
+            Pairwise weights.
+        """
+        self._check_size_w(w)
+        self._check_size_x(x)
+        edge_features = x[2]
+        pairwise = np.asarray(w[self.n_states * self.n_features:])
+        pairwise = pairwise.reshape(self.n_edge_features, -1)
+        return np.dot(edge_features, pairwise).reshape(
+            edge_features.shape[0], self.n_states, self.n_states)
+
+    def get_unary_potentials(self, x, w):
+        """Computes unary potentials for x and w.
+
+        Parameters
+        ----------
+        x : tuple
+            Instance Representation.
+
+        w : ndarray, shape=(size_psi,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        unary : ndarray, shape=(n_states)
+            Unary weights.
+        """
+        self._check_size_w(w)
+        self._check_size_x(x)
+        features, edges = self.get_features(x), self.get_edges(x)
+        unary_params = w[:self.n_input_states * self.n_features].reshape(
+            self.n_input_states, self.n_features)
+
+        if self.latent_node_features:
+            unaries = np.dot(features, unary_params.T)
+            n_hidden = x[2]
+            n_visible = features.shape[0] - n_hidden
+        else:
+            # we only have features for visible nodes
+            n_visible, n_hidden = features.shape[0], x[3]
+            # assemble unary potentials for all nodes from observed evidence
+            unaries = np.zeros((n_visible + n_hidden, self.n_states))
+            unaries_observed = np.dot(features, unary_params.T)
+            # paste observed into large matrix
+            unaries[:n_visible, :self.n_labels] = unaries_observed
+        # forbid latent states for observable nodes
+        max_entry = np.maximum(np.max(unaries), 1)
+        unaries[:n_visible, self.n_labels:] = -1e2 * max_entry
+        # forbid observed states for latent nodes
+        unaries[n_visible:, :self.n_labels] = -1e2 * max_entry
+        return unaries
+
+    def loss_augmented_inference(self, x, h, w, relaxed=False,
+                                 return_energy=False):
+        self.inference_calls += 1
+        self._check_size_w(w)
+        unary_potentials = self.get_unary_potentials(x, w)
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+        # do loss-augmentation
+        for l in np.arange(self.n_states):
+            # for each class, decrement features
+            # for loss-agumention
+            inds = np.where(self.label_from_latent(h) != l)[0]
+            unary_potentials[inds, l] += self.class_weight[
+                self.label_from_latent(h)][inds]
+
+        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                  self.inference_method, relaxed=relaxed,
+                                  return_energy=return_energy)
+
+    def latent(self, x, y, w):
+        unary_potentials = self.get_unary_potentials(x, w)
+        # clamp observed nodes by modifying unary potentials
+        max_entry = np.maximum(np.max(unary_potentials), 1)
+        unary_potentials[np.arange(len(y)), y] = 1e2 * max_entry
+        pairwise_potentials = self.get_pairwise_potentials(x, w)
+        edges = self.get_edges(x)
+        h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                               self.inference_method, relaxed=False)
+        if (h[:len(y)] != y).any():
+            print("inconsistent h and y")
+            from IPython.core.debugger import Tracer
+            Tracer()()
+            h[:len(y)] = y
+        return h
+
+    def label_from_latent(self, h):
+        return h[h < self.n_labels]
+
+    def loss(self, h, h_hat):
+        if isinstance(h_hat, tuple):
+            return self.continuous_loss(h, h_hat[0])
+        return GraphCRF.loss(self, self.label_from_latent(h),
+                             self.label_from_latent(h_hat))
+
+    def base_loss(self, y, y_hat):
+        if isinstance(y_hat, tuple):
+            return GraphCRF.continuous_loss(self, y, y_hat)
+        return GraphCRF.loss(self, y, y_hat)
+
+    def continuous_loss(self, y, y_hat):
+        # continuous version of the loss
+        # y_hat is the result of linear programming
+        y_org = self.label_from_latent(y)
+        y_hat_org = y_hat[:y_org.size, :self.n_labels]
+        return GraphCRF.continuous_loss(self, y_org, y_hat_org)
+
+    def psi(self, x, y):
+        """Feature vector associated with instance (x, y).
+
+        Feature representation psi, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+
+        Parameters
+        ----------
+        x : tuple
+            Unary evidence.
+
+        y : ndarray or tuple
+            Either y is an integral ndarray, giving
+            a complete labeling for x.
+            Or it is the result of a linear programming relaxation. In this
+            case, ``y=(unary_marginals, pariwise_marginals)``.
+
+        Returns
+        -------
+        p : ndarray, shape (size_psi,)
+            Feature vector associated with state (x, y).
+
+        """
+        self._check_size_x(x)
+        features, edges = self.get_features(x), self.get_edges(x)
+
+        if isinstance(y, tuple):
+            # y is result of relaxation, tuple of unary and pairwise marginals
+            unary_marginals, pw = y
+            # accumulate pairwise
+            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
+        else:
+            n_nodes = y.size
+            gx = np.ogrid[:n_nodes]
+
+            #make one hot encoding
+            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
+            gx = np.ogrid[:n_nodes]
+            unary_marginals[gx, y] = 1
+
+            ##accumulated pairwise
+            pw = np.dot(unary_marginals[edges[:, 0]].T,
+                        unary_marginals[edges[:, 1]])
+        n_visible = features.shape[0]
+        unaries_acc = np.dot(unary_marginals[:n_visible,
+                                             :self.n_input_states].T, features)
+        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
+
+        psi_vector = np.hstack([unaries_acc.ravel(),
+                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        return psi_vector
+
+    def init_latent(self, X, Y):
+        # treat all edges the same
+        return kmeans_init(X, Y, n_labels=self.n_labels,
+                           n_hidden_states=self.n_hidden_states,
+                           latent_node_features=self.latent_node_features)
+
+    def max_loss(self, h):
+        # maximum possible los on y for macro averages
+        y = self.label_from_latent(h)
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y])
+        return y.size
         return y.size
