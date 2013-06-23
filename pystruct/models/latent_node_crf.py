@@ -548,12 +548,12 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         """
         self._check_size_x(x)
         features, edges = self.get_features(x), self.get_edges(x)
+        n_nodes = features.shape[0]
+        edge_features = x[2]
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
-            # accumulate pairwise
-            pw = pw.reshape(-1, self.n_states, self.n_states).sum(axis=0)
         else:
             n_nodes = y.size
             gx = np.ogrid[:n_nodes]
@@ -563,16 +563,26 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
             gx = np.ogrid[:n_nodes]
             unary_marginals[gx, y] = 1
 
-            ##accumulated pairwise
-            pw = np.dot(unary_marginals[edges[:, 0]].T,
-                        unary_marginals[edges[:, 1]])
+            ## pairwise
+            pw = [np.outer(unary_marginals[edge[0]].T,
+                           unary_marginals[edge[1]]).ravel()
+                  for edge in edges]
+            pw = np.vstack(pw)
+
+        pw = np.dot(edge_features.T, pw)
+        for i in self.symmetric_edge_features:
+            pw_ = pw[i].reshape(self.n_states, self.n_states)
+            pw[i] = (pw_ + pw_.T).ravel() / 2.
+
+        for i in self.antisymmetric_edge_features:
+            pw_ = pw[i].reshape(self.n_states, self.n_states)
+            pw[i] = (pw_ - pw_.T).ravel() / 2.
+
         n_visible = features.shape[0]
         unaries_acc = np.dot(unary_marginals[:n_visible,
                                              :self.n_input_states].T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
 
     def init_latent(self, X, Y):
