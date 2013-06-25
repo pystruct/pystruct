@@ -78,12 +78,18 @@ def test_edge_type_graph_crf():
 def test_graph_crf_continuous_inference():
     for inference_method in ['lp', 'ad3']:
         crf = GraphCRF(n_states=2, inference_method=inference_method)
-        assert_array_equal(np.argmax(crf.inference((x_1, g_1), w,
-                                                   relaxed=True)[0], axis=-1),
-                           y_1)
-        assert_array_equal(np.argmax(crf.inference((x_2, g_2), w,
-                                                   relaxed=True)[0], axis=-1),
-                           y_2)
+        y_hat = crf.inference((x_1, g_1), w, relaxed=True)
+        if isinstance(y_hat, tuple):
+            assert_array_equal(np.argmax(y_hat[0], axis=-1), y_1)
+        else:
+            # ad3 produces integer result if it found the exact solution
+            assert_array_equal(y_hat, y_1)
+
+        y_hat = crf.inference((x_2, g_2), w, relaxed=True)
+        if isinstance(y_hat, tuple):
+            assert_array_equal(np.argmax(y_hat[0], axis=-1), y_2)
+        else:
+            assert_array_equal(y_hat, y_2)
 
 
 def test_graph_crf_energy_lp_integral():

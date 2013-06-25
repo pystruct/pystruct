@@ -41,11 +41,12 @@ def test_continuous_y():
         assert_almost_equal(const[2], const_cont[2])
 
         # returned y_hat is one-hot version of other
-        assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
+        if isinstance(const_cont[0], tuple):
+            assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
-        # test loss:
-        assert_almost_equal(crf.loss(y, const[0]),
-                            crf.continuous_loss(y, const_cont[0][0]))
+            # test loss:
+            assert_almost_equal(crf.loss(y, const[0]),
+                                crf.continuous_loss(y, const_cont[0][0]))
 
 
 def test_energy_lp():

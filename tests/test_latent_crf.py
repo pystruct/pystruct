@@ -6,7 +6,7 @@ import pystruct.toy_datasets as toy
 from pystruct.utils import (exhaustive_loss_augmented_inference,
                             make_grid_edges, find_constraint)
 from pystruct.models import (LatentGridCRF, LatentDirectionalGridCRF,
-                               LatentGraphCRF)
+                             LatentGraphCRF)
 from pystruct.models.latent_grid_crf import kmeans_init
 
 
@@ -258,9 +258,10 @@ def test_continuous_y():
         assert_array_almost_equal(const[1], const_cont[1])
         assert_almost_equal(const[2], const_cont[2])
 
-        # returned y_hat is one-hot version of other
-        assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
+        if isinstance(const_cont[0], tuple):
+            # returned y_hat is one-hot version of other
+            assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
-        # test loss:
-        assert_almost_equal(crf.loss(y, const[0]),
-                            crf.continuous_loss(y, const_cont[0][0]))
+            # test loss:
+            assert_almost_equal(crf.loss(y, const[0]),
+                                crf.continuous_loss(y, const_cont[0][0]))
