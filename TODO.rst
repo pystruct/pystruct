@@ -14,3 +14,4 @@ TODO
 * make more examples plot examples
 * replace pairwise tri code with scipy.spatial.squareform
 * add argmax inference?
+* remove EdgeTypeGraphCRF

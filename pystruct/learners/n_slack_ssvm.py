@@ -179,8 +179,8 @@ class NSlackSSVM(BaseSSVM):
         y_hat_plain = unwrap_pairwise(y_hat)
 
         already_active = np.any([True for y__, _, _ in old_constraints
-                                 if (y_hat_plain ==
-                                     unwrap_pairwise(y__)).all()])
+                                 if np.all(y_hat_plain ==
+                                           unwrap_pairwise(y__))])
         if already_active:
             return True
 

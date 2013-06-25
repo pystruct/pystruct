@@ -362,4 +362,6 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         y = (unary_marginals, pairwise_marginals)
     else:
         y = np.argmax(unary_marginals, axis=-1)
+    if return_energy:
+        return y, -energy
     return y

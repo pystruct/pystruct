@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-##from sklearn.utils.testing import assert_equal, assert_almost_equal, assert_raises
+##from sklearn.utils.testing import assert_equal, assert_almost_equal,
+#assert_raises
 from sklearn.utils.testing import assert_almost_equal, assert_equal
 
 from pystruct.models import EdgeFeatureGraphCRF
@@ -58,8 +59,10 @@ def test_inference():
                                   n_edge_features=2)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
+        if isinstance(y_pred, tuple):
+            assert_array_almost_equal(res[1], y_pred[1])
+            y_pred = y_pred[0]
         assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
-        assert_array_almost_equal(res[1], y_pred[1])
         assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
     for inference_method in ["lp", "ad3", "qpbo"]:

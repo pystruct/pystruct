@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sklearn.utils.testing import assert_almost_equal, assert_equal
 
-from pystruct.models import GraphCRF, EdgeTypeGraphCRF, EdgeFeatureGraphCRF
+from pystruct.models import GraphCRF, EdgeTypeGraphCRF
 
 
 w = np.array([1, 0,  # unary
@@ -38,21 +38,6 @@ def test_graph_crf_inference():
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
 
     print crf.get_pairwise_potentials((x_1, g_1), w)
-
-
-def test_edge_feature_graph_crf():
-    g_ef = [g_1, np.array([[0, 1], [1, 0], [1, 1]])]
-    X = (x_1, g_ef)
-
-    w = np.array([1, 0,  # unary
-                  0, 1,
-                  .22, .88])  # pairwise
-
-    print X
-    crf = EdgeFeatureGraphCRF(n_states=2, inference_method='qpbo',
-                              n_edge_features=2)
-
-    print crf.get_pairwise_potentials(X, w)
 
 
 def test_edge_type_graph_crf():
