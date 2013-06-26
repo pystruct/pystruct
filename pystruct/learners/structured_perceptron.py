@@ -11,7 +11,7 @@ def inference(model, x, w):
 class StructuredPerceptron(BaseSSVM):
     """Structured Perceptron training.
 
-    Implements a simple structured perceptron without regularization.
+    Implements a simple structured perceptron.
     The structured perceptron approximately minimizes the zero-one loss.
     Therefore the learning does not take model.loss into account.
     It is just shown to illustrate the learning progress.
@@ -31,8 +31,20 @@ class StructuredPerceptron(BaseSSVM):
     verbose : int (default=0)
         Verbosity
 
-    batch: bool (default=False)
+    batch : bool (default=False)
         Whether to do batch learning or online learning.
+
+    decay_exponent : float, default=0
+        Exponent for decaying learning rate. Effective learning rate is
+        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        Ignored if adagrad=True.
+
+    decay_t0 : float, default=10
+        Offset for decaying learning rate. Effective learning rate is
+        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        Ignored if adagrad=True.
+
+    logger : logger object.
 
     Attributes
     ----------
@@ -42,9 +54,13 @@ class StructuredPerceptron(BaseSSVM):
    ``loss_curve_`` : list of float
         List of loss values after each pass thorugh the dataset.
     """
-    def __init__(self, model, max_iter=100, verbose=0, batch=False):
-        BaseSSVM.__init__(self, model, max_iter=max_iter, verbose=verbose)
+    def __init__(self, model, max_iter=100, verbose=0, batch=False,
+                 decay_exponent=0, decay_t0=10, n_jobs=1, logger=None):
+        BaseSSVM.__init__(self, model, max_iter=max_iter, verbose=verbose,
+                          n_jobs=n_jobs, logger=logger)
         self.batch = batch
+        self.decay_exponent = decay_exponent
+        self.decay_t0 = decay_t0
 
     def fit(self, X, Y):
         """Learn parameters using structured perceptron.
@@ -66,7 +82,8 @@ class StructuredPerceptron(BaseSSVM):
         loss_curve = []
         try:
             for iteration in xrange(self.max_iter):
-                alpha = 1. / (1 + iteration)
+                effective_lr = ((iteration + self.decay_t0) **
+                                self.decay_exponent)
                 losses = 0
                 if self.verbose:
                     print("iteration %d" % iteration)
@@ -78,8 +95,8 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            w += alpha * (self.model.psi(x, y) -
-                                          self.model.psi(x, y_hat))
+                            w += effective_lr * (self.model.psi(x, y) -
+                                                 self.model.psi(x, y_hat))
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
@@ -87,12 +104,15 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            w += alpha * (self.model.psi(x, y) -
-                                          self.model.psi(x, y_hat))
+                            w += effective_lr * (self.model.psi(x, y) -
+                                                 self.model.psi(x, y_hat))
                 loss_curve.append(float(losses) / n_samples)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (loss_curve[-1], str(w)))
-                    print("alpha: %f" % alpha)
+                    print("effective learning rate: %f" % effective_lr)
+                if loss_curve[-1] == 0:
+                    print("Loss zero. Stopping.")
+                    break
         except KeyboardInterrupt:
             pass
         self.loss_curve_ = loss_curve
