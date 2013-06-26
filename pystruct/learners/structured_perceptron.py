@@ -36,12 +36,12 @@ class StructuredPerceptron(BaseSSVM):
 
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        ``(t0 + t)** decay_exponent``. Zero means no decay.
         Ignored if adagrad=True.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        ``(t0 + t)** decay_exponent``. Zero means no decay.
         Ignored if adagrad=True.
 
     logger : logger object.
@@ -78,8 +78,8 @@ class StructuredPerceptron(BaseSSVM):
 
         n_samples = len(X)
         size_psi = self.model.size_psi
-        w = np.zeros(size_psi)
-        loss_curve = []
+        self.w = np.zeros(size_psi)
+        self.loss_curve_ = []
         try:
             for iteration in xrange(self.max_iter):
                 effective_lr = ((iteration + self.decay_t0) **
@@ -89,31 +89,31 @@ class StructuredPerceptron(BaseSSVM):
                     print("iteration %d" % iteration)
                 if self.batch:
                     Y_hat = (Parallel(n_jobs=self.n_jobs)(
-                        delayed(inference)(self.model, x, w) for x, y in
+                        delayed(inference)(self.model, x, self.w) for x, y in
                         zip(X, Y)))
                     for x, y, y_hat in zip(X, Y, Y_hat):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            w += effective_lr * (self.model.psi(x, y) -
-                                                 self.model.psi(x, y_hat))
+                            self.w += effective_lr * (self.model.psi(x, y) -
+                                                      self.model.psi(x, y_hat))
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
-                        y_hat = self.model.inference(x, w)
+                        y_hat = self.model.inference(x, self.w)
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            w += effective_lr * (self.model.psi(x, y) -
-                                                 self.model.psi(x, y_hat))
-                loss_curve.append(float(losses) / n_samples)
+                            self.w += effective_lr * (self.model.psi(x, y) -
+                                                      self.model.psi(x, y_hat))
+                self.loss_curve_.append(float(losses) / n_samples)
                 if self.verbose:
-                    print("avg loss: %f w: %s" % (loss_curve[-1], str(w)))
+                    print("avg loss: %f w: %s" % (self.loss_curve_[-1],
+                                                  str(self.w)))
                     print("effective learning rate: %f" % effective_lr)
-                if loss_curve[-1] == 0:
+                if self.loss_curve_[-1] == 0:
                     print("Loss zero. Stopping.")
                     break
         except KeyboardInterrupt:
             pass
-        self.loss_curve_ = loss_curve
-        self.w = w
+        return self
