@@ -68,6 +68,10 @@ class EdgeFeatureGraphCRF(GraphCRF):
             symmetric_edge_features = []
         if antisymmetric_edge_features is None:
             antisymmetric_edge_features = []
+        if np.any(np.hstack([symmetric_edge_features,
+                             antisymmetric_edge_features]) >= n_edge_features):
+            raise ValueError("Got (anti) symmetric edge feature index that is "
+                             "larger than n_edge_features.")
 
         if not set(symmetric_edge_features).isdisjoint(
                 antisymmetric_edge_features):
