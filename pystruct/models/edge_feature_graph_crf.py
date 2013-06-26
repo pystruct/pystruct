@@ -165,10 +165,10 @@ class EdgeFeatureGraphCRF(GraphCRF):
             unary_marginals[gx, y] = 1
 
             ## pairwise
-            pw = [np.outer(unary_marginals[edge[0]].T,
-                           unary_marginals[edge[1]]).ravel()
-                  for edge in edges]
-            pw = np.vstack(pw)
+            pw = np.zeros((edges.shape[0], self.n_states ** 2))
+            class_pair_ind = (y[edges[:, 1]] + self.n_states *
+                              y[edges[:, 0]])
+            pw[np.arange(len(edges)), class_pair_ind] = 1
 
         pw = np.dot(edge_features.T, pw)
         for i in self.symmetric_edge_features:
