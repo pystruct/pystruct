@@ -6,6 +6,7 @@ from sklearn.utils.testing import assert_almost_equal, assert_equal
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
+from pystruct.inference.inference_methods import compute_energy
 from pystruct.utils import make_grid_edges
 import pystruct.toy_datasets as toy
 
@@ -144,7 +145,7 @@ def test_psi_continuous():
                                                           #crf.n_states)
 
 
-def test_energy():
+def test_energy_continuous():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
     for inference_method in ["lp", "ad3"]:
@@ -170,11 +171,30 @@ def test_energy():
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, -energy_svm)
-            if not found_fractional:
-                # exact discrete labels, test non-relaxed version
-                res, energy = crf.inference(x, w, relaxed=False,
-                                            return_energy=True)
-                psi = crf.psi(x, res)
-                energy_svm = np.dot(psi, w)
 
-                assert_almost_equal(energy, -energy_svm)
+
+def test_energy_discrete():
+    for inference_method in ["qpbo", "ad3"]:
+        crf = EdgeFeatureGraphCRF(n_states=3,
+                                  inference_method=inference_method,
+                                  n_edge_features=2)
+        for i in xrange(10):
+            x = np.random.normal(size=(7, 8, 3))
+            edge_list = make_grid_edges(x, 4, return_lists=True)
+            edges = np.vstack(edge_list)
+            edge_features = edge_list_to_features(edge_list)
+            x = (x.reshape(-1, 3), edges, edge_features)
+
+            unary_params = np.random.normal(size=(3, 3))
+            pw1 = np.random.normal(size=(3, 3))
+            pw2 = np.random.normal(size=(3, 3))
+            w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
+            y_hat = crf.inference(x, w, relaxed=False)
+            energy = compute_energy(crf.get_unary_potentials(x, w),
+                                    crf.get_pairwise_potentials(x, w), edges,
+                                    y_hat)
+
+            psi = crf.psi(x, y_hat)
+            energy_svm = np.dot(psi, w)
+
+            assert_almost_equal(energy, energy_svm)
