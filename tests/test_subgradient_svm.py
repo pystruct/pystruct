@@ -13,7 +13,6 @@ import pystruct.toy_datasets as toy
 from pystruct.utils import SaveLogger
 
 
-
 def test_binary_blocks_subgradient_parallel():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
@@ -25,7 +24,7 @@ def test_binary_blocks_subgradient_parallel():
     assert_array_equal(Y, Y_pred)
 
 
-def test_binary_blocks_subgradient_oline():
+def test_binary_blocks_subgradient_online():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
