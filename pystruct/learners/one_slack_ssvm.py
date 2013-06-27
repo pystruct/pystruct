@@ -91,10 +91,9 @@ class OneSlackSSVM(BaseSSVM):
         ``inactive_window`` iterations, it will be pruned from the QP.
         If set to 0, no constraints will be removed.
 
-    switch_to_ad3 : bool, default=False
-        Whether to switch inference method of model to 'ad3' if
-        no more constraints can be found. AD3 finds exact solutions
-        in many cases but is slower than QPBO alpha expansion.
+    switch_to : None or string, default=None
+        Switch to the given inference method if the previous method does not
+        find any more constraints.
 
     Attributes
     ----------
@@ -119,7 +118,7 @@ class OneSlackSSVM(BaseSSVM):
                  break_on_bad=False, show_loss_every=0, tol=1e-5,
                  inference_cache=0, inactive_threshold=1e-10,
                  inactive_window=50, logger=None, cache_tol='auto',
-                 switch_to_ad3=False):
+                 switch_to=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -133,7 +132,7 @@ class OneSlackSSVM(BaseSSVM):
         self.inference_cache = inference_cache
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
-        self.switch_to_ad3 = switch_to_ad3
+        self.switch_to = switch_to
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
@@ -436,12 +435,13 @@ class OneSlackSSVM(BaseSSVM):
                         self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
                         print("no additional constraints")
-                        if (self.switch_to_ad3
-                                and self.model.inference_method != "ad3"):
-                            print("Switching to AD3 inference")
+                        if (self.switch_to is not None
+                                and self.model.inference_method !=
+                                self.switch_to):
+                            print("Switching to %s inference" % self.switch_to)
                             self.model.inference_method_ = \
                                 self.model.inference_method
-                            self.model.inference_method = "ad3"
+                            self.model.inference_method = self.switch_to
                             continue
                         else:
                             break

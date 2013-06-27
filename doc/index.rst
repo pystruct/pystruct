@@ -45,9 +45,9 @@ This is where the heavy lifting is done and in some sense these backends are
 interchangeable.
 
 Currently I would recommend AD3 for very accurate solutions and QPBO for larger models.
-The OneSlackSSVM includes an option (``switch_to_ad3``) to switch the solver to
-AD3 when no constraints can be found using the previous solver (which should be
-a faster undergenerating solver, such as QPBO).
+The OneSlackSSVM includes an option (``switch_to``) to switch the solver to
+a stronger or exact solver when no constraints can be found using the previous
+solver (which should be a faster undergenerating solver, such as QPBO).
 
 Examples
 =========

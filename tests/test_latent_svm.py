@@ -119,7 +119,7 @@ def test_switch_to_ad3():
 
     base_ssvm = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000,
-                             switch_to_ad3=True)
+                             switch_to="ad3")
     base_ssvm.C = 10. ** 3
     base_ssvm.n_jobs = -1
     clf = LatentSSVM(base_ssvm)
