@@ -37,12 +37,10 @@ class StructuredPerceptron(BaseSSVM):
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
         ``(t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
         ``(t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     logger : logger object.
 
@@ -55,12 +53,14 @@ class StructuredPerceptron(BaseSSVM):
         List of loss values after each pass thorugh the dataset.
     """
     def __init__(self, model, max_iter=100, verbose=0, batch=False,
-                 decay_exponent=0, decay_t0=10, n_jobs=1, logger=None):
+                 decay_exponent=0, decay_t0=10, average=False, n_jobs=1,
+                 logger=None):
         BaseSSVM.__init__(self, model, max_iter=max_iter, verbose=verbose,
                           n_jobs=n_jobs, logger=logger)
         self.batch = batch
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0
+        self.average = False
 
     def fit(self, X, Y):
         """Learn parameters using structured perceptron.
@@ -78,6 +78,10 @@ class StructuredPerceptron(BaseSSVM):
 
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
+        n_samples = len(X)
+        if self.average:
+            w_sum = np.zeros(size_psi)
+            seen_samples = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
@@ -97,6 +101,9 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
+                        if self.average:
+                            w_sum += self.w
+                            seen_samples += n_samples
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
@@ -106,6 +113,9 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
+                        if self.average:
+                            w_sum += self.w
+                            seen_samples += 1
                 self.loss_curve_.append(float(losses) / max_losses)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (self.loss_curve_[-1],
@@ -114,6 +124,10 @@ class StructuredPerceptron(BaseSSVM):
                 if self.loss_curve_[-1] == 0:
                     print("Loss zero. Stopping.")
                     break
+
         except KeyboardInterrupt:
             pass
+        finally:
+            if self.average:
+                self.w = w_sum / seen_samples 
         return self
