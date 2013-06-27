@@ -15,10 +15,8 @@ Structural SVMs
 Know about learning.
 
 These implement max margin learning, similar to SVM^struct. There is a
-subgradient and a QP version. They are not particularly optimized but at this
-part is usually not the bottleneck in structured learning, so the is not really
-an issue. It is possible to put positivity constraints on certain weight. There
-is also a simple perceptron.
+subgradient and a QP version. It is possible to put positivity constraints on
+certain weight. There is also a simple perceptron.
 
 CRFs aka Models
 -------------------
@@ -27,10 +25,10 @@ Know about the model formulation.
 
 These know about the structure of the model, the loss and the inference. This
 is basically the part that you have to write yourself when using the Python
-interface in SVM^struct. I am only working on pairwise models and there is
-support for grids and general graphs. I am mostly working on the grids at the
-moment.
-
+interface in SVM^struct. I am currently working only on pairwise models and there is
+support for grids and general graphs. The SSVM implementations are agnostic
+to the kind of model that is used, so you can easily extend the given models
+to include higher-order potentials, for example.
 
 Inference Solvers
 -------------------

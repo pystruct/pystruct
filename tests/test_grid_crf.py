@@ -54,7 +54,8 @@ def test_energy_lp():
     np.random.seed(0)
     found_fractional = False
     for inference_method in ["lp", "ad3"]:
-        crf = GridCRF(n_states=3, n_features=4, inference_method='lp')
+        crf = GridCRF(n_states=3, n_features=4,
+                      inference_method=inference_method)
         while not found_fractional:
             x = np.random.normal(size=(2, 2, 4))
             w = np.random.uniform(size=crf.size_psi)
