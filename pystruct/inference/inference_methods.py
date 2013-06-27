@@ -59,6 +59,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'dai' for libDAI wrappers (default to junction tree).
             * 'lp' for build-in lp relaxation via GLPK (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
+            * 'ad3bb' for AD^3 base branch-and-bound.
             * 'ogm' for OpenGM wrappers.
 
     relaxed : bool (default=False)
@@ -91,6 +92,10 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
                              relaxed=relaxed, return_energy=return_energy,
                              **kwargs)
+    elif inference_method == "ad3bb":
+        return inference_ad3(unary_potentials, pairwise_potentials, edges,
+                             relaxed=relaxed, return_energy=return_energy,
+                             branch_and_bound=True, **kwargs)
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
