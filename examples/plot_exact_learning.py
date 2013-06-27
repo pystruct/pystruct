@@ -15,7 +15,7 @@ procedure, branch-and-bound based on AD3.
 The switch to AD3 can be seen in the graph after the (approximate)
 primal objective and the cutting plane lower bound touch. (zoom in)
 
-After the switch to exact inference, the red circles show he true
+After the switch to exact inference, the red circles show the true
 primal objective.
 """
 import numpy as np
