@@ -76,10 +76,10 @@ class StructuredPerceptron(BaseSSVM):
             Needs to have the same length as X.
         """
 
-        n_samples = len(X)
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
         self.loss_curve_ = []
+        max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
             for iteration in xrange(self.max_iter):
                 effective_lr = ((iteration + self.decay_t0) **
@@ -106,7 +106,7 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                self.loss_curve_.append(float(losses) / n_samples)
+                self.loss_curve_.append(float(losses) / max_losses)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (self.loss_curve_[-1],
                                                   str(self.w)))
