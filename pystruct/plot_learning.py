@@ -17,7 +17,7 @@ def main():
     plot_learning(ssvm)
 
 
-def plot_learning(ssvm):
+def plot_learning(ssvm, time=True):
     """Plot optimization curves and cache hits.
 
     Create a plot summarizing the optimization / learning process of an SSVM.
@@ -30,6 +30,9 @@ def plot_learning(ssvm):
     -----------
     ssvm : object
         SSVM learner to evaluate. Should work with all learners.
+
+    time : boolean, default=True
+        Whether to use wall clock time instead of iterations as the x-axis.
 
     Notes
     -----
@@ -48,18 +51,22 @@ def plot_learning(ssvm):
         print("Gap: %f" %
               (np.array(ssvm.primal_objective_curve_)[inference_run][-1] -
                ssvm.objective_curve_[-1]))
-    fig, axes = plt.subplots(1, 2)
-    if hasattr(ssvm, 'timestamps_'):
+    if hasattr(ssvm, "loss_curve_"):
+        n_plots = 2
+        fig, axes = plt.subplots(1, 2)
+    else:
+        n_plots = 1
+        fig, axes = plt.subplots(1, 1)
+        axes = [axes]
+    if time and hasattr(ssvm, 'timestamps_'):
         print("loading timestamps")
         inds = np.array(ssvm.timestamps_)
         inds = inds[2:len(ssvm.objective_curve_) + 1] / 60.
         inds = np.hstack([inds, [inds[-1]]])
         axes[0].set_xlabel('training time (min)')
-        axes[1].set_xlabel('training time (min)')
     else:
         inds = np.arange(len(ssvm.objective_curve_))
         axes[0].set_xlabel('QP iterations')
-        axes[1].set_xlabel('QP iterations')
 
     axes[0].set_title("Objective")
     axes[0].plot(inds, ssvm.objective_curve_, label="dual")
@@ -74,12 +81,19 @@ def plot_learning(ssvm):
                      np.array(ssvm.primal_objective_curve_)[inference_run],
                      'o', label="primal")
     axes[0].legend()
-    try:
-        axes[1].plot(inds[::ssvm.show_loss_every], ssvm.loss_curve_)
-    except:
-        axes[1].plot(ssvm.loss_curve_)
-    axes[1].set_title("Training Error")
-    axes[1].set_yscale('log')
+    if n_plots == 2:
+        if time and hasattr(ssvm, "timestamps_"):
+            axes[1].set_xlabel('training time (min)')
+        else:
+            axes[1].set_xlabel('QP iterations')
+
+        try:
+            axes[1].plot(inds[::ssvm.show_loss_every], ssvm.loss_curve_)
+        except:
+            axes[1].plot(ssvm.loss_curve_)
+
+        axes[1].set_title("Training Error")
+        axes[1].set_yscale('log')
     plt.show()
 
 
