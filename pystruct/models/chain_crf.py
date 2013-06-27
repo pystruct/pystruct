@@ -10,6 +10,7 @@ def make_chain_edges(x):
     return edges
 
 
+# TESTME
 # def make_chain_edges_fast(x):
 #     n_nodes = np.shape(x)[0]
 #     return as_strided(np.arange(n_noes), shape=(n_nodes - 1, 2),
@@ -57,9 +58,9 @@ class ChainCRF(GraphCRF):
             y, energy = y
 
         if isinstance(y, tuple):
-            y = (y[0].reshape(shape_x[0], y[0].shape[1]), y[1])  # not sure
+            y = (y[0].reshape(shape_x , y[0].shape[1]), y[1])
         else:
-            y = y.reshape(shape_x[:-1])  # works for chains too
+            y = y.reshape(shape_x,)  # works for chains too
 
         if return_energy:
             return y, energy
@@ -68,7 +69,7 @@ class ChainCRF(GraphCRF):
     def inference(self, x, w, relaxed=False, return_energy=False):
         y = GraphCRF.inference(self, x, w, relaxed=relaxed,
                                return_energy=return_energy)
-        return self._reshape_y(y, x.shape, return_energy)
+        return self._reshape_y(y, len(x), return_energy)
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
