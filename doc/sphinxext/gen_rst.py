@@ -430,6 +430,7 @@ def generate_example_rst(app):
         background-repeat: no-repeat;
         /* --> Thumbnail image size */
         width: 150px;
+        height: 200px;
         -webkit-background-size: 150px 100px; /* Saf3-4 */
         -moz-background-size: 150px 100px; /* FF3.6 */
         background-size: 150px 100px; /* Opera, IE9, Saf5, Chrome, FF4 */
