@@ -1,9 +1,17 @@
 PyStruct
 ========
 
-This is my humble structural SVM and CRF implementation.
-I use it for my research and hope you find it helpful.
-I am trying to move towards a release and stable API.
+PyStruct aims at being an easy-to-use structured learning and prediction library.
+Currently it implements only max-margin methods and a perceptron, but other algorithms
+might follow.
+
+The goal of PyStruct is to provide a well-documented tool for researchers as well as non-experts
+to make use of structured prediction algorithms.
+The design tries to stay as close as possible to the interface and conventions
+of [scikit-learn](scikit-learn.org) as possible.
+
+Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
+I plan a stable release soon.
 
 The full documentation can be found at the website:
-http://amueller.github.com/pystruct/
+http://pystruct.github.io
