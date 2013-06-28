@@ -75,15 +75,17 @@ def test_objective():
 
 
 def test_directional_bars():
-    for inference_method in ['lp']:
-        X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
-                                 total_size=6, seed=1)
+    # this test is very fragile :-/
+    for inference_method in ['ad3']:
+        X, Y = toy.generate_easy(n_samples=20, noise=2, box_size=2,
+                                 total_size=6, seed=2)
         n_labels = 2
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSubgradientSSVM(model=crf, max_iter=500, C=10. ** 5,
-                                    verbose=2)
+        clf = LatentSubgradientSSVM(model=crf, max_iter=100, C=10.,
+                                    verbose=2, learning_rate=1, momentum=0,
+                                    decay_exponent=0.5, decay_t0=10)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 

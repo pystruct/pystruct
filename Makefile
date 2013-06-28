@@ -6,3 +6,6 @@ coverage:
 
 test:
 	nosetests .
+
+clean:
+	find | grep .pyc | xargs rm

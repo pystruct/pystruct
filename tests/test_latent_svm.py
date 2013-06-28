@@ -85,16 +85,16 @@ def test_with_crosses_bad_init():
 
 
 def test_directional_bars():
-    for inference_method in ['lp']:
+    for inference_method in ['ad3']:
         X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
                                  total_size=6, seed=1)
         n_labels = 2
         crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
-        clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10. ** 5,
-                                      verbose=2, check_constraints=True,
-                                      n_jobs=-1, break_on_bad=True))
+        clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
+                                      verbose=3, n_jobs=-1,
+                                      inference_cache=50))
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 

@@ -119,7 +119,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         print("Training latent subgradient structural SVM")
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(
-                0, .001, size=self.model.size_psi))
+                0, 1, size=self.model.size_psi))
             self.timestamps_ = [time()]
             self.objective_curve_ = []
         else:
