@@ -9,6 +9,7 @@ import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges, SaveLogger
 from sklearn.utils.testing import assert_true, assert_equal, assert_less
 
+
 def test_multinomial_blocks_one_slack():
     #testing cutting plane ssvm on easy multinomial dataset
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
@@ -63,8 +64,7 @@ def test_constraint_removal():
     assert_less(np.mean(clf.predict(X) != clf_no_removal.predict(X)), 0.02)
 
     # without removal, have as many constraints as iterations
-    # +1 for true y constraint
-    assert_equal(len(clf_no_removal.objective_curve_) + 1,
+    assert_equal(len(clf_no_removal.objective_curve_),
                  len(clf_no_removal.constraints_))
 
     # with removal, there are less constraints than iterations
