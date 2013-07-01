@@ -1,6 +1,6 @@
-#cvxopt
+cvxopt
 scikit-learn
 #git clone git://git.tuebingen.mpg.de/libdai.git
-#git+git://github.com/amueller/pyqpbo.git#egg=pyqbo
-#git+git://github.com/amueller/daimrf.git#egg=daimrf
+git+git://github.com/amueller/pyqpbo.git#egg=pyqbo
+git+git://github.com/amueller/daimrf.git#egg=daimrf
 
