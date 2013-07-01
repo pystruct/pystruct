@@ -114,20 +114,23 @@ def test_switch_to_ad3():
                         inference_method='qpbo')
     H_init = crf.init_latent(X, Y)
 
+    np.random.seed(0)
     mask = np.random.uniform(size=H_init.shape) > .7
     H_init[mask] = 2 * (H_init[mask] / 2)
 
     base_ssvm = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000,
-                             switch_to="ad3")
-    base_ssvm.C = 10. ** 3
-    base_ssvm.n_jobs = -1
+                             switch_to='ad3bb', C=10. ** 3, n_jobs=-1)
     clf = LatentSSVM(base_ssvm)
 
     clf.fit(X, Y, H_init=H_init)
+    # we actually switch back from ad3bb to the original
+    assert_equal(clf.model.inference_method, "qpbo")
+
+    # unfortunately this test only works with ad3
+    clf.base_ssvm.model.inference_method = 'ad3bb'
     Y_pred = clf.predict(X)
 
     assert_array_equal(np.array(Y_pred), Y)
     # test that score is not always 1
     assert_true(.98 < clf.score(X_test, Y_test) < 1)
-    assert_equal(clf.model.inference_method, "qpbo")
