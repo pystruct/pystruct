@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pystruct/pystruct.png)](https://travis-ci.org/pystruct/pystruct)
+
 PyStruct
 ========
 
