@@ -4,9 +4,9 @@ python:
 before_install:
     - deactivate
     - sudo apt-get update -qq
-    - sudo apt-get install -qq python-scipy python-nose python-cvxopt
+    - sudo apt-get install -qq python-scipy python-nose python-cvxopt python-sklearn
     - virtualenv --system-site-packages ~/virtualenv/this
     - source ~/virtualenv/this/bin/activate
-    - pip install cython sklearn
+    - pip install cython
 install: python setup.py build_ext --inplace
 script: make test
