@@ -1,6 +1,5 @@
-#import numpy as np
 from numpy.testing import assert_array_equal
-from sklearn.utils.testing import assert_greater
+from nose.tools import assert_greater
 from pystruct.models import GridCRF
 from pystruct.learners import StructuredPerceptron
 import pystruct.toy_datasets as toy
@@ -22,6 +21,7 @@ def test_multinomial_blocks():
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
+
 
 def test_averaged():
     # Under a lot of noise, averaging helps.  This fails with less noise.

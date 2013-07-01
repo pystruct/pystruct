@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sklearn.utils.testing import assert_equal, assert_true
+from nose.tools import assert_equal, assert_true
 from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import (NSlackSSVM, LatentSSVM,
                                LatentSubgradientSSVM, OneSlackSSVM,
@@ -28,8 +28,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     X, Y = toy.generate_blocks(n_samples=3)
     crf = GraphCRF(inference_method='ad3')
     clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                        check_constraints=True, break_on_bad=False,
-                        n_jobs=1)
+                     check_constraints=True, break_on_bad=False, n_jobs=1)
     x1, x2, x3 = X
     y1, y2, y3 = Y
     n_states = len(np.unique(Y))
@@ -53,10 +52,9 @@ def test_binary_blocks_cutting_plane_latent_node():
 
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
                                n_hidden_states=0)
-    latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20,
-                                          C=100, verbose=0,
-                                          check_constraints=True,
-                                          break_on_bad=False, n_jobs=1),
+    latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20, C=100,
+                                       verbose=0, check_constraints=True,
+                                       break_on_bad=False, n_jobs=1),
                             latent_iter=3)
     X_latent = zip(X_, G, np.zeros(len(X_)))
     latent_svm.fit(X_latent, Y, H_init=Y)

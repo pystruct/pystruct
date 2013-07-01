@@ -1,8 +1,9 @@
 import numpy as np
+from numpy.testing import assert_array_equal
+from nose.tools import assert_greater
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
-from sklearn.utils.testing import assert_array_equal, assert_greater
 
 from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM, OneSlackSSVM
@@ -18,8 +19,7 @@ def test_binary_blocks_cutting_plane():
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                            check_constraints=True, break_on_bad=False,
-                            n_jobs=1)
+                         check_constraints=True, break_on_bad=False, n_jobs=1)
         x1, x2, x3 = X
         y1, y2, y3 = Y
         n_states = len(np.unique(Y))

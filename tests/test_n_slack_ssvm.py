@@ -8,7 +8,7 @@ from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM
 from pystruct.utils import SaveLogger
 
-from sklearn.utils.testing import assert_less
+from nose.tools import assert_less
 
 
 def test_n_slack_svm_as_crf_pickling():

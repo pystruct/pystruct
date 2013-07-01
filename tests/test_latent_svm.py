@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-from sklearn.utils.testing import assert_equal, assert_true
+from nose.tools import assert_equal, assert_true
 
 from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import (LatentSSVM, NSlackSSVM, OneSlackSSVM,

@@ -2,7 +2,7 @@ from tempfile import mkstemp
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from sklearn.utils.testing import assert_less
+from nose.tools import assert_less
 
 from sklearn.datasets import load_iris
 from sklearn.cross_validation import train_test_split
