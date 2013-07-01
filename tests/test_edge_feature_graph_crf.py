@@ -1,8 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
-##from sklearn.utils.testing import assert_equal, assert_almost_equal,
-#assert_raises
-from sklearn.utils.testing import assert_almost_equal, assert_equal
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+                           assert_almost_equal, assert_equal)
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph

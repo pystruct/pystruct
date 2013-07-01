@@ -1,7 +1,8 @@
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sklearn.utils.testing import assert_equal, assert_almost_equal, assert_greater
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+                           assert_almost_equal, assert_equal)
+from sklearn.utils.testing import assert_greater
 
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
@@ -105,7 +106,7 @@ def test_blobs_2d_cutting_plane():
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
     svm = NSlackSSVM(pbl, verbose=10, check_constraints=True, C=1000,
-                        batch_size=1)
+                     batch_size=1)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
