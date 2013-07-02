@@ -11,10 +11,11 @@ def inference(model, x, w):
 class StructuredPerceptron(BaseSSVM):
     """Structured Perceptron training.
 
-    Implements a simple structured perceptron.
-    The structured perceptron approximately minimizes the zero-one loss.
-    Therefore the learning does not take model.loss into account.
-    It is just shown to illustrate the learning progress.
+    Implements a simple structured perceptron with optional averaging.
+    The structured perceptron approximately minimizes the zero-one loss,
+    therefore the learning does not take ``model.loss`` into account. It is
+    just shown to illustrate the learning progress.
+
     As the perceptron learning is not margin-based, the model does not
     need to provide loss_augmented_inference.
 
@@ -42,6 +43,15 @@ class StructuredPerceptron(BaseSSVM):
         Offset for decaying learning rate. Effective learning rate is
         ``(t0 + t)** decay_exponent``. Zero means no decay.
 
+    average : bool or int, default=False
+        Whether to average over all weight vectors obtained during training
+        or simply keeping the last one.
+        ``average=False`` does not perform any averaging.
+        ``average=True`` averages over all epochs.
+        ``average=k`` with ``k >= 0`` waits ``k`` epochs before averaging.
+        ``average=k`` with ``k < 0`` averages over the last ``k`` epochs.  So
+        far ``k = -1`` is the only negative value supported.
+
     logger : logger object.
 
     Attributes
@@ -51,6 +61,13 @@ class StructuredPerceptron(BaseSSVM):
 
    ``loss_curve_`` : list of float
         List of loss values after each pass thorugh the dataset.
+
+    References
+    ----------
+    Michael Collins. "Discriminative training methods for hidden Markov models:
+    theory and experiments with perceptron algorithms". In: Proc. EMNLP 2002.
+    http://www.aclweb.org/anthology-new/W/W02/W02-1001.pdf
+
     """
     def __init__(self, model, max_iter=100, verbose=0, batch=False,
                  decay_exponent=0, decay_t0=10, average=False, n_jobs=1,
@@ -60,7 +77,7 @@ class StructuredPerceptron(BaseSSVM):
         self.batch = batch
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0
-        self.average = False
+        self.average = average
 
     def fit(self, X, Y):
         """Learn parameters using structured perceptron.
@@ -78,14 +95,25 @@ class StructuredPerceptron(BaseSSVM):
 
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
-        n_samples = len(X)
-        if self.average:
-            w_sum = np.zeros(size_psi)
-            seen_samples = 0
+        if self.average is not False:
+            if self.average is True:
+                self.average = 0
+            elif self.average < -1:
+                raise NotImplemented("The only negative value for averaging "
+                                     "implemented at the moment is `-1`. Try "
+                                     "`max_iter - k` but be aware of the "
+                                     "possibility of early stopping.")
+            w_bar = np.zeros(size_psi)
+            n_obs = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
             for iteration in xrange(self.max_iter):
+                if self.average == -1:
+                    # By resetting at every iteration we effectively get
+                    # averaging over the last one.
+                    n_obs = 0
+                    w_bar.fill(0)
                 effective_lr = ((iteration + self.decay_t0) **
                                 self.decay_exponent)
                 losses = 0
@@ -101,9 +129,10 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                        if self.average:
-                            w_sum += self.w
-                            seen_samples += n_samples
+                    if self.average is not False and iteration >= self.average:
+                        n_obs += 1
+                        w_bar = ((1 - 1. / n_obs) * w_bar +
+                                 (1. / n_obs) * self.w)
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
@@ -113,9 +142,11 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                        if self.average:
-                            w_sum += self.w
-                            seen_samples += 1
+                        if (self.average is not False and
+                                iteration >= self.average):
+                            n_obs += 1
+                            w_bar = ((1 - 1. / n_obs) * w_bar +
+                                     (1. / n_obs) * self.w)
                 self.loss_curve_.append(float(losses) / max_losses)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (self.loss_curve_[-1],
@@ -128,6 +159,6 @@ class StructuredPerceptron(BaseSSVM):
         except KeyboardInterrupt:
             pass
         finally:
-            if self.average:
-                self.w = w_sum / seen_samples 
+            if self.average is not False:
+                self.w = w_bar
         return self
