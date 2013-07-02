@@ -112,3 +112,10 @@ def test_blobs_batch():
     Y_hat = pbl.batch_loss_augmented_inference(X, Y, w)
     for i, (x, y, y_hat) in enumerate(zip(X, Y, Y_hat)):
         assert_array_equal(Y_hat[i], pbl.loss_augmented_inference(x, y, w))
+
+
+def test_break_ties():
+    pbl = BinarySVMModel(n_features=2)
+    X = np.array([[-1., -1.], [-1., 1.], [1., 1.]])
+    w = np.array([1., 1.])
+    assert_array_equal(pbl.batch_inference(X, w), np.array([-1, 1, 1]))
