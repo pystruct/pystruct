@@ -69,6 +69,23 @@ def test_partial_averaging():
     assert_array_almost_equal(weight[4], [2.5, 5, 0])
 
 
+def test_averaging_early_stopping():
+    """Test averaging over final epoch when early stopping"""
+    # we use logical OR, an easy problem solved after the second epoch
+    X = np.array([[a, b, 1] for a in (-1, 1) for b in (-1, 1)], dtype=np.float)
+    Y = np.array([-1, 1, 1, 1])
+    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=3), max_iter=3,
+                               average=-1)
+    pcp.fit(X, Y)
+    # The exact weight is used without the influence of the early iterations
+    assert_array_equal(pcp.w, [1, 1, 1])
+
+    # If we were expecting 3 iterations, we would end up with a zero vector
+    pcp.set_params(average=2)
+    pcp.fit(X, Y)
+    assert_array_equal(pcp.w, [0, 0, 0])
+
+
 def test_overflow_averaged():
     X = np.array([[np.finfo('d').max]])
     Y = np.array([-1])
