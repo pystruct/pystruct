@@ -42,9 +42,15 @@ class StructuredPerceptron(BaseSSVM):
         Offset for decaying learning rate. Effective learning rate is
         ``(t0 + t)** decay_exponent``. Zero means no decay.
 
-    average : bool, default=False
+    average : bool or int, default=False
         Whether to average over all weight vectors obtained during training
         or simply keeping the last one.
+        ``average=False`` does not perform any averaging.
+        ``average=True`` averages over all epochs.
+        ``average=k`` with ``k >= 0`` waits ``k`` epochs before averaging.
+        ``average=k`` with ``k < 0`` averages over the last ``k`` epochs.
+        The integer-valued cases are not reliable when manually stopping
+        the optimization with Ctrl+C.
 
     logger : logger object.
 
@@ -82,7 +88,15 @@ class StructuredPerceptron(BaseSSVM):
 
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
-        if self.average:
+        if self.average is not False:
+            if self.average is True:
+                self.average = 0
+            elif self.average < 0:
+                raise NotImplemented
+                # I think I know how to do it reliably, just keep k averages
+                # and keep resetting them, take their average when optimization
+                # stops.  This is crucial not only because of Ctrl+C but
+                # because of early zero loss.
             w_bar = np.zeros(size_psi)
             n_obs = 0
         self.loss_curve_ = []
@@ -104,7 +118,7 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                    if self.average:
+                    if self.average is not False and iteration >= self.average:
                         n_obs += 1
                         w_bar = ((1 - 1. / n_obs) * w_bar +
                                  (1. / n_obs) * self.w)
@@ -117,7 +131,8 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                        if self.average:
+                        if (self.average is not False and
+                                iteration >= self.average):
                             n_obs += 1
                             w_bar = ((1 - 1. / n_obs) * w_bar +
                                      (1. / n_obs) * self.w)
@@ -133,6 +148,6 @@ class StructuredPerceptron(BaseSSVM):
         except KeyboardInterrupt:
             pass
         finally:
-            if self.average:
+            if self.average is not False:
                 self.w = w_bar
         return self
