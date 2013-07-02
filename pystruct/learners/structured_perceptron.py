@@ -49,9 +49,8 @@ class StructuredPerceptron(BaseSSVM):
         ``average=False`` does not perform any averaging.
         ``average=True`` averages over all epochs.
         ``average=k`` with ``k >= 0`` waits ``k`` epochs before averaging.
-        ``average=k`` with ``k < 0`` averages over the last ``k`` epochs.
-        The integer-valued cases are not reliable when manually stopping
-        the optimization with Ctrl+C.
+        ``average=k`` with ``k < 0`` averages over the last ``k`` epochs.  So
+        far ``k = -1`` is the only negative value supported.
 
     logger : logger object.
 
@@ -99,18 +98,22 @@ class StructuredPerceptron(BaseSSVM):
         if self.average is not False:
             if self.average is True:
                 self.average = 0
-            elif self.average < 0:
-                raise NotImplemented
-                # I think I know how to do it reliably, just keep k averages
-                # and keep resetting them, take their average when optimization
-                # stops.  This is crucial not only because of Ctrl+C but
-                # because of early zero loss.
+            elif self.average < -1:
+                raise NotImplemented("The only negative value for averaging "
+                                     "implemented at the moment is `-1`. Try "
+                                     "`max_iter - k` but be aware of the "
+                                     "possibility of early stopping.")
             w_bar = np.zeros(size_psi)
             n_obs = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
             for iteration in xrange(self.max_iter):
+                if self.average == -1:
+                    # By resetting at every iteration we effectively get
+                    # averaging over the last one.
+                    n_obs = 0
+                    w_bar.fill(0)
                 effective_lr = ((iteration + self.decay_t0) **
                                 self.decay_exponent)
                 losses = 0

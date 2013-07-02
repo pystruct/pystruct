@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import product
 
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_greater, assert_true
 from pystruct.models import GridCRF, BinarySVMModel
 from pystruct.learners import StructuredPerceptron
@@ -50,6 +50,23 @@ def test_xor():
         # is invariant to the scaling of w, this will allow the optimization of
         # the underlying implementation
         assert_array_equal(pcp.predict(X), pred)
+
+
+def test_partial_averaging():
+    """Use XOR weight cycling to test partial averaging"""
+    X = np.array([[a, b, 1] for a in (-1, 1) for b in (-1, 1)], dtype=np.float)
+    Y = np.array([-1, 1, 1, -1])
+    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=3), max_iter=5,
+                               decay_exponent=1, decay_t0=1)
+    weight = {}
+    for average in (0, 1, 4, -1):
+        pcp.set_params(average=average)
+        pcp.fit(X, Y)
+        weight[average] = pcp.w
+    assert_array_equal(weight[4], weight[-1])
+    assert_array_almost_equal(weight[0], [1.5, 3, 0])
+    assert_array_almost_equal(weight[1], [1.75, 3.5, 0])
+    assert_array_almost_equal(weight[4], [2.5, 5, 0])
 
 
 def test_overflow_averaged():
