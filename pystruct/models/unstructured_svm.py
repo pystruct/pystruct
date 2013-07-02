@@ -81,10 +81,10 @@ class BinarySVMModel(StructuredModel):
             Predicted class label.
         """
         self.inference_calls += 1
-        return np.sign(np.dot(x, w) + 1e-9)
+        return 2 * (np.dot(x, w) >= 0) - 1
 
     def batch_inference(self, X, w):
-        return np.sign(np.dot(X, w) + 1e-9)
+        return 2 * (np.dot(X, w) >= 0) - 1
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         """Loss-augmented inference for x and y using parameters w.
