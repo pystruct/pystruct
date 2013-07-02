@@ -64,7 +64,7 @@ class StructuredPerceptron(BaseSSVM):
         self.batch = batch
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0
-        self.average = False
+        self.average = average
 
     def fit(self, X, Y):
         """Learn parameters using structured perceptron.
