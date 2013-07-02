@@ -11,10 +11,11 @@ def inference(model, x, w):
 class StructuredPerceptron(BaseSSVM):
     """Structured Perceptron training.
 
-    Implements a simple structured perceptron.
-    The structured perceptron approximately minimizes the zero-one loss.
-    Therefore the learning does not take model.loss into account.
-    It is just shown to illustrate the learning progress.
+    Implements a simple structured perceptron with optional averaging.
+    The structured perceptron approximately minimizes the zero-one loss,
+    therefore the learning does not take ``model.loss`` into account. It is
+    just shown to illustrate the learning progress.
+
     As the perceptron learning is not margin-based, the model does not
     need to provide loss_augmented_inference.
 
@@ -61,6 +62,13 @@ class StructuredPerceptron(BaseSSVM):
 
    ``loss_curve_`` : list of float
         List of loss values after each pass thorugh the dataset.
+
+    References
+    ----------
+    Michael Collins. "Discriminative training methods for hidden Markov models:
+    theory and experiments with perceptron algorithms". In: Proc. EMNLP 2002.
+    http://www.aclweb.org/anthology-new/W/W02/W02-1001.pdf
+
     """
     def __init__(self, model, max_iter=100, verbose=0, batch=False,
                  decay_exponent=0, decay_t0=10, average=False, n_jobs=1,
