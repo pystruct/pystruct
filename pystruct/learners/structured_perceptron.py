@@ -83,7 +83,8 @@ class StructuredPerceptron(BaseSSVM):
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
         if self.average:
-            w_sum = np.zeros(size_psi)
+            w_bar = np.zeros(size_psi)
+            n_obs = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
@@ -104,7 +105,9 @@ class StructuredPerceptron(BaseSSVM):
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
                     if self.average:
-                        w_sum += self.w
+                        n_obs += 1
+                        w_bar = ((1 - 1. / n_obs) * w_bar +
+                                 (1. / n_obs) * self.w)
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
@@ -115,7 +118,9 @@ class StructuredPerceptron(BaseSSVM):
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
                         if self.average:
-                            w_sum += self.w
+                            n_obs += 1
+                            w_bar = ((1 - 1. / n_obs) * w_bar +
+                                     (1. / n_obs) * self.w)
                 self.loss_curve_.append(float(losses) / max_losses)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (self.loss_curve_[-1],
@@ -129,7 +134,5 @@ class StructuredPerceptron(BaseSSVM):
             pass
         finally:
             if self.average:
-                self.w = w_sum
-                if (self.w > 0).any():
-                    self.w /= np.sqrt(np.sum(self.w ** 2))
+                self.w = w_bar
         return self
