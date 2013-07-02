@@ -42,6 +42,10 @@ class StructuredPerceptron(BaseSSVM):
         Offset for decaying learning rate. Effective learning rate is
         ``(t0 + t)** decay_exponent``. Zero means no decay.
 
+    average : bool, default=False
+        Whether to average over all weight vectors obtained during training
+        or simply keeping the last one.
+
     logger : logger object.
 
     Attributes
@@ -78,10 +82,8 @@ class StructuredPerceptron(BaseSSVM):
 
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
-        n_samples = len(X)
         if self.average:
             w_sum = np.zeros(size_psi)
-            seen_samples = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
@@ -101,9 +103,8 @@ class StructuredPerceptron(BaseSSVM):
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
                                                       self.model.psi(x, y_hat))
-                        if self.average:
-                            w_sum += self.w
-                            seen_samples += n_samples
+                    if self.average:
+                        w_sum += self.w
                 else:
                     # standard online update
                     for x, y in zip(X, Y):
@@ -115,7 +116,6 @@ class StructuredPerceptron(BaseSSVM):
                                                       self.model.psi(x, y_hat))
                         if self.average:
                             w_sum += self.w
-                            seen_samples += 1
                 self.loss_curve_.append(float(losses) / max_losses)
                 if self.verbose:
                     print("avg loss: %f w: %s" % (self.loss_curve_[-1],
@@ -129,5 +129,7 @@ class StructuredPerceptron(BaseSSVM):
             pass
         finally:
             if self.average:
-                self.w = w_sum / seen_samples 
+                self.w = w_sum
+                if (self.w > 0).any():
+                    self.w /= np.sqrt(np.sum(self.w ** 2))
         return self
