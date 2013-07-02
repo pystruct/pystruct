@@ -2,7 +2,7 @@ import numpy as np
 from itertools import product
 
 from numpy.testing import assert_array_equal
-from nose.tools import assert_greater
+from nose.tools import assert_greater, assert_true
 from pystruct.models import GridCRF, BinarySVMModel
 from pystruct.learners import StructuredPerceptron
 import pystruct.toy_datasets as toy
@@ -50,6 +50,15 @@ def test_xor():
         # is invariant to the scaling of w, this will allow the optimization of
         # the underlying implementation
         assert_array_equal(pcp.predict(X), pred)
+
+
+def test_overflow_averaged():
+    X = np.array([[np.finfo('d').max]])
+    Y = np.array([-1])
+    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=1),
+                               max_iter=2, average=True)
+    pcp.fit(X, Y)
+    assert_true(np.isfinite(pcp.w[0]))
 
 
 def test_averaged():
