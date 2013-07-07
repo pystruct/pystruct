@@ -11,16 +11,10 @@ def is_tree(n_vertices, edges):
         return False
     graph = sparse.coo_matrix((np.ones(len(edges)), edges.T),
                               shape=(n_vertices, n_vertices)).tocsr()
-    n_components, component_indicators = sparse.cs_graph_components(graph +
-                                                                    graph.T)
-    if n_components == 1:
-        # special case of connected graphs was already done
-        return True
-
-    for component in range(n_components):
-        inds = np.where(component_indicators == component)[0]
-        if len(graph[:, inds][inds, :].nonzero()[0]) > len(inds) - 1:
-            return False
+    n_components, component_indicators = \
+        sparse.csgraph.connected_components(graph, directed=False)
+    if len(edges) > n_vertices - n_components:
+        return False
     return True
 
 
