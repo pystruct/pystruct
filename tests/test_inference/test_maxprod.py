@@ -54,7 +54,7 @@ def test_tree_max_product_chain():
 
 def test_tree_max_product_tree():
     rnd = np.random.RandomState(0)
-    for i in xrange(10):
+    for i in xrange(100):
         # generate random tree using mst
         graph = rnd.uniform(size=(10, 10))
         tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
@@ -64,7 +64,6 @@ def test_tree_max_product_tree():
         pairwise_potentials = rnd.normal(size=(9, 3, 3))
         result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
                                    tree_edges, branch_and_bound=True)
-        print(result_ad3)
         result_mp = inference_max_product(unary_potentials,
                                           pairwise_potentials, tree_edges)
         assert_array_equal(result_ad3, result_mp)
