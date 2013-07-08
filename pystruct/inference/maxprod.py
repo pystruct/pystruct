@@ -2,6 +2,8 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import csgraph
 
+from inference_methods import _validate_params
+
 
 def edges_to_graph(edges, n_vertices=None):
     if n_vertices is None:
@@ -48,15 +50,48 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges):
 
 
 def tree_max_product(unary_potentials, pairwise_potentials, edges):
-    graph = edges_to_graph(edges, len(unary_potentials))
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+    n_vertices = len(unary_potentials)
+    edge_hashes = edges[:, 0] + n_vertices * edges[:, 1]
+    graph = edges_to_graph(edges, n_vertices)
     nodes, predecessors = csgraph.depth_first_order(graph, 0, directed=False)
-    for i, node in enumerate(nodes):
-        for neighbor in get_neighbors(edges, node):
-            if neighbor == predecessors[i]:
-                continue
+    # we store the message from pred to node in down_messages[node]
+    down_messages = np.zeros((n_vertices, n_states))
+    edge_potentials = []
+    # down-pass
+    for node, pred in zip(nodes, predecessors):
+        if pred < 0:
+            edge_potentials.append([])
+            continue
+        # we need to get the pairwise potentials corresponding to
+        # the edge between predecessor and node
+        edge_number = np.where(edge_hashes == node + pred * n_vertices)
+        if len(edge_number):
+            pairwise = pairwise_potentials[edge_number[0][0]]
+        else:
+            edge_number = np.where(edge_hashes == n_vertices * node + pred)[0]
+            pairwise = pairwise_potentials[edge_number[0]].T
+        edge_potentials.append(pairwise)
+        incoming = down_messages[pred] + pairwise + unary_potentials[pred]
+        down_messages[node] = incoming.max(axis=1)
+        down_messages[node] -= down_messages[node].max()
 
-    from IPython.core.debugger import Tracer
-    Tracer()()
+    # up-pass
+    # we store in up_messages the sum of all messages going into node
+    up_messages = np.zeros((n_vertices, n_states))
+    for node, pred, pairwise in zip(nodes, predecessors,
+                                    edge_potentials)[::-1]:
+        if pred < 0:
+            continue
+        # node already got all up-going messages
+        # take max, normalize, send up to parent
+        going_up = up_messages[node] + unary_potentials[node] + pairwise.T
+        going_up = going_up.max(axis=1)
+        going_up -= going_up.max()
+        up_messages[pred] += going_up
+
+    return np.argmax(up_messages + down_messages + unary_potentials, axis=1)
 
 
 def iterative_max_product():
