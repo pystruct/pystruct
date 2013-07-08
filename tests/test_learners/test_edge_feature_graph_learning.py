@@ -25,12 +25,12 @@ def test_multinomial_blocks_directional():
     X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
     Y = [y.ravel() for y in Y_]
 
-    for inference_method in ['lp', 'ad3']:
+    for inference_method in ['qpbo']:
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
-        clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
-                            check_constraints=False, n_jobs=-1)
+        clf = NSlackSSVM(model=crf, max_iter=10, C=1, verbose=1,
+                         check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -47,14 +47,14 @@ def test_multinomial_blocks_directional_anti_symmetric():
     X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
     Y = [y.ravel() for y in Y_]
 
-    for inference_method in ['lp', 'ad3']:
+    for inference_method in ['qpbo']:
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2,
                                   symmetric_edge_features=[0],
                                   antisymmetric_edge_features=[1])
-        clf = NSlackSSVM(model=crf, max_iter=20, C=1000, verbose=10,
-                            check_constraints=False, n_jobs=-1)
+        clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=1,
+                         check_constraints=False, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
