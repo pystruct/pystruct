@@ -45,7 +45,7 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges):
     if is_tree(edges=edges, n_vertices=len(unary_potentials)):
         y = tree_max_product(unary_potentials, pairwise_potentials, edges)
     else:
-        y = iterative_max_product(unary_potentials, pairwise_potentials)
+        y = iterative_max_product(unary_potentials, pairwise_potentials, edges)
     return y
 
 
@@ -100,5 +100,29 @@ def tree_max_product(unary_potentials, pairwise_potentials, edges):
     return np.argmax(up_messages + down_messages + unary_potentials, axis=1)
 
 
-def iterative_max_product():
-    pass
+def iterative_max_product(unary_potentials, pairwise_potentials, edges,
+                          max_iter=10):
+    n_edges = len(edges)
+    n_vertices, n_states = unary_potentials.shape
+    messages = np.zeros((n_edges, 2, n_states))
+    all_incoming = np.zeros((n_vertices, n_states))
+    for i in xrange(max_iter):
+        for e, (edge, pairwise) in enumerate(zip(edges, pairwise_potentials)):
+            # update message from edge[0] to edge[1]
+            update = (all_incoming[edge[0]] + pairwise.T +
+                      unary_potentials[edge[0]]
+                      - messages[e, 1])
+            old_message = messages[e, 0].copy()
+            messages[e, 0] = np.max(update, axis=1)
+            messages[e, 0] -= np.max(messages[e, 0])
+            all_incoming[edge[1]] += messages[e, 0] - old_message
+
+            # update message from edge[1] to edge[0]
+            update = (all_incoming[edge[1]] + pairwise +
+                      unary_potentials[edge[1]]
+                      - messages[e, 0])
+            old_message = messages[e, 1].copy()
+            messages[e, 1] = np.max(update, axis=1)
+            messages[e, 1] -= np.max(messages[e, 1])
+            all_incoming[edge[0]] += messages[e, 1] - old_message
+    return np.argmax(all_incoming + unary_potentials, axis=1)
