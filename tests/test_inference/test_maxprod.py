@@ -6,6 +6,8 @@ from scipy import sparse
 from pystruct.inference.maxprod import (is_tree, inference_max_product,
                                         iterative_max_product)
 from pystruct.inference import inference_ad3
+import pystruct.toy_datasets as toy
+from pystruct.models import GridCRF
 
 
 def test_is_tree():
@@ -99,4 +101,30 @@ def test_iterative_max_product_tree():
         result_mp = iterative_max_product(unary_potentials,
                                           pairwise_potentials, tree_edges)
         print(result_mp)
-        assert_array_equal(result_ad3, result_mp)
+    assert_array_equal(result_ad3, result_mp)
+
+
+def test_max_product_binary_blocks():
+    X, Y = toy.generate_blocks(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1, 0,  # unary
+                  0, 1,
+                  0,     # pairwise
+                  -4, 0])
+    crf = GridCRF(inference_method='mp')
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)
+
+
+def test_max_product_multinomial_crf():
+    X, Y = toy.generate_blocks_multinomial(n_samples=1)
+    x, y = X[0], Y[0]
+    w = np.array([1., 0., 0.,  # unary
+                  0., 1., 0.,
+                  0., 0., 1.,
+                 .4,           # pairwise
+                 -.3, .3,
+                 -.5, -.1, .3])
+    crf = GridCRF(n_states=3, inference_method='mp')
+    y_hat = crf.inference(x, w)
+    assert_array_equal(y, y_hat)

@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import csgraph
 
-from inference_methods import _validate_params
+from .common import _validate_params
 
 
 def edges_to_graph(edges, n_vertices=None):
@@ -36,23 +36,25 @@ def is_tree(edges, n_vertices=None):
     return True
 
 
-def inference_max_product(unary_potentials, pairwise_potentials, edges):
+def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                          max_iter=10):
     """Max-product inference.
 
     In case the edges specify a tree, dynamic programming is used
     producing a result in only a single pass.
     """
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
     if is_tree(edges=edges, n_vertices=len(unary_potentials)):
         y = tree_max_product(unary_potentials, pairwise_potentials, edges)
     else:
-        y = iterative_max_product(unary_potentials, pairwise_potentials, edges)
+        y = iterative_max_product(unary_potentials, pairwise_potentials, edges,
+                                  max_iter=max_iter)
     return y
 
 
 def tree_max_product(unary_potentials, pairwise_potentials, edges):
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-    n_vertices = len(unary_potentials)
+    n_vertices, n_states = unary_potentials.shape
     edge_hashes = edges[:, 0] + n_vertices * edges[:, 1]
     graph = edges_to_graph(edges, n_vertices)
     nodes, predecessors = csgraph.breadth_first_order(graph, 0, directed=False)
