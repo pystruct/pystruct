@@ -66,9 +66,9 @@ def tree_max_product(unary_potentials, pairwise_potentials, edges):
             continue
         # we need to get the pairwise potentials corresponding to
         # the edge between predecessor and node
-        edge_number = np.where(edge_hashes == node + pred * n_vertices)
+        edge_number = np.where(edge_hashes == node + pred * n_vertices)[0]
         if len(edge_number):
-            pairwise = pairwise_potentials[edge_number[0][0]]
+            pairwise = pairwise_potentials[edge_number[0]]
         else:
             edge_number = np.where(edge_hashes == n_vertices * node + pred)[0]
             pairwise = pairwise_potentials[edge_number[0]].T

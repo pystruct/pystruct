@@ -38,14 +38,15 @@ def test_is_tree():
 
 def test_tree_max_product():
     rnd = np.random.RandomState(0)
-    chain = np.c_[np.arange(1, 10), np.arange(9)]
+    forward = np.c_[np.arange(9), np.arange(1, 10)]
+    backward = np.c_[np.arange(1, 10), np.arange(9)]
     for i in xrange(10):
         unary_potentials = rnd.normal(size=(10, 3))
         pairwise_potentials = rnd.normal(size=(3, 3))
-        #pairwise_potentials = np.zeros((3, 3))
-        result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
-                                   chain, branch_and_bound=True)
-        print(result_ad3)
-        result_mp = inference_max_product(unary_potentials,
-                                          pairwise_potentials, chain)
-        assert_array_equal(result_ad3, result_mp)
+        for chain in [forward, backward]:
+            result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
+                                       chain, branch_and_bound=True)
+            print(result_ad3)
+            result_mp = inference_max_product(unary_potentials,
+                                              pairwise_potentials, chain)
+            assert_array_equal(result_ad3, result_mp)
