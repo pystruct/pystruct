@@ -42,7 +42,7 @@ def test_tree_max_product():
     backward = np.c_[np.arange(1, 10), np.arange(9)]
     for i in xrange(10):
         unary_potentials = rnd.normal(size=(10, 3))
-        pairwise_potentials = rnd.normal(size=(3, 3))
+        pairwise_potentials = rnd.normal(size=(9, 3, 3))
         for chain in [forward, backward]:
             result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
                                        chain, branch_and_bound=True)
