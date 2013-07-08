@@ -99,6 +99,9 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
+    elif inference_method == "unary":
+        return inference_unaries(unary_potentials, pairwise_potentials, edges,
+                                 **kwargs)
     else:
         raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo', 'ogm'"
                          " or 'dai', got %s" % inference_method)
@@ -370,3 +373,37 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     if return_energy:
         return y, -energy
     return y
+
+
+def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0):
+    """Inference that only uses unary potentials.
+
+    This methods can be used as a sanity check, as acceleration if no
+    edges are present in an instance, and for debugging.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    verbose : int (default=0)
+        Degree of verbosity for solver.
+
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=False, this is a tuple of unary and edge 'marginals'.
+    """
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+
+    unaries = unary_potentials.reshape(-1, n_states)
+    return np.argmax(unaries)
