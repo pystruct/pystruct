@@ -15,7 +15,7 @@ def edge_list_to_features(edge_list):
     return edge_features
 
 
-def test_multinomial_blocks_directional():
+def test_multinomial_blocks_directional_simple():
     # testing cutting plane ssvm with directional CRF on easy multinomial
     # dataset
     X_, Y_ = toy.generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)

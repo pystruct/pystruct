@@ -56,7 +56,7 @@ def test_standard_svm_blobs_2d():
                      for x in X_test]
 
     pbl = GraphCRF(n_features=3, n_states=3, inference_method='unary')
-    svm = OneSlackSSVM(pbl, verbose=10, check_constraints=True, C=1000)
+    svm = OneSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000)
 
     svm.fit(X_train_graphs, Y_train[:, np.newaxis])
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test_graphs)))
@@ -79,7 +79,8 @@ def test_standard_svm_blobs_2d_class_weight():
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
 
-    pbl_class_weight = GraphCRF(n_features=3, n_states=3, class_weight=weights)
+    pbl_class_weight = GraphCRF(n_features=3, n_states=3, class_weight=weights,
+                                inference_method='unary')
     svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=0, C=10,
                                     check_constraints=False,
                                     break_on_bad=False)

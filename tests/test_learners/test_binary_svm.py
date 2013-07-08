@@ -40,7 +40,7 @@ def test_simple_1d_dataset_cutting_plane():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
     pbl = BinarySVMModel(n_features=2)
-    svm = NSlackSSVM(pbl, verbose=3, check_constraints=True, C=1000)
+    svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
 
@@ -54,7 +54,7 @@ def test_blobs_2d_cutting_plane():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMModel(n_features=3)
-    svm = NSlackSSVM(pbl, verbose=3, check_constraints=True, C=1000)
+    svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -69,7 +69,7 @@ def test_blobs_2d_subgradient():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMModel(n_features=3)
-    svm = SubgradientSSVM(pbl, verbose=3, C=1000)
+    svm = SubgradientSSVM(pbl, verbose=1, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -84,7 +84,7 @@ def test_blobs_2d_one_slack():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = BinarySVMModel(n_features=3)
-    svm = OneSlackSSVM(pbl, verbose=30, C=1000)
+    svm = OneSlackSSVM(pbl, verbose=1, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))

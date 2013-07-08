@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 from tempfile import mkstemp
-from nose.tools import assert_true, assert_equal, assert_less
+from nose.tools import assert_true, assert_equal, assert_less, assert_greater
 
 from sklearn.datasets import load_digits, load_iris
 from sklearn.cross_validation import train_test_split
@@ -14,15 +14,17 @@ from pystruct.utils import make_grid_edges, SaveLogger
 
 def test_multinomial_blocks_one_slack():
     #testing cutting plane ssvm on easy multinomial dataset
+    # we use ad3bb which is fast and exact, so we can check constraint
+    # generation
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0)
     print(np.argmax(X[0], axis=-1))
     n_labels = len(np.unique(Y))
-    for inference_method in ['lp']:
-        check = inference_method == "lp"
+    for inference_method in ['ad3bb']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=50, C=1, verbose=2,
-                           check_constraints=check, break_on_bad=check, tol=.1)
+        clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=0,
+                           check_constraints=True, break_on_bad=True, tol=.1,
+                           inference_cache=50)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -38,9 +40,9 @@ def test_svm_as_crf_pickling():
     X_train, X_test, y_train, y_test = train_test_split(X_, Y, random_state=1)
     _, file_name = mkstemp()
 
-    pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
-    logger = SaveLogger(file_name, verbose=1)
-    svm = OneSlackSSVM(pbl, verbose=0, check_constraints=True, C=100, n_jobs=1,
+    pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
+    logger = SaveLogger(file_name, verbose=0)
+    svm = OneSlackSSVM(pbl, verbose=0, check_constraints=True, C=1, n_jobs=1,
                        logger=logger)
     svm.fit(X_train, y_train)
 
@@ -54,12 +56,14 @@ def test_constraint_removal():
     y = 2 * (y % 2) - 1  # even vs odd as +1 vs -1
     X = X / 16.
     pbl = BinarySVMModel(n_features=X.shape[1])
-    clf_no_removal = OneSlackSSVM(model=pbl, max_iter=500, verbose=1, C=10,
+    clf_no_removal = OneSlackSSVM(model=pbl, max_iter=500, verbose=0, C=1,
                                   inactive_window=0, tol=0.01)
     clf_no_removal.fit(X, y)
-    clf = OneSlackSSVM(model=pbl, max_iter=500, verbose=1, C=10, tol=0.01,
+    clf = OneSlackSSVM(model=pbl, max_iter=500, verbose=0, C=1, tol=0.01,
                        inactive_threshold=1e-8)
     clf.fit(X, y)
+    # check that we learned something
+    assert_greater(clf.score(X, y), .92)
 
     # results are mostly equal
     # if we decrease tol, they will get more similar
@@ -81,9 +85,9 @@ def test_binary_blocks_one_slack_graph():
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=100, C=100, verbose=100,
+        clf = OneSlackSSVM(model=crf, max_iter=100, C=1, verbose=0,
                            check_constraints=True, break_on_bad=True,
-                           n_jobs=1)
+                           n_jobs=1, tol=.1)
         x1, x2, x3 = X
         y1, y2, y3 = Y
         n_states = len(np.unique(Y))
@@ -109,32 +113,33 @@ def test_binary_blocks_one_slack_graph():
 def test_one_slack_constraint_caching():
     #testing cutting plane ssvm on easy multinomial dataset
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
-                                           seed=0)
+                                           seed=0, size_x=9)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method='lp')
-    clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=2,
+    clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=0,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
     assert_equal(len(clf.inference_cache_), len(X))
-    # there should be 14 constraints, which are less than the 90 iterations
+    # there should be 21 constraints, which are less than the 94 iterations
     # that are done
-    assert_equal(len(clf.inference_cache_[0]), 23)
+    assert_equal(len(clf.inference_cache_[0]), 21)
     # check that we didn't change the behavior of how we construct the cache
     constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
-    assert_equal(np.max(constraints_per_sample), 23)
-    assert_equal(np.min(constraints_per_sample), 23)
+    assert_equal(np.max(constraints_per_sample), 21)
+    assert_equal(np.min(constraints_per_sample), 21)
 
 
 def test_one_slack_attractive_potentials():
     # test that submodular SSVM can learn the block dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=100, verbose=1,
+    submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1, verbose=0,
                                   check_constraints=True,
-                                  positive_constraint=[5], n_jobs=-1)
+                                  positive_constraint=[5], n_jobs=-1,
+                                  inference_cache=50)
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -145,20 +150,21 @@ def test_one_slack_repellent_potentials():
     # test non-submodular learning with and without positivity constraint
     # dataset is checkerboard
     X, Y = toy.generate_checker()
-    for inference_method in ["lp", "qpbo", "ad3"]:
+    for inference_method in ["lp", "qpbo"]:
         crf = GridCRF(inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
+        clf = OneSlackSSVM(model=crf, max_iter=10, C=.01, verbose=0,
                            check_constraints=True, n_jobs=-1)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         # standard crf can predict perfectly
         assert_array_equal(Y, Y_pred)
 
-        submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=100,
+        submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                                       verbose=0, check_constraints=True,
                                       positive_constraint=[4, 5, 6], n_jobs=-1)
         submodular_clf.fit(X, Y)
         Y_pred = submodular_clf.predict(X)
+        assert_less(submodular_clf.score(X, Y), .99)
         # submodular crf can not do better than unaries
         for i, x in enumerate(X):
             y_pred_unaries = crf.inference(x, np.array([1, 0, 0, 1, 0, 0, 0]))

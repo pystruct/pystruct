@@ -15,16 +15,17 @@ def test_with_crosses_perfect_init():
         # test with 2 states for both foreground and background,
         # as well as with single background state
         #for inference_method in ['ad3', 'qpbo', 'lp']:
-        for inference_method in ['ad3']:
+        for inference_method in ['qpbo']:
             X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
                                         total_size=8)
             n_labels = 2
             crf = LatentGridCRF(n_labels=n_labels,
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
-            clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=50, C=10. ** 5,
-                                          verbose=2, check_constraints=True,
-                                          n_jobs=-1, break_on_bad=True))
+            clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10,
+                                          verbose=1, check_constraints=False,
+                                          n_jobs=-1, break_on_bad=False,
+                                          inference_cache=50))
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
             assert_array_equal(np.array(Y_pred), Y)
@@ -38,13 +39,15 @@ def test_with_crosses_base_svms():
                         inference_method='lp')
     one_slack = OneSlackSSVM(crf)
     n_slack = NSlackSSVM(crf)
-    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
+    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.1,
+                                  verbose=2)
+
+    X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+                                total_size=8)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
-        base_ssvm.C = 10. ** 5
+        base_ssvm.C = 10.
         base_ssvm.n_jobs = -1
-        X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                    total_size=8)
         clf = LatentSSVM(base_ssvm=base_ssvm)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -93,8 +96,8 @@ def test_directional_bars():
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
         clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
-                                      verbose=3, n_jobs=-1,
-                                      inference_cache=50))
+                                      verbose=1, n_jobs=-1,
+                                      inference_cache=50, tol=.01))
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 
