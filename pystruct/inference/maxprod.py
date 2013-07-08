@@ -37,11 +37,32 @@ def is_tree(edges, n_vertices=None):
 
 
 def inference_max_product(unary_potentials, pairwise_potentials, edges,
-                          max_iter=10):
+                          max_iter=30, damping=0.5, tol=1e-5):
     """Max-product inference.
 
     In case the edges specify a tree, dynamic programming is used
     producing a result in only a single pass.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array
+        Pairwise potentials of energy function.
+
+    edges : nd-array
+        Edges of energy function.
+
+    max_iter : int (default=10)
+        Maximum number of iterations. Ignored if graph is a tree.
+
+    damping : float (default=.5)
+        Daming of messages in loopy message passing.
+        Ignored if graph is a tree.
+
+    tol : float (default=1e-5)
+        Stopping tollerance for loopy message passing.
     """
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
@@ -49,7 +70,7 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges,
         y = tree_max_product(unary_potentials, pairwise_potentials, edges)
     else:
         y = iterative_max_product(unary_potentials, pairwise_potentials, edges,
-                                  max_iter=max_iter)
+                                  max_iter=max_iter, damping=damping)
     return y
 
 
@@ -103,28 +124,39 @@ def tree_max_product(unary_potentials, pairwise_potentials, edges):
 
 
 def iterative_max_product(unary_potentials, pairwise_potentials, edges,
-                          max_iter=10):
+                          max_iter=10, damping=.5, tol=1e-5):
     n_edges = len(edges)
     n_vertices, n_states = unary_potentials.shape
     messages = np.zeros((n_edges, 2, n_states))
     all_incoming = np.zeros((n_vertices, n_states))
     for i in xrange(max_iter):
+        diff = 0
         for e, (edge, pairwise) in enumerate(zip(edges, pairwise_potentials)):
             # update message from edge[0] to edge[1]
             update = (all_incoming[edge[0]] + pairwise.T +
                       unary_potentials[edge[0]]
                       - messages[e, 1])
             old_message = messages[e, 0].copy()
-            messages[e, 0] = np.max(update, axis=1)
-            messages[e, 0] -= np.max(messages[e, 0])
-            all_incoming[edge[1]] += messages[e, 0] - old_message
+            new_message = np.max(update, axis=1)
+            new_message -= np.max(new_message)
+            new_message = damping * old_message + (1 - damping) * new_message
+            messages[e, 0] = new_message
+            update = new_message - old_message
+            all_incoming[edge[1]] += update
+            diff += np.abs(update).sum()
 
             # update message from edge[1] to edge[0]
             update = (all_incoming[edge[1]] + pairwise +
                       unary_potentials[edge[1]]
                       - messages[e, 0])
             old_message = messages[e, 1].copy()
-            messages[e, 1] = np.max(update, axis=1)
-            messages[e, 1] -= np.max(messages[e, 1])
-            all_incoming[edge[0]] += messages[e, 1] - old_message
+            new_message = np.max(update, axis=1)
+            new_message -= np.max(messages[e, 1])
+            new_message = damping * old_message + (1 - damping) * new_message
+            messages[e, 1] = new_message
+            update = new_message - old_message
+            all_incoming[edge[0]] += update
+            diff += np.abs(update).sum()
+        if diff < tol:
+            break
     return np.argmax(all_incoming + unary_potentials, axis=1)
