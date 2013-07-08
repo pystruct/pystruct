@@ -36,7 +36,7 @@ def test_is_tree():
     assert_true(is_tree(tree_edges))
 
 
-def test_tree_max_product():
+def test_tree_max_product_chain():
     rnd = np.random.RandomState(0)
     forward = np.c_[np.arange(9), np.arange(1, 10)]
     backward = np.c_[np.arange(1, 10), np.arange(9)]
@@ -50,3 +50,21 @@ def test_tree_max_product():
             result_mp = inference_max_product(unary_potentials,
                                               pairwise_potentials, chain)
             assert_array_equal(result_ad3, result_mp)
+
+
+def test_tree_max_product_tree():
+    rnd = np.random.RandomState(0)
+    for i in xrange(10):
+        # generate random tree using mst
+        graph = rnd.uniform(size=(10, 10))
+        tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
+        tree_edges = np.c_[tree.nonzero()]
+
+        unary_potentials = rnd.normal(size=(10, 3))
+        pairwise_potentials = rnd.normal(size=(9, 3, 3))
+        result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
+                                   tree_edges, branch_and_bound=True)
+        print(result_ad3)
+        result_mp = inference_max_product(unary_potentials,
+                                          pairwise_potentials, tree_edges)
+        assert_array_equal(result_ad3, result_mp)

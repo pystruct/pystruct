@@ -55,12 +55,12 @@ def tree_max_product(unary_potentials, pairwise_potentials, edges):
     n_vertices = len(unary_potentials)
     edge_hashes = edges[:, 0] + n_vertices * edges[:, 1]
     graph = edges_to_graph(edges, n_vertices)
-    nodes, predecessors = csgraph.depth_first_order(graph, 0, directed=False)
+    nodes, predecessors = csgraph.breadth_first_order(graph, 0, directed=False)
     # we store the message from pred to node in down_messages[node]
     down_messages = np.zeros((n_vertices, n_states))
     edge_potentials = []
     # down-pass
-    for node, pred in zip(nodes, predecessors):
+    for node, pred in zip(nodes, predecessors[nodes]):
         if pred < 0:
             edge_potentials.append([])
             continue
