@@ -3,6 +3,24 @@ import numpy as np
 from .linear_programming import lp_general_graph
 
 
+def get_installed(method_filter=None):
+    if method_filter is None:
+        method_filter = ['ad3', 'qpbo', 'dai', 'ogm', 'lp']
+
+    installed = []
+    unary = np.zeros((1, 1))
+    pw = np.zeros((1, 1))
+    edges = np.empty((0, 2), dtype=np.int)
+    for method in method_filter:
+        try:
+            inference_dispatch(unary, pw, edges, inference_method=method)
+            installed.append(method)
+        except:
+            ImportError
+            pass
+    return installed
+
+
 def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
     """Compute energy of labels for given energy function.
 
