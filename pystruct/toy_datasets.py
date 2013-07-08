@@ -202,20 +202,21 @@ def generate_xs(n_samples=5, noise=30):
 
 
 #### Multinomial
-def generate_blocks_multinomial(n_samples=20, noise=0.5, seed=None):
+def generate_blocks_multinomial(n_samples=20, noise=0.5, seed=None, size_x=12):
     if seed is not None:
         np.random.seed(seed)
-    Y = np.zeros((n_samples, 10, 12, 3))
-    Y[:, :, :4, 0] = 1
-    Y[:, :, 4:8, 1] = 1
-    Y[:, :, 8:16, 2] = 1
+    Y = np.zeros((n_samples, size_x - 2, size_x, 3))
+    step = size_x // 3
+    Y[:, :, :step, 0] = 1
+    Y[:, :, step:-step, 1] = 1
+    Y[:, :, -step:, 2] = 1
     X = Y + noise * np.random.normal(size=Y.shape)
     Y = np.argmax(Y, axis=3).astype(np.int32)
     return X, Y
 
 
-def generate_checker_multinomial(n_samples=20, noise=1.5):
-    Y = -np.ones((n_samples, 10, 12, 3))
+def generate_checker_multinomial(n_samples=20, noise=1.5, size_x=12):
+    Y = -np.ones((n_samples, size_x - 2, size_x, 3))
     Y[:, ::2, ::2, 0] = 1
     Y[:, 1::2, 1::2, 1] = 1
     Y[:, :, :, 2] = 0
@@ -336,5 +337,4 @@ def generate_crosses_latent(n_samples=5, noise=30):
 binary = [generate_blocks, generate_checker, generate_big_checker,
           generate_easy]
 
-multinomial = [generate_blocks_multinomial, generate_checker_multinomial,
-               generate_big_checker_extended]
+multinomial = [generate_blocks_multinomial, generate_checker_multinomial]

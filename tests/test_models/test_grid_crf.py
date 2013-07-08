@@ -106,7 +106,7 @@ def test_binary_blocks_crf_n8_lp():
 
 
 def test_blocks_multinomial_crf():
-    X, Y = toy.generate_blocks_multinomial(n_samples=1)
+    X, Y = toy.generate_blocks_multinomial(n_samples=1, size_x=9, seed=0)
     x, y = X[0], Y[0]
     w = np.array([1., 0., 0.,  # unaryA
                   0., 1., 0.,
@@ -114,7 +114,7 @@ def test_blocks_multinomial_crf():
                  .4,           # pairwise
                  -.3, .3,
                  -.5, -.1, .3])
-    for inference_method in ['dai', 'qpbo', 'lp', 'ad3', 'ogm']:
+    for inference_method in ['ad3', 'qpbo', 'lp', 'dai', 'ogm']:
         crf = GridCRF(n_states=3, inference_method=inference_method)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
@@ -154,7 +154,7 @@ def test_multinomial_grid_unaries():
     # test handling on unaries for multinomial grid CRFs
     # on multinomial datasets
     for ds in toy.multinomial:
-        X, Y = ds(n_samples=1)
+        X, Y = ds(n_samples=1, size_x=9)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
         for inference_method in ['qpbo', 'lp', 'ad3', 'ogm']:
@@ -174,39 +174,33 @@ def test_multinomial_grid_unaries():
 
 
 def test_binary_crf_exhaustive():
-    # tests graph cut inference against brute force
+    # tests qpbo inference against brute force
     # on random data / weights
     np.random.seed(0)
-    for i in xrange(50):
-        x = np.random.uniform(-1, 1, size=(3, 3))
+    for i in xrange(10):
+        x = np.random.uniform(-1, 1, size=(3, 2))
         x = np.dstack([-x, np.zeros_like(x)]).copy()
         crf = GridCRF()
         w = np.random.uniform(-1, 1, size=7)
         # check map inference
         y_hat = crf.inference(x, w)
         y_ex = exhaustive_inference(crf, x, w)
-        #print(y_hat)
-        #print(y_ex)
-        #print("++++++++++++++++++++++")
         assert_array_equal(y_hat, y_ex)
 
 
 def test_binary_crf_exhaustive_loss_augmented():
-    # tests graph cut inference against brute force
+    # tests qpbo inference against brute force
     # on random data / weights
     np.random.seed(0)
     for inference_method in ['qpbo', 'lp']:
         crf = GridCRF(inference_method=inference_method)
-        for i in xrange(50):
+        for i in xrange(10):
             # generate data and weights
-            y = np.random.randint(2, size=(3, 3))
-            x = np.random.uniform(-1, 1, size=(3, 3))
+            y = np.random.randint(2, size=(3, 2))
+            x = np.random.uniform(-1, 1, size=(3, 2))
             x = np.dstack([-x, np.zeros_like(x)])
             w = np.random.uniform(-1, 1, size=7)
             # check loss augmented map inference
             y_hat = crf.loss_augmented_inference(x, y, w)
             y_ex = exhaustive_loss_augmented_inference(crf, x, y, w)
-            #print(y_hat)
-            #print(y_ex)
-            #print("++++++++++++++++++++++")
             assert_array_equal(y_hat, y_ex)

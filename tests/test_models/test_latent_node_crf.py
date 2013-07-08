@@ -176,7 +176,8 @@ def test_edge_feature_latent_node_crf_no_latent():
 
     # Test inference with different weights in different directions
 
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1,
+                                           size_x=10)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
