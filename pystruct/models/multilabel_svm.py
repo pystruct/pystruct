@@ -35,7 +35,8 @@ class MultiLabelModel(CRF):
             pw = pw.reshape(-1, self.n_states, self.n_states)
         else:
             y_signs = 2 * y - 1
-            unary_marginals = np.hstack([x * y_i for y_i in y_signs])
+            unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
+            unary_marginals *= y_signs[:, np.newaxis]
             pairwise_marginals = []
             for edge in self.edges:
                 # indicator of one of four possible states of the edge
@@ -44,4 +45,6 @@ class MultiLabelModel(CRF):
                 pairwise_marginals.append(pw)
             if pairwise_marginals:
                 pairwise_marginals = np.vstack(pairwise_marginals)
-        return np.hstack([unary_marginals, pairwise_marginals])
+                return np.hstack([unary_marginals.ravel(),
+                                  pairwise_marginals.ravel()])
+            return unary_marginals.ravel()
