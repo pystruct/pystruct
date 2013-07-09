@@ -424,4 +424,4 @@ def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0):
         _validate_params(unary_potentials, pairwise_potentials, edges)
 
     unaries = unary_potentials.reshape(-1, n_states)
-    return np.argmax(unaries)
+    return np.argmax(unaries, axis=-1)
