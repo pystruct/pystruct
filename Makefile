@@ -5,7 +5,7 @@ coverage:
 	nosetests . --cover-html --with-coverage --cover-package pystruct
 
 test:
-	nosetests tests
+	nosetests -sv tests
 
 clean:
 	find | grep .pyc | xargs rm
