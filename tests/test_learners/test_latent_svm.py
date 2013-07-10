@@ -24,7 +24,7 @@ def test_with_crosses_perfect_init():
                                 inference_method=inference_method)
             clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10,
                                           verbose=1, check_constraints=False,
-                                          n_jobs=-1, break_on_bad=False,
+                                          break_on_bad=False,
                                           inference_cache=50))
             clf.fit(X, Y)
             Y_pred = clf.predict(X)
@@ -96,8 +96,7 @@ def test_directional_bars():
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
         clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
-                                      verbose=1, n_jobs=-1,
-                                      inference_cache=50, tol=.01))
+                                      verbose=1, inference_cache=50, tol=.01))
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 
@@ -123,7 +122,7 @@ def test_switch_to_ad3():
 
     base_ssvm = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000,
-                             switch_to='ad3bb', C=10. ** 3, n_jobs=-1)
+                             switch_to='ad3bb', C=10. ** 3)
     clf = LatentSSVM(base_ssvm)
 
     clf.fit(X, Y, H_init=H_init)

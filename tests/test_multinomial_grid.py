@@ -14,7 +14,7 @@ def test_multinomial_blocks_cutting_plane():
     for inference_method in ['lp', 'qpbo', 'ad3']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
-                            check_constraints=False, n_jobs=-1)
+                         check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -30,7 +30,7 @@ def test_multinomial_blocks_directional():
         crf = DirectionalGridCRF(n_states=n_labels,
                                  inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
-                            check_constraints=False, n_jobs=-1)
+                         check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -43,7 +43,7 @@ def test_multinomial_blocks_subgradient():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10, verbose=0,
-                          momentum=.98, learning_rate=0.001, n_jobs=-1)
+                          momentum=.98, learning_rate=0.001)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -54,7 +54,7 @@ def test_multinomial_checker_cutting_plane():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = NSlackSSVM(model=crf, max_iter=20, C=100000, verbose=0,
-                        check_constraints=True, n_jobs=-1)
+                     check_constraints=True)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -65,7 +65,7 @@ def test_multinomial_checker_subgradient():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10, verbose=0,
-                          momentum=.98, learning_rate=0.01, n_jobs=-1)
+                          momentum=.98, learning_rate=0.01)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

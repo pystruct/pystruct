@@ -138,7 +138,7 @@ def test_one_slack_attractive_potentials():
     crf = GridCRF()
     submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1, verbose=0,
                                   check_constraints=True,
-                                  positive_constraint=[5], n_jobs=-1,
+                                  positive_constraint=[5],
                                   inference_cache=50)
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
@@ -153,7 +153,7 @@ def test_one_slack_repellent_potentials():
     for inference_method in ["lp", "qpbo"]:
         crf = GridCRF(inference_method=inference_method)
         clf = OneSlackSSVM(model=crf, max_iter=10, C=.01, verbose=0,
-                           check_constraints=True, n_jobs=-1)
+                           check_constraints=True)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         # standard crf can predict perfectly
@@ -161,7 +161,7 @@ def test_one_slack_repellent_potentials():
 
         submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                                       verbose=0, check_constraints=True,
-                                      positive_constraint=[4, 5, 6], n_jobs=-1)
+                                      positive_constraint=[4, 5, 6])
         submodular_clf.fit(X, Y)
         Y_pred = submodular_clf.predict(X)
         assert_less(submodular_clf.score(X, Y), .99)
