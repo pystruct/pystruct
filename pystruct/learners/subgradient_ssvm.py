@@ -107,9 +107,6 @@ class SubgradientSSVM(BaseSSVM):
     def _solve_subgradient(self, dpsi, n_samples):
         """Do a single subgradient step."""
 
-        #w += 1. / self.t * (psi_matrix - w / self.C / 2)
-        #grad = (self.learning_rate / (self.t + 1.) ** 2
-                #* (psi_matrix - w / self.C / 2))
         grad = (dpsi - self.w / (self.C * n_samples))
 
         if self.adagrad:
