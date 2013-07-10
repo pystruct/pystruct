@@ -26,13 +26,12 @@ class MultiLabelModel(CRF):
 
     def psi(self, x, y):
         if isinstance(y, tuple):
-            from IPython.core.debugger import Tracer
-            Tracer()()
-            unary_marginals, pw = y
-            unary_marginals = unary_marginals.reshape(self.edges.shape[0],
-                                                      self.n_states)
-            # accumulate pairwise
-            pw = pw.reshape(-1, self.n_states, self.n_states)
+            #from IPython.core.debugger import Tracer
+            #Tracer()()
+            y_cont, pairwise_marginals = y
+            y_signs = 2 * y_cont[:, 1] - 1
+            unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
+            unary_marginals *= y_signs[:, np.newaxis]
         else:
             y_signs = 2 * y - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
@@ -43,8 +42,9 @@ class MultiLabelModel(CRF):
                 pw = np.zeros((2, 2))
                 pw[y[edge[0]], y[edge[1]]] = 1
                 pairwise_marginals.append(pw)
-            if pairwise_marginals:
-                pairwise_marginals = np.vstack(pairwise_marginals)
-                return np.hstack([unary_marginals.ravel(),
-                                  pairwise_marginals.ravel()])
-            return unary_marginals.ravel()
+
+        if len(pairwise_marginals):
+            pairwise_marginals = np.vstack(pairwise_marginals)
+            return np.hstack([unary_marginals.ravel(),
+                              pairwise_marginals.ravel()])
+        return unary_marginals.ravel()
