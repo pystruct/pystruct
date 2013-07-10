@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 from scipy import sparse
 
@@ -9,6 +11,7 @@ from sklearn.utils.mst import minimum_spanning_tree
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelModel
+#from pystruct.utils import SaveLogger
 
 
 def chow_liu_tree(y):
@@ -26,6 +29,8 @@ def my_hamming(y_train, y_pred):
 
 yeast = fetch_mldata("yeast")
 
+# for both, mine and ovr, C=.1 seems good!
+
 X = yeast.data
 X = np.hstack([X, np.ones((X.shape[0], 1))])
 y = yeast.target.toarray().astype(np.int).T
@@ -38,20 +43,27 @@ y_train, y_test = y[:1500], y[1500:]
 X_train.shape
 
 #import itertools
-#edges = np.vstack([x for x in itertools.combinations(range(14), 2)])
-edges = np.zeros((0, 2), dtype=np.int)
+edges = np.vstack([x for x in itertools.combinations(range(14), 2)])
+#edges = np.zeros((0, 2), dtype=np.int)
 
-model = MultiLabelModel(14, X.shape[1], edges=edges, inference_method='unary')
+model = MultiLabelModel(14, X.shape[1], edges=edges, inference_method='qpbo')
 
-ssvm = OneSlackSSVM(model, inference_cache=0, verbose=0, n_jobs=1, C=.1,
-                    show_loss_every=20, max_iter=10000, tol=0.01)
+#logger = SaveLogger('multi_label_fully_switch_to_dai.pickle', save_every=20)
+ssvm = OneSlackSSVM(model, inference_cache=50, verbose=1, n_jobs=-1, C=.01,
+                    show_loss_every=20, max_iter=10000, tol=0.01,
+                    switch_to='ad3bb')
 
-param_grid = {'C': 10. ** np.arange(-3, 1)}
+#param_grid = {'C': 10. ** np.arange(-3, 1)}
 
-grid = GridSearchCV(ssvm, loss_func=my_hamming, cv=5, n_jobs=-1, verbose=10,
-                    param_grid=param_grid)
-grid.fit(X_train, y_train)
-#ssvm.fit(X_train, y_train)
+#grid = GridSearchCV(ssvm, loss_func=my_hamming, cv=5, n_jobs=1, verbose=10,
+                    #param_grid=param_grid)
+#grid.fit(X_train, y_train)
+#from IPython.core.debugger import Tracer
+#Tracer()()
+ssvm.fit(X_train, y_train)
+print(ssvm.score(X_train, y_train))
+print(ssvm.score(X_test, y_test))
+print(my_hamming(y_test, ssvm.predict(X_test)))
 
 from IPython.core.debugger import Tracer
 Tracer()()
