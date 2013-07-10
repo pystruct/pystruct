@@ -9,5 +9,10 @@ before_install:
     - source ~/virtualenv/this/bin/activate
     - pip install cython --use-mirrors
     - pip install git+git://github.com/fgregg/pyqpbo.git#egg=pyqbo
+    # Workaround for a permissions issue with Travis virtual machine images
+    # that breaks Python's multiprocessing:
+    # https://github.com/travis-ci/travis-cookbooks/issues/155
+    - sudo rm -rf /dev/shm
+    - sudo ln -s /run/shm /dev/shm 
 install: python setup.py build_ext --inplace
 script: make test
