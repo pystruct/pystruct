@@ -153,8 +153,7 @@ class NSlackSSVM(BaseSSVM):
                               + 1e-8 * np.eye(psi_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h)
             if solution['status'] != "optimal":
-                from IPython.core.debugger import Tracer
-                Tracer()()
+                raise ValueError("QP solver failed. Try regularizing your QP.")
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
@@ -200,8 +199,8 @@ class NSlackSSVM(BaseSSVM):
                 if slack - slack_tmp < -1e-5:
                     print("bad inference: %f" % (slack_tmp - slack))
                     if self.break_on_bad:
-                        from IPython.core.debugger import Tracer
-                        Tracer()()
+                        raise ValueError("bad inference: %f" % (slack_tmp -
+                                                                slack))
                     return True
 
         return False

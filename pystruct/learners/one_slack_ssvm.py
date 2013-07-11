@@ -185,8 +185,7 @@ class OneSlackSSVM(BaseSSVM):
                               + 1e-8 * np.eye(psi_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h, A, b)
             if solution['status'] != "optimal":
-                from IPython.core.debugger import Tracer
-                Tracer()()
+                raise ValueError("QP solver failed. Try regularizing your QP.")
 
         # Lagrange multipliers
         a = np.ravel(solution['x'])
@@ -233,8 +232,8 @@ class OneSlackSSVM(BaseSSVM):
             print("New violation: %f difference to last: %f"
                   % (violation, violation_difference))
         if violation_difference < 0 and violation > 0 and break_on_bad:
-            from IPython.core.debugger import Tracer
-            Tracer()()
+            raise ValueError("Bad inference: new violation is smaller than"
+                             " old.")
         if tol is None:
             tol = self.tol
         if violation_difference < tol:
@@ -258,8 +257,8 @@ class OneSlackSSVM(BaseSSVM):
                 if violation - violation_tmp < -1e-5:
                     print("bad inference: %f" % (violation_tmp - violation))
                     if break_on_bad:
-                        from IPython.core.debugger import Tracer
-                        Tracer()()
+                        raise ValueError("Bad inference: new violation is"
+                                         " weaker than previous constraint.")
                     return True
         return False
 
