@@ -330,10 +330,20 @@ def train_test_split(*arrays, **options):
 
     arrays = check_arrays(*arrays, **options)
     n_samples = arrays[0].shape[0]
-    cv = ShuffleSplit(n_samples, test_size=test_size,
-                      train_size=train_size,
-                      random_state=random_state,
-                      indices=True)
+    try:
+        cv = ShuffleSplit(n_samples, test_size=test_size,
+                          train_size=train_size,
+                          random_state=random_state,
+                          indices=True)
+    except TypeError:
+        if test_size > 1:
+            test_size /= n_samples
+            if train_size is not None:
+                train_size /= n_samples
+        cv = ShuffleSplit(n_samples, test_fraction=test_size,
+                          train_fraction=train_size,
+                          random_state=random_state,
+                          indices=True)
     train, test = next(iter(cv))
     splitted = []
     for a in arrays:
