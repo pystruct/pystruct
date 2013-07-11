@@ -2,11 +2,10 @@ import numpy as np
 from tempfile import mkstemp
 
 from sklearn.datasets import load_iris
-from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM
-from pystruct.utils import SaveLogger
+from pystruct.utils import SaveLogger, train_test_split
 
 from nose.tools import assert_less
 

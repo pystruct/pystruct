@@ -4,12 +4,11 @@ from tempfile import mkstemp
 from nose.tools import assert_true, assert_equal, assert_less, assert_greater
 
 from sklearn.datasets import load_digits, load_iris
-from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF, BinarySVMModel
 from pystruct.learners import OneSlackSSVM
 import pystruct.toy_datasets as toy
-from pystruct.utils import make_grid_edges, SaveLogger
+from pystruct.utils import make_grid_edges, SaveLogger, train_test_split
 from pystruct.inference import get_installed
 
 
