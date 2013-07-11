@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from pystruct.inference import inference_dai, inference_ad3, inference_lp
+from pystruct.inference import inference_lp
 
 
 def test_chain():
@@ -14,19 +14,28 @@ def test_chain():
         unary_potentials = rnd.normal(size=(10, 3))
         pairwise_potentials = rnd.normal(size=(3, 3))
         # test that reversing edges is same as transposing pairwise potentials
-        y_ad3_forward = inference_ad3(unary_potentials, pairwise_potentials,
-                                      forward)
-        y_ad3_backward = inference_ad3(unary_potentials, pairwise_potentials.T,
-                                       backward)
-        assert_array_equal(y_ad3_forward, y_ad3_backward)
+        y_forward = inference_lp(unary_potentials, pairwise_potentials,
+                                 forward)
+        y_backward = inference_lp(unary_potentials, pairwise_potentials.T,
+                                  backward)
+        assert_array_equal(y_forward, y_backward)
         for chain in [forward, backward]:
-            y_dai = inference_dai(unary_potentials, pairwise_potentials, chain,
-                                  alg='jt')
-            y_ad3 = inference_ad3(unary_potentials, pairwise_potentials, chain)
-            y_ad3bb = inference_ad3(unary_potentials, pairwise_potentials,
-                                    chain, branch_and_bound=True)
             y_lp = inference_lp(unary_potentials, pairwise_potentials, chain)
-            assert_array_equal(y_lp, y_ad3bb)
-            #assert_array_equal(y_dai, y_ad3)
-            assert_array_equal(y_ad3, y_ad3bb)
-            print(y_dai)
+            try:
+                from pystruct.inference import inference_dai
+                y_dai = inference_dai(unary_potentials, pairwise_potentials,
+                                      chain, alg='jt')
+                assert_array_equal(y_dai, y_lp)
+            except:
+                pass
+            try:
+                from pystruct.inference import inference_ad3
+
+                y_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
+                                      chain)
+                y_ad3bb = inference_ad3(unary_potentials, pairwise_potentials,
+                                        chain, branch_and_bound=True)
+                assert_array_equal(y_ad3, y_lp)
+                assert_array_equal(y_ad3bb, y_lp)
+            except:
+                pass

@@ -26,7 +26,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     # we use the LatentNodeCRF without latent nodes and check that it does the
     # same as GraphCRF
     X, Y = toy.generate_blocks(n_samples=3)
-    crf = GraphCRF(inference_method='ad3')
+    crf = GraphCRF()
     clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,
                      break_on_bad=False, n_jobs=1)
     x1, x2, x3 = X
@@ -50,8 +50,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     for y, y_pred in zip(Y, Y_pred):
         assert_array_equal(y, y_pred)
 
-    latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
-                               n_hidden_states=0)
+    latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=0)
     latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20, C=100,
                                        check_constraints=True,
                                        break_on_bad=False, n_jobs=1),
@@ -72,8 +71,7 @@ def test_latent_node_boxes_standard_latent():
     # that should make the model fairly simple
 
     X, Y = toy.make_simple_2x2(seed=1, n_samples=40)
-    latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
-                               n_hidden_states=2, n_features=1)
+    latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
     one_slack = OneSlackSSVM(latent_crf)
     n_slack = NSlackSSVM(latent_crf)
     subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
@@ -108,8 +106,7 @@ def test_latent_node_boxes_latent_subgradient():
     # same as above, now with elementary subgradients
 
     X, Y = toy.make_simple_2x2(seed=1)
-    latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
-                               n_hidden_states=2, n_features=1)
+    latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
     latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=250, C=10,
                                        learning_rate=0.1, momentum=0)
 
@@ -134,8 +131,7 @@ def test_latent_node_boxes_standard_latent_features():
     # latent state. This basically tests that the features are actually used
 
     X, Y = toy.make_simple_2x2(seed=1, n_samples=40, n_flips=6)
-    latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
-                               n_hidden_states=2, n_features=1,
+    latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1,
                                latent_node_features=True)
     one_slack = OneSlackSSVM(latent_crf)
     n_slack = NSlackSSVM(latent_crf)

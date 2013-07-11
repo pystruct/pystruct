@@ -8,6 +8,7 @@ from pystruct.utils import (exhaustive_loss_augmented_inference,
 from pystruct.models import (LatentGridCRF, LatentDirectionalGridCRF,
                              LatentGraphCRF)
 from pystruct.models.latent_grid_crf import kmeans_init
+from pystruct.inference import get_installed
 
 
 def test_k_means_initialization():
@@ -57,8 +58,7 @@ def test_k_means_initialization():
 def test_k_means_initialization_grid_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
-                        inference_method='lp')
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=1)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -66,8 +66,7 @@ def test_k_means_initialization_grid_crf():
 def test_k_means_initialization_graph_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=1,
-                         inference_method='lp')
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=1)
     # convert grid model to graph model
     X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
          for x in X]
@@ -78,8 +77,7 @@ def test_k_means_initialization_graph_crf():
 
 def test_k_means_initialization_directional_grid_crf():
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentDirectionalGridCRF(n_labels=2, n_states_per_label=1,
-                                   inference_method='lp')
+    crf = LatentDirectionalGridCRF(n_labels=2, n_states_per_label=1)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -178,8 +176,7 @@ def test_latent_consistency_graph():
 
 
 def test_loss_augmented_inference_energy_graph():
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2,
-                         inference_method='lp')
+    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(2))
@@ -214,8 +211,7 @@ def test_latent_consistency_grid():
 
 
 def test_loss_augmented_inference_exhaustive_grid():
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2,
-                        inference_method='dai')
+    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(2, 2))
@@ -226,7 +222,7 @@ def test_loss_augmented_inference_exhaustive_grid():
 
 
 def test_continuous_y():
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         X, Y = toy.generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
         w = np.array([1, 0,  # unary
