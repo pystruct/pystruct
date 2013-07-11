@@ -44,7 +44,12 @@ def kmeans_init(X, Y, n_labels, n_hidden_states, latent_node_features=False):
 
         all_feats.append(neighbors)
     all_feats_stacked = np.vstack(all_feats)
-    km = KMeans(n_clusters=n_hidden_states)
+    try:
+        km = KMeans(n_clusters=n_hidden_states)
+    except TypeError:
+        # for old versions :-/
+        km = KMeans(k=n_hidden_states)
+
     km.fit(all_feats_stacked)
     H = []
     for y, feats in zip(Y, all_feats):

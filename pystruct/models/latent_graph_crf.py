@@ -50,7 +50,11 @@ def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
     H = [np.zeros_like(y) for y in Y]
     label_indices = np.hstack([0, np.cumsum(n_states_per_label)])
     for label in np.unique(Y_stacked):
-        km = KMeans(n_clusters=n_states_per_label[label])
+        try:
+            km = KMeans(n_clusters=n_states_per_label[label])
+        except TypeError:
+            # for old versions :-/
+            km = KMeans(k=n_states_per_label[label])
         indicator = Y_stacked == label
         f = all_feats_stacked[indicator]
         km.fit(f)
