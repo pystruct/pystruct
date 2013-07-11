@@ -1,0 +1,15 @@
+2012-06-01 AD3 1.0 afm@cs.cmu.edu
+  Initial implementation.
+
+2012-09-09 AD3 2.0 afm@cs.cmu.edu
+  New release with major modifications:
+  * Ability of handling dense, sparse, and combinatorial factors,
+    with binary or multi-valued variables.
+  * Active set method for solving the AD3 subproblems.
+  * Ability of handling user-defined factors.
+  * Parses UAI files.
+  * Can be compiled as a library.
+
+2012-10-10 AD3 2.0.1 afm@cs.cmu.edu
+  Fixed initialization of STL vectors which was causing problems
+  in some compilers.
