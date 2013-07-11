@@ -1,6 +1,9 @@
-#cvxopt
-#scikit-learn
+numpy
+cvxopt
+matplotlib
+PIL
 cython
+scikit-learn
 git+git://github.com/fgregg/pyqpbo.git#egg=pyqpbo
 #git clone git://git.tuebingen.mpg.de/libdai.git
 #git+git://github.com/amueller/daimrf.git#egg=daimrf
