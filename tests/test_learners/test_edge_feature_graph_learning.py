@@ -25,15 +25,12 @@ def test_multinomial_blocks_directional_simple():
     X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
     Y = [y.ravel() for y in Y_]
 
-    for inference_method in ['qpbo']:
-        crf = EdgeFeatureGraphCRF(n_states=3,
-                                  inference_method=inference_method,
-                                  n_edge_features=2)
-        clf = NSlackSSVM(model=crf, max_iter=10, C=1, check_constraints=False)
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
-        assert_array_equal(Y, Y_pred)
-        print(clf.w[-9 * 2:].reshape(2, 3, 3))
+    crf = EdgeFeatureGraphCRF(n_states=3,
+                              n_edge_features=2)
+    clf = NSlackSSVM(model=crf, max_iter=10, C=1, check_constraints=False)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
 
 
 def test_multinomial_blocks_directional_anti_symmetric():
@@ -46,21 +43,16 @@ def test_multinomial_blocks_directional_anti_symmetric():
     X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
     Y = [y.ravel() for y in Y_]
 
-    for inference_method in ['qpbo']:
-        crf = EdgeFeatureGraphCRF(n_states=3,
-                                  inference_method=inference_method,
-                                  n_edge_features=2,
-                                  symmetric_edge_features=[0],
-                                  antisymmetric_edge_features=[1])
-        clf = NSlackSSVM(model=crf, max_iter=20, C=100,
-                         check_constraints=False)
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
-        assert_array_equal(Y, Y_pred)
-        pairwise_params = clf.w[-9 * 2:].reshape(2, 3, 3)
-        sym = pairwise_params[0]
-        antisym = pairwise_params[1]
-        print(sym)
-        print(antisym)
-        assert_array_equal(sym, sym.T)
-        assert_array_equal(antisym, -antisym.T)
+    crf = EdgeFeatureGraphCRF(n_states=3, n_edge_features=2,
+                              symmetric_edge_features=[0],
+                              antisymmetric_edge_features=[1])
+    clf = NSlackSSVM(model=crf, max_iter=20, C=100,
+                     check_constraints=False)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+    pairwise_params = clf.w[-9 * 2:].reshape(2, 3, 3)
+    sym = pairwise_params[0]
+    antisym = pairwise_params[1]
+    assert_array_equal(sym, sym.T)
+    assert_array_equal(antisym, -antisym.T)

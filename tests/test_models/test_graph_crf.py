@@ -3,6 +3,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_equal)
 
 from pystruct.models import GraphCRF, EdgeTypeGraphCRF
+from pystruct.inference import get_installed
 
 
 w = np.array([1, 0,  # unary
@@ -32,7 +33,7 @@ y_2 = np.array([1, 0, 0])
 def test_graph_crf_inference():
     # create two samples with different graphs
     # two states only, pairwise smoothing
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
+    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'dai', 'ogm']):
         crf = GraphCRF(n_states=2, inference_method=inference_method)
         assert_array_equal(crf.inference((x_1, g_1), w), y_1)
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
@@ -46,7 +47,7 @@ def test_edge_type_graph_crf():
 
     # all edges are of the first type. should do the same as GraphCRF
     # if we make w symmetric
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
+    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'dai', 'ogm']):
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=1)
         assert_array_equal(crf.inference((x_1, [g_1]), w_sym), y_1)
@@ -59,7 +60,7 @@ def test_edge_type_graph_crf():
                       0, .22,
                       2, -1,   # second edge type, doesn't exist
                       -1, 3])
-    for inference_method in ['qpbo', 'lp', 'ad3', 'dai', 'ogm']:
+    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'dai', 'ogm']):
         crf = EdgeTypeGraphCRF(n_states=2, inference_method=inference_method,
                                n_edge_types=2)
         assert_array_equal(crf.inference((x_1,
@@ -76,7 +77,7 @@ def test_edge_type_graph_crf():
 
 
 def test_graph_crf_continuous_inference():
-    for inference_method in ['lp', 'ad3']:
+    for inference_method in get_installed(['lp', 'ad3']):
         crf = GraphCRF(n_states=2, inference_method=inference_method)
         y_hat = crf.inference((x_1, g_1), w, relaxed=True)
         if isinstance(y_hat, tuple):
@@ -93,7 +94,7 @@ def test_graph_crf_continuous_inference():
 
 
 def test_graph_crf_energy_lp_integral():
-    crf = GraphCRF(n_states=2, inference_method='lp')
+    crf = GraphCRF(n_states=2)
     inf_res, energy_lp = crf.inference((x_1, g_1), w, relaxed=True,
                                        return_energy=True)
     # integral solution
@@ -104,7 +105,7 @@ def test_graph_crf_energy_lp_integral():
 
 
 def test_graph_crf_energy_lp_relaxed():
-    crf = GraphCRF(n_states=2, inference_method='lp')
+    crf = GraphCRF(n_states=2)
     for i in xrange(10):
         w_ = np.random.uniform(size=w.shape)
         inf_res, energy_lp = crf.inference((x_1, g_1), w_, relaxed=True,
@@ -122,7 +123,7 @@ def test_graph_crf_energy_lp_relaxed():
 def test_graph_crf_loss_augment():
     x = (x_1, g_1)
     y = y_1
-    crf = GraphCRF(n_states=2, inference_method='lp')
+    crf = GraphCRF(n_states=2)
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
     # check that y_hat fulfills energy + loss condition
     assert_almost_equal(np.dot(w, crf.psi(x, y_hat)) + crf.loss(y, y_hat),
@@ -131,7 +132,7 @@ def test_graph_crf_loss_augment():
 
 def test_edge_type_graph_crf_energy_lp_integral():
     # same test as for graph crf above, using single edge type
-    crf = EdgeTypeGraphCRF(n_states=2, inference_method='lp', n_edge_types=1)
+    crf = EdgeTypeGraphCRF(n_states=2, n_edge_types=1)
     inf_res, energy_lp = crf.inference((x_1, [g_1]), w_sym, relaxed=True,
                                        return_energy=True)
     # integral solution
@@ -143,8 +144,7 @@ def test_edge_type_graph_crf_energy_lp_integral():
 
 def test_edge_type_graph_crf_energy_lp_relaxed():
     # same test as for graph crf above, using single edge type
-    crf = EdgeTypeGraphCRF(n_states=2, inference_method='lp',
-                           n_edge_types=1)
+    crf = EdgeTypeGraphCRF(n_states=2, n_edge_types=1)
     for i in xrange(10):
         w_ = np.random.uniform(size=w_sym.shape)
         inf_res, energy_lp = crf.inference((x_1, [g_1]), w_, relaxed=True,
@@ -162,7 +162,7 @@ def test_edge_type_graph_crf_energy_lp_relaxed():
 
 def test_graph_crf_class_weights():
     # no edges
-    crf = GraphCRF(n_states=3, n_features=3, inference_method='dai')
+    crf = GraphCRF(n_states=3, n_features=3)
     w = np.array([1, 0, 0,  # unary
                   0, 1, 0,
                   0, 0, 1,
@@ -176,6 +176,5 @@ def test_graph_crf_class_weights():
 
     # with class-weights, loss for class 1 is smaller, loss-augmented inference
     # will find it
-    crf = GraphCRF(n_states=3, n_features=3, inference_method='dai',
-                   class_weight=[1, .1, 1])
+    crf = GraphCRF(n_states=3, n_features=3, class_weight=[1, .1, 1])
     assert_equal(crf.loss_augmented_inference(x, [1], w), 1)

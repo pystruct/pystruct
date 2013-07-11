@@ -7,6 +7,7 @@ from pystruct.learners import (LatentSSVM, NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
 import pystruct.toy_datasets as toy
+from pystruct.inference import get_installed
 
 
 def test_with_crosses_perfect_init():
@@ -14,29 +15,25 @@ def test_with_crosses_perfect_init():
     for n_states_per_label in [2, [1, 2]]:
         # test with 2 states for both foreground and background,
         # as well as with single background state
-        #for inference_method in ['ad3', 'qpbo', 'lp']:
-        for inference_method in ['qpbo']:
-            X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                        total_size=8)
-            n_labels = 2
-            crf = LatentGridCRF(n_labels=n_labels,
-                                n_states_per_label=n_states_per_label,
-                                inference_method=inference_method)
-            clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10,
-                                          check_constraints=False,
-                                          break_on_bad=False,
-                                          inference_cache=50))
-            clf.fit(X, Y)
-            Y_pred = clf.predict(X)
-            assert_array_equal(np.array(Y_pred), Y)
-            assert_equal(clf.score(X, Y), 1)
+        X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+                                    total_size=8)
+        n_labels = 2
+        crf = LatentGridCRF(n_labels=n_labels,
+                            n_states_per_label=n_states_per_label)
+        clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10,
+                                      check_constraints=False,
+                                      break_on_bad=False,
+                                      inference_cache=50))
+        clf.fit(X, Y)
+        Y_pred = clf.predict(X)
+        assert_array_equal(np.array(Y_pred), Y)
+        assert_equal(clf.score(X, Y), 1)
 
 
 def test_with_crosses_base_svms():
     # very simple dataset. k-means init is perfect
     n_labels = 2
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2],
-                        inference_method='lp')
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=[1, 2])
     one_slack = OneSlackSSVM(crf)
     n_slack = NSlackSSVM(crf)
     subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.1)
@@ -61,8 +58,7 @@ def test_with_crosses_bad_init():
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
     n_labels = 2
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
-                        inference_method='lp')
+    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2)
     H_init = crf.init_latent(X, Y)
 
     mask = np.random.uniform(size=H_init.shape) > .7
@@ -87,25 +83,26 @@ def test_with_crosses_bad_init():
 
 
 def test_directional_bars():
-    for inference_method in ['ad3']:
-        X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
-                                 total_size=6, seed=1)
-        n_labels = 2
-        crf = LatentDirectionalGridCRF(n_labels=n_labels,
-                                       n_states_per_label=[1, 4],
-                                       inference_method=inference_method)
-        clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
-                                      inference_cache=50, tol=.01))
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
+    X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
+                             total_size=6, seed=1)
+    n_labels = 2
+    crf = LatentDirectionalGridCRF(n_labels=n_labels,
+                                   n_states_per_label=[1, 4])
+    clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
+                                  inference_cache=50, tol=.01))
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
 
-        assert_array_equal(np.array(Y_pred), Y)
+    assert_array_equal(np.array(Y_pred), Y)
 
 
 def test_switch_to_ad3():
     # smoketest only
     # test if switching between qpbo and ad3 works inside latent svm
     # use less perfect initialization
+
+    if not get_installed(['qpbo']):
+        return
     X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
                                 total_size=8)
     X_test, Y_test = X[10:], Y[10:]

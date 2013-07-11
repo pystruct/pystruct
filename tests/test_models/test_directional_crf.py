@@ -5,6 +5,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
 
 import pystruct.toy_datasets as toy
 from pystruct.inference.linear_programming import lp_general_graph
+from pystruct.inference import get_installed
 from pystruct.utils import make_grid_edges
 from pystruct.models import DirectionalGridCRF
 
@@ -39,7 +40,7 @@ def test_inference():
     # do inference
     res = lp_general_graph(-x.reshape(-1, n_states), edges, edge_weights)
 
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         # same inference through CRF inferface
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
@@ -50,7 +51,7 @@ def test_inference():
             assert_array_almost_equal(res[1], y_pred[1])
             assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
-    for inference_method in ["lp", "ad3", "qpbo"]:
+    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
@@ -61,7 +62,7 @@ def test_inference():
 def test_psi_discrete():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
-    for inference_method in ["lp", "ad3", "qpbo"]:
+    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         psi_y = crf.psi(x, y)
         assert_equal(psi_y.shape, (crf.size_psi,))
@@ -96,7 +97,7 @@ def test_psi_continuous():
     pw_vert *= 10
 
     # create crf, assemble weight, make prediction
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
@@ -115,7 +116,7 @@ def test_psi_continuous():
 def test_energy():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         found_fractional = False
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
         while not found_fractional:

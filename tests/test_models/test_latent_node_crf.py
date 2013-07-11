@@ -6,7 +6,7 @@ import pystruct.toy_datasets as toy
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.utils import make_grid_edges
 from pystruct.models import LatentNodeCRF, EdgeFeatureLatentNodeCRF
-#from pystruct.models.latent_grid_crf import kmeans_init
+from pystruct.inference import get_installed
 
 
 def edge_list_to_features(edge_list):
@@ -212,7 +212,7 @@ def test_edge_feature_latent_node_crf_no_latent():
     x = (x.reshape(-1, n_states), edges, edge_features, 0)
     y = y.ravel()
 
-    for inference_method in ["lp"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         # same inference through CRF inferface
         crf = EdgeFeatureLatentNodeCRF(n_labels=3,
                                        inference_method=inference_method,
@@ -223,7 +223,7 @@ def test_edge_feature_latent_node_crf_no_latent():
         assert_array_almost_equal(res[1], y_pred[1])
         assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
-    for inference_method in ["lp", "ad3", "qpbo"]:
+    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
         crf = EdgeFeatureLatentNodeCRF(n_labels=3,
                                        inference_method=inference_method,

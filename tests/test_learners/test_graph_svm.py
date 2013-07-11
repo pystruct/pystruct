@@ -9,12 +9,13 @@ from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM, OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges
+from pystruct.inference import get_installed
 
 
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in ["dai", "lp", "qpbo", "ad3", 'ogm']:
+    for inference_method in get_installed(["dai", "lp", "qpbo", "ad3", 'ogm']):
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)

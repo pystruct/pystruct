@@ -4,7 +4,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
-from pystruct.inference.inference_methods import compute_energy
+from pystruct.inference import compute_energy, get_installed
 from pystruct.utils import make_grid_edges
 import pystruct.toy_datasets as toy
 
@@ -51,7 +51,7 @@ def test_inference():
     x = (x.reshape(-1, n_states), edges, edge_features)
     y = y.ravel()
 
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         # same inference through CRF inferface
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
@@ -64,7 +64,7 @@ def test_inference():
             assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
             assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
-    for inference_method in ["lp", "ad3", "qpbo"]:
+    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
@@ -82,7 +82,7 @@ def test_psi_discrete():
     edge_features = edge_list_to_features(edge_list)
     x = (x.reshape(-1, 3), edges, edge_features)
     y_flat = y.ravel()
-    for inference_method in ["lp", "ad3", "qpbo"]:
+    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
@@ -124,7 +124,7 @@ def test_psi_continuous():
     pw_vert *= 10
 
     # create crf, assemble weight, make prediction
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
@@ -146,7 +146,7 @@ def test_psi_continuous():
 def test_energy_continuous():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         found_fractional = False
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
@@ -172,7 +172,7 @@ def test_energy_continuous():
 
 
 def test_energy_discrete():
-    for inference_method in ["qpbo", "ad3"]:
+    for inference_method in get_installed(["qpbo", "ad3"]):
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)

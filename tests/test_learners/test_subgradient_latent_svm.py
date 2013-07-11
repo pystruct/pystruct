@@ -39,15 +39,14 @@ def test_objective():
     # in particular that it has the same loss, if there are no latent states.
     X, Y = toy.generate_blocks_multinomial(n_samples=10)
     n_labels = 3
-    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
-                         inference_method='ad3')
+    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1)
     clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10.,
                                  learning_rate=0.001, momentum=0.98,
                                  decay_exponent=0)
     clfl.w = np.zeros(crfl.size_psi)  # this disables random init
     clfl.fit(X, Y)
 
-    crf = GridCRF(n_states=n_labels, inference_method='ad3')
+    crf = GridCRF(n_states=n_labels)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10.,
                           learning_rate=0.001, momentum=0.98, decay_exponent=0)
     clf.fit(X, Y)
@@ -76,17 +75,15 @@ def test_objective():
 
 def test_directional_bars():
     # this test is very fragile :-/
-    for inference_method in ['ad3']:
-        X, Y = toy.generate_easy(n_samples=20, noise=2, box_size=2,
-                                 total_size=6, seed=2)
-        n_labels = 2
-        crf = LatentDirectionalGridCRF(n_labels=n_labels,
-                                       n_states_per_label=[1, 4],
-                                       inference_method=inference_method)
-        clf = LatentSubgradientSSVM(model=crf, max_iter=75, C=10.,
-                                    learning_rate=1, momentum=0,
-                                    decay_exponent=0.5, decay_t0=10)
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
+    X, Y = toy.generate_easy(n_samples=20, noise=2, box_size=2,
+                             total_size=6, seed=2)
+    n_labels = 2
+    crf = LatentDirectionalGridCRF(n_labels=n_labels,
+                                   n_states_per_label=[1, 4])
+    clf = LatentSubgradientSSVM(model=crf, max_iter=75, C=10.,
+                                learning_rate=1, momentum=0,
+                                decay_exponent=0.5, decay_t0=10)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
 
-        assert_array_equal(np.array(Y_pred), Y)
+    assert_array_equal(np.array(Y_pred), Y)

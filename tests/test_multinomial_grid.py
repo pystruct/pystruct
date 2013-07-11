@@ -4,6 +4,7 @@ from numpy.testing import assert_array_equal
 from pystruct.models import GridCRF, DirectionalGridCRF
 from pystruct.learners import NSlackSSVM, SubgradientSSVM
 import pystruct.toy_datasets as toy
+from pystruct.inference import get_installed
 
 
 def test_multinomial_blocks_cutting_plane():
@@ -11,7 +12,7 @@ def test_multinomial_blocks_cutting_plane():
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
                                            seed=0)
     n_labels = len(np.unique(Y))
-    for inference_method in ['lp', 'qpbo', 'ad3']:
+    for inference_method in get_installed(['lp', 'qpbo', 'ad3']):
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                          check_constraints=False)
@@ -26,7 +27,7 @@ def test_multinomial_blocks_directional():
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
                                            seed=0)
     n_labels = len(np.unique(Y))
-    for inference_method in ['lp', 'ad3']:
+    for inference_method in get_installed(['lp', 'ad3']):
         crf = DirectionalGridCRF(n_states=n_labels,
                                  inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100,

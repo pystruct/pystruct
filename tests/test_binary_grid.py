@@ -4,11 +4,12 @@ from nose.tools import assert_true
 from pystruct.models import GridCRF
 from pystruct.learners import NSlackSSVM, SubgradientSSVM
 import pystruct.toy_datasets as toy
+from pystruct.inference import get_installed
 
 
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
-    for inference_method in ["dai", "lp", "qpbo", "ad3"]:
+    for inference_method in get_installed(["dai", "lp", "qpbo", "ad3"]):
         X, Y = toy.generate_blocks(n_samples=5)
         crf = GridCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=20, C=100,
@@ -21,7 +22,7 @@ def test_binary_blocks_cutting_plane():
 def test_binary_blocks_batches_n_slack():
     #testing cutting plane ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=5)
-    crf = GridCRF(inference_method='lp')
+    crf = GridCRF()
     clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,
                      break_on_bad=False, n_jobs=1, batch_size=1)
     clf.fit(X, Y)
@@ -54,7 +55,7 @@ def test_binary_ssvm_repellent_potentials():
     # test non-submodular learning with and without positivity constraint
     # dataset is checkerboard
     X, Y = toy.generate_checker()
-    for inference_method in ["lp", "qpbo", "ad3"]:
+    for inference_method in get_installed(["lp", "qpbo", "ad3"]):
         crf = GridCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                          check_constraints=True)

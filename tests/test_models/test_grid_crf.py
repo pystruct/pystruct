@@ -6,10 +6,11 @@ import pystruct.toy_datasets as toy
 from pystruct.models import GridCRF
 from pystruct.utils import (find_constraint, exhaustive_inference,
                             exhaustive_loss_augmented_inference)
+from pystruct.inference import get_installed
 
 
 def test_continuous_y():
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         X, Y = toy.generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
         w = np.array([1, 0,  # unary
@@ -53,7 +54,7 @@ def test_energy_lp():
     # make sure that energy as computed by ssvm is the same as by lp
     np.random.seed(0)
     found_fractional = False
-    for inference_method in ["lp", "ad3"]:
+    for inference_method in get_installed(["lp", "ad3"]):
         crf = GridCRF(n_states=3, n_features=4,
                       inference_method=inference_method)
         while not found_fractional:
@@ -73,7 +74,7 @@ def test_loss_augmentation():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    crf = GridCRF(inference_method='lp')
+    crf = GridCRF()
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
 
     assert_almost_equal(energy + crf.loss(y, y_hat),
@@ -87,7 +88,7 @@ def test_binary_blocks_crf():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    for inference_method in ['dai', 'qpbo', 'lp', 'ad3', 'ogm']:
+    for inference_method in get_installed(['dai', 'qpbo', 'lp', 'ad3', 'ogm']):
         crf = GridCRF(inference_method=inference_method)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
@@ -100,7 +101,7 @@ def test_binary_blocks_crf_n8_lp():
                   0, 1,
                   1,     # pairwise
                   -1.4, 1])
-    crf = GridCRF(inference_method="lp", neighborhood=8)
+    crf = GridCRF(neighborhood=8)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 
@@ -114,7 +115,7 @@ def test_blocks_multinomial_crf():
                  .4,           # pairwise
                  -.3, .3,
                  -.5, -.1, .3])
-    for inference_method in ['ad3', 'qpbo', 'lp', 'dai', 'ogm']:
+    for inference_method in get_installed():
         crf = GridCRF(n_states=3, inference_method=inference_method)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
@@ -125,7 +126,7 @@ def test_binary_grid_unaries():
     for ds in toy.binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
-        for inference_method in ['qpbo', 'lp', 'ad3', 'ogm']:
+        for inference_method in get_installed():
             # dai is to expensive
             crf = GridCRF(inference_method=inference_method)
             w_unaries_only = np.zeros(7)
@@ -157,7 +158,7 @@ def test_multinomial_grid_unaries():
         X, Y = ds(n_samples=1, size_x=9)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
-        for inference_method in ['qpbo', 'lp', 'ad3', 'ogm']:
+        for inference_method in get_installed():
             # dai is to expensive
             crf = GridCRF(n_states=n_labels, inference_method=inference_method)
             w_unaries_only = np.zeros(crf.size_psi)
@@ -192,7 +193,7 @@ def test_binary_crf_exhaustive_loss_augmented():
     # tests qpbo inference against brute force
     # on random data / weights
     np.random.seed(0)
-    for inference_method in ['qpbo', 'lp']:
+    for inference_method in get_installed(['qpbo', 'lp']):
         crf = GridCRF(inference_method=inference_method)
         for i in xrange(10):
             # generate data and weights

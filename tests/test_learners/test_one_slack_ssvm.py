@@ -10,24 +10,22 @@ from pystruct.models import GridCRF, GraphCRF, BinarySVMModel
 from pystruct.learners import OneSlackSSVM
 import pystruct.toy_datasets as toy
 from pystruct.utils import make_grid_edges, SaveLogger
+from pystruct.inference import get_installed
 
 
 def test_multinomial_blocks_one_slack():
     #testing cutting plane ssvm on easy multinomial dataset
-    # we use ad3bb which is fast and exact, so we can check constraint
-    # generation
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0)
     print(np.argmax(X[0], axis=-1))
     n_labels = len(np.unique(Y))
-    for inference_method in ['ad3bb']:
-        crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
-                           check_constraints=True, break_on_bad=True, tol=.1,
-                           inference_cache=50)
-        clf.fit(X, Y)
-        Y_pred = clf.predict(X)
-        assert_array_equal(Y, Y_pred)
+    crf = GridCRF(n_states=n_labels)
+    clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
+                       check_constraints=True, break_on_bad=True, tol=.1,
+                       inference_cache=50)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
 
 
 def test_svm_as_crf_pickling():
@@ -81,7 +79,7 @@ def test_constraint_removal():
 def test_binary_blocks_one_slack_graph():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in ["dai", "lp"]:
+    for inference_method in get_installed(["dai", "lp"]):
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
@@ -115,7 +113,7 @@ def test_one_slack_constraint_caching():
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0, size_x=9)
     n_labels = len(np.unique(Y))
-    crf = GridCRF(n_states=n_labels, inference_method='lp')
+    crf = GridCRF(n_states=n_labels)
     clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)
@@ -150,7 +148,7 @@ def test_one_slack_repellent_potentials():
     # test non-submodular learning with and without positivity constraint
     # dataset is checkerboard
     X, Y = toy.generate_checker()
-    for inference_method in ["lp", "qpbo"]:
+    for inference_method in get_installed(["lp", "qpbo"]):
         crf = GridCRF(inference_method=inference_method)
         clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                            check_constraints=True)
