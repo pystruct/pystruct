@@ -17,3 +17,6 @@ I plan a stable release soon.
 
 The full documentation can be found at the website:
 http://pystruct.github.io
+
+You can contact the authors either via the [mailing list](https://groups.google.com/forum/#!forum/pystruct)
+or on [github](https://github.com/pystruct/pystruct).
