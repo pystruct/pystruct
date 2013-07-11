@@ -33,7 +33,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
     n_edge_features : int, default=1
         Number of features per edge.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -55,7 +55,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
     """
     def __init__(self, n_states=2, n_features=None, n_edge_features=1,
-                 inference_method='qpbo', class_weight=None,
+                 inference_method='lp', class_weight=None,
                  symmetric_edge_features=None,
                  antisymmetric_edge_features=None):
         GraphCRF.__init__(self, n_states, n_features, inference_method,

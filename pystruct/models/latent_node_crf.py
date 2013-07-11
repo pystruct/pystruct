@@ -72,7 +72,7 @@ class LatentNodeCRF(GraphCRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
@@ -324,7 +324,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 

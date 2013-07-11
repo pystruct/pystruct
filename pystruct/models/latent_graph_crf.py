@@ -83,7 +83,7 @@ class LatentGraphCRF(GraphCRF):
         of hidden states will be used for all observable states, or a list
         of integers of length ``n_labels``.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
@@ -94,7 +94,7 @@ class LatentGraphCRF(GraphCRF):
 
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
-                 inference_method='qpbo'):
+                 inference_method='lp'):
         self.n_labels = n_labels
         if n_features is None:
             n_features = n_labels

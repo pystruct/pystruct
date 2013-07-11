@@ -24,7 +24,7 @@ class GraphCRF(CRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -37,7 +37,7 @@ class GraphCRF(CRF):
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='qpbo',
+    def __init__(self, n_states=2, n_features=None, inference_method='lp',
                  class_weight=None):
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
@@ -174,7 +174,7 @@ class EdgeTypeGraphCRF(GraphCRF):
     n_states : int, default=2
         Number of states for all variables.
 
-    inference_method : string, default="qpbo"
+    inference_method : string, default="lp"
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
