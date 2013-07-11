@@ -13,7 +13,7 @@ def test_multinomial_blocks_cutting_plane():
     n_labels = len(np.unique(Y))
     for inference_method in ['lp', 'qpbo', 'ad3']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
+        clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                          check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -29,7 +29,7 @@ def test_multinomial_blocks_directional():
     for inference_method in ['lp', 'ad3']:
         crf = DirectionalGridCRF(n_states=n_labels,
                                  inference_method=inference_method)
-        clf = NSlackSSVM(model=crf, max_iter=10, C=100, verbose=0,
+        clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                          check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -42,8 +42,8 @@ def test_multinomial_blocks_subgradient():
                                            seed=1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10, verbose=0,
-                          momentum=.98, learning_rate=0.001)
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10, momentum=.98,
+                          learning_rate=0.001)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -53,8 +53,7 @@ def test_multinomial_checker_cutting_plane():
     X, Y = toy.generate_checker_multinomial(n_samples=10, noise=.1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
-    clf = NSlackSSVM(model=crf, max_iter=20, C=100000, verbose=0,
-                     check_constraints=True)
+    clf = NSlackSSVM(model=crf, max_iter=20, C=100000, check_constraints=True)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -64,7 +63,7 @@ def test_multinomial_checker_subgradient():
     X, Y = toy.generate_checker_multinomial(n_samples=10, noise=0.0)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10, verbose=0,
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10,
                           momentum=.98, learning_rate=0.01)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)

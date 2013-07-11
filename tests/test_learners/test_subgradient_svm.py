@@ -18,7 +18,7 @@ def test_binary_blocks_subgradient_parallel():
     #testing subgradient ssvm on easy binary dataset
     #X, Y = toy.generate_blocks(n_samples=10)
     #crf = GridCRF()
-    #clf = SubgradientSSVM(model=crf, max_iter=100, C=1, verbose=0,
+    #clf = SubgradientSSVM(model=crf, max_iter=100, C=1,
                           #momentum=.0, learning_rate=0.1, n_jobs=-1)
     #clf.fit(X, Y)
     #Y_pred = clf.predict(X)
@@ -29,8 +29,8 @@ def test_binary_blocks_subgradient_online():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    clf = SubgradientSSVM(model=crf, max_iter=200, C=10, verbose=0,
-                          momentum=.0, learning_rate=0.1)
+    clf = SubgradientSSVM(model=crf, max_iter=200, C=10, momentum=.0,
+                          learning_rate=0.1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -48,8 +48,8 @@ def test_subgradient_svm_as_crf_pickling():
     _, file_name = mkstemp()
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
-    logger = SaveLogger(file_name, verbose=1)
-    svm = SubgradientSSVM(pbl, verbose=0, C=10, n_jobs=1, logger=logger,
+    logger = SaveLogger(file_name)
+    svm = SubgradientSSVM(pbl, C=10, n_jobs=1, logger=logger,
                           max_iter=50, momentum=0, learning_rate=0.01)
     svm.fit(X_train, y_train)
 

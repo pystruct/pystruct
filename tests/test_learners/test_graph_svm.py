@@ -18,8 +18,8 @@ def test_binary_blocks_cutting_plane():
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                         check_constraints=True, break_on_bad=False, n_jobs=1)
+        clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,
+                         break_on_bad=False, n_jobs=1)
         x1, x2, x3 = X
         y1, y2, y3 = Y
         n_states = len(np.unique(Y))
@@ -56,7 +56,7 @@ def test_standard_svm_blobs_2d():
                      for x in X_test]
 
     pbl = GraphCRF(n_features=3, n_states=3, inference_method='unary')
-    svm = OneSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000)
+    svm = OneSlackSSVM(pbl, check_constraints=True, C=1000)
 
     svm.fit(X_train_graphs, Y_train[:, np.newaxis])
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test_graphs)))
@@ -72,7 +72,7 @@ def test_standard_svm_blobs_2d_class_weight():
     X_graphs = [(x[np.newaxis, :], np.empty((0, 2), dtype=np.int)) for x in X]
 
     pbl = GraphCRF(n_features=3, n_states=3, inference_method='unary')
-    svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=1000)
+    svm = OneSlackSSVM(pbl, check_constraints=False, C=1000)
 
     svm.fit(X_graphs, Y[:, np.newaxis])
 
@@ -81,7 +81,7 @@ def test_standard_svm_blobs_2d_class_weight():
 
     pbl_class_weight = GraphCRF(n_features=3, n_states=3, class_weight=weights,
                                 inference_method='unary')
-    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=0, C=10,
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10,
                                     check_constraints=False,
                                     break_on_bad=False)
     svm_class_weight.fit(X_graphs, Y[:, np.newaxis])

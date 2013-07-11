@@ -22,7 +22,7 @@ def test_multinomial_blocks_one_slack():
     n_labels = len(np.unique(Y))
     for inference_method in ['ad3bb']:
         crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=0,
+        clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
                            check_constraints=True, break_on_bad=True, tol=.1,
                            inference_cache=50)
         clf.fit(X, Y)
@@ -41,8 +41,8 @@ def test_svm_as_crf_pickling():
     _, file_name = mkstemp()
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
-    logger = SaveLogger(file_name, verbose=0)
-    svm = OneSlackSSVM(pbl, verbose=0, check_constraints=True, C=1, n_jobs=1,
+    logger = SaveLogger(file_name)
+    svm = OneSlackSSVM(pbl, check_constraints=True, C=1, n_jobs=1,
                        logger=logger)
     svm.fit(X_train, y_train)
 
@@ -56,10 +56,10 @@ def test_constraint_removal():
     y = 2 * (y % 2) - 1  # even vs odd as +1 vs -1
     X = X / 16.
     pbl = BinarySVMModel(n_features=X.shape[1])
-    clf_no_removal = OneSlackSSVM(model=pbl, max_iter=500, verbose=0, C=1,
+    clf_no_removal = OneSlackSSVM(model=pbl, max_iter=500, C=1,
                                   inactive_window=0, tol=0.01)
     clf_no_removal.fit(X, y)
-    clf = OneSlackSSVM(model=pbl, max_iter=500, verbose=0, C=1, tol=0.01,
+    clf = OneSlackSSVM(model=pbl, max_iter=500, C=1, tol=0.01,
                        inactive_threshold=1e-8)
     clf.fit(X, y)
     # check that we learned something
@@ -85,7 +85,7 @@ def test_binary_blocks_one_slack_graph():
         print("testing %s" % inference_method)
         X, Y = toy.generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=100, C=1, verbose=0,
+        clf = OneSlackSSVM(model=crf, max_iter=100, C=1,
                            check_constraints=True, break_on_bad=True,
                            n_jobs=1, tol=.1)
         x1, x2, x3 = X
@@ -116,7 +116,7 @@ def test_one_slack_constraint_caching():
                                            seed=0, size_x=9)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method='lp')
-    clf = OneSlackSSVM(model=crf, max_iter=150, C=1, verbose=0,
+    clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)
     clf.fit(X, Y)
@@ -136,7 +136,7 @@ def test_one_slack_attractive_potentials():
     # test that submodular SSVM can learn the block dataset
     X, Y = toy.generate_blocks(n_samples=10)
     crf = GridCRF()
-    submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1, verbose=0,
+    submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1,
                                   check_constraints=True,
                                   positive_constraint=[5],
                                   inference_cache=50)
@@ -152,7 +152,7 @@ def test_one_slack_repellent_potentials():
     X, Y = toy.generate_checker()
     for inference_method in ["lp", "qpbo"]:
         crf = GridCRF(inference_method=inference_method)
-        clf = OneSlackSSVM(model=crf, max_iter=10, C=.01, verbose=0,
+        clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                            check_constraints=True)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
@@ -160,7 +160,7 @@ def test_one_slack_repellent_potentials():
         assert_array_equal(Y, Y_pred)
 
         submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
-                                      verbose=0, check_constraints=True,
+                                      check_constraints=True,
                                       positive_constraint=[4, 5, 6])
         submodular_clf.fit(X, Y)
         Y_pred = submodular_clf.predict(X)

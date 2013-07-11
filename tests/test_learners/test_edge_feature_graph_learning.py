@@ -29,8 +29,7 @@ def test_multinomial_blocks_directional_simple():
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
-        clf = NSlackSSVM(model=crf, max_iter=10, C=1, verbose=1,
-                         check_constraints=False)
+        clf = NSlackSSVM(model=crf, max_iter=10, C=1, check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
         assert_array_equal(Y, Y_pred)
@@ -53,7 +52,7 @@ def test_multinomial_blocks_directional_anti_symmetric():
                                   n_edge_features=2,
                                   symmetric_edge_features=[0],
                                   antisymmetric_edge_features=[1])
-        clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=1,
+        clf = NSlackSSVM(model=crf, max_iter=20, C=100,
                          check_constraints=False)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

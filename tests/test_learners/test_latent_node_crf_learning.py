@@ -27,8 +27,8 @@ def test_binary_blocks_cutting_plane_latent_node():
     # same as GraphCRF
     X, Y = toy.generate_blocks(n_samples=3)
     crf = GraphCRF(inference_method='ad3')
-    clf = NSlackSSVM(model=crf, max_iter=20, C=100, verbose=0,
-                     check_constraints=True, break_on_bad=False, n_jobs=1)
+    clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,
+                     break_on_bad=False, n_jobs=1)
     x1, x2, x3 = X
     y1, y2, y3 = Y
     n_states = len(np.unique(Y))
@@ -53,7 +53,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
                                n_hidden_states=0)
     latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20, C=100,
-                                       verbose=0, check_constraints=True,
+                                       check_constraints=True,
                                        break_on_bad=False, n_jobs=1),
                             latent_iter=3)
     X_latent = zip(X_, G, np.zeros(len(X_)))
@@ -111,8 +111,7 @@ def test_latent_node_boxes_latent_subgradient():
     latent_crf = LatentNodeCRF(n_labels=2, inference_method='ad3',
                                n_hidden_states=2, n_features=1)
     latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=250, C=10,
-                                       verbose=10, learning_rate=0.1,
-                                       momentum=0)
+                                       learning_rate=0.1, momentum=0)
 
     G = [make_grid_edges(x) for x in X]
 

@@ -41,14 +41,14 @@ def test_objective():
     n_labels = 3
     crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
                          inference_method='ad3')
-    clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10., verbose=20,
+    clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10.,
                                  learning_rate=0.001, momentum=0.98,
                                  decay_exponent=0)
     clfl.w = np.zeros(crfl.size_psi)  # this disables random init
     clfl.fit(X, Y)
 
     crf = GridCRF(n_states=n_labels, inference_method='ad3')
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10., verbose=20,
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10.,
                           learning_rate=0.001, momentum=0.98, decay_exponent=0)
     clf.fit(X, Y)
     assert_array_almost_equal(clf.w, clfl.w)
@@ -63,8 +63,7 @@ def test_objective():
 #    n_labels = 2
 #    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
 #                        inference_method='lp')
-#    clf = LatentSubgradientSSVM(model=crf, max_iter=50, C=10. ** 3,
-#                                verbose=2)
+#    clf = LatentSubgradientSSVM(model=crf, max_iter=50, C=10. ** 3)
 #    H_init = crf.init_latent(X, Y)
 
 #    mask = np.random.uniform(size=H_init.shape) > .7
@@ -85,7 +84,7 @@ def test_directional_bars():
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
         clf = LatentSubgradientSSVM(model=crf, max_iter=75, C=10.,
-                                    verbose=2, learning_rate=1, momentum=0,
+                                    learning_rate=1, momentum=0,
                                     decay_exponent=0.5, decay_t0=10)
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

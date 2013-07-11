@@ -91,7 +91,7 @@ def test_simple_1d_dataset_cutting_plane():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     pbl = CrammerSingerSVMModel(n_features=2)
-    svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=10000)
+    svm = NSlackSSVM(pbl, check_constraints=True, C=10000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
 
@@ -105,7 +105,7 @@ def test_blobs_2d_cutting_plane():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000,
+    svm = NSlackSSVM(pbl, check_constraints=True, C=1000,
                      batch_size=1)
 
     svm.fit(X_train, Y_train)
@@ -121,7 +121,7 @@ def test_blobs_2d_one_slack():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = OneSlackSSVM(pbl, verbose=1, check_constraints=True, C=1000)
+    svm = OneSlackSSVM(pbl, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -135,7 +135,7 @@ def test_blobs_2d_subgradient():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = SubgradientSSVM(pbl, verbose=1, C=1000)
+    svm = SubgradientSSVM(pbl, C=1000)
 
     svm.fit(X_train, Y_train)
     assert_array_equal(Y_test, np.hstack(svm.predict(X_test)))
@@ -148,14 +148,14 @@ def test_equal_class_weights():
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = OneSlackSSVM(pbl, verbose=1, C=10)
+    svm = OneSlackSSVM(pbl, C=10)
 
     svm.fit(X_train, Y_train)
     predict_no_class_weight = svm.predict(X_test)
 
     pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
                                              class_weight=np.ones(3))
-    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=1, C=10)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X_train, Y_train)
     predict_class_weight = svm_class_weight.predict(X_test)
 
@@ -170,7 +170,7 @@ def test_class_weights():
     X, Y = X[:170], Y[:170]
 
     pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
-    svm = OneSlackSSVM(pbl, verbose=1, C=10)
+    svm = OneSlackSSVM(pbl, C=10)
 
     svm.fit(X, Y)
 
@@ -178,7 +178,7 @@ def test_class_weights():
     weights *= len(weights) / np.sum(weights)
     pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
                                              class_weight=weights)
-    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=1, C=10)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
 
     assert_greater(f1_score(Y, svm_class_weight.predict(X)),
@@ -199,7 +199,7 @@ def test_class_weights_rescale_C():
     pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
                                              class_weight=weights,
                                              rescale_C=True)
-    svm_class_weight = OneSlackSSVM(pbl_class_weight, verbose=1, C=10)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
 
     linearsvm = LinearSVC(multi_class='crammer_singer', fit_intercept=False,

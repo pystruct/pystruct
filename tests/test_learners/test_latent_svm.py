@@ -23,7 +23,7 @@ def test_with_crosses_perfect_init():
                                 n_states_per_label=n_states_per_label,
                                 inference_method=inference_method)
             clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10,
-                                          verbose=1, check_constraints=False,
+                                          check_constraints=False,
                                           break_on_bad=False,
                                           inference_cache=50))
             clf.fit(X, Y)
@@ -39,8 +39,7 @@ def test_with_crosses_base_svms():
                         inference_method='lp')
     one_slack = OneSlackSSVM(crf)
     n_slack = NSlackSSVM(crf)
-    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.1,
-                                  verbose=2)
+    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.1)
 
     X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
                                 total_size=8)
@@ -96,7 +95,7 @@ def test_directional_bars():
                                        n_states_per_label=[1, 4],
                                        inference_method=inference_method)
         clf = LatentSSVM(OneSlackSSVM(model=crf, max_iter=500, C=10.,
-                                      verbose=1, inference_cache=50, tol=.01))
+                                      inference_cache=50, tol=.01))
         clf.fit(X, Y)
         Y_pred = clf.predict(X)
 

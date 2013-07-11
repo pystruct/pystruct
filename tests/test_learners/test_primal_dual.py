@@ -12,14 +12,12 @@
         #for dataset in binary:
             #X, Y = dataset(n_samples=1)
             #crf = BinaryGridCRF()
-            #clf = NSlackSSVM(model=crf, max_iter=200, C=C, verbose=0,
+            #clf = NSlackSSVM(model=crf, max_iter=200, C=C,
                     #check_constraints=True)
             #clf.fit(X, Y)
-            #clf2 = SubgradientSSVM(model=crf, max_iter=200, C=C,
-                    #verbose=0)
+            #clf2 = SubgradientSSVM(model=crf, max_iter=200, C=C)
             #clf2.fit(X, Y)
-            #clf3 = PrimalDSStructuredSVM(model=crf, max_iter=200, C=C,
-                    #verbose=0)
+            #clf3 = PrimalDSStructuredSVM(model=crf, max_iter=200, C=C)
             #clf3.fit(X, Y)
             #obj = objective_primal(crf, clf.w, X, Y, C)
             ## the dual finds the optimum so it might be better
