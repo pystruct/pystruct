@@ -46,8 +46,7 @@ def test_multinomial_blocks_directional_anti_symmetric():
     crf = EdgeFeatureGraphCRF(n_states=3, n_edge_features=2,
                               symmetric_edge_features=[0],
                               antisymmetric_edge_features=[1])
-    clf = NSlackSSVM(model=crf, max_iter=20, C=100,
-                     check_constraints=False)
+    clf = NSlackSSVM(model=crf, C=100)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
