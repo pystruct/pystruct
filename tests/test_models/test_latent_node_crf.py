@@ -166,9 +166,6 @@ def test_inference_trivial_features():
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
     assert_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) + crf.loss(h_hat, y))
-    #print(h_hat)
-    #print(h)
-    #print(crf.loss(h_hat, h))
 
 
 def test_edge_feature_latent_node_crf_no_latent():
@@ -212,7 +209,7 @@ def test_edge_feature_latent_node_crf_no_latent():
     x = (x.reshape(-1, n_states), edges, edge_features, 0)
     y = y.ravel()
 
-    for inference_method in get_installed(["lp", "ad3"]):
+    for inference_method in get_installed(["lp"]):
         # same inference through CRF inferface
         crf = EdgeFeatureLatentNodeCRF(n_labels=3,
                                        inference_method=inference_method,
