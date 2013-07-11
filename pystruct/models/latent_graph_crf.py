@@ -61,6 +61,10 @@ def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
         for feats_sample, y, h in zip(all_feats, Y, H):
             indicator_sample = y.ravel() == label
             pred = km.predict(feats_sample[indicator_sample]).astype(np.int)
+            print(h.dtype)
+            print(pred.dtype)
+            print(indicator_sample.dtype)
+            print(label_indices[label].dtype)
             h.ravel()[indicator_sample] = pred + label_indices[label]
     return H
 
