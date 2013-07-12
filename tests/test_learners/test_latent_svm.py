@@ -101,7 +101,7 @@ def test_switch_to_ad3():
     # test if switching between qpbo and ad3 works inside latent svm
     # use less perfect initialization
 
-    if not get_installed(['qpbo']):
+    if not get_installed(['qpbo']) or not get_installed(['ad3']):
         return
     X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
                                 total_size=8)
