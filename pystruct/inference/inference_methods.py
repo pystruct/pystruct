@@ -15,8 +15,7 @@ def get_installed(method_filter=None):
         try:
             inference_dispatch(unary, pw, edges, inference_method=method)
             installed.append(method)
-        except:
-            ImportError
+        except ImportError :
             pass
     return installed
 
