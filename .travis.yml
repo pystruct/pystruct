@@ -9,6 +9,7 @@ before_install:
     - sudo rm -rf /dev/shm
     - sudo ln -s /run/shm /dev/shm 
 install:
+    - pip install --use-mirrors -r cython
     - pip install --use-mirrors -r requirements.txt
     - python setup.py build_ext --inplace
 script: make test
