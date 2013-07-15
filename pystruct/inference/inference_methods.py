@@ -15,8 +15,7 @@ def get_installed(method_filter=None):
         try:
             inference_dispatch(unary, pw, edges, inference_method=method)
             installed.append(method)
-        except:
-            ImportError
+        except ImportError :
             pass
     return installed
 
@@ -372,12 +371,12 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
     """
-    import AD3
+    import ad3
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
 
     unaries = unary_potentials.reshape(-1, n_states)
-    res = AD3.general_graph(unaries, edges, pairwise_potentials, verbose=1,
+    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=1,
                             n_iterations=4000, exact=branch_and_bound)
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
