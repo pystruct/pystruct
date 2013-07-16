@@ -11,7 +11,13 @@ from pystruct.utils import make_grid_edges
 size = 10
 n_runs = 10
 #inference_methods = get_installed(['ad3', 'qpbo', 'lp', 'ogm'])
-inference_methods = get_installed(['ad3', 'qpbo', 'ogm', 'unary', 'ad3bb'])
+inference_methods = get_installed(['ad3', 'qpbo', 'unary',
+                                   ('ad3', {'branch_and_bound':True}),
+                                   ('ogm', {'alg': 'bp'}),
+                                   ('ogm', {'alg': 'dd'}),
+                                   ('ogm', {'alg': 'trws'}),
+                                   ('ogm', {'alg': 'lf'}),
+                                   ])
 
 rnd = np.random.RandomState(2)
 
@@ -33,26 +39,23 @@ for n_states in list_n_states:
         edges = make_grid_edges(x)
         unaries = x.reshape(-1, n_states)
         # apply all inference methods
-        for inference_method in inference_methods:
-            print("running %s" % inference_method)
+        for i, inference_method in enumerate(inference_methods):
+            print("running %s" % str(inference_method))
             start = time()
             y = inference_dispatch(unaries, pairwise, edges,
                                    inference_method=inference_method)
-            this_times[inference_method].append(time() - start)
-            this_energies[inference_method].append(compute_energy(unaries,
-                                                                  pairwise,
-                                                                  edges, y))
+            this_times[i].append(time() - start)
+            this_energies[i].append(compute_energy(unaries, pairwise, edges,
+                                                   y))
     # summarize runs
-    for inference_method in inference_methods:
-        mean_times[inference_method].append(
-            np.mean(this_times[inference_method]))
-        mean_energies[inference_method].append(
-            np.mean(this_energies[inference_method]))
+    for i in xrange(len(inference_methods)):
+        mean_times[i].append(np.mean(this_times[i]))
+        mean_energies[i].append(np.mean(this_energies[i]))
 
 fig, ax = plt.subplots(2, 1)
-for inference_method in inference_methods:
-    ax[0].plot(mean_times[inference_method], label=inference_method)
-    ax[1].plot(mean_energies[inference_method], label=inference_method)
+for i, inference_method in enumerate(inference_methods):
+    ax[0].plot(mean_times[i], label=str(inference_method))
+    ax[1].plot(mean_energies[i], label=str(inference_method))
 
 ax[0].legend()
 ax[1].legend()
