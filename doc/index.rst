@@ -18,21 +18,16 @@ or on `github <https://github.com/pystruct/pystruct>`_.
 
 Introduction
 =============
-There are three basic concepts in the implementation.
+In order to do learning with PyStruct, you need to pick two or three things:
+a model structure, a learning algorithm and optionally an inference algorithm.
+By passing a model to a learning algorithm,
+you get an estimator.
 
 
-Structural SVMs
------------------
-Know about learning.
-
-These implement max margin learning, similar to SVM^struct. There is a
-subgradient and a QP version. It is possible to put positivity constraints on
-certain weight. There is also a simple perceptron.
-
-CRFs aka Models
--------------------
-
-Know about the model formulation.
+Models, aka CRFs
+----------------
+These determine what your model looks like:
+its graph structure and its loss function.
 
 These know about the structure of the model, the loss and the inference. This
 is basically the part that you have to write yourself when using the Python
@@ -41,9 +36,26 @@ support for grids and general graphs. The SSVM implementations are agnostic
 to the kind of model that is used, so you can easily extend the given models
 to include higher-order potentials, for example.
 
-Inference Solvers
+Learning algorithms
 -------------------
-Do the inference.
+These set the parameters in a model based on training data.
+
+Learners are agnostic of the kind of model that is used,
+so all combinations are possible
+and new models can be defined (to include, e.g., higher-order potentials)
+without changing the learner.
+
+The current learning algorithms implement max margin learning,
+similar to SVM^struct.
+There is a subgradient and a QP version.
+It is possible to put positivity constraints on
+certain weight. There is also a simple perceptron.
+
+
+Inference solvers
+-----------------
+These perform inference: they run your model on data
+in order to make predictions.
 
 There are some options to use different solvers for inference. A linear
 programming solver using GLPK is included. I have Python interfaces for several
