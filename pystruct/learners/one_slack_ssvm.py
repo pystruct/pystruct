@@ -373,6 +373,7 @@ class OneSlackSSVM(BaseSSVM):
         """
         print("Training 1-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 1
+        self.model.initialize(X, Y)
 
         # parse cache_tol parameter
         if self.cache_tol is None or self.cache_tol == 'auto':

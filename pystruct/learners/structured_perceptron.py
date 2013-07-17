@@ -92,7 +92,7 @@ class StructuredPerceptron(BaseSSVM):
             Training labels. Contains the strctured labels for inputs in X.
             Needs to have the same length as X.
         """
-
+        self.model.initialize(X, Y)
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
         if self.average is not False:

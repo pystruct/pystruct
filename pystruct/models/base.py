@@ -23,6 +23,10 @@ class StructuredModel(object):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
 
+    def initialize(self, X, Y):
+        # set any data-specific parameters in the model
+        pass
+
     def psi(self, x, y):
         raise NotImplementedError()
 

@@ -116,6 +116,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
         warm_start : boolean, default=False
             Whether to restart a previous fit.
         """
+        self.model.initialize(X, Y)
         print("Training latent subgradient structural SVM")
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(

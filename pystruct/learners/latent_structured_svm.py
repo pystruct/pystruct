@@ -48,6 +48,7 @@ class LatentSSVM(BaseSSVM):
         self.logger = logger
 
     def fit(self, X, Y, H_init=None):
+        self.model.initialize(X, Y)
         w = np.zeros(self.model.size_psi)
         constraints = None
         ws = []

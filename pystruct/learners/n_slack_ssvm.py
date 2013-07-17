@@ -236,6 +236,7 @@ class NSlackSSVM(BaseSSVM):
         """
         print("Training n-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 1
+        self.model.initialize(X, Y)
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         stopping_criterion = False
