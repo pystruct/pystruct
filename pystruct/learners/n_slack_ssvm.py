@@ -240,7 +240,7 @@ class NSlackSSVM(BaseSSVM):
             objective = self._solve_n_slack_qp(constraints, n_samples)
         loss_curve = []
         objective_curve = []
-        self.alphas = []  # dual solutions
+        self.alphas = [[] for i in xrange(n_samples)]  # dual solutions
         # we have to update at least once after going through the dataset
         for iteration in xrange(self.max_iter):
             # main loop
@@ -268,10 +268,10 @@ class NSlackSSVM(BaseSSVM):
                                                          self.w)
                                                      for x, y in zip(X_b, Y_b))
 
-                # for each slice, gather new constraints
+                # for each batch, gather new constraints
                 for i, x, y, constraint in zip(indices_b, X_b, Y_b,
                                                candidate_constraints):
-                    # loop over dataset
+                    # loop over samples in batch
                     y_hat, delta_psi, slack, loss = constraint
 
                     if self.verbose > 3:
@@ -324,10 +324,17 @@ class NSlackSSVM(BaseSSVM):
         return self
 
     def prune_constraints(self, constraints, a):
-        pass
-        # FIXME
         # append list for new constraint
-        #self.alphas.extend([[] for i in xrange(len(a) - len(self.alphas))])
+        # self.alpha is a list which has
+        # an entry per sample. each sample has an int for each constraint,
+        # saying when was it last used
+        k = 0
+        for i, sample in enumerate(constraints):
+            n_new_constraints_sample = len(self.alphas[i])
+            if n_new_constraints_sample < len(sample):
+                self.alphas[i] = np.hstack([self.alphas[i], [0]])
+            k += n_new_constraints_sample
+            assert(len(sample) == len(self.alphas[i]))
         #flat_constraints = [constraint for sample in constraints for
         #constraint #in sample]
         #assert(len(self.alphas) == len(flat_constraints))
