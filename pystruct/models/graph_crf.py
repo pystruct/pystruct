@@ -36,11 +36,15 @@ class GraphCRF(CRF):
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
+
+    warm_starts : bool, default=False
+        Whether to warm-start loss augmented inference with previous results.
+        Not supported for all inference procedures.
     """
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
-                 class_weight=None):
+                 class_weight=None, warm_starts=False):
         CRF.__init__(self, n_states, n_features, inference_method,
-                     class_weight=class_weight)
+                     class_weight=class_weight, warm_starts=warm_starts)
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = (n_states * self.n_features
                          + n_states * (n_states + 1) / 2)

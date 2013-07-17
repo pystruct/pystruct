@@ -55,11 +55,16 @@ class GridCRF(GraphCRF):
     neighborhood : int, default=4
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
+
+    warm_starts : bool, default=False
+        Whether to warm-start loss augmented inference with previous results.
+        Not supported for all inference procedures.
     """
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
-                 neighborhood=4):
+                 neighborhood=4, warm_starts=False):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
-                          inference_method=inference_method)
+                          inference_method=inference_method,
+                          warm_starts=warm_starts)
         self.neighborhood = neighborhood
 
     def get_edges(self, x):

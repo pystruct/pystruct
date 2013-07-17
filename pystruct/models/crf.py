@@ -1,4 +1,5 @@
 import numpy as np
+from hashlib import sha1
 
 from .base import StructuredModel
 from ..inference import inference_dispatch
@@ -7,10 +8,13 @@ from ..inference import inference_dispatch
 class CRF(StructuredModel):
     """Abstract base class"""
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
-                 class_weight=None):
+                 class_weight=None, warm_starts=False):
         self.n_states = n_states
         self.inference_method = inference_method
         self.inference_calls = 0
+        self.warm_starts = warm_starts
+        if self.warm_starts:
+            self.cache_ = {}
         if n_features is None:
             # backward compatibilty hack
             n_features = n_states
@@ -99,9 +103,19 @@ class CRF(StructuredModel):
             mask = y != l
             unary_potentials[mask, l] += self.class_weight[y][mask]
 
-        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                                  self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy)
+        if self.warm_starts and x in self.cache_.keys():
+            init = self.cache_[sha1(x).hexdigest()]
+            print("loading init")
+        else:
+            init = None
+
+        result = inference_dispatch(unary_potentials, pairwise_potentials,
+                                    edges, self.inference_method,
+                                    relaxed=relaxed,
+                                    return_energy=return_energy, init=init)
+        if self.warm_starts:
+            self.cache_[sha1(x).hexdigest()] = result
+        return result
 
     def inference(self, x, w, relaxed=False, return_energy=False):
         """Inference for x using parameters w.

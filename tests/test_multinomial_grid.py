@@ -44,7 +44,7 @@ def test_multinomial_blocks_subgradient():
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10, momentum=.98,
-                          learning_rate=0.001)
+                          learning_rate=0.001, verbose=10)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

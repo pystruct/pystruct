@@ -227,7 +227,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     return res
 
 
-def inference_qpbo(unary_potentials, pairwise_potentials, edges):
+def inference_qpbo(unary_potentials, pairwise_potentials, edges, init=None):
     """Inference with PyQPBO backend.
 
     Used QPBO-I based move-making for undergenerating inference.
@@ -264,7 +264,7 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
 
 
 def inference_dai(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='jt'):
+                  return_energy=False, alg='jt', init=None):
     """Inference with LibDAI backend.
 
     Parameters
@@ -307,7 +307,7 @@ def inference_dai(unary_potentials, pairwise_potentials, edges,
 
 
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                 return_energy=False):
+                 return_energy=False, init=None):
     """Inference with build-in LP solver using GLPK backend.
 
     Parameters
@@ -358,7 +358,8 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False):
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  init=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -415,7 +416,8 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     return y
 
 
-def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0):
+def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
+                      init=None):
     """Inference that only uses unary potentials.
 
     This methods can be used as a sanity check, as acceleration if no
