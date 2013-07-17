@@ -6,9 +6,11 @@ from ..inference import inference_dispatch
 
 class CRF(StructuredModel):
     """Abstract base class"""
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+    def __init__(self, n_states=2, n_features=None, inference_method=None,
                  class_weight=None):
         self.n_states = n_states
+        if inference_method is None:
+            inference_method = 'ad3'
         self.inference_method = inference_method
         self.inference_calls = 0
         if n_features is None:
