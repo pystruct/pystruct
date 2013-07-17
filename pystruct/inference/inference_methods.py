@@ -160,8 +160,14 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
             * 'bp' for Loopy Belief Propagation.
             * 'dd' for Dual Decomposition via Subgradients.
             * 'trws' for Vladimirs TRWs implementation.
+            * 'trw' for OGM  TRW.
             * 'gibbs' for Gibbs sampling.
             * 'lf' for Lazy Flipper
+            * 'fm' for Fusion Moves (alpha-expansion fusion)
+            * 'dyn' for Dynamic Programming (message passing in trees)
+            * 'gc' for Graph Cut
+            * 'alphaexp' for Alpha Expansion using Graph Cuts
+            * 'mqpbo' for multi-label qpbo
 
     init : nd-array
         Initial solution for starting inference (ignored by some algorithms).
@@ -194,6 +200,20 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         inference = opengm.inference.Gibbs(gm)
     elif alg == 'lf':
         inference = opengm.inference.LazyFlipper(gm)
+    elif alg == 'icm':
+        inference = opengm.inference.Icm(gm)
+    elif alg == 'dyn':
+        inference = opengm.inference.DynamicProgramming(gm)
+    elif alg == 'fm':
+        inference = opengm.inference.AlphaExpansionFusion(gm)
+    elif alg == 'gc':
+        inference = opengm.inference.GraphCut(gm)
+    elif alg == 'loc':
+        inference = opengm.inference.Loc(gm)
+    elif alg == 'mqpbo':
+        inference = opengm.inference.Mqpbo(gm)
+    elif alg == 'alphaexp':
+        inference = opengm.inference.AlphaExpansion(gm)
     if init is not None:
         inference.setStartingPoint(init)
 
