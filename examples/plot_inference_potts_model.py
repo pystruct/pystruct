@@ -70,6 +70,9 @@ diverse_methods = get_installed(['ad3', 'qpbo', 'unary', 'lp',
                                  ('ogm', {'alg': 'trw'}),
                                  ('ogm', {'alg': 'gibbs'}),
                                  ('ogm', {'alg': 'fm'}),
+                                 ('ogm', {'alg': 'icm'}),
+                                 ('ogm', {'alg': 'alphaexp'}),
+                                 ('ogm', {'alg': 'mqpbo'}),
                                  ('ogm', {'alg': 'lf'}), ])
 
 fast_methods = get_installed(['qpbo', 'unary',
@@ -77,10 +80,16 @@ fast_methods = get_installed(['qpbo', 'unary',
                               ('ogm', {'alg': 'fm'}),
                               ('ogm', {'alg': 'trw'}),
                               ('ogm', {'alg': 'dd'}),
+                              ('ogm', {'alg': 'icm'}),
+                              ('ogm', {'alg': 'alphaexp'}),
+                              ('ogm', {'alg': 'mqpbo'}),
                               ('ogm', {'alg': 'lf'}), ])
 
 very_fast_methods = get_installed(['qpbo', 'unary',
                                    ('ogm', {'alg': 'fm'}),
+                                   ('ogm', {'alg': 'icm'}),
+                                   ('ogm', {'alg': 'alphaexp'}),
+                                   ('ogm', {'alg': 'mqpbo'}),
                                    ('ogm', {'alg': 'lf'}), ])
 
 rnd = np.random.RandomState(2)
