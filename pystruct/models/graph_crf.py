@@ -39,13 +39,19 @@ class GraphCRF(CRF):
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None):
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = (n_states * self.n_features
-                         + n_states * (n_states + 1) / 2)
+        if n_features is not None and n_states is not None:
+            self.size_psi = (n_states * self.n_features
+                             + n_states * (n_states + 1) / 2)
+
+    def initialize(self, X, Y):
+        CRF.initialize(self, X, Y)
+        self.size_psi = (self.n_states * self.n_features
+                         + self.n_states * (self.n_states + 1) / 2)
 
     def get_edges(self, x):
         return x[1]

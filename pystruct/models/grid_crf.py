@@ -56,7 +56,7 @@ class GridCRF(GraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  neighborhood=4):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
@@ -132,14 +132,20 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+    def __init__(self, n_states=None, n_features=None, inference_method='lp',
                  neighborhood=4):
         GridCRF.__init__(self, n_states, n_features,
                          inference_method=inference_method,
                          neighborhood=neighborhood)
         self.n_edge_types = 2 if neighborhood == 4 else 4
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_types * n_states ** 2)
+        if n_features is not None and n_states is not None:
+            self.size_psi = (n_states * self.n_features
+                             + self.n_edge_types * n_states ** 2)
+
+    def initialize(self, X, Y):
+        GridCRF.initialize(self, X, Y)
+        self.size_psi = (self.n_states * self.n_features
+                         + self.n_edge_types * self.n_states ** 2)
 
     def get_edges(self, x, flat=True):
         return make_grid_edges(x, neighborhood=self.neighborhood,

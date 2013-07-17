@@ -6,7 +6,7 @@ from ..inference import inference_dispatch, get_installed
 
 class CRF(StructuredModel):
     """Abstract base class"""
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None):
         self.n_states = n_states
         if inference_method is None:
@@ -14,9 +14,6 @@ class CRF(StructuredModel):
             inference_method = get_installed(['ad3', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
-        if n_features is None:
-            # backward compatibilty hack
-            n_features = n_states
         self.n_features = n_features
 
         if class_weight is not None:
@@ -31,6 +28,21 @@ class CRF(StructuredModel):
             self.class_weight = np.array(class_weight)
         else:
             self.class_weight = np.ones(n_states)
+
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_states = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_states is None:
+            self.n_states = n_states
+        elif self.n_states != n_states:
+            raise ValueError("Expected %d states, got %d"
+                             % (self.n_states, n_states))
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s)"

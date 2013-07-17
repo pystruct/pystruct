@@ -100,8 +100,6 @@ class LatentGraphCRF(GraphCRF):
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
                  inference_method=None):
         self.n_labels = n_labels
-        if n_features is None:
-            n_features = n_labels
 
         if isinstance(n_states_per_label, numbers.Integral):
             # same for all labels
@@ -125,6 +123,11 @@ class LatentGraphCRF(GraphCRF):
 
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method)
+
+    def initialize(self, X, Y):
+        CRF.initialize(self, X, Y)
+        self.size_psi = (self.n_states * self.n_features
+                         + self.n_states * (self.n_states + 1) / 2)
 
     def label_from_latent(self, h):
         return self._states_map[h]

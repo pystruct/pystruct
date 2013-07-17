@@ -19,6 +19,7 @@ def test_continuous_y():
                       -4, 0])
 
         crf = GridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         psi = crf.psi(x, y)
         y_cont = np.zeros_like(x)
         gx, gy = np.indices(x.shape[:-1])
@@ -75,6 +76,7 @@ def test_loss_augmentation():
                   0,     # pairwise
                   -4, 0])
     crf = GridCRF()
+    crf.initialize(X, Y)
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
 
     assert_almost_equal(energy + crf.loss(y, y_hat),
@@ -90,6 +92,7 @@ def test_binary_blocks_crf():
                   -4, 0])
     for inference_method in get_installed(['dai', 'qpbo', 'lp', 'ad3', 'ogm']):
         crf = GridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
 
@@ -102,6 +105,7 @@ def test_binary_blocks_crf_n8_lp():
                   1,     # pairwise
                   -1.4, 1])
     crf = GridCRF(neighborhood=8)
+    crf.initialize(X, Y)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
 
@@ -116,7 +120,8 @@ def test_blocks_multinomial_crf():
                  -.3, .3,
                  -.5, -.1, .3])
     for inference_method in get_installed():
-        crf = GridCRF(n_states=3, inference_method=inference_method)
+        crf = GridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         y_hat = crf.inference(x, w)
         assert_array_equal(y, y_hat)
 
@@ -129,6 +134,7 @@ def test_binary_grid_unaries():
         for inference_method in get_installed():
             # dai is to expensive
             crf = GridCRF(inference_method=inference_method)
+            crf.initialize(X, Y)
             w_unaries_only = np.zeros(7)
             w_unaries_only[:4] = np.eye(2).ravel()
             # test that inference with unaries only is the
@@ -161,6 +167,7 @@ def test_multinomial_grid_unaries():
         for inference_method in get_installed():
             # dai is to expensive
             crf = GridCRF(n_states=n_labels, inference_method=inference_method)
+            crf.initialize(X, Y)
             w_unaries_only = np.zeros(crf.size_psi)
             w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
             # test that inference with unaries only is the
@@ -181,7 +188,7 @@ def test_binary_crf_exhaustive():
     for i in xrange(10):
         x = np.random.uniform(-1, 1, size=(3, 2))
         x = np.dstack([-x, np.zeros_like(x)]).copy()
-        crf = GridCRF()
+        crf = GridCRF(n_features=2, n_states=2)
         w = np.random.uniform(-1, 1, size=7)
         # check map inference
         y_hat = crf.inference(x, w)
@@ -194,7 +201,8 @@ def test_binary_crf_exhaustive_loss_augmented():
     # on random data / weights
     np.random.seed(0)
     for inference_method in get_installed(['qpbo', 'lp']):
-        crf = GridCRF(inference_method=inference_method)
+        crf = GridCRF(n_states=2, n_features=2,
+                      inference_method=inference_method)
         for i in xrange(10):
             # generate data and weights
             y = np.random.randint(2, size=(3, 2))

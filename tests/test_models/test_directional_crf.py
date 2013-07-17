@@ -42,7 +42,8 @@ def test_inference():
 
     for inference_method in get_installed(["lp", "ad3"]):
         # same inference through CRF inferface
-        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        crf = DirectionalGridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
         if isinstance(y_pred, tuple):
@@ -53,7 +54,8 @@ def test_inference():
 
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
-        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        crf = DirectionalGridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=False)
         assert_array_equal(y, y_pred)
@@ -63,7 +65,8 @@ def test_psi_discrete():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
-        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        crf = DirectionalGridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         psi_y = crf.psi(x, y)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first horizontal, then vertical
@@ -98,7 +101,8 @@ def test_psi_continuous():
 
     # create crf, assemble weight, make prediction
     for inference_method in get_installed(["lp", "ad3"]):
-        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        crf = DirectionalGridCRF(inference_method=inference_method)
+        crf.initialize(X, Y)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
 
@@ -118,7 +122,8 @@ def test_energy():
     np.random.seed(0)
     for inference_method in get_installed(["lp", "ad3"]):
         found_fractional = False
-        crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
+        crf = DirectionalGridCRF(n_states=3, n_features=3,
+                                 inference_method=inference_method)
         while not found_fractional:
             x = np.random.normal(size=(7, 8, 3))
             unary_params = np.random.normal(size=(3, 3))
