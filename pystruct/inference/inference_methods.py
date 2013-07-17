@@ -15,7 +15,7 @@ def get_installed(method_filter=None):
         try:
             inference_dispatch(unary, pw, edges, inference_method=method)
             installed.append(method)
-        except ImportError :
+        except ImportError:
             pass
     return installed
 
@@ -76,8 +76,9 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'dai' for libDAI wrappers (default to junction tree).
             * 'lp' for build-in lp relaxation via GLPK (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
-            * 'ad3bb' for AD^3 base branch-and-bound.
             * 'ogm' for OpenGM wrappers.
+        It is also possible to pass a tuple (string, dict) where the dict
+        contains additional keyword arguments.
 
     relaxed : bool (default=False)
         Whether to return a relaxed solution (when appropriate)
@@ -96,6 +97,12 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         If relaxed=True, this is a tuple of unary and pairwise "marginals"
         from the LP relaxation.
     """
+    if isinstance(inference_method, tuple):
+        additional_kwargs = inference_method[1]
+        inference_method = inference_method[0]
+        # append additional_kwargs, but take care not to modify the dicts we
+        # got
+        kwargs = dict(additional_kwargs.items() + kwargs.items())
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
@@ -109,10 +116,6 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
                              relaxed=relaxed, return_energy=return_energy,
                              **kwargs)
-    elif inference_method == "ad3bb":
-        return inference_ad3(unary_potentials, pairwise_potentials, edges,
-                             relaxed=relaxed, return_energy=return_energy,
-                             branch_and_bound=True, **kwargs)
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)

@@ -437,7 +437,8 @@ class OneSlackSSVM(BaseSSVM):
                         if (self.switch_to is not None
                                 and self.model.inference_method !=
                                 self.switch_to):
-                            print("Switching to %s inference" % self.switch_to)
+                            print("Switching to %s inference" %
+                                  str(self.switch_to))
                             self.model.inference_method_ = \
                                 self.model.inference_method
                             self.model.inference_method = self.switch_to
@@ -504,7 +505,5 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
                   % (primal_objective, primal_objective - objective))
-        if hasattr(self.model, 'inference_method_'):
-            self.model.inference_method = self.model.inference_method_
 
         return self

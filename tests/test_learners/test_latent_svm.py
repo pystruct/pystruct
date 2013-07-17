@@ -118,15 +118,13 @@ def test_switch_to_ad3():
 
     base_ssvm = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000,
-                             switch_to='ad3bb', C=10. ** 3)
+                             switch_to=('ad3', {'branch_and_bound': True}),
+                             C=10. ** 3)
     clf = LatentSSVM(base_ssvm)
 
     clf.fit(X, Y, H_init=H_init)
-    # we actually switch back from ad3bb to the original
-    assert_equal(clf.model.inference_method, "qpbo")
+    assert_equal(clf.model.inference_method[0], 'ad3')
 
-    # unfortunately this test only works with ad3
-    clf.base_ssvm.model.inference_method = 'ad3bb'
     Y_pred = clf.predict(X)
 
     assert_array_equal(np.array(Y_pred), Y)
