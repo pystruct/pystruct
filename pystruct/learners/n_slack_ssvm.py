@@ -235,12 +235,13 @@ class NSlackSSVM(BaseSSVM):
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         if constraints is None:
+            # fresh start
             constraints = [[] for i in xrange(n_samples)]
+            self.last_active = [[] for i in xrange(n_samples)]
+            self.objective_curve_ = []
         else:
+            # warm start
             objective = self._solve_n_slack_qp(constraints, n_samples)
-        loss_curve = []
-        self.objective_curve_ = []
-        self.last_active = [[] for i in xrange(n_samples)]
         # we have to update at least once after going through the dataset
         for iteration in xrange(self.max_iter):
             # main loop
@@ -262,12 +263,10 @@ class NSlackSSVM(BaseSSVM):
                 X_b = X[batch]
                 Y_b = Y[batch]
                 indices_b = indices[batch]
-                candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                                 verbose=verbose)(
-                                                     delayed(find_constraint)(
-                                                         self.model, x, y,
-                                                         self.w)
-                                                     for x, y in zip(X_b, Y_b))
+                candidate_constraints = Parallel(
+                    n_jobs=self.n_jobs, verbose=verbose)(
+                        delayed(find_constraint)(self.model, x, y, self.w) for
+                        x, y in zip(X_b, Y_b))
 
                 # for each batch, gather new constraints
                 for i, x, y, constraint in zip(indices_b, X_b, Y_b,
@@ -318,7 +317,6 @@ class NSlackSSVM(BaseSSVM):
                 self.logger(self, iteration)
 
         self.constraints_ = constraints
-        self.loss_curve_ = loss_curve
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         return self
