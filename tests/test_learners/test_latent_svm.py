@@ -67,10 +67,10 @@ def test_with_crosses_bad_init():
     one_slack = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000)
     n_slack = NSlackSSVM(crf)
-    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=5)
+    subgradient = SubgradientSSVM(crf, max_iter=50, learning_rate=.1)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
-        base_ssvm.C = 10. ** 3
+        base_ssvm.C = 10.
         base_ssvm.n_jobs = -1
         clf = LatentSSVM(base_ssvm)
 
