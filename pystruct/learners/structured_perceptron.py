@@ -127,8 +127,9 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            self.w += effective_lr * (self.model.psi(x, y) -
-                                                      self.model.psi(x, y_hat))
+                            psi_y = self.model.joint_features(x, y)
+                            psi_y_hat = self.model.joint_features(x, y)
+                            self.w += effective_lr * (psi_y - psi_y_hat)
                     if self.average is not False and iteration >= self.average:
                         n_obs += 1
                         w_bar = ((1 - 1. / n_obs) * w_bar +
@@ -140,8 +141,9 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            self.w += effective_lr * (self.model.psi(x, y) -
-                                                      self.model.psi(x, y_hat))
+                            psi_y = self.model.joint_features(x, y)
+                            psi_y_hat = self.model.joint_features(x, y)
+                            self.w += effective_lr * (psi_y - psi_y_hat)
                         if (self.average is not False and
                                 iteration >= self.average):
                             n_obs += 1

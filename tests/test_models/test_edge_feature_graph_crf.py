@@ -74,7 +74,7 @@ def test_inference():
         assert_array_equal(y, y_pred)
 
 
-def test_psi_discrete():
+def test_joint_features_discrete():
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     edge_list = make_grid_edges(x, 4, return_lists=True)
@@ -86,7 +86,7 @@ def test_psi_discrete():
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
-        psi_y = crf.psi(x, y_flat)
+        psi_y = crf.joint_features(x, y_flat)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first horizontal, then vertical
         # we trust the unaries ;)
@@ -101,7 +101,7 @@ def test_psi_discrete():
         assert_array_equal(pw_psi_horz, vert_psi)
 
 
-def test_psi_continuous():
+def test_joint_features_continuous():
     # FIXME
     # first make perfect prediction, including pairwise part
     X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
@@ -132,7 +132,7 @@ def test_psi_continuous():
         y_pred = crf.inference(x, w, relaxed=True)
 
         # compute psi for prediction
-        psi_y = crf.psi(x, y_pred)
+        psi_y = crf.joint_features(x, y_pred)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # FIXME
         # first horizontal, then vertical
@@ -165,7 +165,7 @@ def test_energy_continuous():
             res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
             found_fractional = np.any(np.max(res[0], axis=-1) != 1)
 
-            psi = crf.psi(x, res)
+            psi = crf.joint_features(x, res)
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, -energy_svm)
@@ -192,7 +192,7 @@ def test_energy_discrete():
                                     crf.get_pairwise_potentials(x, w), edges,
                                     y_hat)
 
-            psi = crf.psi(x, y_hat)
+            psi = crf.joint_features(x, y_hat)
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, energy_svm)

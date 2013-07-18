@@ -123,7 +123,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration
@@ -181,5 +181,5 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         unaries_acc = np.dot(unary_marginals.T, features)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
-        return psi_vector
+        psi = np.hstack([unaries_acc.ravel(), pw.ravel()])
+        return psi

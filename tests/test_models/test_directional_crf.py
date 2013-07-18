@@ -64,7 +64,7 @@ def test_psi_discrete():
     x, y = X[0], Y[0]
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         crf = DirectionalGridCRF(n_states=3, inference_method=inference_method)
-        psi_y = crf.psi(x, y)
+        psi_y = crf.joint_features(x, y)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first horizontal, then vertical
         # we trust the unaries ;)
@@ -103,7 +103,7 @@ def test_psi_continuous():
         y_pred = crf.inference(x, w, relaxed=True)
 
         # compute psi for prediction
-        psi_y = crf.psi(x, y_pred)
+        psi_y = crf.joint_features(x, y_pred)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first horizontal, then vertical
         # we trust the unaries ;)
@@ -128,7 +128,7 @@ def test_energy():
             res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
             found_fractional = np.any(np.max(res[0], axis=-1) != 1)
 
-            psi = crf.psi(x, res)
+            psi = crf.joint_features(x, res)
             energy_svm = np.dot(psi, w)
 
             assert_almost_equal(energy, -energy_svm)
@@ -136,7 +136,7 @@ def test_energy():
                 # exact discrete labels, test non-relaxed version
                 res, energy = crf.inference(x, w, relaxed=False,
                                             return_energy=True)
-                psi = crf.psi(x, res)
+                psi = crf.joint_features(x, res)
                 energy_svm = np.dot(psi, w)
 
                 assert_almost_equal(energy, -energy_svm)

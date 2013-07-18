@@ -240,7 +240,7 @@ class LatentNodeCRF(GraphCRF):
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration
@@ -528,7 +528,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration

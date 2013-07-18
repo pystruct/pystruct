@@ -23,7 +23,7 @@ class MultiLabelModel(CRF):
             self.edges.shape[0], self.n_states, self.n_states)
         return pairwise_params
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         if isinstance(y, tuple):
             from IPython.core.debugger import Tracer
             Tracer()()

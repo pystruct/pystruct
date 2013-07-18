@@ -101,7 +101,7 @@ class GraphCRF(CRF):
 
         return np.dot(features, unary_params.T)
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration
@@ -150,9 +150,9 @@ class GraphCRF(CRF):
         unaries_acc = np.dot(unary_marginals.T, features)
         pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
-        return psi_vector
+        psi = np.hstack([unaries_acc.ravel(),
+                         pw[np.tri(self.n_states, dtype=np.bool)]])
+        return psi
 
 
 class EdgeTypeGraphCRF(GraphCRF):
@@ -201,7 +201,7 @@ class EdgeTypeGraphCRF(GraphCRF):
             return np.vstack(x[1])
         return x[1]
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration

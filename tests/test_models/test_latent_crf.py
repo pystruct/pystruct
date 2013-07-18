@@ -148,8 +148,8 @@ def test_blocks_crf_directional():
     h_hat_d = directional_crf.loss_augmented_inference(x, y, w_directional)
     assert_array_equal(h_hat, h_hat_d)
 
-    psi = crf.psi(x, h_hat)
-    psi_d = directional_crf.psi(x, h_hat)
+    psi = crf.joint_features(x, h_hat)
+    psi_d = directional_crf.joint_features(x, h_hat)
     assert_array_equal(np.dot(psi, w), np.dot(psi_d, w_directional))
 
 
@@ -185,8 +185,8 @@ def test_loss_augmented_inference_energy_graph():
         h_hat, energy = crf.loss_augmented_inference((x, e), y * 2, w,
                                                      relaxed=True,
                                                      return_energy=True)
-        assert_almost_equal(-energy, np.dot(w, crf.psi((x, e), h_hat))
-                            + crf.loss(y * 2, h_hat))
+        psi = crf.joint_features((x, e), h_hat)
+        assert_almost_equal(-energy, np.dot(w, psi) + crf.loss(y * 2, h_hat))
 
 
 def test_latent_consistency_zero_pw_grid():
@@ -232,7 +232,7 @@ def test_continuous_y():
 
         crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
                             inference_method=inference_method)
-        psi = crf.psi(x, y)
+        psi = crf.joint_features(x, y)
         y_cont = np.zeros_like(x)
         gx, gy = np.indices(x.shape[:-1])
         y_cont[gx, gy, y] = 1
@@ -244,7 +244,7 @@ def test_continuous_y():
                       y_cont[:, :-1, :].reshape(-1, 2))
         pw = vert + horz
 
-        psi_cont = crf.psi(x, (y_cont, pw))
+        psi_cont = crf.joint_features(x, (y_cont, pw))
         assert_array_almost_equal(psi, psi_cont)
 
         const = find_constraint(crf, x, y, w, relaxed=False)

@@ -145,7 +145,7 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
         return make_grid_edges(x, neighborhood=self.neighborhood,
                                return_lists=not flat)
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Feature vector associated with instance (x, y).
 
         Feature representation psi, such that the energy of the configuration
@@ -171,7 +171,7 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
             Feature vector associated with state (x, y).
 
         """
-        return EdgeTypeGraphCRF.psi(self, x, y)
+        return EdgeTypeGraphCRF.joint_features(self, x, y)
 
     def get_pairwise_potentials(self, x, w):
         return EdgeTypeGraphCRF.get_pairwise_potentials(self, x, w)

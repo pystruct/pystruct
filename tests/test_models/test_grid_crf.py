@@ -19,7 +19,7 @@ def test_continuous_y():
                       -4, 0])
 
         crf = GridCRF(inference_method=inference_method)
-        psi = crf.psi(x, y)
+        psi = crf.joint_features(x, y)
         y_cont = np.zeros_like(x)
         gx, gy = np.indices(x.shape[:-1])
         y_cont[gx, gy, y] = 1
@@ -31,7 +31,7 @@ def test_continuous_y():
                       y_cont[:, :-1, :].reshape(-1, 2))
         pw = vert + horz
 
-        psi_cont = crf.psi(x, (y_cont, pw))
+        psi_cont = crf.joint_features(x, (y_cont, pw))
         assert_array_almost_equal(psi, psi_cont)
 
         const = find_constraint(crf, x, y, w, relaxed=False)
@@ -63,7 +63,7 @@ def test_energy_lp():
             inf_res, energy_lp = crf.inference(x, w, relaxed=True,
                                                return_energy=True)
             assert_almost_equal(energy_lp,
-                                -np.dot(w, crf.psi(x, inf_res)))
+                                -np.dot(w, crf.joint_features(x, inf_res)))
             found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
 
 
@@ -78,7 +78,7 @@ def test_loss_augmentation():
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
 
     assert_almost_equal(energy + crf.loss(y, y_hat),
-                        -np.dot(w, crf.psi(x, y_hat)))
+                        -np.dot(w, crf.joint_features(x, y_hat)))
 
 
 def test_binary_blocks_crf():
