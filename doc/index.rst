@@ -20,8 +20,9 @@ Introduction
 =============
 In order to do learning with PyStruct, you need to pick two or three things:
 a model structure, a learning algorithm and optionally an inference algorithm.
-By passing a model to a learning algorithm,
-you get an estimator.
+By constructing a learner object from a model,
+you get an object that can ``fit`` to training data
+and can ``predict`` for unseen data (just like scikit-learn estimators).
 
 
 Models, aka CRFs
@@ -29,8 +30,7 @@ Models, aka CRFs
 These determine what your model looks like:
 its graph structure and its loss function.
 
-These know about the structure of the model, the loss and the inference. This
-is basically the part that you have to write yourself when using the Python
+This is basically the part that you have to write yourself when using the Python
 interface in SVM^struct. I am currently working only on pairwise models and there is
 support for grids and general graphs. The SSVM implementations are agnostic
 to the kind of model that is used, so you can easily extend the given models
