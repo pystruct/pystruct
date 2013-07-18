@@ -279,13 +279,12 @@ def generate_easy_explicit(n_samples=5, noise=5):
     return X, Y
 
 
-def generate_crosses_explicit(n_samples=5, noise=30):
+def generate_crosses_explicit(n_samples=5, noise=30, size=9, n_crosses=2):
     np.random.seed(0)
-    size = 9
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    t_old, l_old = -3, -3
     for i in xrange(n_samples):
-        for j in xrange(2):
+        t_old, l_old = -3, -3
+        for j in xrange(n_crosses):
             while True:
                 t, l = np.random.randint(1, size - 3, size=2)
                 if np.abs(t - t_old) > 2 and np.abs(l - l_old):
