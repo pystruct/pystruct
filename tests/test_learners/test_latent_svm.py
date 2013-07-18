@@ -53,6 +53,7 @@ def test_with_crosses_base_svms():
 
 def test_with_crosses_bad_init():
     # use less perfect initialization
+    rnd = np.random.RandomState(0)
     X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
                                 total_size=8)
     X_test, Y_test = X[10:], Y[10:]
@@ -61,17 +62,17 @@ def test_with_crosses_bad_init():
     crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2)
     H_init = crf.init_latent(X, Y)
 
-    mask = np.random.uniform(size=H_init.shape) > .7
+    mask = rnd.uniform(size=H_init.shape) > .7
     H_init[mask] = 2 * (H_init[mask] / 2)
 
     one_slack = OneSlackSSVM(crf, inactive_threshold=1e-8, cache_tol=.0001,
                              inference_cache=50, max_iter=10000)
     n_slack = NSlackSSVM(crf)
-    subgradient = SubgradientSSVM(crf, max_iter=50, learning_rate=.1)
+    subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.01,
+                                  verbose=3, momentum=0)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
-        base_ssvm.C = 10.
-        base_ssvm.n_jobs = -1
+        base_ssvm.C = 10. ** 2
         clf = LatentSSVM(base_ssvm)
 
         clf.fit(X, Y, H_init=H_init)
