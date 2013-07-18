@@ -95,8 +95,8 @@ class NSlackSSVM(BaseSSVM):
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=0, positive_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
-                 tol=-10, inactive_threshold=1e-10,
-                 inactive_window=0, logger=None):
+                 tol=-10, inactive_threshold=1e-5,
+                 inactive_window=50, logger=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -161,14 +161,14 @@ class NSlackSSVM(BaseSSVM):
         self.old_solution = solution
 
         # Support vectors have non zero lagrange multipliers
-        sv = a > 1e-10
+        sv = a > self.inactive_threshold * C
         box = np.dot(blocks, a)
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
             # calculate per example box constraint:
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
-            print("dual objective: %f" % solution['primal objective'])
+            print("dual objective: %f" % -solution['primal objective'])
         self.w = np.dot(a, psi_matrix)
         return -solution['primal objective']
 
@@ -235,17 +235,19 @@ class NSlackSSVM(BaseSSVM):
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         if constraints is None:
+            # fresh start
             constraints = [[] for i in xrange(n_samples)]
+            self.last_active = [[] for i in xrange(n_samples)]
+            self.objective_curve_ = []
         else:
+            # warm start
             objective = self._solve_n_slack_qp(constraints, n_samples)
-        loss_curve = []
-        objective_curve = []
-        self.alphas = []  # dual solutions
         # we have to update at least once after going through the dataset
         for iteration in xrange(self.max_iter):
             # main loop
             if self.verbose > 0:
                 print("iteration %d" % iteration)
+                print(self)
             new_constraints = 0
             # generate slices through dataset from batch_size
             if self.batch_size < 1 and not self.batch_size == -1:
@@ -261,17 +263,15 @@ class NSlackSSVM(BaseSSVM):
                 X_b = X[batch]
                 Y_b = Y[batch]
                 indices_b = indices[batch]
-                candidate_constraints = Parallel(n_jobs=self.n_jobs,
-                                                 verbose=verbose)(
-                                                     delayed(find_constraint)(
-                                                         self.model, x, y,
-                                                         self.w)
-                                                     for x, y in zip(X_b, Y_b))
+                candidate_constraints = Parallel(
+                    n_jobs=self.n_jobs, verbose=verbose)(
+                        delayed(find_constraint)(self.model, x, y, self.w) for
+                        x, y in zip(X_b, Y_b))
 
-                # for each slice, gather new constraints
+                # for each batch, gather new constraints
                 for i, x, y, constraint in zip(indices_b, X_b, Y_b,
                                                candidate_constraints):
-                    # loop over dataset
+                    # loop over samples in batch
                     y_hat, delta_psi, slack, loss = constraint
 
                     if self.verbose > 3:
@@ -292,7 +292,7 @@ class NSlackSSVM(BaseSSVM):
                 # after processing the slice, solve the qp
                 if new_constraints_batch:
                     objective = self._solve_n_slack_qp(constraints, n_samples)
-                    objective_curve.append(objective)
+                    self.objective_curve_.append(objective)
                     new_constraints += new_constraints_batch
 
             if new_constraints == 0:
@@ -306,8 +306,8 @@ class NSlackSSVM(BaseSSVM):
                       "dual objective: %f" %
                       (new_constraints,
                        objective))
-            if (iteration > 1 and objective_curve[-1]
-                    - objective_curve[-2] < self.tol):
+            if (iteration > 1 and self.objective_curve_[-1]
+                    - self.objective_curve_[-2] < self.tol):
                 print("objective converged.")
                 break
             if self.verbose > 5:
@@ -317,36 +317,36 @@ class NSlackSSVM(BaseSSVM):
                 self.logger(self, iteration)
 
         self.constraints_ = constraints
-        self.loss_curve_ = loss_curve
-        self.objective_curve_ = objective_curve
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def prune_constraints(self, constraints, a):
-        pass
-        # FIXME
         # append list for new constraint
-        #self.alphas.extend([[] for i in xrange(len(a) - len(self.alphas))])
-        #flat_constraints = [constraint for sample in constraints for
-        #constraint #in sample]
-        #assert(len(self.alphas) == len(flat_constraints))
-        #for constraint, alpha in zip(self.alphas, a):
-            #constraint.append(alpha)
-            #constraint = constraint[-self.inactive_window:]
+        # self.alpha is a list which has
+        # an entry per sample. each sample has an int for each constraint,
+        # saying when was it last used
+        if self.inactive_window == 0:
+            return
+        k = 0
+        for i, sample in enumerate(constraints):
+            # if there are no constraints for this sample, do nothing:
+            if not len(sample):
+                continue
+            # add self.last_active for any new constraint
+            n_old_constraints_sample = len(self.last_active[i])
+            if n_old_constraints_sample < len(sample):
+                self.last_active[i] = np.hstack([self.last_active[i], [0]])
+            # if inactive, count up
+            inactive_this = (a[k:k + len(sample)] < self.inactive_threshold
+                             * self.C)
+            self.last_active[i][inactive_this] += 1
+            k += len(sample)
+            assert(len(sample) == len(self.last_active[i]))
 
-        ## prune unused constraints:
-        ## if the max of alpha in last 50 iterations was small, throw away
-        #if self.inactive_window != 0:
-            #max_active = [np.max(constr[-self.inactive_window:])
-                          #for constr in self.alphas]
-            ## find strongest constraint that is not ground truth constraint
-            #strongest = np.max(max_active[1:])
-            #inactive = max_active < self.inactive_threshold * strongest
-            #idx = 0
-            #for sample in constraints:
-                #for i, const in reversed(list(enumerate(sample))):
-                    #if inactive[idx]:
-                        #del const[i]
-                        #del self.alphas[idx]
-                    #idx += 1
+            # remove unused constraints:
+            to_remove = self.last_active[i] > self.inactive_window
+            self.last_active[i] = self.last_active[i][~to_remove]
+            for j in np.where(to_remove)[0]:
+                del sample[j]
+            assert(len(sample) == len(self.last_active[i]))
