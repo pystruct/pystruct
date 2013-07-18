@@ -6,6 +6,8 @@
 # Support Vector Machines Learning for Interdependent
 # and Structures Output Spaces
 
+from time import time
+
 import numpy as np
 import cvxopt
 import cvxopt.solvers
@@ -239,82 +241,98 @@ class NSlackSSVM(BaseSSVM):
             constraints = [[] for i in xrange(n_samples)]
             self.last_active = [[] for i in xrange(n_samples)]
             self.objective_curve_ = []
+            self.primal_objective_curve_ = []
+            self.timestamps_ = [time()]
         else:
             # warm start
             objective = self._solve_n_slack_qp(constraints, n_samples)
-        # we have to update at least once after going through the dataset
-        for iteration in xrange(self.max_iter):
-            # main loop
-            if self.verbose > 0:
-                print("iteration %d" % iteration)
-                print(self)
-            new_constraints = 0
-            # generate slices through dataset from batch_size
-            if self.batch_size < 1 and not self.batch_size == -1:
-                raise ValueError("batch_size should be integer >= 1 or -1,"
-                                 "got %s." % str(self.batch_size))
-            batch_size = self.batch_size if self.batch_size != -1 else len(X)
-            n_batches = int(np.ceil(float(len(X)) / batch_size))
-            slices = gen_even_slices(n_samples, n_batches)
-            indices = np.arange(n_samples)
-            for batch in slices:
-                new_constraints_batch = 0
-                verbose = max(0, self.verbose - 3)
-                X_b = X[batch]
-                Y_b = Y[batch]
-                indices_b = indices[batch]
-                candidate_constraints = Parallel(
-                    n_jobs=self.n_jobs, verbose=verbose)(
-                        delayed(find_constraint)(self.model, x, y, self.w) for
-                        x, y in zip(X_b, Y_b))
+        try:
+            # catch ctrl+c to stop training
+            # we have to update at least once after going through the dataset
+            for iteration in xrange(self.max_iter):
+                # main loop
+                self.timestamps_.append(time() - self.timestamps_[0])
+                if self.verbose > 0:
+                    print("iteration %d" % iteration)
+                    print(self)
+                new_constraints = 0
+                # generate slices through dataset from batch_size
+                if self.batch_size < 1 and not self.batch_size == -1:
+                    raise ValueError("batch_size should be integer >= 1 or -1,"
+                                     "got %s." % str(self.batch_size))
+                batch_size = (self.batch_size if self.batch_size != -1 else
+                              len(X))
+                n_batches = int(np.ceil(float(len(X)) / batch_size))
+                slices = gen_even_slices(n_samples, n_batches)
+                indices = np.arange(n_samples)
+                slack_sum = 0
+                for batch in slices:
+                    new_constraints_batch = 0
+                    verbose = max(0, self.verbose - 3)
+                    X_b = X[batch]
+                    Y_b = Y[batch]
+                    indices_b = indices[batch]
+                    candidate_constraints = Parallel(
+                        n_jobs=self.n_jobs, verbose=verbose)(
+                            delayed(find_constraint)(self.model, x, y, self.w)
+                            for x, y in zip(X_b, Y_b))
 
-                # for each batch, gather new constraints
-                for i, x, y, constraint in zip(indices_b, X_b, Y_b,
-                                               candidate_constraints):
-                    # loop over samples in batch
-                    y_hat, delta_psi, slack, loss = constraint
+                    # for each batch, gather new constraints
+                    for i, x, y, constraint in zip(indices_b, X_b, Y_b,
+                                                   candidate_constraints):
+                        # loop over samples in batch
+                        y_hat, delta_psi, slack, loss = constraint
+                        slack_sum += slack
 
-                    if self.verbose > 3:
-                        print("current slack: %f" % slack)
+                        if self.verbose > 3:
+                            print("current slack: %f" % slack)
 
-                    if not loss > 0:
-                        # can have y != y_hat but loss = 0 in latent svm.
-                        # we need this here as dpsi is then != 0
-                        continue
+                        if not loss > 0:
+                            # can have y != y_hat but loss = 0 in latent svm.
+                            # we need this here as dpsi is then != 0
+                            continue
 
-                    if self._check_bad_constraint(y_hat, slack,
-                                                  constraints[i]):
-                        continue
+                        if self._check_bad_constraint(y_hat, slack,
+                                                      constraints[i]):
+                            continue
 
-                    constraints[i].append([y_hat, delta_psi, loss])
-                    new_constraints_batch += 1
+                        constraints[i].append([y_hat, delta_psi, loss])
+                        new_constraints_batch += 1
 
-                # after processing the slice, solve the qp
-                if new_constraints_batch:
-                    objective = self._solve_n_slack_qp(constraints, n_samples)
-                    self.objective_curve_.append(objective)
-                    new_constraints += new_constraints_batch
+                    # after processing the slice, solve the qp
+                    if new_constraints_batch:
+                        objective = self._solve_n_slack_qp(constraints,
+                                                           n_samples)
+                        new_constraints += new_constraints_batch
 
-            if new_constraints == 0:
-                print("no additional constraints")
-                break
+                self.objective_curve_.append(objective)
+                self._compute_training_loss(X, Y, iteration)
 
-            self._compute_training_loss(X, Y, iteration)
+                primal_objective = (self.C
+                                    * slack_sum
+                                    + np.sum(self.w ** 2) / 2)
+                self.primal_objective_curve_.append(primal_objective)
 
-            if self.verbose > 0:
-                print("new constraints: %d, "
-                      "dual objective: %f" %
-                      (new_constraints,
-                       objective))
-            if (iteration > 1 and self.objective_curve_[-1]
-                    - self.objective_curve_[-2] < self.tol):
-                print("objective converged.")
-                break
-            if self.verbose > 5:
-                print(self.w)
+                if self.verbose > 0:
+                    print("new constraints: %d, "
+                          "cutting plane objective: %f primal objective: %f" %
+                          (new_constraints, objective, primal_objective))
 
-            if self.logger is not None:
-                self.logger(self, iteration)
+                if new_constraints == 0:
+                    print("no additional constraints")
+                    break
+
+                if (iteration > 1 and self.objective_curve_[-1]
+                        - self.objective_curve_[-2] < self.tol):
+                    print("objective converged.")
+                    break
+                if self.verbose > 5:
+                    print(self.w)
+
+                if self.logger is not None:
+                    self.logger(self, iteration)
+        except KeyboardInterrupt:
+            pass
 
         self.constraints_ = constraints
         if self.verbose and self.n_jobs == 1:
