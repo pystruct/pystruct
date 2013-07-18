@@ -10,7 +10,7 @@ might follow.
 The goal of PyStruct is to provide a well-documented tool for researchers as well as non-experts
 to make use of structured prediction algorithms.
 The design tries to stay as close as possible to the interface and conventions
-of [scikit-learn](scikit-learn.org).
+of [scikit-learn](http://scikit-learn.org).
 
 Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
 I plan a stable release soon.
