@@ -60,7 +60,7 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     LatentGridCRF function - that simply works because the feature are right.
     """
     def __init__(self, n_labels, n_features=None, n_states_per_label=2,
-                 inference_method='lp', neighborhood=4):
+                 inference_method=None, neighborhood=4):
         LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
         DirectionalGridCRF.__init__(self, self.n_states, self.n_features,

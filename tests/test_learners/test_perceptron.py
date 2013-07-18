@@ -100,7 +100,7 @@ def test_averaged():
     X, Y = toy.generate_blocks_multinomial(n_samples=15, noise=2, seed=0)
     X_train, Y_train = X[:10], Y[:10]
     X_test, Y_test = X[10:], Y[10:]
-    crf = GridCRF(n_states=X.shape[-1])
+    crf = GridCRF(n_states=X.shape[-1], inference_method='lp')
     clf = StructuredPerceptron(model=crf, max_iter=3)
     clf.fit(X_train, Y_train)
     no_avg_test = clf.score(X_test, Y_test)

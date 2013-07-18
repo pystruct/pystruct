@@ -43,7 +43,7 @@ class GridCRF(GraphCRF):
     n_states : int, default=2
         Number of states for all variables.
 
-    inference_method : string, default="lp"
+    inference_method : string, default="ad3"
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -56,7 +56,7 @@ class GridCRF(GraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+    def __init__(self, n_states=2, n_features=None, inference_method=None,
                  neighborhood=4):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
