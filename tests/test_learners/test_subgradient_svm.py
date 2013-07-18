@@ -12,7 +12,32 @@ import pystruct.toy_datasets as toy
 from pystruct.utils import SaveLogger, train_test_split
 
 
+def test_multinomial_blocks_subgradient():
+    #testing cutting plane ssvm on easy multinomial dataset
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
+                                           seed=1)
+    n_labels = len(np.unique(Y))
+    crf = GridCRF(n_states=n_labels)
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10, momentum=.98,
+                          learning_rate=0.001)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+
+
+def test_multinomial_checker_subgradient():
+    X, Y = toy.generate_checker_multinomial(n_samples=10, noise=0.0)
+    n_labels = len(np.unique(Y))
+    crf = GridCRF(n_states=n_labels)
+    clf = SubgradientSSVM(model=crf, max_iter=50, C=10,
+                          momentum=.98, learning_rate=0.01)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+
+
 def test_binary_blocks_subgradient_parallel():
+    # fixme: travis doesn't like parallelism?
     pass
     #testing subgradient ssvm on easy binary dataset
     #X, Y = toy.generate_blocks(n_samples=10)
