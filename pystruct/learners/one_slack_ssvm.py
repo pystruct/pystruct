@@ -97,7 +97,7 @@ class OneSlackSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.psi,)
+    w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
     old_solution : dict

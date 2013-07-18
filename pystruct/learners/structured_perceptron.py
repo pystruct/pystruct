@@ -56,7 +56,7 @@ class StructuredPerceptron(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.psi,)
+    w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
    ``loss_curve_`` : list of float
