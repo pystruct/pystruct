@@ -94,7 +94,7 @@ def test_graph_crf_continuous_inference():
 
 
 def test_graph_crf_energy_lp_integral():
-    crf = GraphCRF(n_states=2)
+    crf = GraphCRF(n_states=2, inference_method='lp')
     inf_res, energy_lp = crf.inference((x_1, g_1), w, relaxed=True,
                                        return_energy=True)
     # integral solution

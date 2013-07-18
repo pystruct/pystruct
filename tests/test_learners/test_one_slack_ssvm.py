@@ -112,7 +112,7 @@ def test_one_slack_constraint_caching():
     X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.5,
                                            seed=0, size_x=9)
     n_labels = len(np.unique(Y))
-    crf = GridCRF(n_states=n_labels)
+    crf = GridCRF(n_states=n_labels, inference_method='lp')
     clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)

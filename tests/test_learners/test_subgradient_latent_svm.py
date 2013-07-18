@@ -39,14 +39,15 @@ def test_objective():
     # in particular that it has the same loss, if there are no latent states.
     X, Y = toy.generate_blocks_multinomial(n_samples=10)
     n_labels = 3
-    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1)
+    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
+                         inference_method='lp')
     clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10.,
                                  learning_rate=0.001, momentum=0.98,
                                  decay_exponent=0)
     clfl.w = np.zeros(crfl.size_psi)  # this disables random init
     clfl.fit(X, Y)
 
-    crf = GridCRF(n_states=n_labels)
+    crf = GridCRF(n_states=n_labels, inference_method='lp')
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10.,
                           learning_rate=0.001, momentum=0.98, decay_exponent=0)
     clf.fit(X, Y)
