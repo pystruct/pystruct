@@ -1,7 +1,7 @@
 import numpy as np
 
 from .base import StructuredModel
-from ..inference import inference_dispatch
+from ..inference import inference_dispatch, get_installed
 
 
 class CRF(StructuredModel):
@@ -10,7 +10,9 @@ class CRF(StructuredModel):
                  class_weight=None):
         self.n_states = n_states
         if inference_method is None:
-            inference_method = 'ad3'
+            # get first in list that is installed
+            inference_method = get_installed([('ogm', {'alg': 'dd'}),
+                                              'ad3', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
         if n_features is None:
