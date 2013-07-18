@@ -69,7 +69,7 @@ def test_with_crosses_bad_init():
                              inference_cache=50, max_iter=10000)
     n_slack = NSlackSSVM(crf)
     subgradient = SubgradientSSVM(crf, max_iter=150, learning_rate=.01,
-                                  verbose=3, momentum=0)
+                                  momentum=0)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
         base_ssvm.C = 10. ** 2
