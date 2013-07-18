@@ -347,6 +347,6 @@ class NSlackSSVM(BaseSSVM):
             # remove unused constraints:
             to_remove = self.last_active[i] > self.inactive_window
             self.last_active[i] = self.last_active[i][~to_remove]
-            for j in np.where(to_remove)[0]:
+            for j in np.where(to_remove)[0][::-1]:
                 del sample[j]
             assert(len(sample) == len(self.last_active[i]))
