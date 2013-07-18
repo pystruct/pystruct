@@ -417,7 +417,6 @@ class OneSlackSSVM(BaseSSVM):
             # catch ctrl+c to stop training
 
             for iteration in xrange(self.max_iter):
-                self.timestamps_.append(time() - self.timestamps_[0])
                 # main loop
                 cached_constraint = False
                 if self.verbose > 0:
@@ -446,6 +445,7 @@ class OneSlackSSVM(BaseSSVM):
                         else:
                             break
 
+                self.timestamps_.append(time() - self.timestamps_[0])
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 

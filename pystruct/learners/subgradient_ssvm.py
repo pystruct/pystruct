@@ -157,7 +157,6 @@ class SubgradientSSVM(BaseSSVM):
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
-                self.timestamps_.append(time() - self.timestamps_[0])
                 if self.n_jobs == 1:
                     objective, positive_slacks = self._sequential_learning(X,
                                                                            Y)
@@ -178,6 +177,7 @@ class SubgradientSSVM(BaseSSVM):
                     print("positive slacks: %d,"
                           "objective: %f" %
                           (positive_slacks, objective))
+                self.timestamps_.append(time() - self.timestamps_[0])
                 self.objective_curve_.append(objective)
 
                 if self.verbose > 2:
