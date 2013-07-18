@@ -10,11 +10,13 @@ class GraphCRF(CRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
-    Node features are given as a tuple of shape (n_nodes, n_features),
-    An instance ``x`` is represented as a tuple ``(features, edges)``
-    where edges is an array of shape (n_edges, 2), representing the graph.
+    Examples, i.e. X, are given as an iterable of n_examples. 
+    An example, x, is represented as a tuple (features, edges) where 
+    features is a numpy array of shape (n_nodes, n_attributes), and 
+    edges is is an array of shape (n_edges, 2), representing the graph.
 
-    Labels ``y`` are given as array of shape (n_features)
+    Labels, Y, are given as an interable of n_examples. Each label, y, in Y 
+    is given by a numpy array of shape (n_nodes,).
 
     Parameters
     ----------
