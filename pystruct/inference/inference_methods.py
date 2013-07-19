@@ -55,8 +55,7 @@ def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
 
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                       inference_method, relaxed=False, return_energy=False,
-                       **kwargs):
+                       inference_method, return_energy=False, **kwargs):
     """Wrapper function to dispatch between inference method by string.
 
     Parameters
@@ -102,7 +101,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         inference_method = inference_method[0]
         # append additional_kwargs, but take care not to modify the dicts we
         # got
-        kwargs = dict(additional_kwargs.items() + kwargs.items())
+        kwargs = dict(kwargs.items() + additional_kwargs.items())
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
@@ -111,11 +110,10 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
     elif inference_method == "lp":
         return inference_lp(unary_potentials, pairwise_potentials, edges,
-                            relaxed, return_energy=return_energy, **kwargs)
+                            return_energy=return_energy, **kwargs)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
-                             relaxed=relaxed, return_energy=return_energy,
-                             **kwargs)
+                             return_energy=return_energy, **kwargs)
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
@@ -144,7 +142,7 @@ def _validate_params(unary_potentials, pairwise_params, edges):
 
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='dd', init=None):
+                  return_energy=False, alg='dd', init=None, **kwargs):
     """Inference with OpenGM backend.
 
     Parameters
@@ -227,7 +225,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     return res
 
 
-def inference_qpbo(unary_potentials, pairwise_potentials, edges):
+def inference_qpbo(unary_potentials, pairwise_potentials, edges, **kwargs):
     """Inference with PyQPBO backend.
 
     Used QPBO-I based move-making for undergenerating inference.
@@ -264,7 +262,7 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges):
 
 
 def inference_dai(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='jt'):
+                  return_energy=False, alg='jt', **kwargs):
     """Inference with LibDAI backend.
 
     Parameters
@@ -307,7 +305,7 @@ def inference_dai(unary_potentials, pairwise_potentials, edges,
 
 
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                 return_energy=False):
+                 return_energy=False, **kwargs):
     """Inference with build-in LP solver using GLPK backend.
 
     Parameters
@@ -415,7 +413,8 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     return y
 
 
-def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0):
+def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
+                      **kwargs):
     """Inference that only uses unary potentials.
 
     This methods can be used as a sanity check, as acceleration if no
