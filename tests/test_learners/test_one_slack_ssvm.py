@@ -166,3 +166,26 @@ def test_one_slack_repellent_potentials():
         for i, x in enumerate(X):
             y_pred_unaries = crf.inference(x, np.array([1, 0, 0, 1, 0, 0, 0]))
             assert_array_equal(y_pred_unaries, Y_pred[i])
+
+
+def test_switch_to_ad3():
+    # test if switching between qpbo and ad3 works
+
+    if not get_installed(['qpbo']) or not get_installed(['ad3']):
+        return
+    X, Y = toy.generate_blocks_multinomial(n_samples=5, noise=1.5,
+                                           seed=0)
+    crf = GridCRF(n_states=3, inference_method='qpbo')
+
+    ssvm = OneSlackSSVM(crf, inference_cache=50, max_iter=10000)
+
+    ssvm_with_switch = OneSlackSSVM(crf, inference_cache=50, max_iter=10000,
+                                    switch_to=('ad3'))
+    ssvm.fit(X, Y)
+    ssvm_with_switch.fit(X, Y)
+    assert_equal(ssvm_with_switch.model.inference_method, 'ad3')
+    # we check that the dual is higher with ad3 inference
+    # as it might use the relaxation, that is pretty much guraranteed
+    assert_greater(ssvm_with_switch.objective_curve_[-1],
+                   ssvm.objective_curve_[-1])
+    print(ssvm_with_switch.objective_curve_[-1], ssvm.objective_curve_[-1])
