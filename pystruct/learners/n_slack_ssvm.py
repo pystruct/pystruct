@@ -79,6 +79,10 @@ class NSlackSSVM(BaseSSVM):
         ``inactive_window`` iterations, it will be pruned from the QP.
         If set to 0, no constraints will be removed.
 
+    switch_to : None or string, default=None
+        Switch to the given inference method if the previous method does not
+        find any more constraints.
+
     Attributes
     ----------
     w : nd-array, shape=(model.size_psi,)
@@ -98,7 +102,7 @@ class NSlackSSVM(BaseSSVM):
                  verbose=0, positive_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
                  tol=-10, inactive_threshold=1e-5,
-                 inactive_window=50, logger=None):
+                 inactive_window=50, logger=None, switch_to=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -111,6 +115,7 @@ class NSlackSSVM(BaseSSVM):
         self.tol = tol
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
+        self.switch_to = switch_to
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
@@ -199,7 +204,8 @@ class NSlackSSVM(BaseSSVM):
                 # significantly larger, don't add constraint.
                 # if smaller, complain about approximate inference.
                 if slack - slack_tmp < -1e-5:
-                    print("bad inference: %f" % (slack_tmp - slack))
+                    if self.verbose > 0:
+                        print("bad inference: %f" % (slack_tmp - slack))
                     if self.break_on_bad:
                         raise ValueError("bad inference: %f" % (slack_tmp -
                                                                 slack))
@@ -320,7 +326,17 @@ class NSlackSSVM(BaseSSVM):
 
                 if new_constraints == 0:
                     print("no additional constraints")
-                    break
+                    if (self.switch_to is not None
+                            and self.model.inference_method !=
+                            self.switch_to):
+                        print("Switching to %s inference" %
+                              str(self.switch_to))
+                        self.model.inference_method_ = \
+                            self.model.inference_method
+                        self.model.inference_method = self.switch_to
+                        continue
+                    else:
+                        break
 
                 if (iteration > 1 and self.objective_curve_[-1]
                         - self.objective_curve_[-2] < self.tol):
