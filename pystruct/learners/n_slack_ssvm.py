@@ -242,6 +242,7 @@ class NSlackSSVM(BaseSSVM):
 
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
+        stopping_criterion = False
         if constraints is None:
             # fresh start
             constraints = [[] for i in xrange(n_samples)]
@@ -326,22 +327,26 @@ class NSlackSSVM(BaseSSVM):
 
                 if new_constraints == 0:
                     print("no additional constraints")
-                    if (self.switch_to is not None
-                            and self.model.inference_method !=
-                            self.switch_to):
+                    stopping_criterion = True
+
+                if (iteration > 1 and self.objective_curve_[-1]
+                        - self.objective_curve_[-2] < self.tol):
+                    print("objective converged.")
+                    stopping_criterion = True
+
+                if stopping_criterion:
+                    if (self.switch_to is not None and
+                            self.model.inference_method != self.switch_to):
                         print("Switching to %s inference" %
                               str(self.switch_to))
                         self.model.inference_method_ = \
                             self.model.inference_method
                         self.model.inference_method = self.switch_to
+                        stopping_criterion = False
                         continue
                     else:
                         break
 
-                if (iteration > 1 and self.objective_curve_[-1]
-                        - self.objective_curve_[-2] < self.tol):
-                    print("objective converged.")
-                    break
                 if self.verbose > 5:
                     print(self.w)
 
