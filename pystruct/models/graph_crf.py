@@ -21,7 +21,7 @@ class GraphCRF(CRF):
     state_1       1       2    
     state_2       2       3
     
-    However, since edge potentials are symmetric, so we only need to keep track
+    However, edge potentials are symmetric, so we only need to keep track
     of the lower triangle, or n_states * (n_states + 1) / 2 parameters for 
     edge potentials.
     
