@@ -44,14 +44,12 @@ class GraphCRF(CRF):
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
-        if n_features is not None and n_states is not None:
-            self.size_psi = (n_states * self.n_features
-                             + n_states * (n_states + 1) / 2)
 
-    def initialize(self, X, Y):
-        CRF.initialize(self, X, Y)
-        self.size_psi = (self.n_states * self.n_features
-                         + self.n_states * (self.n_states + 1) / 2)
+    def _set_size_psi(self):
+        # try to set the size of psi if possible
+        if self.n_features is not None and self.n_states is not None:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_states * (self.n_states + 1) / 2)
 
     def get_edges(self, x):
         return x[1]
@@ -197,24 +195,23 @@ class EdgeTypeGraphCRF(GraphCRF):
     """
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
                  n_edge_types=1):
+        self.n_edge_types = n_edge_types
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method,)
-        self.n_edge_types = n_edge_types
-        if not None in [n_states, n_features, n_edge_types]:
-            self.size_psi = (n_states * self.n_features
-                             + self.n_edge_types * n_states ** 2)
+
+    def _set_size_psi(self):
+        if not None in [self.n_states, self.n_features, self.n_edge_types]:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_types * self.n_states ** 2)
 
     def initialize(self, X, Y):
-        CRF.initialize(self, X, Y)
         n_edge_types = len(X[0][1])
         if self.n_edge_types is None:
             self.n_edge_types = n_edge_types
         elif self.n_edge_types != n_edge_types:
             raise ValueError("Expected %d edge types, got %d"
                              % (self.n_edge_types, n_edge_types))
-
-        self.size_psi = (self.n_states * self.n_features
-                         + self.n_edge_types * self.n_states ** 2)
+        CRF.initialize(self, X, Y)
 
     def get_edges(self, x, flat=True):
         if flat:

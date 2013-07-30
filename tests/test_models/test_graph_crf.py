@@ -2,6 +2,8 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_equal)
 
+from nose.tools import assert_raises
+
 from pystruct.models import GraphCRF, EdgeTypeGraphCRF
 from pystruct.inference import get_installed
 
@@ -28,6 +30,24 @@ x_2 = np.array([[0, 1], [1, 0], [.4, .6]])
 g_2 = np.array([[0, 1], [1, 2]])
 # expected result
 y_2 = np.array([1, 0, 0])
+
+
+def test_initialize():
+    x = (x_1, g_1)
+    y = y_1
+    crf = GraphCRF(n_states=2, n_features=2)
+    # no-op
+    crf.initialize([x], [y])
+
+    #test initialization works
+    crf = GraphCRF()
+    # no-op
+    crf.initialize([x], [y])
+    assert_equal(crf.n_states, 2)
+    assert_equal(crf.n_features, 2)
+
+    crf = GraphCRF(n_states=3)
+    assert_raises(ValueError, crf.initialize, X=[x], Y=[y])
 
 
 def test_graph_crf_inference():
@@ -126,7 +146,8 @@ def test_graph_crf_energy_lp_relaxed():
 def test_graph_crf_loss_augment():
     x = (x_1, g_1)
     y = y_1
-    crf = GraphCRF(n_states=2, n_features=2)
+    crf = GraphCRF()
+    crf.initialize([x], [y])
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
     # check that y_hat fulfills energy + loss condition
     assert_almost_equal(np.dot(w, crf.psi(x, y_hat)) + crf.loss(y, y_hat),

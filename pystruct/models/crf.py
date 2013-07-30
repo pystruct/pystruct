@@ -15,19 +15,9 @@ class CRF(StructuredModel):
         self.inference_method = inference_method
         self.inference_calls = 0
         self.n_features = n_features
-
-        if class_weight is not None:
-            if hasattr(self, 'n_labels'):
-                n_things = self.n_labels
-            else:
-                n_things = n_states
-
-            if len(class_weight) != n_things:
-                raise ValueError("class_weight must have length n_states or"
-                                 " be None")
-            self.class_weight = np.array(class_weight)
-        else:
-            self.class_weight = np.ones(n_states)
+        self.class_weight = class_weight
+        self._set_size_psi()
+        self._set_class_weight()
 
     def initialize(self, X, Y):
         n_features = X[0][0].shape[1]
@@ -43,6 +33,28 @@ class CRF(StructuredModel):
         elif self.n_states != n_states:
             raise ValueError("Expected %d states, got %d"
                              % (self.n_states, n_states))
+
+        self._set_size_psi()
+        self._set_class_weight()
+
+    def _set_class_weight(self):
+        if not hasattr(self, 'size_psi'):
+            # we are not initialized yet
+            return
+
+        if hasattr(self, 'n_labels'):
+            n_things = self.n_labels
+        else:
+            n_things = self.n_states
+
+        if self.class_weight is not None:
+
+            if len(self.class_weight) != n_things:
+                raise ValueError("class_weight must have length n_states or"
+                                 " be None")
+            self.class_weight = np.array(self.class_weight)
+        else:
+            self.class_weight = np.ones(n_things)
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s)"

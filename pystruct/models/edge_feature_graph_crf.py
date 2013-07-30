@@ -59,13 +59,9 @@ class EdgeFeatureGraphCRF(GraphCRF):
                  inference_method=None, class_weight=None,
                  symmetric_edge_features=None,
                  antisymmetric_edge_features=None):
+        self.n_edge_features = n_edge_features
         GraphCRF.__init__(self, n_states, n_features, inference_method,
                           class_weight=class_weight)
-        self.n_edge_features = n_edge_features
-        if not None in [n_states, n_features, n_edge_features]:
-            self.size_psi = (n_states * self.n_features
-                             + self.n_edge_features
-                             * n_states ** 2)
         if symmetric_edge_features is None:
             symmetric_edge_features = []
         if antisymmetric_edge_features is None:
@@ -84,18 +80,20 @@ class EdgeFeatureGraphCRF(GraphCRF):
         self.symmetric_edge_features = symmetric_edge_features
         self.antisymmetric_edge_features = antisymmetric_edge_features
 
+    def _set_size_psi(self):
+        if not None in [self.n_states, self.n_features, self.n_edge_features]:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_features
+                             * self.n_states ** 2)
+
     def initialize(self, X, Y):
-        CRF.initialize(self, X, Y)
         n_edge_features = X[0][2].shape[1]
         if self.n_edge_features is None:
             self.n_edge_features = n_edge_features
         elif self.n_edge_features != n_edge_features:
             raise ValueError("Expected %d edge features, got %d"
                              % (self.n_edge_features, n_edge_features))
-
-        self.size_psi = (self.n_states * self.n_features
-                         + self.n_edge_features
-                         * self.n_states ** 2)
+        CRF.initialize(self, X, Y)
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s, n_features: %d, "
