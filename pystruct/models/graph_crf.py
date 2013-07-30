@@ -7,8 +7,8 @@ class GraphCRF(CRF):
     """Pairwise CRF on a general graph.
 
     Pairwise potentials are symmetric and the same for all edges.
-    This leads to n_classes parameters for unary potentials and
-    n_classes * (n_classes + 1) / 2 parameters for edge potentials.
+    This leads to n_states parameters for unary potentials and
+    n_states * (n_states + 1) / 2 parameters for edge potentials.
 
     Examples, i.e. X, are given as an iterable of n_examples. 
     An example, x, is represented as a tuple (features, edges) where 
@@ -35,14 +35,14 @@ class GraphCRF(CRF):
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
 
-    class_weight : None, or array-like
-        Class weights. If an array-like is passed, it must have length
-        n_classes. None means equal class weights.
+    state_weight : None, or array-like
+        State weights. If an array-like is passed, it must have length
+        n_states. None means equal state weights.
     """
     def __init__(self, n_states=2, n_features=None, inference_method=None,
-                 class_weight=None):
+                 state_weight=None):
         CRF.__init__(self, n_states, n_features, inference_method,
-                     class_weight=class_weight)
+                     class_weight=state_weight)
         # n_states unary parameters, upper triangular for pairwise
         self.size_psi = (n_states * self.n_features
                          + n_states * (n_states + 1) / 2)
