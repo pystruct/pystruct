@@ -84,9 +84,10 @@ class LatentSSVM(BaseSSVM):
                 H = H_new
             if iteration > 0:
                 self.base_ssvm.fit(X, H, constraints=constraints,
-                                   warm_start="soft")
+                                   warm_start="soft", initialize=False)
             else:
-                self.base_ssvm.fit(X, H, constraints=constraints)
+                self.base_ssvm.fit(X, H, constraints=constraints,
+                                   initialize=False)
             w = self.base_ssvm.w
             ws.append(w)
             if self.logger is not None:

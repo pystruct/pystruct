@@ -353,7 +353,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def fit(self, X, Y, constraints=None, warm_start=False):
+    def fit(self, X, Y, constraints=None, warm_start=False, initialize=True):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -370,10 +370,15 @@ class OneSlackSSVM(BaseSSVM):
 
         warm_start : bool, default=False
             Whether we are warmstarting from a previous fit.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
         print("Training 1-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 1
-        self.model.initialize(X, Y)
+        if initialize:
+            self.model.initialize(X, Y)
 
         # parse cache_tol parameter
         if self.cache_tol is None or self.cache_tol == 'auto':

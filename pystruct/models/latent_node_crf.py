@@ -107,6 +107,9 @@ class LatentNodeCRF(GraphCRF):
                           class_weight=class_weight)
 
     def _set_size_psi(self):
+        if None in [self.n_states, self.n_features]:
+            return
+
         if self.latent_node_features:
             n_input_states = self.n_states
         else:
@@ -115,22 +118,22 @@ class LatentNodeCRF(GraphCRF):
         self.size_psi = (n_input_states * self.n_features
                          + self.n_states * (self.n_states + 1) / 2)
 
-    #def initialize(self, X, Y):
-        #n_features = X[0][0].shape[1]
-        #if self.n_features is None:
-            #self.n_features = n_features
-        #elif self.n_features != n_features:
-            #raise ValueError("Expected %d features, got %d"
-                             #% (self.n_features, n_features))
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
 
-        #n_labels = len(np.unique(np.hstack([y.ravel() for y in Y])))
-        #if self.n_labels is None:
-            #self.n_labels = n_labels
-        #elif self.n_labels != n_labels:
-            #raise ValueError("Expected %d states, got %d"
-                             #% (self.n_labels, n_labels))
-        #self._set_size_psi()
-        #self._set_class_weight()
+        n_labels = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_labels is None:
+            self.n_labels = n_labels
+        elif self.n_labels != n_labels:
+            raise ValueError("Expected %d labels, got %d"
+                             % (self.n_labels, n_labels))
+        self._set_size_psi()
+        self._set_class_weight()
 
     def get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.

@@ -20,13 +20,21 @@ class BinarySVMModel(StructuredModel):
 
     Parameters
     ----------
-    n_features : int
+    n_features : int or None, default=None
         Number of features of inputs x.
     """
-    def __init__(self, n_features):
+    def __init__(self, n_features=None):
         self.size_psi = n_features
         self.n_states = 2
         self.inference_calls = 0
+
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
 
     def __repr__(self):
         return ("%s, n_features: %d"

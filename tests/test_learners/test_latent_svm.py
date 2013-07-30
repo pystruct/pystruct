@@ -58,8 +58,8 @@ def test_with_crosses_bad_init():
                                 total_size=8)
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
-    n_labels = 2
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2)
+    crf = LatentGridCRF(n_states_per_label=2)
+    crf.intitialize(X, Y)
     H_init = crf.init_latent(X, Y)
 
     mask = rnd.uniform(size=H_init.shape) > .7
@@ -108,9 +108,10 @@ def test_switch_to_ad3():
                                 total_size=8)
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
-    n_labels = 2
-    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
+
+    crf = LatentGridCRF(n_states_per_label=2,
                         inference_method='qpbo')
+    crf.initialize(X, Y)
     H_init = crf.init_latent(X, Y)
 
     np.random.seed(0)
