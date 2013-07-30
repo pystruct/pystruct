@@ -6,10 +6,6 @@ from .crf import CRF
 class GraphCRF(CRF):
     """Pairwise CRF on a general graph.
 
-    Pairwise potentials are symmetric and the same for all edges.
-    This leads to n_states parameters for unary potentials and
-    n_states * (n_states + 1) / 2 parameters for edge potentials.
-
     Examples, i.e. X, are given as an iterable of n_examples. 
     An example, x, is represented as a tuple (features, edges) where 
     features is a numpy array of shape (n_nodes, n_attributes), and 
@@ -17,7 +13,27 @@ class GraphCRF(CRF):
 
     Labels, Y, are given as an interable of n_examples. Each label, y, in Y 
     is given by a numpy array of shape (n_nodes,).
-
+    
+    Pairwise potentials are symmetric and the same for all edges.
+    
+    This means means that there are n_states * n_features for unary 
+    potentials. There are n_state * n_states permutations of edge
+    potentials parameters, i.e.
+    
+            state_1 state_2
+    state_1       1 2    
+    state_2       2 3
+    
+    However, since potentials are symmetric, we only need to keep track
+    of lower triangle, or n_states * (n_states + 1) / 2 parameters for 
+    edge potentials.
+    
+    The fitted parameters of this model will be returned as an array with
+    the first n_states * n_features elements representing the unary potentials
+    parameters, and the remaining n_states * (n_states + 1) / 2 representing
+    the flattened lower triangular edge potenial parameter 
+    matrix, i.e. [1, 2, 3].
+    
     Parameters
     ----------
     n_states : int, default=2
