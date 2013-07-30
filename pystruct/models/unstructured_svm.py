@@ -163,7 +163,9 @@ class CrammerSingerSVMModel(StructuredModel):
                 raise ValueError("class_weight must have length n_classes or"
                                  " be None")
             class_weight = np.array(class_weight)
+            self.uniform_class_weight = False
         else:
+            self.uniform_class_weight = True
             class_weight = np.ones(n_classes)
         self.class_weight = class_weight
         self.inference_calls = 0
@@ -290,8 +292,8 @@ class CrammerSingerSVMModel(StructuredModel):
 
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
-        other_classes = (np.arange(self.n_states) != np.vstack(Y))
-        if self.rescale_C:
+        other_classes = (np.arange(self.n_states) != Y[:, np.newaxis])
+        if self.rescale_C or self.uniform_class_weight:
             scores[other_classes] += 1
         else:
             scores[other_classes] += np.repeat(self.class_weight[Y],
