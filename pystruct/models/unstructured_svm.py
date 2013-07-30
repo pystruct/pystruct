@@ -29,13 +29,12 @@ class BinarySVMModel(StructuredModel):
         self.inference_calls = 0
 
     def initialize(self, X, Y):
-        n_features = X[0][0].shape[1]
-        if self.n_features is None:
-            self.n_features = n_features
-        elif self.n_features != n_features:
+        n_features = X.shape[1]
+        if self.size_psi is None:
+            self.size_psi = n_features
+        elif self.size_psi != n_features:
             raise ValueError("Expected %d features, got %d"
-                             % (self.n_features, n_features))
-        self.size_psi = self.n_features
+                             % (self.size_psi, n_features))
 
     def __repr__(self):
         return ("%s, n_features: %d"
