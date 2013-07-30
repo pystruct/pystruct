@@ -329,7 +329,8 @@ class NSlackSSVM(BaseSSVM):
                     print("no additional constraints")
                     stopping_criterion = True
 
-                if (iteration > 1 and self.objective_curve_[-1]
+                if (not stopping_criterion and iteration > 1 and
+                    self.objective_curve_[-1]
                         - self.objective_curve_[-2] < self.tol):
                     print("objective converged.")
                     stopping_criterion = True
