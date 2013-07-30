@@ -14,18 +14,15 @@ class GraphCRF(CRF):
     Labels, Y, are given as an interable of n_examples. Each label, y, in Y 
     is given by a numpy array of shape (n_nodes,).
     
-    Pairwise potentials are symmetric and the same for all edges.
-    
-    This means means that there are n_states * n_features for unary 
-    potentials. There are n_state * n_states permutations of edge
-    potentials parameters, i.e.
+    There are n_states * n_features parameters for unary potentials. For edge 
+    potential parameters, there are n_state * n_states permutations, i.e.
     
             state_1 state_2
     state_1       1       2    
     state_2       2       3
     
-    However, since potentials are symmetric, we only need to keep track
-    of lower triangle, or n_states * (n_states + 1) / 2 parameters for 
+    However, since edge potentials are symmetric, so we only need to keep track
+    of the lower triangle, or n_states * (n_states + 1) / 2 parameters for 
     edge potentials.
     
     The fitted parameters of this model will be returned as an array with
