@@ -21,8 +21,8 @@ class GraphCRF(CRF):
     potentials parameters, i.e.
     
             state_1 state_2
-    state_1       1 2    
-    state_2       2 3
+    state_1       1       2    
+    state_2       2       3
     
     However, since potentials are symmetric, we only need to keep track
     of lower triangle, or n_states * (n_states + 1) / 2 parameters for 
