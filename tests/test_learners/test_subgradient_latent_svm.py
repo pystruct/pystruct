@@ -44,6 +44,7 @@ def test_objective():
     clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10.,
                                  learning_rate=0.001, momentum=0.98,
                                  decay_exponent=0)
+    crfl.initialize(X, Y)
     clfl.w = np.zeros(crfl.size_psi)  # this disables random init
     clfl.fit(X, Y)
 
