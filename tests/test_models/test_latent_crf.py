@@ -59,7 +59,6 @@ def test_k_means_initialization_grid_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentGridCRF(n_states_per_label=1, n_features=2, n_labels=2)
-    #crf.initalize(X, Y)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -68,7 +67,6 @@ def test_k_means_initialization_graph_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentGraphCRF(n_states_per_label=1, n_features=2, n_labels=2)
-    #crf.initalize(X, Y)
     # convert grid model to graph model
     X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
          for x in X]
@@ -81,7 +79,7 @@ def test_k_means_initialization_directional_grid_crf():
     X, Y = toy.generate_big_checker(n_samples=10)
     crf = LatentDirectionalGridCRF(n_states_per_label=1, n_features=2,
                                    n_labels=2)
-    #crf.initalize(X, Y)
+    #crf.initialize(X, Y)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -96,7 +94,6 @@ def test_blocks_crf_unaries():
                                  0,  0,  0, 0])
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
-    #crf.initalize(X, Y)
     h_hat = crf.inference(x, w)
     assert_array_equal(h_hat / 2, np.argmax(x, axis=-1))
 
@@ -111,7 +108,6 @@ def test_blocks_crf():
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
-    #crf.initalize(X, Y)
     h_hat = crf.inference(x, w)
     assert_array_equal(y, h_hat / 2)
 
@@ -140,10 +136,10 @@ def test_blocks_crf_directional():
                                -4, -4,  0,  0])
     w_directional = np.hstack([unary_weights.ravel(), pw_directional])
     crf = LatentGridCRF(n_states_per_label=2, inference_method='lp')
-    crf.initalize(X, Y)
+    crf.initialize(X, Y)
     directional_crf = LatentDirectionalGridCRF(n_states_per_label=2,
                                                inference_method='lp')
-    directional_crf.initalize(X, Y)
+    directional_crf.initialize(X, Y)
     h_hat = crf.inference(x, w)
     h_hat_d = directional_crf.inference(x, w_directional)
     assert_array_equal(h_hat, h_hat_d)
