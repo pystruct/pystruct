@@ -93,3 +93,23 @@ class StructuredModel(object):
         # default implementation of batch loss augmented inference
         return [self.loss_augmented_inference(x, y, w, relaxed=relaxed)
                 for x, y in zip(X, Y)]
+
+    def _set_class_weight(self):
+        if not hasattr(self, 'size_psi'):
+            # we are not initialized yet
+            return
+
+        if hasattr(self, 'n_labels'):
+            n_things = self.n_labels
+        else:
+            n_things = self.n_states
+
+        if self.class_weight is not None:
+
+            if len(self.class_weight) != n_things:
+                raise ValueError("class_weight must have length n_states or"
+                                 " be None")
+            self.class_weight = np.array(self.class_weight)
+        else:
+            self.class_weight = np.ones(n_things)
+            self.uniform_class_weight = True
