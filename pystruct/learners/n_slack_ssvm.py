@@ -235,11 +235,7 @@ class NSlackSSVM(BaseSSVM):
             y.
         """
         print("Training n-slack dual structural SVM")
-        if self.verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
-        else:
-            cvxopt.solvers.options['show_progress'] = True
-
+        cvxopt.solvers.options['show_progress'] = self.verbose > 1
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         stopping_criterion = False

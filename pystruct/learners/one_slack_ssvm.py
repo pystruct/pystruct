@@ -372,10 +372,7 @@ class OneSlackSSVM(BaseSSVM):
             Whether we are warmstarting from a previous fit.
         """
         print("Training 1-slack dual structural SVM")
-        if self.verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
-        else:
-            cvxopt.solvers.options['show_progress'] = True
+        cvxopt.solvers.options['show_progress'] = self.verbose > 1
 
         # parse cache_tol parameter
         if self.cache_tol is None or self.cache_tol == 'auto':
