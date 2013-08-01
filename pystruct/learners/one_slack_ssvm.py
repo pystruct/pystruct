@@ -113,10 +113,10 @@ class OneSlackSSVM(BaseSSVM):
         Total training time stored before each iteration.
     """
 
-    def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
+    def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
                  verbose=0, positive_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, tol=1e-5,
-                 inference_cache=0, inactive_threshold=1e-10,
+                 inference_cache=0, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, cache_tol='auto',
                  switch_to=None):
 
