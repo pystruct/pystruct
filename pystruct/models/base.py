@@ -110,6 +110,7 @@ class StructuredModel(object):
                 raise ValueError("class_weight must have length n_states or"
                                  " be None")
             self.class_weight = np.array(self.class_weight)
+            self.uniform_class_weight = False
         else:
             self.class_weight = np.ones(n_things)
             self.uniform_class_weight = True

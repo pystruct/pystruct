@@ -59,7 +59,7 @@ def test_with_crosses_bad_init():
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
     crf = LatentGridCRF(n_states_per_label=2)
-    crf.intitialize(X, Y)
+    crf.initialize(X, Y)
     H_init = crf.init_latent(X, Y)
 
     mask = rnd.uniform(size=H_init.shape) > .7
