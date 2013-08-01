@@ -286,7 +286,7 @@ class OneSlackSSVM(BaseSSVM):
             # this makes it a little less efficient in the caching case.
             # the idea is that if we cache, inference is way more expensive
             # and this doesn't matter much.
-            sample.append((self.model.psi(x, y_hat),
+            sample.append((self.model.joint_features(x, y_hat),
                            self.model.loss(y, y_hat), y_hat))
 
     def _constraint_from_cache(self, X, Y, psi_gt, constraints):
@@ -340,9 +340,11 @@ class OneSlackSSVM(BaseSSVM):
         # compute the mean over psis and losses
 
         if getattr(self.model, 'rescale_C', False):
-            dpsi = (psi_gt - self.model.batch_psi(X, Y_hat, Y)) / len(X)
+            dpsi = (psi_gt - self.model.batch_joint_features(X, Y_hat, Y))
+            dpsi /= len(X)
         else:
-            dpsi = (psi_gt - self.model.batch_psi(X, Y_hat)) / len(X)
+            dpsi = (psi_gt - self.model.batch_joint_features(X, Y_hat))
+            dpsi /= len(X)
 
         loss_mean = np.mean(self.model.batch_loss(Y, Y_hat))
 
@@ -409,9 +411,9 @@ class OneSlackSSVM(BaseSSVM):
 
         # get the psi of the ground truth
         if getattr(self.model, 'rescale_C', False):
-            psi_gt = self.model.batch_psi(X, Y, Y)
+            psi_gt = self.model.batch_joint_features(X, Y, Y)
         else:
-            psi_gt = self.model.batch_psi(X, Y)
+            psi_gt = self.model.batch_joint_features(X, Y)
 
         try:
             # catch ctrl+c to stop training

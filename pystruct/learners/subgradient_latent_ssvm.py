@@ -140,8 +140,8 @@ class LatentSubgradientSSVM(SubgradientSSVM):
                         h = self.model.latent(x, y, self.w)
                         h_hat = self.model.loss_augmented_inference(
                             x, h, self.w, relaxed=True)
-                        delta_psi = (self.model.psi(x, h)
-                                     - self.model.psi(x, h_hat))
+                        delta_psi = (self.model.joint_features(x, h)
+                                     - self.model.joint_features(x, h_hat))
                         slack = (-np.dot(delta_psi, self.w)
                                  + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)

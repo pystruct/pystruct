@@ -32,7 +32,7 @@ class BinarySVMModel(StructuredModel):
         return ("%s, n_features: %d"
                 % (type(self).__name__, self.size_psi))
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         """Compute joint feature vector of x and y.
 
         Feature representation psi, such that the energy of the configuration
@@ -55,7 +55,7 @@ class BinarySVMModel(StructuredModel):
             raise ValueError("y has to be either -1 or +1, got %s" % repr(y))
         return y * x / 2.
 
-    def batch_psi(self, X, Y):
+    def batch_joint_features(self, X, Y):
         return np.sum(X * np.array(Y)[:, np.newaxis] / 2., axis=0)
 
     def inference(self, x, w, relaxed=None):
@@ -174,7 +174,7 @@ class CrammerSingerSVMModel(StructuredModel):
         return ("%s(n_features=%d, n_classes=%d)"
                 % (type(self).__name__, self.n_features, self.n_states))
 
-    def psi(self, x, y, y_true=None):
+    def joint_features(self, x, y, y_true=None):
         """Compute joint feature vector of x and y.
 
         Feature representation psi, such that the energy of the configuration
@@ -208,7 +208,7 @@ class CrammerSingerSVMModel(StructuredModel):
 
         return result.ravel()
 
-    def batch_psi(self, X, Y, Y_true=None):
+    def batch_joint_features(self, X, Y, Y_true=None):
         result = np.zeros((self.n_states, self.n_features))
         if self.rescale_C:
             if Y_true is None:

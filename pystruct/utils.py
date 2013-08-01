@@ -86,16 +86,16 @@ def compute_energy(x, y, unary_params, pairwise_params, neighborhood=4):
 def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
                     compute_difference=True):
     """Find most violated constraint, or, given y_hat,
-    find slack and dpsi for this constraing.
+    find slack and dpsi for this constraint.
 
     As for finding the most violated constraint, it is enough to compute
-    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
-    using compute_differences=False
+    joint_features(x, y_hat), not dpsi, we can optionally skip computing
+    joint_features(x, y) using compute_differences=False.
     """
 
     if y_hat is None:
         y_hat = model.loss_augmented_inference(x, y, w, relaxed=relaxed)
-    psi = model.psi
+    psi = model.joint_features
     if compute_difference:
         delta_psi = psi(x, y) - psi(x, y_hat)
     else:
@@ -113,12 +113,12 @@ def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
     As for finding the most violated constraint, it is enough to compute
-    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
-    using compute_differences=False
+    joint_features(x, y_hat), not dpsi, we can optionally skip computing
+    joint_features(x, y) using compute_differences=False.
     """
     h = model.latent(x, y, w)
     h_hat = model.loss_augmented_inference(x, h, w, relaxed=relaxed)
-    psi = model.psi
+    psi = model.joint_features
     delta_psi = psi(x, h) - psi(x, h_hat)
 
     loss = model.loss(y, h_hat)
@@ -137,7 +137,7 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
 # easy debugging
 def objective_primal(model, w, X, Y, C):
     objective = 0
-    psi = model.psi
+    psi = model.joint_features
     for x, y in zip(X, Y):
         y_hat = model.loss_augmented_inference(x, y, w)
         loss = model.loss(y, y_hat)
@@ -155,7 +155,7 @@ def exhaustive_loss_augmented_inference(model, x, y, w):
     for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(y.shape)
         #print("trying %s" % repr(y_hat))
-        psi = model.psi(x, y_hat)
+        psi = model.joint_features(x, y_hat)
         energy = -model.loss(y, y_hat) - np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy
@@ -175,7 +175,7 @@ def exhaustive_inference(model, x, w):
     for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(feats.shape[:-1])
         #print("trying %s" % repr(y_hat))
-        psi = model.psi(x, y_hat)
+        psi = model.joint_features(x, y_hat)
         energy = -np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy

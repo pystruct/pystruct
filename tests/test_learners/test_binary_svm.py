@@ -22,13 +22,14 @@ def test_model_1d():
     Y_pred = np.hstack([pbl.inference(x, w) for x in X])
     assert_array_equal(Y, Y_pred)
 
-    # check that sign of psi and inference agree
     for x, y in zip(X, Y):
-        assert_true(np.dot(w, pbl.psi(x, y)) > np.dot(w, pbl.psi(x, -y)))
+        psi_pos = pbl.joint_features(x, y)
+        psi_neg = pbl.joint_features(x, -y)
+        # check that sign of psi and inference agree
+        assert_true(np.dot(w, psi_pos) > np.dot(w, psi_neg))
 
-    # check that sign of psi and the sign of y correspond
-    for x, y in zip(X, Y):
-        assert_true(np.dot(w, pbl.psi(x, y)) == -np.dot(w, pbl.psi(x, -y)))
+        # check that sign of psi and the sign of y correspond
+        assert_true(np.dot(w, psi_pos) == -np.dot(w, psi_neg))
 
 
 def test_simple_1d_dataset_cutting_plane():
@@ -98,8 +99,9 @@ def test_blobs_batch():
     pbl = BinarySVMModel(n_features=2)
 
     # test psi
-    psi_mean = pbl.batch_psi(X, Y)
-    psi_mean2 = np.sum([pbl.psi(x, y) for x, y in zip(X, Y)], axis=0)
+    psi_mean = pbl.batch_joint_features(X, Y)
+    psi_mean2 = np.sum([pbl.joint_features(x, y) for x, y in zip(X, Y)],
+                       axis=0)
     assert_array_equal(psi_mean, psi_mean2)
 
     # test inference

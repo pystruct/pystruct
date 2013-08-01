@@ -251,8 +251,8 @@ class SubgradientSSVM(BaseSSVM):
                 Y_b = Y[batch]
                 Y_hat = self.model.batch_loss_augmented_inference(
                     X_b, Y_b, self.w, relaxed=True)
-                delta_psi = (self.model.batch_psi(X_b, Y_b)
-                             - self.model.batch_psi(X_b, Y_hat))
+                delta_psi = (self.model.batch_joint_features(X_b, Y_b)
+                             - self.model.batch_joint_features(X_b, Y_hat))
                 loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
 
                 violation = loss - np.dot(self.w, delta_psi)

@@ -5,7 +5,7 @@ class StructuredModel(object):
     """Interface definition for Structured Learners.
 
     This class defines what is necessary to use the structured svm.
-    You have to implement at least psi and inference.
+    You have to implement at least joint_features and inference.
     """
     def __repr__(self):
         return ("%s, size_psi: %d"
@@ -23,24 +23,24 @@ class StructuredModel(object):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
                              (self.size_psi, w.shape))
 
-    def psi(self, x, y):
+    def joint_features(self, x, y):
         raise NotImplementedError()
 
-    def batch_psi(self, X, Y, Y_true=None):
-        psi_ = np.zeros(self.size_psi)
+    def batch_joint_features(self, X, Y, Y_true=None):
+        psi = np.zeros(self.size_psi)
         if getattr(self, 'rescale_C', False):
             for x, y, y_true in zip(X, Y, Y_true):
-                psi_ += self.psi(x, y, y_true)
+                psi += self.joint_features(x, y, y_true)
         else:
             for x, y in zip(X, Y):
-                psi_ += self.psi(x, y)
-        return psi_
+                psi += self.joint_features(x, y)
+        return psi
 
     def _loss_augmented_dpsi(self, x, y, y_hat, w):
         # debugging only!
         x_loss_augmented = self.loss_augment(x, y, w)
-        return (self.psi(x_loss_augmented, y)
-                - self.psi(x_loss_augmented, y_hat))
+        return (self.joint_features(x_loss_augmented, y)
+                - self.joint_features(x_loss_augmented, y_hat))
 
     def inference(self, x, w, relaxed=None):
         raise NotImplementedError()

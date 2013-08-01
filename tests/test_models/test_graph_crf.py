@@ -101,7 +101,8 @@ def test_graph_crf_energy_lp_integral():
     assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
     y = np.argmax(inf_res[0], axis=-1)
     # energy and psi check out
-    assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x_1, g_1), y)))
+    psi = crf.joint_features((x_1, g_1), y)
+    assert_almost_equal(energy_lp, -np.dot(w, psi))
 
 
 def test_graph_crf_energy_lp_relaxed():
@@ -110,14 +111,15 @@ def test_graph_crf_energy_lp_relaxed():
         w_ = np.random.uniform(size=w.shape)
         inf_res, energy_lp = crf.inference((x_1, g_1), w_, relaxed=True,
                                            return_energy=True)
-        assert_almost_equal(energy_lp,
-                            -np.dot(w_, crf.psi((x_1, g_1), inf_res)))
+        psi = crf.joint_features((x_1, g_1), inf_res)
+        assert_almost_equal(energy_lp, -np.dot(w_, psi))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
     inf_res, energy_lp = crf.inference((x, g_1), w, relaxed=True,
                                        return_energy=True)
-    assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x, g_1), inf_res)))
+    psi = crf.joint_features((x, g_1), inf_res)
+    assert_almost_equal(energy_lp, -np.dot(w, psi))
 
 
 def test_graph_crf_loss_augment():
@@ -126,8 +128,8 @@ def test_graph_crf_loss_augment():
     crf = GraphCRF(n_states=2)
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
     # check that y_hat fulfills energy + loss condition
-    assert_almost_equal(np.dot(w, crf.psi(x, y_hat)) + crf.loss(y, y_hat),
-                        -energy)
+    psi = crf.joint_features(x, y_hat)
+    assert_almost_equal(np.dot(w, psi) + crf.loss(y, y_hat), -energy)
 
 
 def test_edge_type_graph_crf_energy_lp_integral():
@@ -139,7 +141,8 @@ def test_edge_type_graph_crf_energy_lp_integral():
     assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
     y = np.argmax(inf_res[0], axis=-1)
     # energy and psi check out
-    assert_almost_equal(energy_lp, -np.dot(w_sym, crf.psi((x_1, [g_1]), y)))
+    psi = crf.joint_features((x_1, [g_1]), y)
+    assert_almost_equal(energy_lp, -np.dot(w_sym, psi))
 
 
 def test_edge_type_graph_crf_energy_lp_relaxed():
@@ -149,15 +152,15 @@ def test_edge_type_graph_crf_energy_lp_relaxed():
         w_ = np.random.uniform(size=w_sym.shape)
         inf_res, energy_lp = crf.inference((x_1, [g_1]), w_, relaxed=True,
                                            return_energy=True)
-        assert_almost_equal(energy_lp,
-                            -np.dot(w_, crf.psi((x_1, [g_1]), inf_res)))
+        psi = crf.joint_features((x_1, [g_1]), inf_res)
+        assert_almost_equal(energy_lp, -np.dot(w_, psi))
 
     # now with fractional solution
     x = np.array([[0, 0], [0, 0], [0, 0]])
     inf_res, energy_lp = crf.inference((x, [g_1]), w_sym, relaxed=True,
                                        return_energy=True)
-    assert_almost_equal(energy_lp,
-                        -np.dot(w_sym, crf.psi((x, [g_1]), inf_res)))
+    psi = crf.joint_features((x_1, [g_1]), inf_res)
+    assert_almost_equal(energy_lp, -np.dot(w_sym, psi))
 
 
 def test_graph_crf_class_weights():
