@@ -101,7 +101,7 @@ class NSlackSSVM(BaseSSVM):
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
                  verbose=0, positive_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
-                 tol=-10, inactive_threshold=1e-5,
+                 tol=1e-3, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, switch_to=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
@@ -355,6 +355,8 @@ class NSlackSSVM(BaseSSVM):
                     self.logger(self, iteration)
         except KeyboardInterrupt:
             pass
+        if self.logger is not None:
+            self.logger(self, 'final')
 
         self.constraints_ = constraints
         if self.verbose and self.n_jobs == 1:
