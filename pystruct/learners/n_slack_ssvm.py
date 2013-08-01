@@ -213,7 +213,7 @@ class NSlackSSVM(BaseSSVM):
 
         return False
 
-    def fit(self, X, Y, constraints=None, warm_start=None):
+    def fit(self, X, Y, constraints=None, warm_start=None, initialize=True):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -233,9 +233,15 @@ class NSlackSSVM(BaseSSVM):
             y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
             and loss is the loss for predicting y_hat instead of the true label
             y.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
         print("Training n-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 1
+        if initialize:
+            self.model.initialize(X, Y)
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         stopping_criterion = False

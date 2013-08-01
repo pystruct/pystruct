@@ -94,28 +94,46 @@ class LatentNodeCRF(GraphCRF):
         Whether latent nodes have features. We assume that if True,
         the number of features is the same as for visible nodes.
     """
-    def __init__(self, n_labels=2, n_features=None, n_hidden_states=2,
+    def __init__(self, n_labels=None, n_features=None, n_hidden_states=2,
                  inference_method=None, class_weight=None,
                  latent_node_features=False):
-
         self.n_labels = n_labels
-        if n_features is None:
-            n_features = n_labels
-
         self.n_hidden_states = n_hidden_states
         n_states = n_hidden_states + n_labels
+        self.latent_node_features = latent_node_features
 
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method,
                           class_weight=class_weight)
-        if latent_node_features:
-            n_input_states = n_states
+
+    def _set_size_psi(self):
+        if None in [self.n_states, self.n_features]:
+            return
+
+        if self.latent_node_features:
+            n_input_states = self.n_states
         else:
-            n_input_states = n_labels
+            n_input_states = self.n_labels
         self.n_input_states = n_input_states
         self.size_psi = (n_input_states * self.n_features
-                         + n_states * (n_states + 1) / 2)
-        self.latent_node_features = latent_node_features
+                         + self.n_states * (self.n_states + 1) / 2)
+
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_labels = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_labels is None:
+            self.n_labels = n_labels
+        elif self.n_labels != n_labels:
+            raise ValueError("Expected %d labels, got %d"
+                             % (self.n_labels, n_labels))
+        self._set_size_psi()
+        self._set_class_weight()
 
     def get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.

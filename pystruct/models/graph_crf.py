@@ -10,12 +10,12 @@ class GraphCRF(CRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
-    Examples, i.e. X, are given as an iterable of n_examples. 
-    An example, x, is represented as a tuple (features, edges) where 
-    features is a numpy array of shape (n_nodes, n_attributes), and 
+    Examples, i.e. X, are given as an iterable of n_examples.
+    An example, x, is represented as a tuple (features, edges) where
+    features is a numpy array of shape (n_nodes, n_attributes), and
     edges is is an array of shape (n_edges, 2), representing the graph.
 
-    Labels, Y, are given as an interable of n_examples. Each label, y, in Y 
+    Labels, Y, are given as an interable of n_examples. Each label, y, in Y
     is given by a numpy array of shape (n_nodes,).
 
     Parameters
@@ -39,13 +39,17 @@ class GraphCRF(CRF):
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None):
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = (n_states * self.n_features
-                         + n_states * (n_states + 1) / 2)
+
+    def _set_size_psi(self):
+        # try to set the size of psi if possible
+        if self.n_features is not None and self.n_states is not None:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_states * (self.n_states + 1) / 2)
 
     def get_edges(self, x):
         return x[1]
@@ -191,11 +195,23 @@ class EdgeTypeGraphCRF(GraphCRF):
     """
     def __init__(self, n_states=2, n_features=None, inference_method='lp',
                  n_edge_types=1):
+        self.n_edge_types = n_edge_types
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method,)
-        self.n_edge_types = n_edge_types
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_types * n_states ** 2)
+
+    def _set_size_psi(self):
+        if not None in [self.n_states, self.n_features, self.n_edge_types]:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_types * self.n_states ** 2)
+
+    def initialize(self, X, Y):
+        n_edge_types = len(X[0][1])
+        if self.n_edge_types is None:
+            self.n_edge_types = n_edge_types
+        elif self.n_edge_types != n_edge_types:
+            raise ValueError("Expected %d edge types, got %d"
+                             % (self.n_edge_types, n_edge_types))
+        CRF.initialize(self, X, Y)
 
     def get_edges(self, x, flat=True):
         if flat:

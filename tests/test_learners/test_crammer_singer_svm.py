@@ -60,7 +60,7 @@ def test_crammer_singer_model_class_weight():
     # test inference energy
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
-    assert_equal(energy, np.dot(w, pbl.psi(x, y)))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)))
 
     # test inference_result:
     energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
@@ -68,7 +68,7 @@ def test_crammer_singer_model_class_weight():
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)

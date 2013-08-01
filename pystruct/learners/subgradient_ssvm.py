@@ -99,7 +99,6 @@ class SubgradientSSVM(BaseSSVM):
         self.learning_rate = learning_rate
         self.t = 0
         self.adagrad = adagrad
-        self.grad_old = np.zeros(self.model.size_psi)
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0
         self.batch_size = batch_size
@@ -128,7 +127,7 @@ class SubgradientSSVM(BaseSSVM):
 
         self.t += 1.
 
-    def fit(self, X, Y, constraints=None, warm_start=False):
+    def fit(self, X, Y, constraints=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
 
         Parameters
@@ -146,8 +145,15 @@ class SubgradientSSVM(BaseSSVM):
 
         warm_start : boolean, default=False
             Whether to restart a previous fit.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
+        if initialize:
+            self.model.initialize(X, Y)
         print("Training primal subgradient structural SVM")
+        self.grad_old = np.zeros(self.model.size_psi)
         if not warm_start:
             self.w = getattr(self, "w", np.zeros(self.model.size_psi))
             self.objective_curve_ = []

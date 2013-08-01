@@ -3,7 +3,8 @@ from .crf import CRF
 
 
 class MultiLabelModel(CRF):
-    def __init__(self, n_labels, n_features, edges, inference_method=None):
+    def __init__(self, n_labels, n_features=None, edges=None,
+                 inference_method=None):
         CRF.__init__(self, 2, n_features, inference_method)
         self.n_labels = n_labels
         self.edges = edges

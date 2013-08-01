@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_equal)
+from nose.tools import assert_raises
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
@@ -15,6 +16,35 @@ def edge_list_to_features(edge_list):
     edge_features[:len(edge_list[0]), 0] = 1
     edge_features[len(edge_list[0]):, 1] = 1
     return edge_features
+
+
+def test_initialization():
+    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    x, y = X[0], Y[0]
+    n_states = x.shape[-1]
+
+    edge_list = make_grid_edges(x, 4, return_lists=True)
+    edges = np.vstack(edge_list)
+
+    edge_features = edge_list_to_features(edge_list)
+    x = (x.reshape(-1, n_states), edges, edge_features)
+    y = y.ravel()
+    crf = EdgeFeatureGraphCRF()
+    crf.initialize([x], [y])
+    assert_equal(crf.n_edge_features, 2)
+    assert_equal(crf.n_features, 3)
+    assert_equal(crf.n_states, 3)
+
+    crf = EdgeFeatureGraphCRF(n_states=3,
+                              n_features=3,
+                              n_edge_features=2)
+    # no-op
+    crf.initialize([x], [y])
+
+    crf = EdgeFeatureGraphCRF(n_states=4,
+                              n_edge_features=2)
+    # incompatible
+    assert_raises(ValueError, crf.initialize, X=[x], Y=[y])
 
 
 def test_inference():
@@ -53,9 +83,8 @@ def test_inference():
 
     for inference_method in get_installed(["lp", "ad3"]):
         # same inference through CRF inferface
-        crf = EdgeFeatureGraphCRF(n_states=3,
-                                  inference_method=inference_method,
-                                  n_edge_features=2)
+        crf = EdgeFeatureGraphCRF(inference_method=inference_method)
+        crf.initialize([x], [y])
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
         if isinstance(y_pred, tuple):
@@ -69,6 +98,7 @@ def test_inference():
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2)
+        crf.initialize([x], [y])
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=False)
         assert_array_equal(y, y_pred)
@@ -83,9 +113,8 @@ def test_psi_discrete():
     x = (x.reshape(-1, 3), edges, edge_features)
     y_flat = y.ravel()
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
-        crf = EdgeFeatureGraphCRF(n_states=3,
-                                  inference_method=inference_method,
-                                  n_edge_features=2)
+        crf = EdgeFeatureGraphCRF(inference_method=inference_method)
+        crf.initialize([x], [y_flat])
         psi_y = crf.psi(x, y_flat)
         assert_equal(psi_y.shape, (crf.size_psi,))
         # first horizontal, then vertical
@@ -125,10 +154,9 @@ def test_psi_continuous():
 
     # create crf, assemble weight, make prediction
     for inference_method in get_installed(["lp", "ad3"]):
-        crf = EdgeFeatureGraphCRF(n_states=3,
-                                  inference_method=inference_method,
-                                  n_edge_features=2)
+        crf = EdgeFeatureGraphCRF(inference_method=inference_method)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+        crf.initialize([x], [y])
         y_pred = crf.inference(x, w, relaxed=True)
 
         # compute psi for prediction
@@ -150,7 +178,7 @@ def test_energy_continuous():
         found_fractional = False
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
-                                  n_edge_features=2)
+                                  n_edge_features=2, n_features=3)
         while not found_fractional:
             x = np.random.normal(size=(7, 8, 3))
             edge_list = make_grid_edges(x, 4, return_lists=True)
@@ -175,7 +203,7 @@ def test_energy_discrete():
     for inference_method in get_installed(["qpbo", "ad3"]):
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
-                                  n_edge_features=2)
+                                  n_edge_features=2, n_features=3)
         for i in xrange(10):
             x = np.random.normal(size=(7, 8, 3))
             edge_list = make_grid_edges(x, 4, return_lists=True)

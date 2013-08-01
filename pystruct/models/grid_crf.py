@@ -1,6 +1,7 @@
 import numpy as np
 
 from .graph_crf import GraphCRF, EdgeTypeGraphCRF
+from .crf import CRF
 from ..utils import make_grid_edges
 
 
@@ -56,11 +57,11 @@ class GridCRF(GraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  neighborhood=4):
+        self.neighborhood = neighborhood
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
-        self.neighborhood = neighborhood
 
     def get_edges(self, x):
         return make_grid_edges(x, neighborhood=self.neighborhood)
@@ -132,14 +133,21 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+    def __init__(self, n_states=None, n_features=None, inference_method='lp',
                  neighborhood=4):
+        self.n_edge_types = 2 if neighborhood == 4 else 4
         GridCRF.__init__(self, n_states, n_features,
                          inference_method=inference_method,
                          neighborhood=neighborhood)
-        self.n_edge_types = 2 if neighborhood == 4 else 4
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_types * n_states ** 2)
+
+    def _set_size_psi(self):
+        if self.n_features is not None and self.n_states is not None:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_types * self.n_states ** 2)
+
+    def initialize(self, X, Y):
+        # we don't want to infere edge-types as in EdgeTypeGraphCRF
+        CRF.initialize(self, X, Y)
 
     def get_edges(self, x, flat=True):
         return make_grid_edges(x, neighborhood=self.neighborhood,

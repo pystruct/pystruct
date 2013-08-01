@@ -58,7 +58,7 @@ def test_k_means_initialization():
 def test_k_means_initialization_grid_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=1)
+    crf = LatentGridCRF(n_states_per_label=1, n_features=2, n_labels=2)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -66,7 +66,7 @@ def test_k_means_initialization_grid_crf():
 def test_k_means_initialization_graph_crf():
     # with only 1 state per label, nothing happends
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=1)
+    crf = LatentGraphCRF(n_states_per_label=1, n_features=2, n_labels=2)
     # convert grid model to graph model
     X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
          for x in X]
@@ -77,7 +77,9 @@ def test_k_means_initialization_graph_crf():
 
 def test_k_means_initialization_directional_grid_crf():
     X, Y = toy.generate_big_checker(n_samples=10)
-    crf = LatentDirectionalGridCRF(n_labels=2, n_states_per_label=1)
+    crf = LatentDirectionalGridCRF(n_states_per_label=1, n_features=2,
+                                   n_labels=2)
+    #crf.initialize(X, Y)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
 
@@ -91,7 +93,7 @@ def test_blocks_crf_unaries():
                                  0,  0,  0,
                                  0,  0,  0, 0])
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
     h_hat = crf.inference(x, w)
     assert_array_equal(h_hat / 2, np.argmax(x, axis=-1))
 
@@ -105,7 +107,7 @@ def test_blocks_crf():
                                 -4, -4,  0, 0])
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
     h_hat = crf.inference(x, w)
     assert_array_equal(y, h_hat / 2)
 
@@ -133,11 +135,11 @@ def test_blocks_crf_directional():
                                -4, -4,  0,  0,
                                -4, -4,  0,  0])
     w_directional = np.hstack([unary_weights.ravel(), pw_directional])
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2,
-                        inference_method='lp')
-    directional_crf = LatentDirectionalGridCRF(n_labels=2,
-                                               n_states_per_label=2,
+    crf = LatentGridCRF(n_states_per_label=2, inference_method='lp')
+    crf.initialize(X, Y)
+    directional_crf = LatentDirectionalGridCRF(n_states_per_label=2,
                                                inference_method='lp')
+    directional_crf.initialize(X, Y)
     h_hat = crf.inference(x, w)
     h_hat_d = directional_crf.inference(x, w_directional)
     assert_array_equal(h_hat, h_hat_d)
@@ -156,7 +158,7 @@ def test_blocks_crf_directional():
 
 
 def test_latent_consistency_zero_pw_graph():
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.zeros(18)
         w[:8] = np.random.normal(size=8)
@@ -167,7 +169,7 @@ def test_latent_consistency_zero_pw_graph():
 
 
 def test_latent_consistency_graph():
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(4))
@@ -178,7 +180,7 @@ def test_latent_consistency_graph():
 
 
 def test_loss_augmented_inference_energy_graph():
-    crf = LatentGraphCRF(n_labels=2, n_states_per_label=2,
+    crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2,
                          inference_method='lp')
     for i in xrange(10):
         w = np.random.normal(size=18)
@@ -193,7 +195,7 @@ def test_loss_augmented_inference_energy_graph():
 
 
 def test_latent_consistency_zero_pw_grid():
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.zeros(18)
         w[:8] = np.random.normal(size=8)
@@ -204,7 +206,7 @@ def test_latent_consistency_zero_pw_grid():
 
 
 def test_latent_consistency_grid():
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(4, 4))
@@ -214,7 +216,7 @@ def test_latent_consistency_grid():
 
 
 def test_loss_augmented_inference_exhaustive_grid():
-    crf = LatentGridCRF(n_labels=2, n_states_per_label=2)
+    crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in xrange(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(2, 2))
@@ -233,7 +235,7 @@ def test_continuous_y():
                       0,     # pairwise
                       -4, 0])
 
-        crf = LatentGridCRF(n_labels=2, n_states_per_label=1,
+        crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=1,
                             inference_method=inference_method)
         psi = crf.psi(x, y)
         y_cont = np.zeros_like(x)

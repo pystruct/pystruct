@@ -1,11 +1,3 @@
-######################
-# (c) 2012 Andreas Mueller <amueller@ais.uni-bonn.de>
-# ALL RIGHTS RESERVED.
-#
-# Implements a HRF / Latent Dynamic CRF
-# For each output node there is one hidden node that is assigned a latent
-# subclass.
-
 import numbers
 
 import numpy as np
@@ -97,34 +89,54 @@ class LatentGraphCRF(GraphCRF):
             - 'ad3' for AD3 dual decomposition.
 
     """
-    def __init__(self, n_labels, n_features=None, n_states_per_label=2,
+    def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
                  inference_method=None):
         self.n_labels = n_labels
-        if n_features is None:
-            n_features = n_labels
+        self.n_states_per_label = n_states_per_label
+        GraphCRF.__init__(self, n_states=None, n_features=n_features,
+                          inference_method=inference_method)
 
-        if isinstance(n_states_per_label, numbers.Integral):
+    def _set_size_psi(self):
+        if None in [self.n_features, self.n_labels]:
+            return
+
+        if isinstance(self.n_states_per_label, numbers.Integral):
             # same for all labels
-            n_states_per_label = np.array([n_states_per_label
-                                           for i in xrange(n_labels)])
+            n_states_per_label = np.array([
+                self.n_states_per_label for i in xrange(self.n_labels)])
         else:
-            n_states_per_label = np.array(n_states_per_label)
-            if len(n_states_per_label) != n_labels:
+            n_states_per_label = np.array(self.n_states_per_label)
+            if len(n_states_per_label) != self.n_labels:
                 raise ValueError("states_per_label must be integer"
                                  "or array-like of length n_labels. Got %s"
                                  % str(n_states_per_label))
         self.n_states_per_label = n_states_per_label
-        n_states = np.sum(n_states_per_label)
+        self.n_states = np.sum(n_states_per_label)
 
         # compute mapping from latent states to labels
         ranges = np.cumsum(n_states_per_label)
-        states_map = np.zeros(n_states, dtype=np.int)
-        for l in xrange(1, n_labels):
+        states_map = np.zeros(self.n_states, dtype=np.int)
+        for l in xrange(1, self.n_labels):
             states_map[ranges[l - 1]: ranges[l]] = l
         self._states_map = states_map
+        GraphCRF._set_size_psi(self)
 
-        GraphCRF.__init__(self, n_states, n_features,
-                          inference_method=inference_method)
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_labels = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_labels is None:
+            self.n_labels = n_labels
+        elif self.n_labels != n_labels:
+            raise ValueError("Expected %d states, got %d"
+                             % (self.n_labels, n_labels))
+        self._set_size_psi()
+        self._set_class_weight()
 
     def label_from_latent(self, h):
         return self._states_map[h]

@@ -69,7 +69,8 @@ def test_inference_trivial():
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
-    assert_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) + crf.loss(h_hat, y))
+    assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
+                        crf.loss(h_hat, y))
     #print(h_hat)
     #print(h)
     #print(crf.loss(h_hat, h))
@@ -165,7 +166,8 @@ def test_inference_trivial_features():
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
-    assert_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) + crf.loss(h_hat, y))
+    assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
+                        crf.loss(h_hat, y))
 
 
 def test_edge_feature_latent_node_crf_no_latent():

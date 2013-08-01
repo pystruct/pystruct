@@ -79,7 +79,7 @@ class StructuredPerceptron(BaseSSVM):
         self.decay_t0 = decay_t0
         self.average = average
 
-    def fit(self, X, Y):
+    def fit(self, X, Y, initialize=True):
         """Learn parameters using structured perceptron.
 
         Parameters
@@ -91,8 +91,13 @@ class StructuredPerceptron(BaseSSVM):
         Y : iterable
             Training labels. Contains the strctured labels for inputs in X.
             Needs to have the same length as X.
-        """
 
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
+        """
+        if initialize:
+            self.model.initialize(X, Y)
         size_psi = self.model.size_psi
         self.w = np.zeros(size_psi)
         if self.average is not False:
