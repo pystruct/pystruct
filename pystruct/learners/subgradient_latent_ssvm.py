@@ -97,7 +97,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
             break_on_no_constraints=break_on_no_constraints, logger=logger,
             decay_t0=decay_t0)
 
-    def fit(self, X, Y, H_init=None, warm_start=False):
+    def fit(self, X, Y, H_init=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
 
         Parameters
@@ -115,10 +115,15 @@ class LatentSubgradientSSVM(SubgradientSSVM):
 
         warm_start : boolean, default=False
             Whether to restart a previous fit.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
         if self.verbose > 0:
             print("Training latent subgradient structural SVM")
-        self.model.initialize(X, Y)
+        if initialize:
+            self.model.initialize(X, Y)
         self.grad_old = np.zeros(self.model.size_psi)
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(

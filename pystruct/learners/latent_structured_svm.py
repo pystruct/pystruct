@@ -14,11 +14,15 @@ from ..utils import find_constraint
 class LatentSSVM(BaseSSVM):
     """Stuctured SVM solver for latent-variable models.
 
-    Alternates between doing latent variale completion and solving the
-    completed SSVM problem using the ``base_ssvm`` solver.
+    This is a hard-EM-style algorithm that alternates between
+    latent variable completion for the ground truth and
+    learning the parameters with the latent variables held fixed
+    using the ``base_ssvm`` solver.
 
     The model is expected to know how to initialize itself
-    - it should provide a ``init_latent`` procedure.
+    - it should provide a ``init_latent`` procedure.  Optionally the ``H_init``
+    parameter can be passed to ``fit``, to explicitly initialize the latent
+    variables in the first iteration.
 
     If the base_ssvm is an n-slack SSVM, the current constraints
     will be adjusted after recomputing the latent variables H.
@@ -47,7 +51,30 @@ class LatentSSVM(BaseSSVM):
         self.latent_iter = latent_iter
         self.logger = logger
 
-    def fit(self, X, Y, H_init=None):
+    def fit(self, X, Y, H_init=None, initialize=True):
+        """Learn parameters using the concave-convex procedure.
+
+        If no H_init is given, the latent variables are initialized
+        using the ``init_latent`` method of the model.
+
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+            No requirement on the particular form of entries of X is made.
+
+        Y : iterable
+            Training labels. Contains the strctured labels for inputs in X.
+            Needs to have the same length as X.
+
+        H_init : iterable, optional
+            Initial values for the latent variables.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
+        """
+
         self.model.initialize(X, Y)
         w = np.zeros(self.model.size_psi)
         constraints = None
