@@ -164,21 +164,19 @@ def test_multinomial_grid_unaries():
         X, Y = ds(n_samples=1, size_x=9)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
-        for inference_method in get_installed():
-            # dai is to expensive
-            crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-            crf.initialize(X, Y)
-            w_unaries_only = np.zeros(crf.size_psi)
-            w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
-            # test that inference with unaries only is the
-            # same as argmax
-            inf_unaries = crf.inference(x, w_unaries_only)
+        crf = GridCRF(n_states=n_labels)
+        crf.initialize(X, Y)
+        w_unaries_only = np.zeros(crf.size_psi)
+        w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
+        # test that inference with unaries only is the
+        # same as argmax
+        inf_unaries = crf.inference(x, w_unaries_only)
 
-            assert_array_equal(inf_unaries, np.argmax(x, axis=2))
-            # check that the right thing happens on noise-free data
-            X, Y = ds(n_samples=1, noise=0)
-            inf_unaries = crf.inference(X[0], w_unaries_only)
-            assert_array_equal(inf_unaries, Y[0])
+        assert_array_equal(inf_unaries, np.argmax(x, axis=2))
+        # check that the right thing happens on noise-free data
+        X, Y = ds(n_samples=1, noise=0)
+        inf_unaries = crf.inference(X[0], w_unaries_only)
+        assert_array_equal(inf_unaries, Y[0])
 
 
 def test_binary_crf_exhaustive():
