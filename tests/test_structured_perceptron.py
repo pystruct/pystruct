@@ -3,12 +3,14 @@ from numpy.testing import assert_array_equal
 from pystruct.models import GridCRF
 from pystruct.learners import StructuredPerceptron
 import pystruct.toy_datasets as toy
+from pystruct.inference import get_installed
 
 
 def test_binary_blocks_perceptron_online():
     #testing subgradient ssvm on easy binary dataset
     X, Y = toy.generate_blocks(n_samples=10)
-    crf = GridCRF()
+    inference_method = get_installed(['qpbo', 'ad3', 'lp'])[0]
+    crf = GridCRF(inference_method=inference_method)
     clf = StructuredPerceptron(model=crf, max_iter=20)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
