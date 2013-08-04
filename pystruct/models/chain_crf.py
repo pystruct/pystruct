@@ -52,34 +52,3 @@ class ChainCRF(GraphCRF):
 
     def get_features(self, x):
         return x
-
-    def _reshape_y(self, y, shape_x, return_energy):
-        if return_energy:
-            y, energy = y
-
-        if isinstance(y, tuple):
-            y = (y[0].reshape(shape_x , y[0].shape[1]), y[1])
-        else:
-            y = y.reshape(shape_x,)  # works for chains too
-
-        if return_energy:
-            return y, energy
-        return y
-
-    def inference(self, x, w, relaxed=False, return_energy=False):
-        y = GraphCRF.inference(self, x, w, relaxed=relaxed,
-                               return_energy=return_energy)
-        return self._reshape_y(y, len(x), return_energy)
-
-    def loss_augmented_inference(self, x, y, w, relaxed=False,
-                                 return_energy=False):
-        y_hat = GraphCRF.loss_augmented_inference(self, x, y.ravel(), w,
-                                                  relaxed=relaxed,
-                                                  return_energy=return_energy)
-        return self._reshape_y(y_hat, x.shape, return_energy)
-
-    def continuous_loss(self, y, y_hat):
-        # continuous version of the loss
-        # y_hat is the result of linear programming
-        return GraphCRF.continuous_loss(
-            self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
