@@ -6,7 +6,8 @@ from .graph_crf import GraphCRF
 def make_chain_edges(x):
     # this can be optimized sooooo much!
     inds = np.arange(x.shape[0])
-    edges = np.c_[inds[:-1], inds[1:]]
+    edges = np.concatenate([inds[:-1, np.newaxis], inds[1:, np.newaxis]],
+                           axis=1)
     return edges
 
 
@@ -43,7 +44,7 @@ class ChainCRF(GraphCRF):
             - 'ad3' for AD3 dual decomposition.
 
     """
-    def __init__(self, n_states, n_features, inference_method='qpbo'):
+    def __init__(self, n_states=None, n_features=None, inference_method=None):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
 
@@ -52,3 +53,21 @@ class ChainCRF(GraphCRF):
 
     def get_features(self, x):
         return x
+
+    def initialize(self, X, Y):
+        n_features = X[0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_states = len(np.unique(np.hstack([y for y in Y])))
+        if self.n_states is None:
+            self.n_states = n_states
+        elif self.n_states != n_states:
+            raise ValueError("Expected %d states, got %d"
+                             % (self.n_states, n_states))
+
+        self._set_size_psi()
+        self._set_class_weight()

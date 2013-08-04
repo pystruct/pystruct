@@ -20,6 +20,8 @@ class CRF(StructuredModel):
         self._set_class_weight()
 
     def initialize(self, X, Y):
+        # Works for both GridCRF and GraphCRF, but not ChainCRF.
+        # funny that ^^
         n_features = X[0][0].shape[1]
         if self.n_features is None:
             self.n_features = n_features
