@@ -29,8 +29,6 @@ leading to underestimating the primal objective.
 See plot_exact_learning.py for a way to deal with this.
 
 """
-import numpy as np
-
 from pystruct.models import DirectionalGridCRF
 import pystruct.learners as ssvm
 import pystruct.toy_datasets as toy
@@ -38,12 +36,9 @@ from pystruct.plot_learning import plot_learning
 
 
 X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
-n_labels = len(np.unique(Y))
-crf = DirectionalGridCRF(n_states=n_labels, inference_method="qpbo",
-                         neighborhood=4)
-clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=1, verbose=0,
-                        check_constraints=True, n_jobs=-1, inference_cache=100,
-                        inactive_window=50, tol=.1, show_loss_every=10)
+crf = DirectionalGridCRF(inference_method="qpbo", neighborhood=4)
+clf = ssvm.OneSlackSSVM(model=crf, C=1, n_jobs=-1, inference_cache=100, tol=.1,
+                        show_loss_every=10)
 clf.fit(X, Y)
 
 plot_learning(clf, time=False)

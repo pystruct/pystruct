@@ -34,11 +34,8 @@ class_weights = 1. / np.bincount(np.hstack(data_train.Y))
 class_weights *= 21. / np.sum(class_weights)
 print(class_weights)
 
-model = crfs.EdgeFeatureGraphCRF(n_states=n_states,
-                                 n_features=data_train.X[0][0].shape[1],
-                                 inference_method='qpbo',
+model = crfs.EdgeFeatureGraphCRF(inference_method='qpbo',
                                  class_weight=class_weights,
-                                 n_edge_features=3,
                                  symmetric_edge_features=[0, 1],
                                  antisymmetric_edge_features=[2])
 

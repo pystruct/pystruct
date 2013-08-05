@@ -25,8 +25,8 @@ Y = y.reshape(-1, 1)
 
 X_train, X_test, y_train, y_test = train_test_split(X_, Y)
 
-pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
-svm = NSlackSSVM(pbl, verbose=1, check_constraints=True, C=100, n_jobs=1)
+pbl = GraphCRF(inference_method='unary')
+svm = NSlackSSVM(pbl, C=100)
 
 
 start = time()

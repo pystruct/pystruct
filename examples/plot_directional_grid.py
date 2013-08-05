@@ -19,12 +19,9 @@ import pystruct.toy_datasets as toy
 
 
 X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
-n_labels = len(np.unique(Y))
-crf = DirectionalGridCRF(n_states=n_labels, inference_method="qpbo",
-                         neighborhood=4)
-clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=1, verbose=0,
-                        check_constraints=True, n_jobs=-1,
-                        inference_cache=100, inactive_window=50, tol=.1)
+crf = DirectionalGridCRF(inference_method="qpbo", neighborhood=4)
+clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=1, n_jobs=-1,
+                        inference_cache=100, tol=.1)
 clf.fit(X, Y)
 Y_pred = np.array(clf.predict(X))
 print("overall accuracy (training set): %f" % clf.score(X, Y))
