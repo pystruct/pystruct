@@ -130,7 +130,7 @@ def test_latent_node_boxes_standard_latent_features():
     # we make it even easier now by adding features that encode the correct
     # latent state. This basically tests that the features are actually used
 
-    X, Y = toy.make_simple_2x2(seed=1, n_samples=40, n_flips=6)
+    X, Y = toy.make_simple_2x2(seed=1, n_samples=20, n_flips=6)
     latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1,
                                latent_node_features=True)
     one_slack = OneSlackSSVM(latent_crf)
@@ -157,10 +157,10 @@ def test_latent_node_boxes_standard_latent_features():
         Y_flat = [y.ravel() for y in Y]
 
         X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
-        latent_svm.fit(X_[:20], Y_flat[:20])
+        latent_svm.fit(X_[:10], Y_flat[:10])
 
-        assert_array_equal(latent_svm.predict(X_[:20]), Y_flat[:20])
-        assert_equal(latent_svm.score(X_[:20], Y_flat[:20]), 1)
+        assert_array_equal(latent_svm.predict(X_[:10]), Y_flat[:10])
+        assert_equal(latent_svm.score(X_[:10], Y_flat[:10]), 1)
 
         # we actually become prefect ^^
-        assert_true(.98 < latent_svm.score(X_[20:], Y_flat[20:]) <= 1)
+        assert_true(.98 < latent_svm.score(X_[10:], Y_flat[10:]) <= 1)
