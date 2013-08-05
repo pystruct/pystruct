@@ -49,17 +49,14 @@ Y_flat = [y.ravel() for y in Y]
 
 # first, use standard graph CRF. Can't do much, high loss.
 crf = GraphCRF()
-svm = NSlackSSVM(model=crf, max_iter=200, C=1, verbose=0,
-                 check_constraints=True, break_on_bad=False, n_jobs=1)
+svm = NSlackSSVM(model=crf, max_iter=200, C=1, n_jobs=1)
 
-# make dataset from X and graph without edges
-#G_ = [np.zeros((0, 2), dtype=np.int) for x in X]
 G = [make_grid_edges(x) for x in X]
 
 asdf = zip(X_flat, G)
 svm.fit(asdf, Y_flat)
 plot_boxes(svm.predict(asdf), title="Non-latent SSVM predictions")
-print("Training score binary SVM: %f" % svm.score(asdf, Y_flat))
+print("Training score binary grid CRF: %f" % svm.score(asdf, Y_flat))
 
 # using one latent variable for each 2x2 rectangle
 latent_crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2,
