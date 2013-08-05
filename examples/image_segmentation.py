@@ -5,14 +5,16 @@ Semantic Image Segmentation on Pascal VOC
 This example demonstrates learning a superpixel CRF
 for semantic image segmentation.
 To run the experiment, please download the pre-processed data from:
+http://www.ais.uni-bonn.de/~amueller/data/
 
 The data consists of superpixels, unary potentials, and the connectivity
 structure of the superpixels.
 The unary potentials were originally provided by Philipp Kraehenbuehl:
+http://graphics.stanford.edu/projects/densecrf/
 
 The superpixels were extracted using SLIC.
 The code for generating the connectivity graph and edge features will be made
-public soon.
+available soon.
 
 This example does not contain the proper evaluation on pixel level, as that
 would need the Pascal VOC 2010 dataset.
