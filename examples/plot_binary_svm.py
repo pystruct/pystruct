@@ -38,8 +38,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
 pbl = BinarySVMModel()
 n_slack_svm = NSlackSSVM(pbl, C=10, batch_size=-1)
-one_slack_svm = OneSlackSSVM(pbl, C=10,
-                             max_iter=1000, tol=0.1)
+one_slack_svm = OneSlackSSVM(pbl, C=10, tol=0.1)
 subgradient_svm = SubgradientSSVM(pbl, C=10, learning_rate=0.1, max_iter=100,
                                   batch_size=10)
 
