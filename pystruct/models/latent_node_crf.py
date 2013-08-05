@@ -77,7 +77,7 @@ class LatentNodeCRF(GraphCRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="ad3"
+    inference_method : string, default=None
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
