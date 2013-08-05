@@ -4,6 +4,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
 
 from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF, GridCRF
 from pystruct.learners import LatentSubgradientSSVM, SubgradientSSVM
+from pystruct.inference import get_installed
 
 import pystruct.toy_datasets as toy
 
@@ -37,24 +38,25 @@ def test_with_crosses():
 def test_objective():
     # test that LatentSubgradientSSVM does the same as SubgradientSVM,
     # in particular that it has the same loss, if there are no latent states.
-    X, Y = toy.generate_blocks_multinomial(n_samples=10)
+    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=.3, seed=1)
+    inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
     n_labels = 3
     crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
-                         inference_method='lp')
-    clfl = LatentSubgradientSSVM(model=crfl, max_iter=50, C=10.,
-                                 learning_rate=0.001, momentum=0.98,
-                                 decay_exponent=0)
+                         inference_method=inference_method)
+    clfl = LatentSubgradientSSVM(model=crfl, max_iter=20, C=10.,
+                                 learning_rate=0.001, momentum=0.98)
     crfl.initialize(X, Y)
     clfl.w = np.zeros(crfl.size_psi)  # this disables random init
     clfl.fit(X, Y)
 
-    crf = GridCRF(n_states=n_labels, inference_method='lp')
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10.,
-                          learning_rate=0.001, momentum=0.98, decay_exponent=0)
+    crf = GridCRF(n_states=n_labels, inference_method=inference_method)
+    clf = SubgradientSSVM(model=crf, max_iter=20, C=10., learning_rate=0.001,
+                          momentum=0.98)
     clf.fit(X, Y)
     assert_array_almost_equal(clf.w, clfl.w)
-    assert_array_equal(clf.predict(X), Y)
     assert_almost_equal(clf.objective_curve_[-1], clfl.objective_curve_[-1])
+    assert_array_equal(clf.predict(X), clfl.predict(X))
+    assert_array_equal(clf.predict(X), Y)
 
 
 #def test_with_crosses_bad_init():
