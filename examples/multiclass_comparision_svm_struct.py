@@ -15,15 +15,17 @@ use general structured prediction solvers to solve the task.
 The specialized implementation of the Crammer-Singer SVM in LibLinear
 is much faster than either one.
 
-The plots are adjusted to disregard the time spend in writing
-the data to the file for use with SVM^struct. As this time is
-machine dependent, the plots are only approximate (unless you measure
-that time for your machine and re-adjust)
+For SVM^struct, the plot show CPU time as reportet by SVM^struct.
+For pystruct, the plot shows the time spent in the fit function
+according to time.clock.
+
+Both models have disabled constraint caching. With constraint caching,
+SVM^struct is somewhat faster, but PyStruct doesn't gain anything.
 """
 
 import tempfile
 import os
-from time import time
+from time import clock
 
 import numpy as np
 from sklearn.datasets import dump_svmlight_file
@@ -35,7 +37,7 @@ from pystruct.models import CrammerSingerSVMModel
 from pystruct.learners import OneSlackSSVM
 
 # please set the path to the svm-struct multiclass binaries here
-svmstruct_path = "/home/local/lamueller/tools/svm_multiclass/"
+svmstruct_path = "/home/user/amueller/tools/svm_multiclass/"
 
 
 class MultiSVM():
@@ -51,8 +53,11 @@ class MultiSVM():
         train_data_file = tempfile.mktemp(suffix='.svm_dat')
         dump_svmlight_file(X, y + 1, train_data_file, zero_based=False)
         C = self.C * 100. * len(X)
-        os.system(svmstruct_path + "svm_multiclass_learn -c %f %s %s"
-                  % (C, train_data_file, self.model_file))
+        svmstruct_process = os.popen(svmstruct_path
+                                     + "svm_multiclass_learn -w 3 -c %f %s %s"
+                                     % (C, train_data_file, self.model_file))
+        self.output_ = svmstruct_process.read().split("\n")
+        self.runtime_ = float(self.output_[-4].split(":")[1])
 
     def _predict(self, X, y=None):
         if y is None:
@@ -81,29 +86,32 @@ def eval_on_data(X, y, svm, Cs):
     accuracies, times = [], []
     for C in Cs:
         svm.C = C
-        start = time()
+        start = clock()
         svm.fit(X, y)
-        times.append(time() - start)
+        if hasattr(svm, "runtime_"):
+            times.append(svm.runtime_)
+        else:
+            times.append(clock() - start)
         accuracies.append(accuracy_score(y, svm.predict(X)))
     return accuracies, times
 
 
-def plot_timings(times_svmstruct, times_pystruct, dataset="usps"):
-    plt.figure()
-    plt.figsize(4, 3)
-    plt.plot(times_svmstruct, ":", label="SVM^struct", c='blue')
-    plt.plot(times_pystruct, "-.", label="PyStruct", c='red')
+def plot_curves(curve_svmstruct, curve_pystruct, Cs, title="", filename=""):
+    plt.figure(figsize=(5, 4))
+    plt.plot(curve_svmstruct, "--", label="SVM^struct", c='red', linewidth=3)
+    plt.plot(curve_pystruct, "-.", label="PyStruct", c='blue', linewidth=3)
     plt.xlabel("C")
     plt.xticks(np.arange(len(Cs)), Cs)
-    plt.ylabel("learning time (s)")
     plt.legend(loc='best')
-    plt.savefig("timings_%s.pdf" % dataset, bbox_inches='tight')
+    plt.title(title)
+    if filename:
+        plt.savefig("%s.pdf" % filename, bbox_inches='tight')
 
 
-if __name__ == "__main__":
+def main():
     Cs = 10. ** np.arange(-4, 1)
     multisvm = MultiSVM()
-    svm = OneSlackSSVM(CrammerSingerSVMModel(tol=0.001))
+    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
 
     iris = load_iris()
     X, y = iris.data, iris.target
@@ -111,25 +119,30 @@ if __name__ == "__main__":
     accs_pystruct, times_pystruct = eval_on_data(X, y, svm, Cs=Cs)
     accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
 
-    # the adjustment of 0.01 is for the time spent writing the file, see above.
-    plot_timings(np.array(times_svmstruct) - 0.01, times_pystruct,
-                 dataset="iris")
+    plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times iris")
+    plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy iris")
 
     digits = load_digits()
     X, y = digits.data / 16., digits.target
 
-    accs_pystruct, times_pystruct = eval_on_data(X, y, Cs=Cs)
-    accs_svmstruct, times_svmstruct = eval_on_data(X, y, MultiSVM(), Cs=Cs)
-
-    plot_timings(np.array(times_svmstruct) - 0.85, times_pystruct,
-                 dataset="digits")
-
-    digits = fetch_mldata("USPS")
-    X, y = digits.data, digits.target.astype(np.int)
-
-    accs_pystruct, times_pystruct = eval_on_data(X, y - 1, svm, Cs=Cs)
+    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
+    accs_pystruct, times_pystruct = eval_on_data(X, y, svm, Cs=Cs)
     accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
 
-    plot_timings(np.array(times_svmstruct) - 35, times_pystruct,
-                 dataset="usps")
+    plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times digits")
+    plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy digits")
+
+    #digits = fetch_mldata("USPS")
+    #X, y = digits.data, digits.target.astype(np.int)
+    #svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
+
+    #accs_pystruct, times_pystruct = eval_on_data(X, y - 1, svm, Cs=Cs)
+    #accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
+
+    #plot_timings(np.array(times_svmstruct), times_pystruct,
+                 #dataset="usps")
     plt.show()
+
+
+if __name__ == "__main__":
+    main()
