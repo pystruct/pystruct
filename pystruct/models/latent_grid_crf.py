@@ -9,7 +9,7 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
     """Latent variable CRF with 2d grid graph.
     """
     def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
-                 inference_method='lp', neighborhood=4):
+                 inference_method=None, neighborhood=4):
         LatentGraphCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                 inference_method=inference_method)
         GridCRF.__init__(self, n_states=self.n_states,
