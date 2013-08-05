@@ -31,6 +31,7 @@ import numpy as np
 from sklearn.datasets import dump_svmlight_file
 from sklearn.datasets import fetch_mldata, load_iris, load_digits
 from sklearn.metrics import accuracy_score
+from sklearn.cross_validation import train_test_split
 import matplotlib.pyplot as plt
 
 from pystruct.models import CrammerSingerSVMModel
@@ -82,17 +83,17 @@ class MultiSVM():
         return self._predict(X)[:, 1:]
 
 
-def eval_on_data(X, y, svm, Cs):
+def eval_on_data(X_train, y_train, X_test, y_test, svm, Cs):
     accuracies, times = [], []
     for C in Cs:
         svm.C = C
         start = clock()
-        svm.fit(X, y)
+        svm.fit(X_train, y_train)
         if hasattr(svm, "runtime_"):
             times.append(svm.runtime_)
         else:
             times.append(clock() - start)
-        accuracies.append(accuracy_score(y, svm.predict(X)))
+        accuracies.append(accuracy_score(y_test, svm.predict(X_test)))
     return accuracies, times
 
 
@@ -111,36 +112,62 @@ def plot_curves(curve_svmstruct, curve_pystruct, Cs, title="", filename=""):
 def main():
     Cs = 10. ** np.arange(-4, 1)
     multisvm = MultiSVM()
-    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
+    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.01)
 
+    # IRIS
     iris = load_iris()
     X, y = iris.data, iris.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
-    accs_pystruct, times_pystruct = eval_on_data(X, y, svm, Cs=Cs)
-    accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
-
+    accs_pystruct, times_pystruct = eval_on_data(X_train, y_train, X_test,
+                                                 y_test, svm, Cs=Cs)
+    accs_svmstruct, times_svmstruct = eval_on_data(X_train, y_train, X_test,
+                                                   y_test, multisvm, Cs=Cs)
     plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times iris")
     plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy iris")
 
+    # DIGITS
     digits = load_digits()
     X, y = digits.data / 16., digits.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
-    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
-    accs_pystruct, times_pystruct = eval_on_data(X, y, svm, Cs=Cs)
-    accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
+    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.01)
+    accs_pystruct, times_pystruct = eval_on_data(X_train, y_train, X_test,
+                                                 y_test, svm, Cs=Cs)
+    accs_svmstruct, times_svmstruct = eval_on_data(X_train, y_train, X_test,
+                                                   y_test, multisvm, Cs=Cs)
 
     plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times digits")
     plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy digits")
 
+    # USPS
     #digits = fetch_mldata("USPS")
-    #X, y = digits.data, digits.target.astype(np.int)
-    #svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.001)
+    #X, y = digits.data, digits.target.astype(np.int) - 1
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+    #svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.01)
 
-    #accs_pystruct, times_pystruct = eval_on_data(X, y - 1, svm, Cs=Cs)
-    #accs_svmstruct, times_svmstruct = eval_on_data(X, y, multisvm, Cs=Cs)
+    #accs_pystruct, times_pystruct = eval_on_data(X_train, y_train, X_test,
+                                                 #y_test, svm, Cs=Cs)
+    #accs_svmstruct, times_svmstruct = eval_on_data(X_train, y_train, X_test,
+                                                   #y_test, multisvm, Cs=Cs)
 
-    #plot_timings(np.array(times_svmstruct), times_pystruct,
-                 #dataset="usps")
+    #plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times USPS")
+    #plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy USPS")
+
+    # MNIST
+    digits = fetch_mldata("MNIST original")
+    X, y = digits.data / 255., digits.target.astype(np.int)
+    X_train, X_test = X[:60000], X[60000:]
+    y_train, y_test = y[:60000], y[60000:]
+    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.01)
+
+    accs_pystruct, times_pystruct = eval_on_data(X_train, y_train, X_test,
+                                                 y_test, svm, Cs=Cs)
+    accs_svmstruct, times_svmstruct = eval_on_data(X_train, y_train, X_test,
+                                                   y_test, multisvm, Cs=Cs)
+
+    plot_curves(times_svmstruct, times_pystruct, Cs=Cs, title="times MNIST")
+    plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs, title="accuracy MNIST")
     plt.show()
 
 
