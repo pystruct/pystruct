@@ -40,9 +40,9 @@ X_train_, X_test_, X_train, X_test, y_train, y_test, y_org_train, y_org_test =\
 # First, perform the equivalent of the usual SVM.  This is represented as
 # a CRF problem with no edges.
 
-pbl = GraphCRF(n_features=64, n_states=2, inference_method='lp')
-svm = NSlackSSVM(pbl, verbose=0, check_constraints=True, C=1000, n_jobs=1,
-                 batch_size=-1)
+pbl = GraphCRF(inference_method='unary')
+# We use batch_size=-1 as a binary problem can be solved in one go.
+svm = NSlackSSVM(pbl, C=1, batch_size=-1, verbose=3)
 
 svm.fit(X_train_, y_train)
 
@@ -50,9 +50,9 @@ svm.fit(X_train_, y_train)
 # 5 states per label is enough capacity to encode the 5 digit classes.
 
 latent_pbl = LatentGraphCRF(n_features=64, n_labels=2, n_states_per_label=5,
-                            inference_method='ad3')
-base_ssvm = NSlackSSVM(latent_pbl, verbose=0, check_constraints=True, C=100,
-                       n_jobs=2, batch_size=-1, tol=.01)
+                            inference_method='unary')
+base_ssvm = NSlackSSVM(latent_pbl, verbose=3, C=1, tol=.01,
+                       inactive_threshold=1e-3, batch_size=10)
 latent_svm = LatentSSVM(base_ssvm=base_ssvm, latent_iter=2)
 latent_svm.fit(X_train_, y_train)
 
