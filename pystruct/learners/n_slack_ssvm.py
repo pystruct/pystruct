@@ -239,7 +239,7 @@ class NSlackSSVM(BaseSSVM):
             Leave this true except if you really know what you are doing.
         """
         print("Training n-slack dual structural SVM")
-        cvxopt.solvers.options['show_progress'] = self.verbose > 1
+        cvxopt.solvers.options['show_progress'] = self.verbose > 3
         if initialize:
             self.model.initialize(X, Y)
         self.w = np.zeros(self.model.size_psi)
@@ -263,6 +263,7 @@ class NSlackSSVM(BaseSSVM):
                 self.timestamps_.append(time() - self.timestamps_[0])
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
+                if self.verbose > 2:
                     print(self)
                 new_constraints = 0
                 # generate slices through dataset from batch_size
