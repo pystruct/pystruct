@@ -376,7 +376,7 @@ class OneSlackSSVM(BaseSSVM):
             Leave this true except if you really know what you are doing.
         """
         print("Training 1-slack dual structural SVM")
-        cvxopt.solvers.options['show_progress'] = self.verbose > 1
+        cvxopt.solvers.options['show_progress'] = self.verbose > 3
         if initialize:
             self.model.initialize(X, Y)
 
@@ -424,6 +424,7 @@ class OneSlackSSVM(BaseSSVM):
                 cached_constraint = False
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
+                if self.verbose > 2:
                     print(self)
                 try:
                     Y_hat, dpsi, loss_mean = self._constraint_from_cache(
