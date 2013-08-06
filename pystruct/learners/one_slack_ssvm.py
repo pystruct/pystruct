@@ -63,7 +63,7 @@ class OneSlackSSVM(BaseSSVM):
         purposes). Zero means never, otherwise it will be computed very
         show_loss_every'th epoch.
 
-    tol : float, default=1e-5
+    tol : float, default=1e-3
         Convergence tolerance. If dual objective decreases less than tol,
         learning is stopped. The default corresponds to ignoring the behavior
         of the dual objective and stop only if no more constraints can be
@@ -115,7 +115,7 @@ class OneSlackSSVM(BaseSSVM):
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
                  verbose=0, positive_constraint=None, n_jobs=1,
-                 break_on_bad=False, show_loss_every=0, tol=1e-5,
+                 break_on_bad=False, show_loss_every=0, tol=1e-3,
                  inference_cache=0, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, cache_tol='auto',
                  switch_to=None):
