@@ -5,9 +5,13 @@ from scipy import sparse
 
 from sklearn.metrics import hamming_loss
 from sklearn.datasets import fetch_mldata
-from sklearn.grid_search import GridSearchCV
+#from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import mutual_info_score
-from sklearn.utils.mst import minimum_spanning_tree
+try:
+    from sklearn.utils import minimum_spanning_tree
+except ImportError:
+    raise ImportError("Please install a recent version of scikit-learn or"
+                      "scipy to build minimum spanning trees.")
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelModel
@@ -49,9 +53,9 @@ edges = np.vstack([x for x in itertools.combinations(range(14), 2)])
 model = MultiLabelModel(14, X.shape[1], edges=edges, inference_method='qpbo')
 
 #logger = SaveLogger('multi_label_fully_switch_to_dai.pickle', save_every=20)
-ssvm = OneSlackSSVM(model, inference_cache=50, verbose=1, n_jobs=-1, C=.01,
+ssvm = OneSlackSSVM(model, inference_cache=50, verbose=1, n_jobs=-1, C=.1,
                     show_loss_every=20, max_iter=10000, tol=0.01,
-                    switch_to='ad3bb')
+                    switch_to=('ad3', {'branch_and_bound': False}))
 
 #param_grid = {'C': 10. ** np.arange(-3, 1)}
 
