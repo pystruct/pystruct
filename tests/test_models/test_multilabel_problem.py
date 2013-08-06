@@ -2,10 +2,29 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from nose.tools import assert_almost_equal
+from nose.tools import assert_almost_equal, assert_equal, assert_raises
 
 from pystruct.models import MultiLabelModel
 from pystruct.inference.inference_methods import compute_energy
+
+
+def test_initialization():
+    x = np.random.normal(size=(13, 5))
+    y = np.random.randint(2, size=(13, 3))
+    # no edges make independent model
+    model = MultiLabelModel()
+    model.initialize(x, y)
+    assert_equal(model.n_states, 2)
+    assert_equal(model.n_labels, 3)
+    assert_equal(model.n_features, 5)
+    assert_equal(model.size_psi, 5 * 3)
+
+    # setting and then initializing is no-op
+    model = MultiLabelModel(n_features=5, n_labels=3)
+    model.initialize(x, y)  # smoketest
+
+    model = MultiLabelModel(n_features=3, n_labels=3)
+    assert_raises(ValueError, model.initialize, X=x, Y=y)
 
 
 def test_multilabel_independent():

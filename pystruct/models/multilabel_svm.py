@@ -3,12 +3,37 @@ from .crf import CRF
 
 
 class MultiLabelModel(CRF):
-    def __init__(self, n_labels, n_features=None, edges=None,
+    def __init__(self, n_labels=None, n_features=None, edges=None,
                  inference_method=None):
-        CRF.__init__(self, 2, n_features, inference_method)
         self.n_labels = n_labels
         self.edges = edges
-        self.size_psi = n_features * n_labels + 4 * edges.shape[0]
+        CRF.__init__(self, 2, n_features, inference_method)
+
+    def _set_size_psi(self):
+        # try to set the size of psi if possible
+        if self.n_features is not None and self.n_states is not None:
+            if self.edges is None:
+                self.edges = np.zeros(shape=(0, 2), dtype=np.int)
+            self.size_psi = (self.n_features * self.n_labels
+                             + 4 * self.edges.shape[0])
+
+    def initialize(self, X, Y):
+        n_features = X.shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_labels = Y.shape[1]
+        if self.n_labels is None:
+            self.n_labels = n_labels
+        elif self.n_labels != n_labels:
+            raise ValueError("Expected %d labels, got %d"
+                             % (self.n_labels, n_labels))
+
+        self._set_size_psi()
+        self._set_class_weight()
 
     def get_edges(self, x):
         return self.edges
