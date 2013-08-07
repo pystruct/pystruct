@@ -100,7 +100,7 @@ def eval_on_data(X_train, y_train, X_test, y_test, svm, Cs):
 
 def plot_curves(curve_svmstruct, curve_pystruct, Cs, title="", filename=""):
     # plot nice graphs comparing a value for the two implementations
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(7, 4))
     plt.plot(curve_svmstruct, "--", label="SVM^struct", c='red', linewidth=3)
     plt.plot(curve_pystruct, "-.", label="PyStruct", c='blue', linewidth=3)
     plt.xlabel("C")
@@ -108,7 +108,7 @@ def plot_curves(curve_svmstruct, curve_pystruct, Cs, title="", filename=""):
     plt.legend(loc='best')
     plt.title(title)
     if filename:
-        plt.savefig("%s.pdf" % filename, bbox_inches='tight')
+        plt.savefig("%s" % filename, bbox_inches='tight')
 
 
 def do_comparison(X_train, y_train, X_test, y_test, dataset):
@@ -124,9 +124,11 @@ def do_comparison(X_train, y_train, X_test, y_test, dataset):
                                                    multisvm, Cs=Cs)
 
     plot_curves(times_svmstruct, times_pystruct, Cs=Cs,
-                title="times %s" % dataset)
+                title="learning time (s) %s" % dataset,
+                filename="times_%s.pdf" % dataset)
     plot_curves(accs_svmstruct, accs_pystruct, Cs=Cs,
-                title="accuracy %s" % dataset)
+                title="accuracy %s" % dataset,
+                filename="accs_%s.pdf" % dataset)
 
 
 def main():
