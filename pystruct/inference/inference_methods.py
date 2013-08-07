@@ -137,7 +137,9 @@ def _validate_params(unary_potentials, pairwise_params, edges):
             raise ValueError("Expected pairwise_params either to "
                              "be of shape n_states x n_states "
                              "or n_edges x n_states x n_states, but"
-                             " got shape %s" % repr(pairwise_params.shape))
+                             " got shape %s. n_states=%d, n_edge=%d."
+                             % (repr(pairwise_params.shape), n_states,
+                                edges.shape[0]))
         pairwise_potentials = pairwise_params
     return n_states, pairwise_potentials
 
