@@ -5,11 +5,11 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_greater, assert_true
 from pystruct.models import GridCRF, BinarySVMModel
 from pystruct.learners import StructuredPerceptron
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks, generate_blocks_multinomial
 
 
 def test_binary_blocks():
-    X, Y = toy.generate_blocks(n_samples=10)
+    X, Y = generate_blocks(n_samples=10)
     crf = GridCRF()
     clf = StructuredPerceptron(model=crf, max_iter=40)
     clf.fit(X, Y)
@@ -18,7 +18,7 @@ def test_binary_blocks():
 
 
 def test_multinomial_blocks():
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     crf = GridCRF(n_states=X.shape[-1])
     clf = StructuredPerceptron(model=crf, max_iter=10)
     clf.fit(X, Y)
@@ -97,7 +97,7 @@ def test_overflow_averaged():
 
 def test_averaged():
     # Under a lot of noise, averaging helps.  This fails with less noise.
-    X, Y = toy.generate_blocks_multinomial(n_samples=15, noise=2, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=15, noise=2, seed=0)
     X_train, Y_train = X[:10], Y[:10]
     X_test, Y_test = X[10:], Y[10:]
     crf = GridCRF(n_states=X.shape[-1], inference_method='lp')

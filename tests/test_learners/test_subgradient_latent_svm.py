@@ -6,7 +6,7 @@ from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF, GridCRF
 from pystruct.learners import LatentSubgradientSSVM, SubgradientSSVM
 from pystruct.inference import get_installed
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial, generate_easy
 
 
 def test_with_crosses():
@@ -19,7 +19,7 @@ def test_with_crosses():
         # as well as with single background state
         #for inference_method in ['ad3', 'qpbo', 'lp']:
         #for inference_method in ['qpbo']:
-            #X, Y = toy.generate_crosses(n_samples=20, noise=2, n_crosses=1,
+            #X, Y = generate_crosses(n_samples=20, noise=2, n_crosses=1,
                                         #total_size=8, seed=0)
             #n_labels = 2
             #crf = LatentGridCRF(n_labels=n_labels,
@@ -38,7 +38,7 @@ def test_with_crosses():
 def test_objective():
     # test that LatentSubgradientSSVM does the same as SubgradientSVM,
     # in particular that it has the same loss, if there are no latent states.
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=.3, seed=1)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=.3, seed=1)
     inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
     n_labels = 3
     crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
@@ -61,7 +61,7 @@ def test_objective():
 
 #def test_with_crosses_bad_init():
 #    # use less perfect initialization
-#    X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
+#    X, Y = generate_crosses(n_samples=10, noise=5, n_crosses=1,
 #                                total_size=8)
 #    n_labels = 2
 #    crf = LatentGridCRF(n_labels=n_labels, n_states_per_label=2,
@@ -79,8 +79,8 @@ def test_objective():
 
 def test_directional_bars():
     # this test is very fragile :-/
-    X, Y = toy.generate_easy(n_samples=20, noise=2, box_size=2,
-                             total_size=6, seed=2)
+    X, Y = generate_easy(n_samples=20, noise=2, box_size=2, total_size=6,
+                         seed=2)
     n_labels = 2
     crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                    n_states_per_label=[1, 4])

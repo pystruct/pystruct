@@ -9,7 +9,8 @@ from sklearn.datasets import load_iris
 from pystruct.models import GridCRF, GraphCRF
 from pystruct.learners import SubgradientSSVM
 from pystruct.inference import get_installed
-import pystruct.toy_datasets as toy
+from pystruct.datasets import (generate_blocks_multinomial,
+                               generate_checker_multinomial, generate_blocks)
 from pystruct.utils import SaveLogger, train_test_split
 
 
@@ -18,8 +19,7 @@ inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
 
 def test_multinomial_blocks_subgradient():
     #testing cutting plane ssvm on easy multinomial dataset
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3,
-                                           seed=1)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10, momentum=.98,
@@ -30,7 +30,7 @@ def test_multinomial_blocks_subgradient():
 
 
 def test_multinomial_checker_subgradient():
-    X, Y = toy.generate_checker_multinomial(n_samples=10, noise=0.0)
+    X, Y = generate_checker_multinomial(n_samples=10, noise=0.0)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
     clf = SubgradientSSVM(model=crf, max_iter=50, C=10,
@@ -44,7 +44,7 @@ def test_binary_blocks_subgradient_parallel():
     # fixme: travis doesn't like parallelism?
     pass
     #testing subgradient ssvm on easy binary dataset
-    #X, Y = toy.generate_blocks(n_samples=10)
+    #X, Y = generate_blocks(n_samples=10)
     #crf = GridCRF()
     #clf = SubgradientSSVM(model=crf, max_iter=100, C=1,
                           #momentum=.0, learning_rate=0.1, n_jobs=-1)
@@ -55,7 +55,7 @@ def test_binary_blocks_subgradient_parallel():
 
 def test_binary_blocks():
     #testing subgradient ssvm on easy binary dataset
-    X, Y = toy.generate_blocks(n_samples=5)
+    X, Y = generate_blocks(n_samples=5)
     crf = GridCRF(inference_method=inference_method)
     clf = SubgradientSSVM(model=crf, C=100, learning_rate=1, decay_exponent=1,
                           momentum=0, decay_t0=10)

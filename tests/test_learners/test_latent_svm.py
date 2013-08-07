@@ -6,7 +6,7 @@ from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import (LatentSSVM, NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_crosses, generate_easy
 from pystruct.inference import get_installed
 
 inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
@@ -17,8 +17,8 @@ def test_with_crosses_perfect_init():
     for n_states_per_label in [2, [1, 2]]:
         # test with 2 states for both foreground and background,
         # as well as with single background state
-        X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                    total_size=8)
+        X, Y = generate_crosses(n_samples=10, noise=5, n_crosses=1,
+                                total_size=8)
         n_labels = 2
         crf = LatentGridCRF(n_labels=n_labels,
                             n_states_per_label=n_states_per_label)
@@ -41,8 +41,7 @@ def test_with_crosses_base_svms():
     subgradient = SubgradientSSVM(crf, max_iter=400, learning_rate=.01,
                                   decay_exponent=0, decay_t0=10)
 
-    X, Y = toy.generate_crosses(n_samples=10, noise=5, n_crosses=1,
-                                total_size=8)
+    X, Y = generate_crosses(n_samples=10, noise=5, n_crosses=1, total_size=8)
 
     for base_ssvm in [one_slack, n_slack, subgradient]:
         base_ssvm.C = 100.
@@ -56,8 +55,7 @@ def test_with_crosses_base_svms():
 def test_with_crosses_bad_init():
     # use less perfect initialization
     rnd = np.random.RandomState(0)
-    X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
-                                total_size=8)
+    X, Y = generate_crosses(n_samples=20, noise=5, n_crosses=1, total_size=8)
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
     crf = LatentGridCRF(n_states_per_label=2)
@@ -81,8 +79,8 @@ def test_with_crosses_bad_init():
 
 
 def test_directional_bars():
-    X, Y = toy.generate_easy(n_samples=10, noise=5, box_size=2,
-                             total_size=6, seed=1)
+    X, Y = generate_easy(n_samples=10, noise=5, box_size=2, total_size=6,
+                         seed=1)
     n_labels = 2
     crf = LatentDirectionalGridCRF(n_labels=n_labels,
                                    n_states_per_label=[1, 4])
@@ -101,8 +99,7 @@ def test_switch_to_ad3():
 
     if not get_installed(['qpbo']) or not get_installed(['ad3']):
         return
-    X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
-                                total_size=8)
+    X, Y = generate_crosses(n_samples=20, noise=5, n_crosses=1, total_size=8)
     X_test, Y_test = X[10:], Y[10:]
     X, Y = X[:10], Y[:10]
 

@@ -2,7 +2,8 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_almost_equal)
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import (generate_big_checker,
+                               generate_blocks_multinomial, generate_blocks)
 from pystruct.utils import (exhaustive_loss_augmented_inference,
                             make_grid_edges, find_constraint)
 from pystruct.models import (LatentGridCRF, LatentDirectionalGridCRF,
@@ -13,7 +14,7 @@ from pystruct.inference import get_installed
 
 def test_k_means_initialization():
     n_samples = 10
-    X, Y = toy.generate_big_checker(n_samples=n_samples)
+    X, Y = generate_big_checker(n_samples=n_samples)
     edges = [make_grid_edges(x, return_lists=True) for x in X]
     # flatten the grid
     Y = Y.reshape(Y.shape[0], -1)
@@ -35,7 +36,7 @@ def test_k_means_initialization():
     assert_array_equal(Y, H / 3)
 
     # for dataset with more than two states
-    X, Y = toy.generate_blocks_multinomial(n_samples=10)
+    X, Y = generate_blocks_multinomial(n_samples=10)
     edges = [make_grid_edges(x, return_lists=True) for x in X]
     Y = Y.reshape(Y.shape[0], -1)
     X = X.reshape(X.shape[0], -1, X.shape[-1])
@@ -57,7 +58,7 @@ def test_k_means_initialization():
 
 def test_k_means_initialization_grid_crf():
     # with only 1 state per label, nothing happends
-    X, Y = toy.generate_big_checker(n_samples=10)
+    X, Y = generate_big_checker(n_samples=10)
     crf = LatentGridCRF(n_states_per_label=1, n_features=2, n_labels=2)
     H = crf.init_latent(X, Y)
     assert_array_equal(Y, H)
@@ -65,7 +66,7 @@ def test_k_means_initialization_grid_crf():
 
 def test_k_means_initialization_graph_crf():
     # with only 1 state per label, nothing happends
-    X, Y = toy.generate_big_checker(n_samples=10)
+    X, Y = generate_big_checker(n_samples=10)
     crf = LatentGraphCRF(n_states_per_label=1, n_features=2, n_labels=2)
     # convert grid model to graph model
     X = [(x.reshape(-1, x.shape[-1]), make_grid_edges(x, return_lists=False))
@@ -76,7 +77,7 @@ def test_k_means_initialization_graph_crf():
 
 
 def test_k_means_initialization_directional_grid_crf():
-    X, Y = toy.generate_big_checker(n_samples=10)
+    X, Y = generate_big_checker(n_samples=10)
     crf = LatentDirectionalGridCRF(n_states_per_label=1, n_features=2,
                                    n_labels=2)
     #crf.initialize(X, Y)
@@ -85,7 +86,7 @@ def test_k_means_initialization_directional_grid_crf():
 
 
 def test_blocks_crf_unaries():
-    X, Y = toy.generate_blocks(n_samples=1)
+    X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     pairwise_weights = np.array([0,
@@ -99,7 +100,7 @@ def test_blocks_crf_unaries():
 
 
 def test_blocks_crf():
-    X, Y = toy.generate_blocks(n_samples=1)
+    X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     pairwise_weights = np.array([0,
                                  0,   0,
@@ -118,7 +119,7 @@ def test_blocks_crf():
 def test_blocks_crf_directional():
     # test latent directional CRF on blocks
     # test that all results are the same as equivalent LatentGridCRF
-    X, Y = toy.generate_blocks(n_samples=1)
+    X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     pairwise_weights = np.array([0,
                                  0,   0,
@@ -228,7 +229,7 @@ def test_loss_augmented_inference_exhaustive_grid():
 
 def test_continuous_y():
     for inference_method in get_installed(["lp", "ad3"]):
-        X, Y = toy.generate_blocks(n_samples=1)
+        X, Y = generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
         w = np.array([1, 0,  # unary
                       0, 1,

@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_almost_equal)
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.inference import get_installed
 from pystruct.utils import make_grid_edges
@@ -13,7 +13,7 @@ from pystruct.models import DirectionalGridCRF
 def test_inference():
     # Test inference with different weights in different directions
 
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
@@ -62,7 +62,7 @@ def test_inference():
 
 
 def test_psi_discrete():
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         crf = DirectionalGridCRF(inference_method=inference_method)
@@ -85,7 +85,7 @@ def test_psi_discrete():
 def test_psi_continuous():
     # FIXME
     # first make perfect prediction, including pairwise part
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
