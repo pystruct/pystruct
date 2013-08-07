@@ -1,3 +1,23 @@
+"""
+=========================
+Mult-label classification
+=========================
+This example shows how to use structured support vector machines
+(or structured prediction in general) to do multi-label classification.
+
+This method hab been investigated in
+Finley, Joachims 2008
+"Training Structural SVMs when Exact Inference is Intractable"
+
+And is an interesting test-bed for non-trivial structured prediction.
+We compare independent predictions, full interactions and tree-structured
+interactions with respect to run-time and accuracy.
+By default, the "scene" dataset is used, but it is also possible to use the
+"yeast" datasets, both of which are used in the literature.
+
+To compute the Chow-Liu tree for the tree structured model, you need
+to install either a recent scipy or scikit-learn version.
+"""
 import itertools
 
 import numpy as np
@@ -5,7 +25,6 @@ from scipy import sparse
 
 from sklearn.metrics import hamming_loss
 from sklearn.datasets import fetch_mldata
-#from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import mutual_info_score
 try:
     from sklearn.utils import minimum_spanning_tree
@@ -15,59 +34,59 @@ except ImportError:
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelModel
-#from pystruct.utils import SaveLogger
+from pystruct.datasets import load_scene
 
 
-def chow_liu_tree(y):
+def chow_liu_tree(y_):
     # compute mutual information using sklearn
-    mi = np.zeros((14, 14))
-    for i in xrange(14):
-        for j in xrange(14):
-            mi[i, j] = mutual_info_score(y[:, i], y[:, j])
+    n_labels = y_.shape[1]
+    mi = np.zeros((n_labels, n_labels))
+    for i in xrange(n_labels):
+        for j in xrange(n_labels):
+            mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
     mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
-    return mst
+    edges = np.vstack(mst.nonzero()).T
+    return edges
 
 
-def my_hamming(y_train, y_pred):
-    return hamming_loss(y_train, np.vstack(y_pred))
+dataset = "scene"
+#dataset = "yeast"
 
-yeast = fetch_mldata("yeast")
+if dataset == "yeast":
+    yeast = fetch_mldata("yeast")
 
-# for both, mine and ovr, C=.1 seems good!
+    X = yeast.data
+    X = np.hstack([X, np.ones((X.shape[0], 1))])
+    y = yeast.target.toarray().astype(np.int).T
 
-X = yeast.data
-X = np.hstack([X, np.ones((X.shape[0], 1))])
-y = yeast.target.toarray().astype(np.int).T
+    X_train, X_test = X[:1500], X[1500:]
+    y_train, y_test = y[:1500], y[1500:]
 
+else:
+    scene = load_scene()
+    X_train, X_test = scene['X_train'], scene['X_test']
+    y_train, y_test = scene['y_train'], scene['y_test']
 
-X_train, X_test = X[:1500], X[1500:]
-y_train, y_test = y[:1500], y[1500:]
+n_labels = len(np.unique(y_train))
+edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
 
+full_model = MultiLabelModel(edges=edges, inference_method='qpbo')
+independent_model = MultiLabelModel(inference_method='unary')
 
-X_train.shape
+full_ssvm = OneSlackSSVM(full_model, inference_cache=50, verbose=2, n_jobs=-1,
+                         C=.1, tol=0.01)
 
-#import itertools
-edges = np.vstack([x for x in itertools.combinations(range(14), 2)])
-#edges = np.zeros((0, 2), dtype=np.int)
+independent_ssvm = OneSlackSSVM(independent_model, verbose=2, C=.1, tol=0.01)
 
-model = MultiLabelModel(14, X.shape[1], edges=edges, inference_method='qpbo')
+independent_ssvm.fit(X_train, y_train)
+full_ssvm.fit(X_train, y_train)
 
-#logger = SaveLogger('multi_label_fully_switch_to_dai.pickle', save_every=20)
-ssvm = OneSlackSSVM(model, inference_cache=50, verbose=1, n_jobs=-1, C=.1,
-                    show_loss_every=20, max_iter=10000, tol=0.01,
-                    switch_to=('ad3', {'branch_and_bound': False}))
+print("Training loss independent model: %f"
+      % hamming_loss(y_train, np.vstack(independent_ssvm.predict(X_train))))
+print("Test loss independent model: %f"
+      % hamming_loss(y_test, np.vstack(independent_ssvm.predict(X_test))))
 
-#param_grid = {'C': 10. ** np.arange(-3, 1)}
-
-#grid = GridSearchCV(ssvm, loss_func=my_hamming, cv=5, n_jobs=1, verbose=10,
-                    #param_grid=param_grid)
-#grid.fit(X_train, y_train)
-#from IPython.core.debugger import Tracer
-#Tracer()()
-ssvm.fit(X_train, y_train)
-print(ssvm.score(X_train, y_train))
-print(ssvm.score(X_test, y_test))
-print(my_hamming(y_test, ssvm.predict(X_test)))
-
-from IPython.core.debugger import Tracer
-Tracer()()
+print("Training loss full model: %f"
+      % hamming_loss(y_train, np.vstack(full_ssvm.predict(X_train))))
+print("Test loss full model: %f"
+      % hamming_loss(y_test, np.vstack(full_ssvm.predict(X_test))))
