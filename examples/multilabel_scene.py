@@ -1,13 +1,25 @@
 from sklearn.datasets import load_svmlight_file
 
 import numpy as np
-import itertools
-
-#from multi_label import chow_liu_tree
+from scipy import sparse
 
 X_train, y_train = load_svmlight_file("scene/scene_train", multilabel=True)
 X_test, y_test = load_svmlight_file("scene/scene_test", multilabel=True)
 
+from sklearn.metrics import mutual_info_score
+from sklearn.utils import minimum_spanning_tree
+
+
+def chow_liu_tree(y_):
+    # compute mutual information using sklearn
+    n_labels = y_.shape[1]
+    mi = np.zeros((n_labels, n_labels))
+    for i in xrange(n_labels):
+        for j in xrange(n_labels):
+            mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
+    mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
+    edges = np.vstack(mst.nonzero()).T
+    return edges
 
 X_train.shape
 X_test.shape
@@ -26,11 +38,10 @@ lb = LabelBinarizer()
 y_train = lb.fit_transform(y_train)
 y_test = lb.transform(y_test)
 
-y_train.mean(axis=0)
-y_test.mean(axis=0)
-
 X_train = X_train.toarray()
 X_test = X_test.toarray()
+from IPython.core.debugger import Tracer
+Tracer()()
 
 #clf.fit(X_train, y_train)
 #hamming_loss(y_train, clf.predict(X_train))
@@ -56,19 +67,19 @@ from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelModel
 
 # <codecell>
-edges = np.vstack([x for x in itertools.combinations(range(6), 2)])
+#edges = np.vstack([x for x in itertools.combinations(range(6), 2)])
+edges = chow_liu_tree(y_train)
 
-ssvm = OneSlackSSVM(MultiLabelModel(edges=edges,
-                                    inference_method=("ad3",
-                                                      {'branch_and_bound':
-                                                       True})),
-                    verbose=2, C=0.1, inference_cache=50)
+model = MultiLabelModel(edges=edges, inference_method="qpbo")
+ssvm = OneSlackSSVM(model, verbose=2, C=.01, inference_cache=50)
 
 
 ssvm.fit(X_train, y_train)
+from IPython.core.debugger import Tracer
+Tracer()()
 
-print(hamming_loss(y_test, np.vstack(ssvm.predict(X_test))))
-print(hamming_loss(y_train, np.vstack(ssvm.predict(X_train))))
+print(hamming_loss(y_test, ssvm.predict(X_test)))
+print(hamming_loss(y_train, ssvm.predict(X_train)))
 
 from IPython.core.debugger import Tracer
 Tracer()()
@@ -90,3 +101,7 @@ Tracer()()
 # ad3
 # 0.10604793757
 # 0.088769611891
+
+# chow-liu
+# 0.107720178372
+# 0.0595926231764
