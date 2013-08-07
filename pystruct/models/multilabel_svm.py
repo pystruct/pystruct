@@ -3,6 +3,37 @@ from .crf import CRF
 
 
 class MultiLabelModel(CRF):
+    """Multi-label model for predicting several binary classes.
+
+    Multi-label classification is a generalization of multi-class
+    classification, in that multiple classes can be present in each
+    example. This can also be thought of as predicting
+    binary indicator per class.
+
+    This class supports different models via the "edges" parameter.
+    Giving no eges yields independent classifiers for each class. Giving
+    "full" yields a fully connected graph over the labels, while "tree"
+    yields the best tree-shaped graph (using the Chow-Liu algorithm).
+    It is also possible to specify a custom connectivity structure.
+
+    Parameters
+    ----------
+    n_labels : int (default=None)
+        Number of labels.
+
+    n_features : int (default=None)
+        Number of input features.
+
+    edges : array-like, string or None
+        Either None, which yields independent models, 'tree',
+        which yields the Chow-Liu tree over the labels, 'full',
+        which yields a fully connected graph, or an array-like
+        of edges for a custom dependency structure.
+
+    inference_method :
+        The inference method to be used.
+
+    """
     def __init__(self, n_labels=None, n_features=None, edges=None,
                  inference_method=None):
         self.n_labels = n_labels
