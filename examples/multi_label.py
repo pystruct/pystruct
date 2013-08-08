@@ -46,6 +46,7 @@ def chow_liu_tree(y_):
             mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
     mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
     edges = np.vstack(mst.nonzero()).T
+    edges.sort(axis=1)
     return edges
 
 
@@ -68,23 +69,35 @@ else:
     y_train, y_test = scene['y_train'], scene['y_test']
 
 n_labels = y_train.shape[1]
-edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
+full = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
+tree = chow_liu_tree(y_train)
 
-full_model = MultiLabelModel(edges=edges, inference_method='qpbo')
+full_model = MultiLabelModel(edges=full, inference_method='qpbo')
 independent_model = MultiLabelModel(inference_method='unary')
+tree_model = MultiLabelModel(edges=tree)
 
-full_ssvm = OneSlackSSVM(full_model, inference_cache=50, verbose=2, n_jobs=-1,
-                         C=.1, tol=0.01)
+full_ssvm = OneSlackSSVM(full_model, inference_cache=50, C=.1, tol=0.01)
 
-independent_ssvm = OneSlackSSVM(independent_model, verbose=2, C=.1, tol=0.01)
+tree_ssvm = OneSlackSSVM(tree_model, inference_cache=50, C=.1, tol=0.01)
 
+independent_ssvm = OneSlackSSVM(independent_model, C=.1, tol=0.01)
+
+print("fitting independent model...")
 independent_ssvm.fit(X_train, y_train)
+print("fitting full model...")
 full_ssvm.fit(X_train, y_train)
+print("fitting tree model...")
+tree_ssvm.fit(X_train, y_train)
 
 print("Training loss independent model: %f"
       % hamming_loss(y_train, np.vstack(independent_ssvm.predict(X_train))))
 print("Test loss independent model: %f"
       % hamming_loss(y_test, np.vstack(independent_ssvm.predict(X_test))))
+
+print("Training loss tree model: %f"
+      % hamming_loss(y_train, np.vstack(tree_ssvm.predict(X_train))))
+print("Test loss tree model: %f"
+      % hamming_loss(y_test, np.vstack(tree_ssvm.predict(X_test))))
 
 print("Training loss full model: %f"
       % hamming_loss(y_train, np.vstack(full_ssvm.predict(X_train))))
