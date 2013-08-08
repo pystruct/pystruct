@@ -10,6 +10,45 @@ def unwrap_pairwise(y):
     return y
 
 
+def expand_sym(sym_compressed):
+    """Expand compressed symmetric matrix to full square matrix.
+
+    Similar to scipy.spatial.squareform, but also contains the
+    diagonal.
+    """
+    length = sym_compressed.size
+    size = int(np.sqrt(2 * length + 0.25) - 1 / 2.)
+    sym = np.zeros((size, size))
+    sym[np.tri(size, dtype=np.bool)] = sym_compressed
+    return (sym + sym.T - np.diag(np.diag(sym)))
+
+
+def compress_sym(sym_expanded, make_symmetric=True):
+    """Compress symmetric matrix to a vector.
+
+    Similar to scipy.spatial.squareform, but also contains the
+    diagonal.
+
+    Parameters
+    ----------
+    sym_expanded : nd-array, shape (size, size)
+        Input matrix to compress.
+
+    make_symmetric : bool (default=True)
+        Whether to symmetrize the input matrix before compressing.
+        It is made symmetric by using
+        ``sym_expanded + sym_expanded.T - np.diag(np.diag(sym_expanded))``
+        This makes sense if only one of the two entries was non-zero before.
+
+
+    """
+    size = sym_expanded.shape[0]
+    if make_symmetric:
+        sym_expanded = (sym_expanded + sym_expanded.T -
+                        np.diag(np.diag(sym_expanded)))
+    return sym_expanded[np.tri(size, dtype=np.bool)]
+
+
 def make_grid_edges(x, neighborhood=4, return_lists=False):
     if neighborhood not in [4, 8]:
         raise ValueError("neighborhood can only be '4' or '8', got %s" %

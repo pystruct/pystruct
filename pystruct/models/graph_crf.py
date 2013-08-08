@@ -1,6 +1,7 @@
 import numpy as np
 
 from .crf import CRF
+from ..utils import expand_sym, compress_sym
 
 
 class GraphCRF(CRF):
@@ -75,13 +76,7 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_flat = np.asarray(w[self.n_states * self.n_features:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
+        return expand_sym(w[self.n_states * self.n_features:])
 
     def get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
@@ -154,10 +149,8 @@ class GraphCRF(CRF):
                         unary_marginals[edges[:, 1]])
 
         unaries_acc = np.dot(unary_marginals.T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        psi_vector = np.hstack([unaries_acc.ravel(), compress_sym(pw)])
         return psi_vector
 
 
