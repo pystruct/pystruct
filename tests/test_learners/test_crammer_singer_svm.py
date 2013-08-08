@@ -197,7 +197,7 @@ def test_class_weights_rescale_C():
     weights *= len(weights) / np.sum(weights)
     pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
                                      class_weight=weights, rescale_C=True)
-    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
+    svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10, tol=1e-5)
     svm_class_weight.fit(X, Y)
 
     try:
