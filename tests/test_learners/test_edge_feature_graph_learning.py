@@ -3,7 +3,7 @@ from numpy.testing import assert_array_equal
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.learners import NSlackSSVM
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 from pystruct.utils import make_grid_edges
 
 
@@ -18,7 +18,7 @@ def edge_list_to_features(edge_list):
 def test_multinomial_blocks_directional_simple():
     # testing cutting plane ssvm with directional CRF on easy multinomial
     # dataset
-    X_, Y_ = toy.generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
+    X_, Y_ = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     G = [make_grid_edges(x, return_lists=True) for x in X_]
     edge_features = [edge_list_to_features(edge_list) for edge_list in G]
     edges = [np.vstack(g) for g in G]
@@ -36,7 +36,7 @@ def test_multinomial_blocks_directional_simple():
 def test_multinomial_blocks_directional_anti_symmetric():
     # testing cutting plane ssvm with directional CRF on easy multinomial
     # dataset
-    X_, Y_ = toy.generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
+    X_, Y_ = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     G = [make_grid_edges(x, return_lists=True) for x in X_]
     edge_features = [edge_list_to_features(edge_list) for edge_list in G]
     edges = [np.vstack(g) for g in G]

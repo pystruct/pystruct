@@ -6,7 +6,8 @@ from sklearn.datasets import load_iris
 from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM
 from pystruct.utils import SaveLogger, train_test_split
-import pystruct.toy_datasets as toy
+from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
+                               generate_checker, generate_checker_multinomial)
 from pystruct.models import GridCRF, DirectionalGridCRF
 from pystruct.inference import get_installed
 
@@ -39,7 +40,7 @@ def test_n_slack_svm_as_crf_pickling():
 
 def test_multinomial_blocks_cutting_plane():
     #testing cutting plane ssvm on easy multinomial dataset
-    X, Y = toy.generate_blocks_multinomial(n_samples=40, noise=0.5, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=40, noise=0.5, seed=0)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
     clf = NSlackSSVM(model=crf, max_iter=100, C=100, verbose=0,
@@ -52,7 +53,7 @@ def test_multinomial_blocks_cutting_plane():
 def test_multinomial_blocks_directional():
     # testing cutting plane ssvm with directional CRF on easy multinomial
     # dataset
-    X, Y = toy.generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     n_labels = len(np.unique(Y))
     crf = DirectionalGridCRF(n_states=n_labels,
                              inference_method=inference_method)
@@ -64,7 +65,7 @@ def test_multinomial_blocks_directional():
 
 
 def test_multinomial_checker_cutting_plane():
-    X, Y = toy.generate_checker_multinomial(n_samples=10, noise=.1)
+    X, Y = generate_checker_multinomial(n_samples=10, noise=.1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
     clf = NSlackSSVM(model=crf, max_iter=20, C=100000, check_constraints=True)
@@ -78,8 +79,7 @@ def test_switch_to_ad3():
 
     if not get_installed(['qpbo']) or not get_installed(['ad3']):
         return
-    X, Y = toy.generate_blocks_multinomial(n_samples=5, noise=1.5,
-                                           seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=5, noise=1.5, seed=0)
     crf = GridCRF(n_states=3, inference_method='qpbo')
 
     ssvm = NSlackSSVM(crf, max_iter=10000)
@@ -103,7 +103,7 @@ def test_switch_to_ad3():
 
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
-    X, Y = toy.generate_blocks(n_samples=5)
+    X, Y = generate_blocks(n_samples=5)
     crf = GridCRF(inference_method=inference_method)
     clf = NSlackSSVM(model=crf, max_iter=20, C=100,
                      check_constraints=True, break_on_bad=False)
@@ -114,7 +114,7 @@ def test_binary_blocks_cutting_plane():
 
 def test_binary_blocks_batches_n_slack():
     #testing cutting plane ssvm on easy binary dataset
-    X, Y = toy.generate_blocks(n_samples=5)
+    X, Y = generate_blocks(n_samples=5)
     crf = GridCRF(inference_method=inference_method)
     clf = NSlackSSVM(model=crf, max_iter=20, batch_size=1, C=100)
     clf.fit(X, Y)
@@ -125,7 +125,7 @@ def test_binary_blocks_batches_n_slack():
 def test_binary_ssvm_repellent_potentials():
     # test non-submodular learning with and without positivity constraint
     # dataset is checkerboard
-    X, Y = toy.generate_checker()
+    X, Y = generate_checker()
     crf = GridCRF(inference_method=inference_method)
     clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                      check_constraints=True)
@@ -147,7 +147,7 @@ def test_binary_ssvm_repellent_potentials():
 
 def test_binary_ssvm_attractive_potentials():
     # test that submodular SSVM can learn the block dataset
-    X, Y = toy.generate_blocks(n_samples=10)
+    X, Y = generate_blocks(n_samples=10)
     crf = GridCRF(inference_method=inference_method)
     submodular_clf = NSlackSSVM(model=crf, max_iter=200, C=100,
                                 check_constraints=True,

@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_almost_equal)
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.utils import make_grid_edges
 from pystruct.models import LatentNodeCRF, EdgeFeatureLatentNodeCRF
@@ -175,8 +175,7 @@ def test_edge_feature_latent_node_crf_no_latent():
 
     # Test inference with different weights in different directions
 
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1,
-                                           size_x=10)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1, size_x=10)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 

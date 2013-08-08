@@ -7,7 +7,7 @@ from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.inference import compute_energy, get_installed
 from pystruct.utils import make_grid_edges
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 
 
 def edge_list_to_features(edge_list):
@@ -19,7 +19,7 @@ def edge_list_to_features(edge_list):
 
 
 def test_initialization():
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
@@ -50,7 +50,7 @@ def test_initialization():
 def test_inference():
     # Test inference with different weights in different directions
 
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
@@ -105,7 +105,7 @@ def test_inference():
 
 
 def test_psi_discrete():
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     edge_list = make_grid_edges(x, 4, return_lists=True)
     edges = np.vstack(edge_list)
@@ -133,7 +133,7 @@ def test_psi_discrete():
 def test_psi_continuous():
     # FIXME
     # first make perfect prediction, including pairwise part
-    X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
     edge_list = make_grid_edges(x, 4, return_lists=True)

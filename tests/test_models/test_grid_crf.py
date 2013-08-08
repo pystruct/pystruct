@@ -2,7 +2,8 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_almost_equal)
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import (generate_blocks, generate_blocks_multinomial,
+                               binary, multinomial)
 from pystruct.models import GridCRF
 from pystruct.utils import (find_constraint, exhaustive_inference,
                             exhaustive_loss_augmented_inference)
@@ -11,7 +12,7 @@ from pystruct.inference import get_installed
 
 def test_continuous_y():
     for inference_method in get_installed(["lp", "ad3"]):
-        X, Y = toy.generate_blocks(n_samples=1)
+        X, Y = generate_blocks(n_samples=1)
         x, y = X[0], Y[0]
         w = np.array([1, 0,  # unary
                       0, 1,
@@ -69,7 +70,7 @@ def test_energy_lp():
 
 
 def test_loss_augmentation():
-    X, Y = toy.generate_blocks(n_samples=1)
+    X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     w = np.array([1, 0,  # unary
                   0, 1,
@@ -84,7 +85,7 @@ def test_loss_augmentation():
 
 
 def test_binary_blocks_crf():
-    X, Y = toy.generate_blocks(n_samples=1)
+    X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     w = np.array([1, 0,  # unary
                   0, 1,
@@ -98,7 +99,7 @@ def test_binary_blocks_crf():
 
 
 def test_binary_blocks_crf_n8_lp():
-    X, Y = toy.generate_blocks(n_samples=1, noise=1)
+    X, Y = generate_blocks(n_samples=1, noise=1)
     x, y = X[0], Y[0]
     w = np.array([1, 0,  # unary
                   0, 1,
@@ -111,7 +112,7 @@ def test_binary_blocks_crf_n8_lp():
 
 
 def test_blocks_multinomial_crf():
-    X, Y = toy.generate_blocks_multinomial(n_samples=1, size_x=9, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=1, size_x=9, seed=0)
     x, y = X[0], Y[0]
     w = np.array([1., 0., 0.,  # unaryA
                   0., 1., 0.,
@@ -128,7 +129,7 @@ def test_blocks_multinomial_crf():
 
 def test_binary_grid_unaries():
     # test handling on unaries for binary grid CRFs
-    for ds in toy.binary:
+    for ds in binary:
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         for inference_method in get_installed():
@@ -160,7 +161,7 @@ def test_binary_grid_unaries():
 def test_multinomial_grid_unaries():
     # test handling on unaries for multinomial grid CRFs
     # on multinomial datasets
-    for ds in toy.multinomial:
+    for ds in multinomial:
         X, Y = ds(n_samples=1, size_x=9)
         x, y = X[0], Y[0]
         n_labels = len(np.unique(Y))
