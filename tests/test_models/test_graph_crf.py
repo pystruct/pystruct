@@ -41,7 +41,6 @@ def test_initialize():
 
     #test initialization works
     crf = GraphCRF()
-    # no-op
     crf.initialize([x], [y])
     assert_equal(crf.n_states, 2)
     assert_equal(crf.n_features, 2)
