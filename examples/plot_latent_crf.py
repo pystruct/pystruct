@@ -20,11 +20,10 @@ from sklearn.cross_validation import train_test_split
 from pystruct.models import LatentGridCRF
 from pystruct.learners import LatentSSVM, OneSlackSSVM
 
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_crosses
 
 
-X, Y = toy.generate_crosses(n_samples=20, noise=5, n_crosses=1,
-                            total_size=8)
+X, Y = generate_crosses(n_samples=20, noise=5, n_crosses=1, total_size=8)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.5)
 
 crf = LatentGridCRF(n_states_per_label=[1, 2])

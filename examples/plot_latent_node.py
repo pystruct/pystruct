@@ -10,7 +10,7 @@ import itertools
 
 from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import NSlackSSVM, OneSlackSSVM, LatentSSVM
-import pystruct.toy_datasets as toy
+from pystruct.datasets import make_simple_2x2
 from pystruct.utils import make_grid_edges, plot_grid
 import matplotlib.pyplot as plt
 
@@ -40,7 +40,7 @@ def plot_boxes(boxes, size=4, title=""):
 # we add a latent variable for each 2x2 patch
 # that should make the model fairly simple
 
-X, Y = toy.make_simple_2x2(seed=1)
+X, Y = make_simple_2x2(seed=1)
 
 # flatten X and Y
 X_flat = [x.reshape(-1, 1).astype(np.float) for x in X]

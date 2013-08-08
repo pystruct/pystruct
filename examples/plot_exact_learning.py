@@ -20,11 +20,11 @@ primal objective.
 """
 from pystruct.models import DirectionalGridCRF
 import pystruct.learners as ssvm
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 from pystruct.plot_learning import plot_learning
 
 
-X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
+X, Y = generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
 crf = DirectionalGridCRF(inference_method="qpbo", neighborhood=4)
 clf = ssvm.OneSlackSSVM(model=crf, n_jobs=-1, inference_cache=100,
                         show_loss_every=10,

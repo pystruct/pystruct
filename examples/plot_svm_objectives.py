@@ -15,10 +15,9 @@ import matplotlib.pyplot as plt
 
 from pystruct.models import GridCRF
 from pystruct.learners import (NSlackSSVM, OneSlackSSVM, SubgradientSSVM)
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_crosses_explicit
 
-X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10, size=6,
-                                     n_crosses=1)
+X, Y = generate_crosses_explicit(n_samples=50, noise=10, size=6, n_crosses=1)
 n_labels = len(np.unique(Y))
 crf = GridCRF(n_states=n_labels, inference_method="dai")
 

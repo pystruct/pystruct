@@ -15,10 +15,10 @@ import matplotlib.pyplot as plt
 
 from pystruct.models import GridCRF
 import pystruct.learners as ssvm
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_crosses_explicit
 
 
-X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
+X, Y = generate_crosses_explicit(n_samples=50, noise=10)
 crf = GridCRF(neighborhood=4)
 clf = ssvm.OneSlackSSVM(model=crf, C=100, n_jobs=-1, inference_cache=100,
                         tol=.1)
