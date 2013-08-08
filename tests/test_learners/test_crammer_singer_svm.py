@@ -7,7 +7,7 @@ from nose.tools import assert_greater
 from sklearn.datasets import make_blobs
 from sklearn.metrics import f1_score
 
-from pystruct.models import CrammerSingerSVMModel
+from pystruct.models import MultiClassClf
 from pystruct.learners import (OneSlackSSVM, NSlackSSVM, SubgradientSSVM)
 
 
@@ -16,7 +16,7 @@ def test_crammer_singer_model():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
 
     # test inference energy
     rng = np.random.RandomState(0)
@@ -52,7 +52,7 @@ def test_crammer_singer_model_class_weight():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3,
+    pbl = MultiClassClf(n_features=3, n_classes=3,
                                 class_weight=[1, 2, 1])
 
     rng = np.random.RandomState(0)
@@ -90,7 +90,7 @@ def test_simple_1d_dataset_cutting_plane():
     Y = (X.ravel() > 0.5).astype(np.int)
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
-    pbl = CrammerSingerSVMModel(n_features=2)
+    pbl = MultiClassClf(n_features=2)
     svm = NSlackSSVM(pbl, check_constraints=True, C=10000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
@@ -104,7 +104,7 @@ def test_blobs_2d_cutting_plane():
 
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
     svm = NSlackSSVM(pbl, check_constraints=True, C=1000,
                      batch_size=1)
 
@@ -120,7 +120,7 @@ def test_blobs_2d_one_slack():
 
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
     svm = OneSlackSSVM(pbl, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -134,7 +134,7 @@ def test_blobs_2d_subgradient():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
     svm = SubgradientSSVM(pbl, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -147,13 +147,13 @@ def test_equal_class_weights():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
     svm = OneSlackSSVM(pbl, C=10)
 
     svm.fit(X_train, Y_train)
     predict_no_class_weight = svm.predict(X_test)
 
-    pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
+    pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
                                              class_weight=np.ones(3))
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X_train, Y_train)
@@ -169,14 +169,14 @@ def test_class_weights():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X, Y = X[:170], Y[:170]
 
-    pbl = CrammerSingerSVMModel(n_features=3, n_classes=3)
+    pbl = MultiClassClf(n_features=3, n_classes=3)
     svm = OneSlackSSVM(pbl, C=10)
 
     svm.fit(X, Y)
 
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
-    pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
+    pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
                                              class_weight=weights)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
@@ -196,7 +196,7 @@ def test_class_weights_rescale_C():
 
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
-    pbl_class_weight = CrammerSingerSVMModel(n_features=3, n_classes=3,
+    pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
                                              class_weight=weights,
                                              rescale_C=True)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)

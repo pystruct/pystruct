@@ -3,7 +3,7 @@ from itertools import product
 
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_greater, assert_true
-from pystruct.models import GridCRF, BinarySVMModel
+from pystruct.models import GridCRF, BinaryClf
 from pystruct.learners import StructuredPerceptron
 from pystruct.datasets import generate_blocks, generate_blocks_multinomial
 
@@ -41,7 +41,7 @@ def test_xor():
         np.array([1, 1, 1, 1]),      # batch, no average, w = (0, 0, 0)
         np.array([-1, -1, -1, -1])   # batch, average, w ~= (0, 0, -2)
     ]
-    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=3), max_iter=2)
+    pcp = StructuredPerceptron(model=BinaryClf(n_features=3), max_iter=2)
     for pred, (batch, average) in zip(expected_predictions,
                                       product((False, True), (False, True))):
         pcp.set_params(batch=batch, average=average)
@@ -56,7 +56,7 @@ def test_partial_averaging():
     """Use XOR weight cycling to test partial averaging"""
     X = np.array([[a, b, 1] for a in (-1, 1) for b in (-1, 1)], dtype=np.float)
     Y = np.array([-1, 1, 1, -1])
-    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=3), max_iter=5,
+    pcp = StructuredPerceptron(model=BinaryClf(n_features=3), max_iter=5,
                                decay_exponent=1, decay_t0=1)
     weight = {}
     for average in (0, 1, 4, -1):
@@ -74,7 +74,7 @@ def test_averaging_early_stopping():
     # we use logical OR, an easy problem solved after the second epoch
     X = np.array([[a, b, 1] for a in (-1, 1) for b in (-1, 1)], dtype=np.float)
     Y = np.array([-1, 1, 1, 1])
-    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=3), max_iter=3,
+    pcp = StructuredPerceptron(model=BinaryClf(n_features=3), max_iter=3,
                                average=-1)
     pcp.fit(X, Y)
     # The exact weight is used without the influence of the early iterations
@@ -89,7 +89,7 @@ def test_averaging_early_stopping():
 def test_overflow_averaged():
     X = np.array([[np.finfo('d').max]])
     Y = np.array([-1])
-    pcp = StructuredPerceptron(model=BinarySVMModel(n_features=1),
+    pcp = StructuredPerceptron(model=BinaryClf(n_features=1),
                                max_iter=2, average=True)
     pcp.fit(X, Y)
     assert_true(np.isfinite(pcp.w[0]))

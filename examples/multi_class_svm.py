@@ -14,7 +14,7 @@ from sklearn.datasets import fetch_mldata
 from sklearn.cross_validation import train_test_split
 from sklearn.svm import LinearSVC
 
-from pystruct.models import CrammerSingerSVMModel
+from pystruct.models import MultiClassClf
 from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
@@ -31,7 +31,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])
 X_test_bias = np.hstack([X_test, np.ones((X_test.shape[0], 1))])
 
-model = CrammerSingerSVMModel(n_features=X_train_bias.shape[1], n_classes=10)
+model = MultiClassClf(n_features=X_train_bias.shape[1], n_classes=10)
 n_slack_svm = NSlackSSVM(model, verbose=2, check_constraints=False, C=0.1,
                          batch_size=100, tol=1e-2)
 one_slack_svm = OneSlackSSVM(model, verbose=2, C=.10, tol=.001)

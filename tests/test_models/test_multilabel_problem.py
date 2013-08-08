@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_almost_equal, assert_equal, assert_raises
 
-from pystruct.models import MultiLabelModel
+from pystruct.models import MultiLabelClf
 from pystruct.inference.inference_methods import compute_energy
 
 
@@ -12,7 +12,7 @@ def test_initialization():
     x = np.random.normal(size=(13, 5))
     y = np.random.randint(2, size=(13, 3))
     # no edges make independent model
-    model = MultiLabelModel()
+    model = MultiLabelClf()
     model.initialize(x, y)
     assert_equal(model.n_states, 2)
     assert_equal(model.n_labels, 3)
@@ -20,10 +20,10 @@ def test_initialization():
     assert_equal(model.size_psi, 5 * 3)
 
     # setting and then initializing is no-op
-    model = MultiLabelModel(n_features=5, n_labels=3)
+    model = MultiLabelClf(n_features=5, n_labels=3)
     model.initialize(x, y)  # smoketest
 
-    model = MultiLabelModel(n_features=3, n_labels=3)
+    model = MultiLabelClf(n_features=3, n_labels=3)
     assert_raises(ValueError, model.initialize, X=x, Y=y)
 
 
@@ -32,7 +32,7 @@ def test_multilabel_independent():
     edges = np.zeros((0, 2), dtype=np.int)
     n_features = 5
     n_labels = 4
-    model = MultiLabelModel(n_labels=n_labels, n_features=n_features,
+    model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
                             edges=edges)
     rnd = np.random.RandomState(0)
 
@@ -61,7 +61,7 @@ def test_multilabel_fully():
     n_features = 5
     n_labels = 4
     edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
-    model = MultiLabelModel(n_labels=n_labels, n_features=n_features,
+    model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
                             edges=edges)
     rnd = np.random.RandomState(0)
 

@@ -5,7 +5,7 @@ from nose.tools import assert_true, assert_equal, assert_less, assert_greater
 
 from sklearn.datasets import load_digits, load_iris
 
-from pystruct.models import GridCRF, GraphCRF, BinarySVMModel
+from pystruct.models import GridCRF, GraphCRF, BinaryClf
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
                                generate_checker)
@@ -55,7 +55,7 @@ def test_constraint_removal():
     X, y = digits.data, digits.target
     y = 2 * (y % 2) - 1  # even vs odd as +1 vs -1
     X = X / 16.
-    pbl = BinarySVMModel(n_features=X.shape[1])
+    pbl = BinaryClf(n_features=X.shape[1])
     clf_no_removal = OneSlackSSVM(model=pbl, max_iter=500, C=1,
                                   inactive_window=0, tol=0.01)
     clf_no_removal.fit(X, y)

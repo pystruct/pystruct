@@ -4,7 +4,7 @@ from nose.tools import assert_true
 
 from sklearn.datasets import make_blobs
 
-from pystruct.models import BinarySVMModel
+from pystruct.models import BinaryClf
 from pystruct.learners import (NSlackSSVM, SubgradientSSVM,
                                OneSlackSSVM)
 
@@ -15,7 +15,7 @@ def test_model_1d():
     X = np.random.uniform(size=(10, 1))
     # linearly separable labels
     Y = 1 - 2 * (X.ravel() < .5)
-    pbl = BinarySVMModel(n_features=2)
+    pbl = BinaryClf(n_features=2)
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     w = [1, -.5]
@@ -39,7 +39,7 @@ def test_simple_1d_dataset_cutting_plane():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
-    pbl = BinarySVMModel(n_features=2)
+    pbl = BinaryClf(n_features=2)
     svm = NSlackSSVM(pbl, check_constraints=True, C=1000)
     svm.fit(X, Y)
     assert_array_equal(Y, np.hstack(svm.predict(X)))
@@ -53,7 +53,7 @@ def test_blobs_2d_cutting_plane():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMModel(n_features=3)
+    pbl = BinaryClf(n_features=3)
     svm = NSlackSSVM(pbl, check_constraints=True, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -68,7 +68,7 @@ def test_blobs_2d_subgradient():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMModel(n_features=3)
+    pbl = BinaryClf(n_features=3)
     svm = SubgradientSSVM(pbl, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -83,7 +83,7 @@ def test_blobs_2d_one_slack():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X_train, X_test, Y_train, Y_test = X[:40], X[40:], Y[:40], Y[40:]
 
-    pbl = BinarySVMModel(n_features=3)
+    pbl = BinaryClf(n_features=3)
     svm = OneSlackSSVM(pbl, C=1000)
 
     svm.fit(X_train, Y_train)
@@ -95,7 +95,7 @@ def test_blobs_batch():
     X, Y = make_blobs(n_samples=80, centers=2, random_state=1)
     Y = 2 * Y - 1
 
-    pbl = BinarySVMModel(n_features=2)
+    pbl = BinaryClf(n_features=2)
 
     # test psi
     psi_mean = pbl.batch_psi(X, Y)
@@ -115,7 +115,7 @@ def test_blobs_batch():
 
 
 def test_break_ties():
-    pbl = BinarySVMModel(n_features=2)
+    pbl = BinaryClf(n_features=2)
     X = np.array([[-1., -1.], [-1., 1.], [1., 1.]])
     w = np.array([1., 1.])
     assert_array_equal(pbl.batch_inference(X, w), np.array([-1, 1, 1]))
