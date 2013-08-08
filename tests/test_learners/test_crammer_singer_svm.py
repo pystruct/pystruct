@@ -52,8 +52,7 @@ def test_crammer_singer_model_class_weight():
     # we have to add a constant 1 feature by hand :-/
     X = np.hstack([X, np.ones((X.shape[0], 1))])
 
-    pbl = MultiClassClf(n_features=3, n_classes=3,
-                                class_weight=[1, 2, 1])
+    pbl = MultiClassClf(n_features=3, n_classes=3, class_weight=[1, 2, 1])
 
     rng = np.random.RandomState(0)
     w = rng.uniform(size=pbl.size_psi)
@@ -154,7 +153,7 @@ def test_equal_class_weights():
     predict_no_class_weight = svm.predict(X_test)
 
     pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
-                                             class_weight=np.ones(3))
+                                     class_weight=np.ones(3))
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X_train, Y_train)
     predict_class_weight = svm_class_weight.predict(X_test)
@@ -177,7 +176,7 @@ def test_class_weights():
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
     pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
-                                             class_weight=weights)
+                                     class_weight=weights)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
 
@@ -197,8 +196,7 @@ def test_class_weights_rescale_C():
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
     pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
-                                             class_weight=weights,
-                                             rescale_C=True)
+                                     class_weight=weights, rescale_C=True)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
 
