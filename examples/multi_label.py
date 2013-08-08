@@ -67,7 +67,7 @@ else:
     X_train, X_test = scene['X_train'], scene['X_test']
     y_train, y_test = scene['y_train'], scene['y_test']
 
-n_labels = len(np.unique(y_train))
+n_labels = y_train.shape[1]
 edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
 
 full_model = MultiLabelModel(edges=edges, inference_method='qpbo')
