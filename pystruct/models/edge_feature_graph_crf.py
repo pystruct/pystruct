@@ -116,6 +116,9 @@ class EdgeFeatureGraphCRF(GraphCRF):
             raise ValueError("Got edge features of size %d, but expected %d."
                              % (edge_features.shape[1], self.n_edge_features))
 
+    def _get_edge_features(self, x):
+        return x[2]
+
     def get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
@@ -134,7 +137,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        edge_features = x[2]
+        edge_features = self._get_edge_features(x)
         pairwise = np.asarray(w[self.n_states * self.n_features:])
         pairwise = pairwise.reshape(self.n_edge_features, -1)
         return np.dot(edge_features, pairwise).reshape(
@@ -166,7 +169,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         self._check_size_x(x)
         features, edges = self.get_features(x), self.get_edges(x)
         n_nodes = features.shape[0]
-        edge_features = x[2]
+        edge_features = self._get_edge_features(x)
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
