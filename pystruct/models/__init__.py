@@ -1,7 +1,7 @@
 from .base import StructuredModel
 from .crf import CRF
 from .grid_crf import GridCRF, DirectionalGridCRF
-from .graph_crf import GraphCRF, EdgeTypeGraphCRF
+from .graph_crf import GraphCRF
 from .latent_grid_crf import LatentGridCRF, LatentDirectionalGridCRF
 from .latent_graph_crf import LatentGraphCRF
 from .latent_node_crf import LatentNodeCRF, EdgeFeatureLatentNodeCRF
@@ -10,7 +10,7 @@ from .multilabel_svm import MultiLabelClf
 from .edge_feature_graph_crf import EdgeFeatureGraphCRF
 
 __all__ = ["StructuredModel", "CRF", "GridCRF", "GraphCRF",
-           "EdgeTypeGraphCRF", "DirectionalGridCRF", "BinaryClf",
-           "LatentGridCRF", "LatentDirectionalGridCRF",
-           "MultiClassClf", "LatentGraphCRF", "MultiLabelClf",
-           "LatentNodeCRF", "EdgeFeatureGraphCRF", "EdgeFeatureLatentNodeCRF"]
+           "DirectionalGridCRF", "BinaryClf", "LatentGridCRF",
+           "LatentDirectionalGridCRF", "MultiClassClf", "LatentGraphCRF",
+           "MultiLabelClf", "LatentNodeCRF", "EdgeFeatureGraphCRF",
+           "EdgeFeatureLatentNodeCRF"]

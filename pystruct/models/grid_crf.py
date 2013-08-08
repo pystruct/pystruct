@@ -151,7 +151,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         GridCRF._check_size_x(self, x)
 
     def initialize(self, X, Y):
-        # we don't want to infere edge-types as in EdgeTypeGraphCRF
+        # we don't want to infere n_edge_features as in EdgeFeatureGraphCRF
         CRF.initialize(self, X, Y)
 
     def get_edges(self, x, flat=True):
