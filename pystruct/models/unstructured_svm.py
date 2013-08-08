@@ -4,7 +4,7 @@ from .base import StructuredModel
 from .utils import crammer_singer_psi
 
 
-class BinarySVMModel(StructuredModel):
+class BinaryClf(StructuredModel):
     """Formulate standard linear binary SVM in CRF framework.
 
     Inputs x are simply feature arrays, labels y are -1 or 1.
@@ -129,7 +129,7 @@ class BinarySVMModel(StructuredModel):
         return Y != Y_hat
 
 
-class CrammerSingerSVMModel(StructuredModel):
+class MultiClassClf(StructuredModel):
     """Formulate linear multiclass SVM in C-S style in CRF framework.
 
     Inputs x are simply feature arrays, labels y are 0 to n_classes.

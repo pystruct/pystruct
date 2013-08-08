@@ -33,7 +33,7 @@ except ImportError:
                       "scipy to build minimum spanning trees.")
 
 from pystruct.learners import OneSlackSSVM
-from pystruct.models import MultiLabelModel
+from pystruct.models import MultiLabelClf
 from pystruct.datasets import load_scene
 
 
@@ -72,9 +72,9 @@ n_labels = y_train.shape[1]
 full = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
 tree = chow_liu_tree(y_train)
 
-full_model = MultiLabelModel(edges=full, inference_method='qpbo')
-independent_model = MultiLabelModel(inference_method='unary')
-tree_model = MultiLabelModel(edges=tree)
+full_model = MultiLabelClf(edges=full, inference_method='qpbo')
+independent_model = MultiLabelClf(inference_method='unary')
+tree_model = MultiLabelClf(edges=tree)
 
 full_ssvm = OneSlackSSVM(full_model, inference_cache=50, C=.1, tol=0.01)
 

@@ -34,7 +34,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.cross_validation import train_test_split
 import matplotlib.pyplot as plt
 
-from pystruct.models import CrammerSingerSVMModel
+from pystruct.models import MultiClassClf
 from pystruct.learners import OneSlackSSVM
 
 # please set the path to the svm-struct multiclass binaries here
@@ -115,7 +115,7 @@ def do_comparison(X_train, y_train, X_test, y_test, dataset):
     # evaluate both svms on a given datasets, generate plots
     Cs = 10. ** np.arange(-4, 1)
     multisvm = MultiSVM()
-    svm = OneSlackSSVM(CrammerSingerSVMModel(), tol=0.01)
+    svm = OneSlackSSVM(MultiClassClf(), tol=0.01)
 
     accs_pystruct, times_pystruct = eval_on_data(X_train, y_train, X_test,
                                                  y_test, svm, Cs=Cs)

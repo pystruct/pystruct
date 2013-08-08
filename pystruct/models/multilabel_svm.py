@@ -2,7 +2,7 @@ import numpy as np
 from .crf import CRF
 
 
-class MultiLabelModel(CRF):
+class MultiLabelClf(CRF):
     """Multi-label model for predicting several binary classes.
 
     Multi-label classification is a generalization of multi-class
