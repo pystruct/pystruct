@@ -10,6 +10,9 @@ def test_chain():
     rnd = np.random.RandomState(0)
     algorithms = get_installed([('ad3', {'branch_and_bound':False}),
                                 ('ad3', {'branch_and_bound':True}),
+                                ('ogm', {'alg':'dyn'}),
+                                ('ogm', {'alg':'dd'}),
+                                ('ogm', {'alg':'trw'}),
                                 ('dai', {'alg':'jt'})])
     for i in xrange(10):
         forward = np.c_[np.arange(9), np.arange(1, 10)]
@@ -26,6 +29,9 @@ def test_chain():
             y_lp = inference_dispatch(unary_potentials, pairwise_potentials,
                                       chain, 'lp')
             for alg in algorithms:
+                if chain is backward and alg[0] == 'ogm':
+                    # ogm needs sorted indices
+                    continue
                 print(alg)
                 y = inference_dispatch(unary_potentials, pairwise_potentials,
                                        chain, alg)

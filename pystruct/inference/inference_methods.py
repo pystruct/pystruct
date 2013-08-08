@@ -222,7 +222,9 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         inference.setStartingPoint(init)
 
     inference.infer()
-    res = inference.arg()
+    # we convert the result to int from unsigned int
+    # because otherwise we are sure to shoot ourself in the foot
+    res = inference.arg().astype(np.int)
     if return_energy:
         return res, gm.evaluate(res)
     return res
