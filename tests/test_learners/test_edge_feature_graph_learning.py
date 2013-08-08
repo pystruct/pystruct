@@ -25,8 +25,7 @@ def test_multinomial_blocks_directional_simple():
     X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
     Y = [y.ravel() for y in Y_]
 
-    crf = EdgeFeatureGraphCRF(n_states=3,
-                              n_edge_features=2)
+    crf = EdgeFeatureGraphCRF(n_states=3, n_edge_features=2)
     clf = NSlackSSVM(model=crf, max_iter=10, C=1, check_constraints=False)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
