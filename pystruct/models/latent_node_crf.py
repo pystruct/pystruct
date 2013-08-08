@@ -15,6 +15,7 @@ from sklearn.cluster import KMeans
 
 from . import GraphCRF
 from ..inference import inference_dispatch
+from ..utils import expand_sym, compress_sym
 
 
 def kmeans_init(X, Y, n_labels, n_hidden_states, latent_node_features=False):
@@ -153,13 +154,7 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_flat = np.asarray(w[self.n_input_states * self.n_features:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
+        return expand_sym(w[self.n_input_states * self.n_features:])
 
     def get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
@@ -231,9 +226,7 @@ class LatentNodeCRF(GraphCRF):
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
-            print("inconsistent h and y")
-            from IPython.core.debugger import Tracer
-            Tracer()()
+            raise ValueError("Inconsistent h and y in latent node CRF!")
             h[:len(y)] = y
         return h
 
@@ -304,10 +297,8 @@ class LatentNodeCRF(GraphCRF):
         n_visible = features.shape[0]
         unaries_acc = np.dot(unary_marginals[:n_visible,
                                              :self.n_input_states].T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        psi_vector = np.hstack([unaries_acc.ravel(), compress_sym(pw)])
         return psi_vector
 
     def init_latent(self, X, Y):

@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from pystruct.models import GridCRF
 import pystruct.learners as ssvm
 from pystruct.datasets import generate_crosses_explicit
+from pystruct.utils import expand_sym
 
 
 X, Y = generate_crosses_explicit(n_samples=50, noise=10)
@@ -48,9 +49,7 @@ for p in plots:
 # visualize weights
 w_un = clf.w[:3 * 3].reshape(3, 3)
 # decode the symmetric pairwise potential
-w_pw = np.zeros((crf.n_states, crf.n_states))
-w_pw[np.tri(crf.n_states, dtype=np.bool)] = clf.w[3 * 3:]
-w_pw = w_pw + w_pw.T - np.diag(np.diag(w_pw))
+w_pw = expand_sym(clf.w[3 * 3:])
 
 fig, plots = plt.subplots(1, 2, figsize=(8, 4))
 plots[0].matshow(w_un, cmap='gray', vmin=-5, vmax=5)
