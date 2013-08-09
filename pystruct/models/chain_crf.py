@@ -11,19 +11,14 @@ def make_chain_edges(x):
     return edges
 
 
-# TESTME
-# def make_chain_edges_fast(x):
-#     n_nodes = np.shape(x)[0]
-#     return as_strided(np.arange(n_noes), shape=(n_nodes - 1, 2),
-#                       strides=(8, 8)  # 8 should be dtype size
-
-
 class ChainCRF(GraphCRF):
-    """Linear-chain CRF
+    """Linear-chain CRF.
 
     Pairwise potentials are symmetric and the same for all edges.
-    This leads to n_classes parameters for unary potentials and
-    n_classes * (n_classes + 1) / 2 parameters for edge potentials.
+    This leads to ``n_classes`` parameters for unary potentials.
+    If ``directed=True``, there are ``n_classes * n_classes`` parameters
+    for pairwise potentials, if ``directed=False``, there are only
+    ``n_classes * (n_classes + 1) / 2`` (for a symmetric matrix).
 
     Unary evidence ``x`` is given as array of shape (n_nodes, n_features), and
     labels ``y`` are given as array of shape (n_nodes,). Chain lengths do not
@@ -34,7 +29,7 @@ class ChainCRF(GraphCRF):
     n_states : int, default=2
         Number of states for all variables.
 
-    inference_method : string, default="qpbo"
+    inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -43,10 +38,22 @@ class ChainCRF(GraphCRF):
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
 
+        If None, ad3 is used if installed, otherwise lp.
+
+    class_weight : None, or array-like
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
+
+    directed : boolean, default=False
+        Whether to model directed or undirected connections.
+        In undirected models, interaction terms are symmetric,
+        so an edge ``a -> b`` has the same energy as ``b -> a``.
     """
-    def __init__(self, n_states=None, n_features=None, inference_method=None):
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
+                 class_weight=None, directed=True):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
-                          inference_method=inference_method)
+                          inference_method=inference_method,
+                          class_weight=class_weight, directed=directed)
 
     def get_edges(self, x):
         return make_chain_edges(x)

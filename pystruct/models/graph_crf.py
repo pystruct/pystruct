@@ -8,8 +8,10 @@ class GraphCRF(CRF):
     """Pairwise CRF on a general graph.
 
     Pairwise potentials are symmetric and the same for all edges.
-    This leads to n_classes parameters for unary potentials and
-    n_classes * (n_classes + 1) / 2 parameters for edge potentials.
+    This leads to n_classes parameters for unary potentials.
+    If ``directed=True``, there are ``n_classes * n_classes`` parameters
+    for pairwise potentials, if ``directed=False``, there are only
+    ``n_classes * (n_classes + 1) / 2`` (for a symmetric matrix).
 
     Examples, i.e. X, are given as an iterable of n_examples.
     An example, x, is represented as a tuple (features, edges) where
@@ -27,7 +29,7 @@ class GraphCRF(CRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="ad3"
+    inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -35,6 +37,8 @@ class GraphCRF(CRF):
             - 'dai' for LibDAI bindings (which has another parameter).
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
+
+        If None, ad3 is used if installed, otherwise lp.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
