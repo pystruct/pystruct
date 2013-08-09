@@ -13,7 +13,7 @@ w = np.array([1, 0,  # unary
               .22,  # pairwise
               0, .22])
 
-# for directional CRF with non-symmetric weights
+# for directed CRF with non-symmetric weights
 w_sym = np.array([1, 0,    # unary
                   0, 1,
                   .22, 0,  # pairwise
@@ -59,6 +59,19 @@ def test_graph_crf_inference():
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
 
     print crf.get_pairwise_potentials((x_1, g_1), w)
+
+
+def test_directed_graph_crf_inference():
+    # create two samples with different graphs
+    # two states only, pairwise smoothing
+    # same as above, only with full symmetric matrix
+    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'dai', 'ogm']):
+        crf = GraphCRF(n_states=2, n_features=2,
+                       inference_method=inference_method, directed=True)
+        assert_array_equal(crf.inference((x_1, g_1), w_sym), y_1)
+        assert_array_equal(crf.inference((x_2, g_2), w_sym), y_2)
+
+    print crf.get_pairwise_potentials((x_1, g_1), w_sym)
 
 
 def test_graph_crf_continuous_inference():
@@ -135,3 +148,21 @@ def test_graph_crf_class_weights():
     # will find it
     crf = GraphCRF(n_states=3, n_features=3, class_weight=[1, .1, 1])
     assert_equal(crf.loss_augmented_inference(x, [1], w), 1)
+
+
+def test_directed_graph_chain():
+    # check that a directed model actually works differntly in the two
+    # directions.  chain of length three, three states 0, 1, 2 which want to be
+    # in this order, evidence only in the middle
+    x = (np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]]),
+         np.array([[0, 1], [1, 2]]))
+
+    w = np.array([1, 0, 0,  # unary
+                  0, 1, 0,
+                  0, 0, 1,
+                  0, 1, 0,  # pairwise
+                  0, 0, 1,
+                  0, 0, 0])
+    crf = GraphCRF(n_states=3, n_features=3, directed=True)
+    y = crf.inference(x, w)
+    assert_array_equal([0, 1, 2], y)
