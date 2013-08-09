@@ -6,16 +6,8 @@ from nose.tools import assert_raises
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.inference import compute_energy, get_installed
-from pystruct.utils import make_grid_edges
+from pystruct.utils import make_grid_edges, edge_list_to_features
 from pystruct.datasets import generate_blocks_multinomial
-
-
-def edge_list_to_features(edge_list):
-    edges = np.vstack(edge_list)
-    edge_features = np.zeros((edges.shape[0], 2))
-    edge_features[:len(edge_list[0]), 0] = 1
-    edge_features[len(edge_list[0]):, 1] = 1
-    return edge_features
 
 
 def test_initialization():

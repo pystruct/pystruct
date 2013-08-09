@@ -62,7 +62,9 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
                  inference_method=None, neighborhood=4):
         self.neighborhood = neighborhood
-        self.n_edge_types = 2 if neighborhood == 4 else 4
+        self.symmetric_edge_features = []
+        self.antisymmetric_edge_features = []
+        self.n_edge_features = 2 if neighborhood == 4 else 4
         LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
 

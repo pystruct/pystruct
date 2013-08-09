@@ -8,5 +8,4 @@ TODO
     * submodular CRFs - segmentation?
 * make more examples plot examples
 * in subgradient ssvm: Decouple updates from shrinking w (aka commulative penalty).
-* remove EdgeTypeGraphCRF
 * allow for warm starts in inference during learning
