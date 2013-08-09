@@ -165,7 +165,7 @@ class GraphCRF(CRF):
         if self.directed:
             pw = pw.ravel()
         else:
-            ps = compress_sym(pw)
+            pw = compress_sym(pw)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), ps])
+        psi_vector = np.hstack([unaries_acc.ravel(), pw])
         return psi_vector
