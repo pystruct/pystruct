@@ -39,9 +39,15 @@ class GraphCRF(CRF):
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
+
+    directed : boolean, default=False
+        Whether to model directed or undirected connections.
+        In undirected models, interaction terms are symmetric,
+        so an edge ``a -> b`` has the same energy as ``b -> a``.
     """
     def __init__(self, n_states=None, n_features=None, inference_method=None,
-                 class_weight=None):
+                 class_weight=None, directed=False):
+        self.directed = directed
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
@@ -49,8 +55,12 @@ class GraphCRF(CRF):
     def _set_size_psi(self):
         # try to set the size of psi if possible
         if self.n_features is not None and self.n_states is not None:
-            self.size_psi = (self.n_states * self.n_features
-                             + self.n_states * (self.n_states + 1) / 2)
+            if self.directed:
+                self.size_psi = (self.n_states * self.n_features +
+                                 self.n_states ** 2)
+            else:
+                self.size_psi = (self.n_states * self.n_features
+                                 + self.n_states * (self.n_states + 1) / 2)
 
     def get_edges(self, x):
         return x[1]
@@ -76,7 +86,10 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        return expand_sym(w[self.n_states * self.n_features:])
+        pw = w[self.n_states * self.n_features:]
+        if self.directed:
+            return pw.reshape(self.n_states, self.n_states)
+        return expand_sym(pw)
 
     def get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
@@ -149,6 +162,10 @@ class GraphCRF(CRF):
                         unary_marginals[edges[:, 1]])
 
         unaries_acc = np.dot(unary_marginals.T, features)
+        if self.directed:
+            pw = pw.ravel()
+        else:
+            pw = compress_sym(pw)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), compress_sym(pw)])
+        psi_vector = np.hstack([unaries_acc.ravel(), pw])
         return psi_vector
