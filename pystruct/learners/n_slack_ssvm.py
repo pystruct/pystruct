@@ -122,7 +122,7 @@ class NSlackSSVM(BaseSSVM):
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
 
-        psi_matrix = np.vstack(psis)
+        psi_matrix = np.vstack(psis).astype(np.float)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
         # q contains loss from margin-rescaling
