@@ -91,11 +91,17 @@ class NSlackSSVM(BaseSSVM):
     old_solution : dict
         The last solution found by the qp solver.
 
-   ``loss_curve_`` : list of float
+    ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-   ``objective_curve_`` : list of float
-       Primal objective after each pass through the dataset.
+    ``objective_curve_`` : list of float
+        Cutting plane objective after each pass through the dataset.
+
+    ``primal_objective_curve_`` : list of float
+        Primal objective after each pass through the dataset.
+
+    ``timestamps_`` : list of int
+       Total training time stored before each iteration.
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,

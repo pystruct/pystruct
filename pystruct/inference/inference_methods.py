@@ -77,6 +77,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'ad3' for AD^3 subgradient based dual solution of LP.
             * 'ogm' for OpenGM wrappers.
             * 'unary' for using unary potentials only.
+
         It is also possible to pass a tuple (string, dict) where the dict
         contains additional keyword arguments.
 

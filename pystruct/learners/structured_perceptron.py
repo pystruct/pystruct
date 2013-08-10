@@ -64,9 +64,9 @@ class StructuredPerceptron(BaseSSVM):
 
     References
     ----------
-    Michael Collins. "Discriminative training methods for hidden Markov models:
-    theory and experiments with perceptron algorithms". In: Proc. EMNLP 2002.
-    http://www.aclweb.org/anthology-new/W/W02/W02-1001.pdf
+    Michael Collins. Discriminative training methods for hidden Markov models:
+        theory and experiments with perceptron algorithms. In Proc. EMNLP 2002
+        http://www.aclweb.org/anthology-new/W/W02/W02-1001.pdf
 
     """
     def __init__(self, model, max_iter=100, verbose=0, batch=False,

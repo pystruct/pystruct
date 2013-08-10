@@ -1,6 +1,8 @@
 .. toctree::
    :maxdepth: 2
 
+.. _learning:
+
 Learning
 ==========
 This module contains algorithms for solving the structured learning model.
@@ -30,6 +32,8 @@ The rest is experimental / for testing.
     learners.LatentSSVM
     learners.SubgradientLatentSSVM
     learners.PrimalDSStructuredSVM
+
+.. _models:
 
 Models
 ========
@@ -73,6 +77,7 @@ Conditional Random Fields
 .. autosummary::
    :toctree: generated/
    :template: class.rst
+
     models.GraphCRF
     models.EdgeFeatureGraphCRF
     models.LatentGraphCRF
