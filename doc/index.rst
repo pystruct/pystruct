@@ -82,16 +82,9 @@ The the cutting plane solvers include an option (``switch_to``) to switch the so
 a stronger or exact solver when no constraints can be found using the previous
 solver (which should be a faster undergenerating solver, such as QPBO).
 
-Examples
-=========
-See the example gallery:
-
 .. toctree::
+    :hidden:
 
     auto_examples/index
-
-
-.. toctree::
-
     references.rst
 
