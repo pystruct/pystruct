@@ -28,7 +28,7 @@ The rest is experimental / for testing.
     learners.SubgradientSSVM
     learners.StructuredPerceptron
     learners.LatentSSVM
-    learners.LatentSubgradientSSVM
+    learners.SubgradientLatentSSVM
     learners.PrimalDSStructuredSVM
 
 Models

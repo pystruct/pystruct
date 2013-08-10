@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal, assert_true
 from pystruct.models import GraphCRF, LatentNodeCRF
 from pystruct.learners import (NSlackSSVM, LatentSSVM,
-                               LatentSubgradientSSVM, OneSlackSSVM,
+                               SubgradientLatentSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 from pystruct.datasets import generate_blocks, make_simple_2x2
 from pystruct.utils import make_grid_edges
@@ -107,7 +107,7 @@ def test_latent_node_boxes_latent_subgradient():
 
     X, Y = make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
-    latent_svm = LatentSubgradientSSVM(model=latent_crf, max_iter=250, C=10,
+    latent_svm = SubgradientLatentSSVM(model=latent_crf, max_iter=250, C=10,
                                        learning_rate=0.1, momentum=0)
 
     G = [make_grid_edges(x) for x in X]

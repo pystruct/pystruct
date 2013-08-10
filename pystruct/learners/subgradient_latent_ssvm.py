@@ -13,7 +13,7 @@ from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
 
 
-class LatentSubgradientSSVM(SubgradientSSVM):
+class SubgradientLatentSSVM(SubgradientSSVM):
     """Latent Variable Structured SVM solver using subgradient descent.
 
     Implements a margin rescaled with l1 slack penalty.
