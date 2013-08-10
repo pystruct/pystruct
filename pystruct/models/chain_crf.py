@@ -55,10 +55,10 @@ class ChainCRF(GraphCRF):
                           inference_method=inference_method,
                           class_weight=class_weight, directed=directed)
 
-    def get_edges(self, x):
+    def _get_edges(self, x):
         return make_chain_edges(x)
 
-    def get_features(self, x):
+    def _get_features(self, x):
         return x
 
     def initialize(self, X, Y):
