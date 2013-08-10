@@ -2,7 +2,7 @@ all:
 	python setup.py build_ext -i
 
 coverage:
-	nosetests . --cover-html --with-coverage --cover-package pystruct
+	nosetests --with-coverage --cover-html --cover-package=pystruct tests
 
 test:
 	nosetests -sv tests
