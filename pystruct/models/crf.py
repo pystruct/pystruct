@@ -52,7 +52,6 @@ class CRF(StructuredModel):
                              " got %s instead."
                              % (self.n_features, features.shape[1]))
 
-    #@profile
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
         """Loss-augmented Inference for x relative to y using parameters w.
@@ -105,8 +104,6 @@ class CRF(StructuredModel):
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
         # do loss-augmentation
-        #loss_augment_unaries(unary_potentials, np.array(y, dtype=np.int64),
-                             #self.class_weight)
         for l in np.arange(self.n_states):
             # for each class, decrement features
             # for loss-agumention
