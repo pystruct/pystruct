@@ -43,7 +43,7 @@ class CRF(StructuredModel):
                    self.inference_method))
 
     def _check_size_x(self, x):
-        features = self.get_features(x)
+        features = self._get_features(x)
         if features.shape[1] != self.n_features:
             raise ValueError("Unary evidence should have %d feature per node,"
                              " got %s instead."
@@ -97,9 +97,9 @@ class CRF(StructuredModel):
         """
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -154,9 +154,9 @@ class CRF(StructuredModel):
         """
         self._check_size_w(w)
         self.inference_calls += 1
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,

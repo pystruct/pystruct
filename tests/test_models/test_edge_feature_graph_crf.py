@@ -208,8 +208,8 @@ def test_energy_discrete():
             pw2 = np.random.normal(size=(3, 3))
             w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
             y_hat = crf.inference(x, w, relaxed=False)
-            energy = compute_energy(crf.get_unary_potentials(x, w),
-                                    crf.get_pairwise_potentials(x, w), edges,
+            energy = compute_energy(crf._get_unary_potentials(x, w),
+                                    crf._get_pairwise_potentials(x, w), edges,
                                     y_hat)
 
             psi = crf.psi(x, y_hat)

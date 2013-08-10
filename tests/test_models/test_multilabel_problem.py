@@ -45,8 +45,8 @@ def test_multilabel_independent():
 
     # test psi / energy
     psi = model.psi(x, y)
-    energy = compute_energy(model.get_unary_potentials(x, w),
-                            model.get_pairwise_potentials(x, w), edges, y)
+    energy = compute_energy(model._get_unary_potentials(x, w),
+                            model._get_pairwise_potentials(x, w), edges, y)
     assert_almost_equal(energy, np.dot(psi, w))
 
     # for continuous y
@@ -71,8 +71,8 @@ def test_multilabel_fully():
 
     # test psi / energy
     psi = model.psi(x, y)
-    energy = compute_energy(model.get_unary_potentials(x, w),
-                            model.get_pairwise_potentials(x, w), edges, y)
+    energy = compute_energy(model._get_unary_potentials(x, w),
+                            model._get_pairwise_potentials(x, w), edges, y)
     assert_almost_equal(energy, np.dot(psi, w))
 
     # for continuous y

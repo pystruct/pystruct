@@ -136,7 +136,7 @@ class LatentNodeCRF(GraphCRF):
         self._set_size_psi()
         self._set_class_weight()
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -156,7 +156,7 @@ class LatentNodeCRF(GraphCRF):
         self._check_size_x(x)
         return expand_sym(w[self.n_input_states * self.n_features:])
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -174,7 +174,7 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 
@@ -201,9 +201,9 @@ class LatentNodeCRF(GraphCRF):
                                  return_energy=False):
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -217,12 +217,12 @@ class LatentNodeCRF(GraphCRF):
                                   return_energy=return_energy)
 
     def latent(self, x, y, w):
-        unary_potentials = self.get_unary_potentials(x, w)
+        unary_potentials = self._get_unary_potentials(x, w)
         # clamp observed nodes by modifying unary potentials
         max_entry = np.maximum(np.max(unary_potentials), 1)
         unary_potentials[np.arange(len(y)), y] = 1e2 * max_entry
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
@@ -275,7 +275,7 @@ class LatentNodeCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
@@ -416,7 +416,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
             raise ValueError("Got edge features of size %d, but expected %d."
                              % (edge_features.shape[1], self.n_edge_features))
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -440,7 +440,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -458,7 +458,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 
@@ -485,9 +485,9 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
                                  return_energy=False):
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -501,12 +501,12 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
                                   return_energy=return_energy)
 
     def latent(self, x, y, w):
-        unary_potentials = self.get_unary_potentials(x, w)
+        unary_potentials = self._get_unary_potentials(x, w)
         # clamp observed nodes by modifying unary potentials
         max_entry = np.maximum(np.max(unary_potentials), 1)
         unary_potentials[np.arange(len(y)), y] = 1e2 * max_entry
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
@@ -561,7 +561,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
         edge_features = x[2]
 

@@ -46,7 +46,7 @@ def test_inference_trivial():
     y = crf.label_from_latent(h)
     assert_array_equal(y, [0, 0, 0, 1, 1, 1])
 
-    y_unaries = np.argmax(crf.get_unary_potentials(x, w), axis=1)[:6]
+    y_unaries = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
     assert_array_equal(y_unaries, features > 0)
 
     # test psi
@@ -99,7 +99,7 @@ def test_inference_chain():
 
     x = (features.reshape(-1, 1), all_edges, 2)
     h, energy_lp = crf.inference(x, w, return_energy=True)
-    y = np.argmax(crf.get_unary_potentials(x, w), axis=1)[:6]
+    y = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
     energy_psi = np.dot(w, crf.psi(x, h))
 
     assert_almost_equal(energy_psi, -energy_lp)
@@ -143,7 +143,7 @@ def test_inference_trivial_features():
     y = crf.label_from_latent(h)
     assert_array_equal(y, [0, 0, 0, 1, 1, 1])
 
-    y_unaries = np.argmax(crf.get_unary_potentials(x, w), axis=1)[:6]
+    y_unaries = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
     assert_array_equal(y_unaries, features[:6] > 0)
 
     # test psi

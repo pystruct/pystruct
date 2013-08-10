@@ -62,13 +62,13 @@ class GraphCRF(CRF):
                 self.size_psi = (self.n_states * self.n_features
                                  + self.n_states * (self.n_states + 1) / 2)
 
-    def get_edges(self, x):
+    def _get_edges(self, x):
         return x[1]
 
-    def get_features(self, x):
+    def _get_features(self, x):
         return x[0]
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -91,7 +91,7 @@ class GraphCRF(CRF):
             return pw.reshape(self.n_states, self.n_states)
         return expand_sym(pw)
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -109,7 +109,7 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_states * self.n_features].reshape(
             self.n_states, self.n_features)
 
@@ -139,7 +139,7 @@ class GraphCRF(CRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
 
         if isinstance(y, tuple):

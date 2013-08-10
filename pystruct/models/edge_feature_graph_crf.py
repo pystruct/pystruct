@@ -119,7 +119,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
     def _get_edge_features(self, x):
         return x[2]
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -167,7 +167,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
         edge_features = self._get_edge_features(x)
 

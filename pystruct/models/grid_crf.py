@@ -64,10 +64,10 @@ class GridCRF(GraphCRF):
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
 
-    def get_edges(self, x):
+    def _get_edges(self, x):
         return make_grid_edges(x, neighborhood=self.neighborhood)
 
-    def get_features(self, x):
+    def _get_features(self, x):
         return x.reshape(-1, self.n_features)
 
     def _reshape_y(self, y, shape_x, return_energy):
@@ -154,7 +154,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         # we don't want to infere n_edge_features as in EdgeFeatureGraphCRF
         CRF.initialize(self, X, Y)
 
-    def get_edges(self, x, flat=True):
+    def _get_edges(self, x, flat=True):
         return make_grid_edges(x, neighborhood=self.neighborhood,
                                return_lists=not flat)
 
@@ -187,4 +187,4 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         return EdgeFeatureGraphCRF.psi(self, x, y)
 
     def _get_edge_features(self, x):
-        return edge_list_to_features(self.get_edges(x, flat=False))
+        return edge_list_to_features(self._get_edges(x, flat=False))

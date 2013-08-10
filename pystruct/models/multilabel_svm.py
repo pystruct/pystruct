@@ -66,16 +66,16 @@ class MultiLabelClf(CRF):
         self._set_size_psi()
         self._set_class_weight()
 
-    def get_edges(self, x):
+    def _get_edges(self, x):
         return self.edges
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         unary_params = w[:self.n_labels * self.n_features].reshape(
             self.n_labels, self.n_features)
         unary_potentials = np.dot(x, unary_params.T)
         return np.vstack([-unary_potentials, unary_potentials]).T
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         pairwise_params = w[self.n_labels * self.n_features:].reshape(
             self.edges.shape[0], self.n_states, self.n_states)
         return pairwise_params

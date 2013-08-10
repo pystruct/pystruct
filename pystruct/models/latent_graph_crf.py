@@ -143,8 +143,8 @@ class LatentGraphCRF(GraphCRF):
 
     def init_latent(self, X, Y):
         # treat all edges the same
-        edges = [[self.get_edges(x)] for x in X]
-        features = np.array([self.get_features(x) for x in X])
+        edges = [[self._get_edges(x)] for x in X]
+        features = np.array([self._get_features(x) for x in X])
         return kmeans_init(features, Y, edges, n_labels=self.n_labels,
                            n_states_per_label=self.n_states_per_label)
 
@@ -152,9 +152,9 @@ class LatentGraphCRF(GraphCRF):
                                  return_energy=False):
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -167,14 +167,14 @@ class LatentGraphCRF(GraphCRF):
                                   return_energy=return_energy)
 
     def latent(self, x, y, w):
-        unary_potentials = self.get_unary_potentials(x, w)
+        unary_potentials = self._get_unary_potentials(x, w)
         # forbid h that is incompoatible with y
         # by modifying unary params
         other_states = self._states_map != y[:, np.newaxis]
         max_entry = np.maximum(np.max(unary_potentials), 1)
         unary_potentials[other_states] = -1e2 * max_entry
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (self.label_from_latent(h) != y).any():
