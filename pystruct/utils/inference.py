@@ -204,7 +204,7 @@ def exhaustive_inference(model, x, w):
     if isinstance(x, np.ndarray):
         feats = x
     else:
-        feats = model.get_features(x)
+        feats = model._get_features(x)
     size = np.prod(feats.shape[:-1])
     best_y = None
     best_energy = np.inf

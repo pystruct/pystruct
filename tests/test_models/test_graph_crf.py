@@ -58,7 +58,7 @@ def test_graph_crf_inference():
         assert_array_equal(crf.inference((x_1, g_1), w), y_1)
         assert_array_equal(crf.inference((x_2, g_2), w), y_2)
 
-    print crf.get_pairwise_potentials((x_1, g_1), w)
+    print crf._get_pairwise_potentials((x_1, g_1), w)
 
 
 def test_directed_graph_crf_inference():
@@ -71,7 +71,7 @@ def test_directed_graph_crf_inference():
         assert_array_equal(crf.inference((x_1, g_1), w_sym), y_1)
         assert_array_equal(crf.inference((x_2, g_2), w_sym), y_2)
 
-    print crf.get_pairwise_potentials((x_1, g_1), w_sym)
+    print crf._get_pairwise_potentials((x_1, g_1), w_sym)
 
 
 def test_graph_crf_continuous_inference():
