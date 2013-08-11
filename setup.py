@@ -1,5 +1,5 @@
-from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup
+from setuptools.extension import Extension
 from Cython.Distutils import build_ext
 
 import os
@@ -9,7 +9,7 @@ if os.path.exists('MANIFEST'):
 
 setup(name="pystruct",
       version="0.1",
-
+      install_requires=["ad3", "pyqpbo"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',

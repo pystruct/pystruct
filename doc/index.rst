@@ -11,7 +11,7 @@ of `scikit-learn <http://scikit-learn.org/dev>`_.
 
 PyStruct 0.1 is out now! Install it via pip:
 
-    pip install -U pystruct
+    pip install pystruct
 
 Starting with this first stable release, PyStruct will remain
 stable with respect to API and will provide backward compatibility.
@@ -21,15 +21,13 @@ or on `github <https://github.com/pystruct/pystruct>`_.
 
 Installation
 =============
+To install pystruct, you need cvxopt, cython and scikit-learn.
 
 The easiest way to install pystruct is using pip:
 
     pip install pystruct
 
-You also need cvxopt and scikit-learn installed, and it is suggested that you
-also install additional packages for inference. The easiest way to get ready is:
-
-    pip install -r requirements.txt
+This will also install the additional inference packages ad3 and pyqpbo.
 
 You might also want to check out `OpenGM <http://ipa.iwr.uni-heidelberg.de/jkappes/opengm2/>`_,
 a library containing many many inference algorithms that can be used with
