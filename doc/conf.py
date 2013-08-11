@@ -262,8 +262,11 @@ html_theme_options = {
 
     # A list of tuples containting pages to link to.  The value should
     # be in the form [(name, page), ..]
-    'navbar_links': [('Examples', 'auto_examples/index'),
-                     ('References', 'references')],
+    'navbar_links': [
+        ('Introduction', 'intro'),
+        ('Examples', 'auto_examples/index'),
+        ('References', 'references'),
+    ],
 
     # Global TOC depth for "site" navbar tab. (Default: 1)
     # Switching to -1 shows all levels.
