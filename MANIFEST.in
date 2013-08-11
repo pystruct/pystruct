@@ -1,0 +1,13 @@
+include requirements.txt
+include README.md
+include *.rst
+recursive-include doc *
+recursive-include tests *
+recursive-include examples *.py README.txt
+recursive-exclude doc *.pyc
+recursive-exclude doc *.pyo
+recursive-exclude tests *.pyc
+recursive-exclude tests *.pyo
+prune docs/_build
+prune docs/auto_examples
+prune docs/generated
