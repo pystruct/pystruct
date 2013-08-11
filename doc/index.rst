@@ -7,6 +7,9 @@ which are often used loosely or differently in different communities.
 Common names are conditional random fields (CRFs), maximum-margin Markov
 random fields (M3N) or structural support vector machines.
 
+If you are new to structured learning,
+have a look at :ref:`intro`.
+
 The goal of PyStruct is to provide a well-documented tool for researchers as well as non-experts
 to make use of structured prediction algorithms.
 The design tries to stay as close as possible to the interface and conventions
@@ -88,4 +91,4 @@ solver (which should be a faster undergenerating solver, such as QPBO).
 
     auto_examples/index
     references.rst
-
+    intro.rst

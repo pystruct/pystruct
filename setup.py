@@ -8,14 +8,14 @@ if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
 setup(name="pystruct",
-      version="0.1",
+      version="0.2-dev",
       install_requires=["ad3", "pyqpbo"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',
                 'pystruct.tests.test_models', 'pystruct.tests.test_inference',
                 'pystruct.tests.test_utils'],
-
+      include_package_data=True,
       description="Structured Learning and Prediction in Python",
       author="Andreas Mueller",
       author_email="t3kcit@gmail.com",

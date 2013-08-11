@@ -85,6 +85,7 @@ Conditional Random Fields
     models.GridCRF
     models.DirectionalGridCRF
 
+.. _inference:
 
 Inference
 ===========
