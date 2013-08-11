@@ -49,7 +49,7 @@ class OneSlackSSVM(BaseSSVM):
     verbose : int
         Verbosity
 
-    positive_constraint: list of ints
+    negativity_constraint: list of ints
         Indices of parmeters that are constraint to be positive.
 
     break_on_bad: bool (default=False)
@@ -117,7 +117,7 @@ class OneSlackSSVM(BaseSSVM):
     """
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
-                 verbose=0, positive_constraint=None, n_jobs=1,
+                 verbose=0, negativity_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, tol=1e-3,
                  inference_cache=0, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, cache_tol='auto',
@@ -127,7 +127,7 @@ class OneSlackSSVM(BaseSSVM):
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        self.positive_constraint = positive_constraint
+        self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
@@ -151,13 +151,13 @@ class OneSlackSSVM(BaseSSVM):
         idy = np.identity(n_constraints)
         tmp1 = np.zeros(n_constraints)
         # positivity constraints:
-        if self.positive_constraint is None:
+        if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
             psis_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.positive_constraint]
-            zero_constr = np.zeros(len(self.positive_constraint))
+            psis_constr = psi_matrix.T[self.negativity_constraint]
+            zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, psis_constr))))

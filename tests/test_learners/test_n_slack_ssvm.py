@@ -123,7 +123,7 @@ def test_binary_blocks_batches_n_slack():
 
 
 def test_binary_ssvm_repellent_potentials():
-    # test non-submodular learning with and without positivity constraint
+    # test non-submodular problem with and without submodularity constraint
     # dataset is checkerboard
     X, Y = generate_checker()
     crf = GridCRF(inference_method=inference_method)
@@ -136,7 +136,7 @@ def test_binary_ssvm_repellent_potentials():
 
     submodular_clf = NSlackSSVM(model=crf, max_iter=10, C=100,
                                 check_constraints=True,
-                                positive_constraint=[4, 5, 6])
+                                negativity_constraint=[4, 5, 6])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     # submodular crf can not do better than unaries
@@ -151,8 +151,8 @@ def test_binary_ssvm_attractive_potentials():
     crf = GridCRF(inference_method=inference_method)
     submodular_clf = NSlackSSVM(model=crf, max_iter=200, C=100,
                                 check_constraints=True,
-                                positive_constraint=[5])
+                                negativity_constraint=[5])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
-    assert_true(submodular_clf.w[5] < 0)  # don't ask me about signs
+    assert_true(submodular_clf.w[5] < 0)
