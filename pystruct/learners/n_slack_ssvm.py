@@ -46,8 +46,10 @@ class NSlackSSVM(BaseSSVM):
     verbose : int (default=0)
         Verbosity.
 
-    positive_constraint: list of ints
-        Indices of parmeters that are constraint to be positive.
+    negativity_constraint: list of ints
+        Indices of parmeters that are constraint to be negative.
+        This is useful for learning submodular CRFs (inference is formulated
+        as maximization in SSVMs, flipping some signs).
 
     break_on_bad: bool (default=False)
         Whether to break (start debug mode) when inference was approximate.
@@ -105,7 +107,7 @@ class NSlackSSVM(BaseSSVM):
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
-                 verbose=0, positive_constraint=None, n_jobs=1,
+                 verbose=0, negativity_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
                  tol=1e-3, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, switch_to=None):
@@ -114,7 +116,7 @@ class NSlackSSVM(BaseSSVM):
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        self.positive_constraint = positive_constraint
+        self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
@@ -143,13 +145,13 @@ class NSlackSSVM(BaseSSVM):
             blocks[i, first: first + len(sample)] = 1
             first += len(sample)
         # positivity constraints:
-        if self.positive_constraint is None:
+        if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
             psis_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.positive_constraint]
-            zero_constr = np.zeros(len(self.positive_constraint))
+            psis_constr = psi_matrix.T[self.negativity_constraint]
+            zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, blocks,

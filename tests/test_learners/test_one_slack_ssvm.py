@@ -137,16 +137,16 @@ def test_one_slack_attractive_potentials():
     crf = GridCRF(inference_method=inference_method)
     submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1,
                                   check_constraints=True,
-                                  positive_constraint=[5],
+                                  negativity_constraint=[5],
                                   inference_cache=50)
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
-    assert_true(submodular_clf.w[5] < 0)  # don't ask me about signs
+    assert_true(submodular_clf.w[5] < 0)
 
 
 def test_one_slack_repellent_potentials():
-    # test non-submodular learning with and without positivity constraint
+    # test non-submodular problem with and without submodularity constraint
     # dataset is checkerboard
     X, Y = generate_checker()
     crf = GridCRF(inference_method=inference_method)
@@ -159,7 +159,7 @@ def test_one_slack_repellent_potentials():
 
     submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                                   check_constraints=True,
-                                  positive_constraint=[4, 5, 6])
+                                  negativity_constraint=[4, 5, 6])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_less(submodular_clf.score(X, Y), .99)
