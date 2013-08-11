@@ -441,7 +441,7 @@ def generate_example_rst(app):
         }
 
     .figure .caption {
-        width: 170px;
+        width: 150px;
         text-align: center !important;
     }
     </style>
