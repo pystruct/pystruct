@@ -15,7 +15,7 @@ setup(name="pystruct",
                 'pystruct.tests', 'pystruct.tests.test_learners',
                 'pystruct.tests.test_models', 'pystruct.tests.test_inference',
                 'pystruct.tests.test_utils'],
-
+      include_package_data=True,
       description="Structured Learning and Prediction in Python",
       author="Andreas Mueller",
       author_email="t3kcit@gmail.com",
