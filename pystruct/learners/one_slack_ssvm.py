@@ -50,7 +50,9 @@ class OneSlackSSVM(BaseSSVM):
         Verbosity
 
     negativity_constraint: list of ints
-        Indices of parmeters that are constraint to be positive.
+        Indices of parmeters that are constraint to be negative.
+        This is useful for learning submodular CRFs (inference is formulated
+        as maximization in SSVMs, flipping some signs).
 
     break_on_bad: bool (default=False)
         Whether to break (start debug mode) when inference was approximate.
