@@ -2,7 +2,10 @@ PyStruct - Structured Learning in Python
 ========================================
 PyStruct aims at being an easy-to-use structured learning and prediction library.
 Currently it implements only max-margin methods and a perceptron, but other algorithms
-might follow.
+might follow. The learning algorithms implemented in PyStruct have various names,
+which are often used loosely or differently in different communities.
+Common names are conditional random fields (CRFs), maximum-margin Markov
+random fields (M3N) or structural support vector machines.
 
 The goal of PyStruct is to provide a well-documented tool for researchers as well as non-experts
 to make use of structured prediction algorithms.
