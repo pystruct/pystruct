@@ -1,6 +1,7 @@
 include requirements.txt
 include README.md
 include *.rst
+recursive-include pystruct/datasets *.pickle
 recursive-include doc *
 recursive-include tests *
 recursive-include examples *.py README.txt
