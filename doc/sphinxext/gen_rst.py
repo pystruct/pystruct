@@ -441,7 +441,7 @@ def generate_example_rst(app):
         }
 
     .figure .caption {
-        width: 170px;
+        width: 150px;
         text-align: center !important;
     }
     </style>
@@ -562,7 +562,7 @@ def generate_dir_rst(dir, fhindex, example_dir, root_dir, plot_gallery):
     """)  # clear at the end of the section
 
 # modules for which we embed links into example code
-DOCMODULES = ['sklearn', 'matplotlib', 'numpy', 'scipy']
+DOCMODULES = ['sklearn', 'matplotlib', 'numpy', 'scipy', 'pystruct']
 
 
 def make_thumbnail(in_fname, out_fname, width, height):
@@ -709,9 +709,9 @@ def generate_file_rst(fname, target_dir, src_dir, plot_gallery):
                             fun_name = match[:-1]
                             try:
                                 exec('this_fun = %s' % fun_name, my_globals)
-                            except Exception as err:
-                                print 'extracting function failed'
-                                print err
+                            except Exception:
+                                #print 'extracting function failed'
+                                #print err
                                 continue
                             this_fun = my_globals['this_fun']
                             if not callable(this_fun):

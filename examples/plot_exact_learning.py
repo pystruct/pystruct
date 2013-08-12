@@ -18,22 +18,17 @@ primal objective and the cutting plane lower bound touch. (zoom in)
 After the switch to exact inference, the red circles show the true
 primal objective.
 """
-import numpy as np
-
 from pystruct.models import DirectionalGridCRF
 import pystruct.learners as ssvm
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_blocks_multinomial
 from pystruct.plot_learning import plot_learning
 
 
-X, Y = toy.generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
-n_labels = len(np.unique(Y))
-crf = DirectionalGridCRF(n_states=n_labels, inference_method="qpbo",
-                         neighborhood=4)
-clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=1, verbose=0,
-                        check_constraints=True, n_jobs=-1, inference_cache=100,
-                        inactive_window=50, tol=.001, show_loss_every=10,
-                        switch_to="ad3bb")
+X, Y = generate_blocks_multinomial(noise=2, n_samples=20, seed=1)
+crf = DirectionalGridCRF(inference_method="qpbo", neighborhood=4)
+clf = ssvm.OneSlackSSVM(model=crf, n_jobs=-1, inference_cache=100,
+                        show_loss_every=10,
+                        switch_to=("ad3", {'branch_and_bound': True}))
 clf.fit(X, Y)
 
 plot_learning(clf, time=False)

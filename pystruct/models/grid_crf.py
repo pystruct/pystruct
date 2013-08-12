@@ -1,7 +1,9 @@
 import numpy as np
 
-from .graph_crf import GraphCRF, EdgeTypeGraphCRF
-from ..utils import make_grid_edges
+from .graph_crf import GraphCRF
+from .edge_feature_graph_crf import EdgeFeatureGraphCRF
+from .crf import CRF
+from ..utils import make_grid_edges, edge_list_to_features
 
 
 def pairwise_grid_features(grid_labels, neighborhood=4):
@@ -56,16 +58,16 @@ class GridCRF(GraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  neighborhood=4):
+        self.neighborhood = neighborhood
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method)
-        self.neighborhood = neighborhood
 
-    def get_edges(self, x):
+    def _get_edges(self, x):
         return make_grid_edges(x, neighborhood=self.neighborhood)
 
-    def get_features(self, x):
+    def _get_features(self, x):
         return x.reshape(-1, self.n_features)
 
     def _reshape_y(self, y, shape_x, return_energy):
@@ -100,12 +102,12 @@ class GridCRF(GraphCRF):
             self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
 
 
-class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
+class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
     """CRF in which each direction of edges has their own set of parameters.
 
     Pairwise potentials are not symmetric and are independend for each kind of
     edges. This leads to n_classes * n_features parameters for unary potentials
-    and n_edge_types * n_classes ** 2 parameters for edge potentials.
+    and n_edge_features * n_classes ** 2 parameters for edge potentials.
     The number of edge-types is two for a 4-connected neighborhood
     (horizontal and vertical) or 4 for a 8 connected neighborhood (additionally
     two diagonals).
@@ -116,10 +118,10 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
 
     Parameters
     ----------
-    n_states : int, default=2
+    n_states : int, default=None
         Number of states for all variables.
 
-    inference_method : string, default="lp"
+    inference_method : string, default=None
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -132,16 +134,27 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
         Neighborhood defining connection for each variable in the grid.
         Possible choices are 4 and 8.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  neighborhood=4):
-        GridCRF.__init__(self, n_states, n_features,
-                         inference_method=inference_method,
-                         neighborhood=neighborhood)
-        self.n_edge_types = 2 if neighborhood == 4 else 4
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_types * n_states ** 2)
+        self.neighborhood = neighborhood
+        n_edge_features = 2 if neighborhood == 4 else 4
+        EdgeFeatureGraphCRF.__init__(self, n_states, n_features,
+                                     n_edge_features,
+                                     inference_method=inference_method)
 
-    def get_edges(self, x, flat=True):
+    def _set_size_psi(self):
+        if self.n_features is not None and self.n_states is not None:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_features * self.n_states ** 2)
+
+    def _check_size_x(self, x):
+        GridCRF._check_size_x(self, x)
+
+    def initialize(self, X, Y):
+        # we don't want to infere n_edge_features as in EdgeFeatureGraphCRF
+        CRF.initialize(self, X, Y)
+
+    def _get_edges(self, x, flat=True):
         return make_grid_edges(x, neighborhood=self.neighborhood,
                                return_lists=not flat)
 
@@ -171,7 +184,7 @@ class DirectionalGridCRF(GridCRF, EdgeTypeGraphCRF):
             Feature vector associated with state (x, y).
 
         """
-        return EdgeTypeGraphCRF.psi(self, x, y)
+        return EdgeFeatureGraphCRF.psi(self, x, y)
 
-    def get_pairwise_potentials(self, x, w):
-        return EdgeTypeGraphCRF.get_pairwise_potentials(self, x, w)
+    def _get_edge_features(self, x):
+        return edge_list_to_features(self._get_edges(x, flat=False))

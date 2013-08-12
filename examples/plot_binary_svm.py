@@ -20,7 +20,7 @@ from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
 from sklearn.svm import SVC
 
-from pystruct.models import BinarySVMModel
+from pystruct.models import BinaryClf
 from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
@@ -36,13 +36,11 @@ X /= X.max()
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
-pbl = BinarySVMModel(n_features=X_train.shape[1] + 1)  # add one for bias
-n_slack_svm = NSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
-                         batch_size=-1)
-one_slack_svm = OneSlackSSVM(pbl, verbose=0, check_constraints=False, C=10,
-                             max_iter=1000, tol=0.1)
+pbl = BinaryClf()
+n_slack_svm = NSlackSSVM(pbl, C=10, batch_size=-1)
+one_slack_svm = OneSlackSSVM(pbl, C=10, tol=0.1)
 subgradient_svm = SubgradientSSVM(pbl, C=10, learning_rate=0.1, max_iter=100,
-                                  decay_exponent=0, batch_size=10, verbose=0)
+                                  batch_size=10)
 
 # we add a constant 1 feature for the bias
 X_train_bias = np.hstack([X_train, np.ones((X_train.shape[0], 1))])

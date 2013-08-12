@@ -15,6 +15,7 @@ from sklearn.cluster import KMeans
 
 from . import GraphCRF
 from ..inference import inference_dispatch
+from ..utils import expand_sym, compress_sym
 
 
 def kmeans_init(X, Y, n_labels, n_hidden_states, latent_node_features=False):
@@ -77,7 +78,7 @@ class LatentNodeCRF(GraphCRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="ad3"
+    inference_method : string, default=None
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
@@ -94,30 +95,52 @@ class LatentNodeCRF(GraphCRF):
         Whether latent nodes have features. We assume that if True,
         the number of features is the same as for visible nodes.
     """
-    def __init__(self, n_labels=2, n_features=None, n_hidden_states=2,
+    def __init__(self, n_labels=None, n_features=None, n_hidden_states=2,
                  inference_method=None, class_weight=None,
                  latent_node_features=False):
-
         self.n_labels = n_labels
-        if n_features is None:
-            n_features = n_labels
-
         self.n_hidden_states = n_hidden_states
-        n_states = n_hidden_states + n_labels
+        if n_labels is not None:
+            n_states = n_hidden_states + n_labels
+        else:
+            n_states = None
+        self.latent_node_features = latent_node_features
 
         GraphCRF.__init__(self, n_states, n_features,
                           inference_method=inference_method,
                           class_weight=class_weight)
-        if latent_node_features:
-            n_input_states = n_states
+
+    def _set_size_psi(self):
+        if None in [self.n_states, self.n_features]:
+            return
+
+        if self.latent_node_features:
+            n_input_states = self.n_states
         else:
-            n_input_states = n_labels
+            n_input_states = self.n_labels
         self.n_input_states = n_input_states
         self.size_psi = (n_input_states * self.n_features
-                         + n_states * (n_states + 1) / 2)
-        self.latent_node_features = latent_node_features
+                         + self.n_states * (self.n_states + 1) / 2)
 
-    def get_pairwise_potentials(self, x, w):
+    def initialize(self, X, Y):
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_labels = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_labels is None:
+            self.n_labels = n_labels
+        elif self.n_labels != n_labels:
+            raise ValueError("Expected %d labels, got %d"
+                             % (self.n_labels, n_labels))
+        self.n_states = self.n_hidden_states + n_labels
+        self._set_size_psi()
+        self._set_class_weight()
+
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -135,15 +158,9 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_flat = np.asarray(w[self.n_input_states * self.n_features:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
+        return expand_sym(w[self.n_input_states * self.n_features:])
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -161,7 +178,7 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 
@@ -188,9 +205,9 @@ class LatentNodeCRF(GraphCRF):
                                  return_energy=False):
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -204,18 +221,16 @@ class LatentNodeCRF(GraphCRF):
                                   return_energy=return_energy)
 
     def latent(self, x, y, w):
-        unary_potentials = self.get_unary_potentials(x, w)
+        unary_potentials = self._get_unary_potentials(x, w)
         # clamp observed nodes by modifying unary potentials
         max_entry = np.maximum(np.max(unary_potentials), 1)
         unary_potentials[np.arange(len(y)), y] = 1e2 * max_entry
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
-            print("inconsistent h and y")
-            from IPython.core.debugger import Tracer
-            Tracer()()
+            raise ValueError("Inconsistent h and y in latent node CRF!")
             h[:len(y)] = y
         return h
 
@@ -264,7 +279,7 @@ class LatentNodeCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
@@ -286,10 +301,8 @@ class LatentNodeCRF(GraphCRF):
         n_visible = features.shape[0]
         unaries_acc = np.dot(unary_marginals[:n_visible,
                                              :self.n_input_states].T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
 
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
+        psi_vector = np.hstack([unaries_acc.ravel(), compress_sym(pw)])
         return psi_vector
 
     def init_latent(self, X, Y):
@@ -407,7 +420,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
             raise ValueError("Got edge features of size %d, but expected %d."
                              % (edge_features.shape[1], self.n_edge_features))
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -431,7 +444,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -449,7 +462,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 
@@ -476,9 +489,9 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
                                  return_energy=False):
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -492,12 +505,12 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
                                   return_energy=return_energy)
 
     def latent(self, x, y, w):
-        unary_potentials = self.get_unary_potentials(x, w)
+        unary_potentials = self._get_unary_potentials(x, w)
         # clamp observed nodes by modifying unary potentials
         max_entry = np.maximum(np.max(unary_potentials), 1)
         unary_potentials[np.arange(len(y)), y] = 1e2 * max_entry
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         h = inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
@@ -552,7 +565,7 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
         edge_features = x[2]
 

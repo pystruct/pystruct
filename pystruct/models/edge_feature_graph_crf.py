@@ -1,6 +1,7 @@
 import numpy as np
 
 from .graph_crf import GraphCRF
+from .crf import CRF
 
 
 class EdgeFeatureGraphCRF(GraphCRF):
@@ -54,33 +55,49 @@ class EdgeFeatureGraphCRF(GraphCRF):
         Indices of edge features that are forced to be anti-symmetric.
 
     """
-    def __init__(self, n_states=2, n_features=None, n_edge_features=1,
+    def __init__(self, n_states=None, n_features=None, n_edge_features=None,
                  inference_method=None, class_weight=None,
                  symmetric_edge_features=None,
                  antisymmetric_edge_features=None):
-        GraphCRF.__init__(self, n_states, n_features, inference_method,
-                          class_weight=class_weight)
         self.n_edge_features = n_edge_features
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_features
-                         * n_states ** 2)
+
         if symmetric_edge_features is None:
             symmetric_edge_features = []
         if antisymmetric_edge_features is None:
             antisymmetric_edge_features = []
-        if np.any(np.hstack([symmetric_edge_features,
-                             antisymmetric_edge_features]) >= n_edge_features):
-            raise ValueError("Got (anti) symmetric edge feature index that is "
-                             "larger than n_edge_features.")
-
-        if not set(symmetric_edge_features).isdisjoint(
-                antisymmetric_edge_features):
-            raise ValueError("symmetric_edge_features and "
-                             " antisymmetric_edge_features share an entry."
-                             " That doesn't make any sense.")
-
         self.symmetric_edge_features = symmetric_edge_features
         self.antisymmetric_edge_features = antisymmetric_edge_features
+
+        GraphCRF.__init__(self, n_states, n_features, inference_method,
+                          class_weight=class_weight)
+
+    def _set_size_psi(self):
+        if not None in [self.n_states, self.n_features, self.n_edge_features]:
+            self.size_psi = (self.n_states * self.n_features
+                             + self.n_edge_features
+                             * self.n_states ** 2)
+
+        if self.n_edge_features is not None:
+            if np.any(np.hstack([self.symmetric_edge_features,
+                                 self.antisymmetric_edge_features]) >=
+                      self.n_edge_features):
+                raise ValueError("Got (anti) symmetric edge feature index that"
+                                 " is larger than n_edge_features.")
+
+            if not set(self.symmetric_edge_features).isdisjoint(
+                    self.antisymmetric_edge_features):
+                raise ValueError("symmetric_edge_features and "
+                                 " antisymmetric_edge_features share an entry."
+                                 " That doesn't make any sense.")
+
+    def initialize(self, X, Y):
+        n_edge_features = X[0][2].shape[1]
+        if self.n_edge_features is None:
+            self.n_edge_features = n_edge_features
+        elif self.n_edge_features != n_edge_features:
+            raise ValueError("Expected %d edge features, got %d"
+                             % (self.n_edge_features, n_edge_features))
+        CRF.initialize(self, X, Y)
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s, n_features: %d, "
@@ -99,7 +116,10 @@ class EdgeFeatureGraphCRF(GraphCRF):
             raise ValueError("Got edge features of size %d, but expected %d."
                              % (edge_features.shape[1], self.n_edge_features))
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_edge_features(self, x):
+        return x[2]
+
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -117,7 +137,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        edge_features = x[2]
+        edge_features = self._get_edge_features(x)
         pairwise = np.asarray(w[self.n_states * self.n_features:])
         pairwise = pairwise.reshape(self.n_edge_features, -1)
         return np.dot(edge_features, pairwise).reshape(
@@ -147,13 +167,14 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
-        edge_features = x[2]
+        edge_features = self._get_edge_features(x)
 
         if isinstance(y, tuple):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
+            unary_marginals = unary_marginals.reshape(n_nodes, self.n_states)
 
         else:
             y = y.reshape(n_nodes)

@@ -15,15 +15,14 @@ import matplotlib.pyplot as plt
 
 from pystruct.models import GridCRF
 import pystruct.learners as ssvm
-import pystruct.toy_datasets as toy
+from pystruct.datasets import generate_crosses_explicit
+from pystruct.utils import expand_sym
 
 
-X, Y = toy.generate_crosses_explicit(n_samples=50, noise=10)
-n_labels = len(np.unique(Y))
-crf = GridCRF(n_states=n_labels, inference_method="lp", neighborhood=4)
-clf = ssvm.OneSlackSSVM(model=crf, max_iter=1000, C=100, verbose=0,
-                        check_constraints=True, n_jobs=-1, inference_cache=100,
-                        inactive_window=50, tol=.1)
+X, Y = generate_crosses_explicit(n_samples=50, noise=10)
+crf = GridCRF(neighborhood=4)
+clf = ssvm.OneSlackSSVM(model=crf, C=100, n_jobs=-1, inference_cache=100,
+                        tol=.1)
 clf.fit(X, Y)
 Y_pred = np.array(clf.predict(X))
 
@@ -50,9 +49,7 @@ for p in plots:
 # visualize weights
 w_un = clf.w[:3 * 3].reshape(3, 3)
 # decode the symmetric pairwise potential
-w_pw = np.zeros((crf.n_states, crf.n_states))
-w_pw[np.tri(crf.n_states, dtype=np.bool)] = clf.w[3 * 3:]
-w_pw = w_pw + w_pw.T - np.diag(np.diag(w_pw))
+w_pw = expand_sym(clf.w[3 * 3:])
 
 fig, plots = plt.subplots(1, 2, figsize=(8, 4))
 plots[0].matshow(w_un, cmap='gray', vmin=-5, vmax=5)

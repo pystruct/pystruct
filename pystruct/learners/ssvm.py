@@ -20,6 +20,7 @@ class BaseSSVM(BaseEstimator):
 
     def predict(self, X):
         """Predict output on examples in X.
+
         Parameters
         ----------
         X : iterable
@@ -29,6 +30,7 @@ class BaseSSVM(BaseEstimator):
         -------
         Y_pred : list
             List of inference results for X using the learned parameters.
+
         """
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:

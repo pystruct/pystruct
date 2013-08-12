@@ -13,7 +13,7 @@ from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
 
 
-class LatentSubgradientSSVM(SubgradientSSVM):
+class SubgradientLatentSSVM(SubgradientSSVM):
     """Latent Variable Structured SVM solver using subgradient descent.
 
     Implements a margin rescaled with l1 slack penalty.
@@ -77,14 +77,15 @@ class LatentSubgradientSSVM(SubgradientSSVM):
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
-   ``loss_curve_`` : list of float
+    ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-   ``objective_curve_`` : list of float
+    ``objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
 
     ``timestamps_`` : list of int
-        Total training time stored before each iteration.
+       Total training time stored before each iteration.
+
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
                  learning_rate=0.001, adagrad=False, n_jobs=1,
@@ -97,7 +98,7 @@ class LatentSubgradientSSVM(SubgradientSSVM):
             break_on_no_constraints=break_on_no_constraints, logger=logger,
             decay_t0=decay_t0)
 
-    def fit(self, X, Y, H_init=None, warm_start=False):
+    def fit(self, X, Y, H_init=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
 
         Parameters
@@ -115,8 +116,16 @@ class LatentSubgradientSSVM(SubgradientSSVM):
 
         warm_start : boolean, default=False
             Whether to restart a previous fit.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
-        print("Training latent subgradient structural SVM")
+        if self.verbose > 0:
+            print("Training latent subgradient structural SVM")
+        if initialize:
+            self.model.initialize(X, Y)
+        self.grad_old = np.zeros(self.model.size_psi)
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(
                 0, 1, size=self.model.size_psi))

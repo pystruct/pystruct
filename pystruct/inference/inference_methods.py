@@ -76,6 +76,8 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'lp' for build-in lp relaxation via GLPK (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
             * 'ogm' for OpenGM wrappers.
+            * 'unary' for using unary potentials only.
+
         It is also possible to pass a tuple (string, dict) where the dict
         contains additional keyword arguments.
 
@@ -136,7 +138,9 @@ def _validate_params(unary_potentials, pairwise_params, edges):
             raise ValueError("Expected pairwise_params either to "
                              "be of shape n_states x n_states "
                              "or n_edges x n_states x n_states, but"
-                             " got shape %s" % repr(pairwise_params.shape))
+                             " got shape %s. n_states=%d, n_edge=%d."
+                             % (repr(pairwise_params.shape), n_states,
+                                edges.shape[0]))
         pairwise_potentials = pairwise_params
     return n_states, pairwise_potentials
 
@@ -219,7 +223,9 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         inference.setStartingPoint(init)
 
     inference.infer()
-    res = inference.arg()
+    # we convert the result to int from unsigned int
+    # because otherwise we are sure to shoot ourself in the foot
+    res = inference.arg().astype(np.int)
     if return_energy:
         return res, gm.evaluate(res)
     return res

@@ -49,8 +49,10 @@ class OneSlackSSVM(BaseSSVM):
     verbose : int
         Verbosity
 
-    positive_constraint: list of ints
-        Indices of parmeters that are constraint to be positive.
+    negativity_constraint: list of ints
+        Indices of parmeters that are constraint to be negative.
+        This is useful for learning submodular CRFs (inference is formulated
+        as maximization in SSVMs, flipping some signs).
 
     break_on_bad: bool (default=False)
         Whether to break (start debug mode) when inference was approximate.
@@ -63,7 +65,7 @@ class OneSlackSSVM(BaseSSVM):
         purposes). Zero means never, otherwise it will be computed very
         show_loss_every'th epoch.
 
-    tol : float, default=1e-5
+    tol : float, default=1e-3
         Convergence tolerance. If dual objective decreases less than tol,
         learning is stopped. The default corresponds to ignoring the behavior
         of the dual objective and stop only if no more constraints can be
@@ -103,20 +105,23 @@ class OneSlackSSVM(BaseSSVM):
     old_solution : dict
         The last solution found by the qp solver.
 
-   ``loss_curve_`` : list of float
+    ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-   ``objective_curve_`` : list of float
-       Primal objective after each pass through the dataset.
+    ``objective_curve_`` : list of float
+       Cutting plane objective after each pass through the dataset.
+
+    ``primal_objective_curve_`` : list of float
+        Primal objective after each pass through the dataset.
 
     ``timestamps_`` : list of int
-        Total training time stored before each iteration.
+       Total training time stored before each iteration.
     """
 
-    def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
-                 verbose=0, positive_constraint=None, n_jobs=1,
-                 break_on_bad=False, show_loss_every=0, tol=1e-5,
-                 inference_cache=0, inactive_threshold=1e-10,
+    def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
+                 verbose=0, negativity_constraint=None, n_jobs=1,
+                 break_on_bad=False, show_loss_every=0, tol=1e-3,
+                 inference_cache=0, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, cache_tol='auto',
                  switch_to=None):
 
@@ -124,7 +129,7 @@ class OneSlackSSVM(BaseSSVM):
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        self.positive_constraint = positive_constraint
+        self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
@@ -148,13 +153,13 @@ class OneSlackSSVM(BaseSSVM):
         idy = np.identity(n_constraints)
         tmp1 = np.zeros(n_constraints)
         # positivity constraints:
-        if self.positive_constraint is None:
+        if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
             psis_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.positive_constraint]
-            zero_constr = np.zeros(len(self.positive_constraint))
+            psis_constr = psi_matrix.T[self.negativity_constraint]
+            zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, psis_constr))))
@@ -353,7 +358,7 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
         return Y_hat, dpsi, loss_mean
 
-    def fit(self, X, Y, constraints=None, warm_start=False):
+    def fit(self, X, Y, constraints=None, warm_start=False, initialize=True):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -370,12 +375,15 @@ class OneSlackSSVM(BaseSSVM):
 
         warm_start : bool, default=False
             Whether we are warmstarting from a previous fit.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
         print("Training 1-slack dual structural SVM")
-        if self.verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
-        else:
-            cvxopt.solvers.options['show_progress'] = True
+        cvxopt.solvers.options['show_progress'] = self.verbose > 3
+        if initialize:
+            self.model.initialize(X, Y)
 
         # parse cache_tol parameter
         if self.cache_tol is None or self.cache_tol == 'auto':
@@ -421,6 +429,7 @@ class OneSlackSSVM(BaseSSVM):
                 cached_constraint = False
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
+                if self.verbose > 2:
                     print(self)
                 try:
                     Y_hat, dpsi, loss_mean = self._constraint_from_cache(

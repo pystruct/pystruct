@@ -1,6 +1,8 @@
 .. toctree::
    :maxdepth: 2
 
+.. _learning:
+
 Learning
 ==========
 This module contains algorithms for solving the structured learning model.
@@ -28,18 +30,27 @@ The rest is experimental / for testing.
     learners.SubgradientSSVM
     learners.StructuredPerceptron
     learners.LatentSSVM
-    learners.LatentSubgradientSSVM
+    learners.SubgradientLatentSSVM
     learners.PrimalDSStructuredSVM
+
+.. _models:
 
 Models
 ========
-This module contains model formulations for several settings.
-They provide the glue between the learning algorithm and the data (and inference).
-The BinarySVMModel implements a standard SVM, the CrammerSingerSVMModel a multi-class SVM
-- which is surprisingly efficient and sometimes comparable to LibLinear Crammer-Singer Implementation.
+This module contains model formulations for several settings. They provide the
+glue between the learning algorithm and the data (and inference).
 
-GraphCRF implements a simple pairwise model for arbitrary graphs, while EdgeFeatureGraphCRF allows
-for arbitrary features for each edge, symmetric, assymmetric and arbitrary potentials.
+There are two main classes of models, conditional random field models (CRFs)
+and classification models (Clfs).
+
+The BinaryClf implements a standard binary classifier, the MultiClassClf a
+linear multi-class classifier. Together with a max-margin learner, these
+produce standard binary SVMs and Crammer-Singer multi-class SVMs. MultiLabelClf
+implements a multi label model with different possible pairwise interactions.
+
+GraphCRF implements a simple pairwise model for arbitrary graphs, while
+EdgeFeatureGraphCRF allows for arbitrary features for each edge, symmetric,
+assymmetric and arbitrary potentials.
 
 GridCRF is a convenience class for grid graphs.
 
@@ -49,12 +60,24 @@ GridCRF is a convenience class for grid graphs.
 
 .. currentmodule:: pystruct
 
+Classifiers
+-----------
+
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-    models.BinarySVMModel
-    models.CrammerSingerSVMModel
+    models.BinaryClf
+    models.MultiClassClf
+    models.MultiLabelClf
+
+Conditional Random Fields
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
     models.GraphCRF
     models.EdgeFeatureGraphCRF
     models.LatentGraphCRF
@@ -62,6 +85,7 @@ GridCRF is a convenience class for grid graphs.
     models.GridCRF
     models.DirectionalGridCRF
 
+.. _inference:
 
 Inference
 ===========
@@ -81,6 +105,7 @@ Inference
    inference.inference_dai
    inference.inference_lp
    inference.inference_ad3
+   inference.inference_ogm
 
 Utilities
 ===========

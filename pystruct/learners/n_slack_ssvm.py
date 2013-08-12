@@ -46,8 +46,10 @@ class NSlackSSVM(BaseSSVM):
     verbose : int (default=0)
         Verbosity.
 
-    positive_constraint: list of ints
-        Indices of parmeters that are constraint to be positive.
+    negativity_constraint: list of ints
+        Indices of parmeters that are constraint to be negative.
+        This is useful for learning submodular CRFs (inference is formulated
+        as maximization in SSVMs, flipping some signs).
 
     break_on_bad: bool (default=False)
         Whether to break (start debug mode) when inference was approximate.
@@ -91,24 +93,30 @@ class NSlackSSVM(BaseSSVM):
     old_solution : dict
         The last solution found by the qp solver.
 
-   ``loss_curve_`` : list of float
+    ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-   ``objective_curve_`` : list of float
-       Primal objective after each pass through the dataset.
+    ``objective_curve_`` : list of float
+        Cutting plane objective after each pass through the dataset.
+
+    ``primal_objective_curve_`` : list of float
+        Primal objective after each pass through the dataset.
+
+    ``timestamps_`` : list of int
+       Total training time stored before each iteration.
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
-                 verbose=0, positive_constraint=None, n_jobs=1,
+                 verbose=0, negativity_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
-                 tol=-10, inactive_threshold=1e-5,
+                 tol=1e-3, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, switch_to=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        self.positive_constraint = positive_constraint
+        self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.batch_size = batch_size
@@ -122,7 +130,7 @@ class NSlackSSVM(BaseSSVM):
         psis = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
 
-        psi_matrix = np.vstack(psis)
+        psi_matrix = np.vstack(psis).astype(np.float)
         n_constraints = len(psis)
         P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
         # q contains loss from margin-rescaling
@@ -137,13 +145,13 @@ class NSlackSSVM(BaseSSVM):
             blocks[i, first: first + len(sample)] = 1
             first += len(sample)
         # positivity constraints:
-        if self.positive_constraint is None:
+        if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
             psis_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.positive_constraint]
-            zero_constr = np.zeros(len(self.positive_constraint))
+            psis_constr = psi_matrix.T[self.negativity_constraint]
+            zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, blocks,
@@ -213,7 +221,7 @@ class NSlackSSVM(BaseSSVM):
 
         return False
 
-    def fit(self, X, Y, constraints=None, warm_start=None):
+    def fit(self, X, Y, constraints=None, warm_start=None, initialize=True):
         """Learn parameters using cutting plane method.
 
         Parameters
@@ -233,13 +241,15 @@ class NSlackSSVM(BaseSSVM):
             y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
             and loss is the loss for predicting y_hat instead of the true label
             y.
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
         """
         print("Training n-slack dual structural SVM")
-        if self.verbose < 2:
-            cvxopt.solvers.options['show_progress'] = False
-        else:
-            cvxopt.solvers.options['show_progress'] = True
-
+        cvxopt.solvers.options['show_progress'] = self.verbose > 3
+        if initialize:
+            self.model.initialize(X, Y)
         self.w = np.zeros(self.model.size_psi)
         n_samples = len(X)
         stopping_criterion = False
@@ -261,6 +271,7 @@ class NSlackSSVM(BaseSSVM):
                 self.timestamps_.append(time() - self.timestamps_[0])
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
+                if self.verbose > 2:
                     print(self)
                 new_constraints = 0
                 # generate slices through dataset from batch_size
@@ -355,6 +366,8 @@ class NSlackSSVM(BaseSSVM):
                     self.logger(self, iteration)
         except KeyboardInterrupt:
             pass
+        if self.logger is not None:
+            self.logger(self, 'final')
 
         self.constraints_ = constraints
         if self.verbose and self.n_jobs == 1:

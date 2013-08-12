@@ -2,11 +2,12 @@ import numpy as np
 
 from .base import StructuredModel
 from ..inference import inference_dispatch, get_installed
+#from .utils import loss_augment_unaries
 
 
 class CRF(StructuredModel):
     """Abstract base class"""
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None):
         self.n_states = n_states
         if inference_method is None:
@@ -14,23 +15,30 @@ class CRF(StructuredModel):
             inference_method = get_installed(['ad3', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
-        if n_features is None:
-            # backward compatibilty hack
-            n_features = n_states
         self.n_features = n_features
+        self.class_weight = class_weight
+        self._set_size_psi()
+        self._set_class_weight()
 
-        if class_weight is not None:
-            if hasattr(self, 'n_labels'):
-                n_things = self.n_labels
-            else:
-                n_things = n_states
+    def initialize(self, X, Y):
+        # Works for both GridCRF and GraphCRF, but not ChainCRF.
+        # funny that ^^
+        n_features = X[0][0].shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
 
-            if len(class_weight) != n_things:
-                raise ValueError("class_weight must have length n_states or"
-                                 " be None")
-            self.class_weight = np.array(class_weight)
-        else:
-            self.class_weight = np.ones(n_states)
+        n_states = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_states is None:
+            self.n_states = n_states
+        elif self.n_states != n_states:
+            raise ValueError("Expected %d states, got %d"
+                             % (self.n_states, n_states))
+
+        self._set_size_psi()
+        self._set_class_weight()
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s)"
@@ -38,7 +46,7 @@ class CRF(StructuredModel):
                    self.inference_method))
 
     def _check_size_x(self, x):
-        features = self.get_features(x)
+        features = self._get_features(x)
         if features.shape[1] != self.n_features:
             raise ValueError("Unary evidence should have %d feature per node,"
                              " got %s instead."
@@ -92,9 +100,9 @@ class CRF(StructuredModel):
         """
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
         # do loss-augmentation
         for l in np.arange(self.n_states):
             # for each class, decrement features
@@ -149,9 +157,9 @@ class CRF(StructuredModel):
         """
         self._check_size_w(w)
         self.inference_calls += 1
-        unary_potentials = self.get_unary_potentials(x, w)
-        pairwise_potentials = self.get_pairwise_potentials(x, w)
-        edges = self.get_edges(x)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,

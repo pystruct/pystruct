@@ -1,17 +1,24 @@
 import numpy as np
 
 from .crf import CRF
+from ..utils import expand_sym, compress_sym
 
 
 class GraphCRF(CRF):
     """Pairwise CRF on a general graph.
 
-    Examples, i.e. X, are given as an iterable of n_examples. 
-    An example, x, is represented as a tuple (features, edges) where 
-    features is a numpy array of shape (n_nodes, n_attributes), and 
+    Pairwise potentials are symmetric and the same for all edges.
+    This leads to n_classes parameters for unary potentials.
+    If ``directed=True``, there are ``n_classes * n_classes`` parameters
+    for pairwise potentials, if ``directed=False``, there are only
+    ``n_classes * (n_classes + 1) / 2`` (for a symmetric matrix).
+
+    Examples, i.e. X, are given as an iterable of n_examples.
+    An example, x, is represented as a tuple (features, edges) where
+    features is a numpy array of shape (n_nodes, n_attributes), and
     edges is is an array of shape (n_edges, 2), representing the graph.
 
-    Labels, Y, are given as an interable of n_examples. Each label, y, in Y 
+    Labels, Y, are given as an interable of n_examples. Each label, y, in Y
     is given by a numpy array of shape (n_nodes,).
     
     There are n_states * n_features parameters for unary potentials. For edge 
@@ -39,7 +46,7 @@ class GraphCRF(CRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="ad3"
+    inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
@@ -48,25 +55,41 @@ class GraphCRF(CRF):
             - 'lp' for Linear Programming relaxation using GLPK.
             - 'ad3' for AD3 dual decomposition.
 
+        If None, ad3 is used if installed, otherwise lp.
+
     class_weight : None, or array-like
-        State weights. If an array-like is passed, it must have length
-        n_states. None means equal state weights.
+        Class weights. If an array-like is passed, it must have length
+        n_classes. None means equal class weights.
+
+    directed : boolean, default=False
+        Whether to model directed or undirected connections.
+        In undirected models, interaction terms are symmetric,
+        so an edge ``a -> b`` has the same energy as ``b -> a``.
     """
-    def __init__(self, n_states=2, n_features=None, inference_method=None,
-                 class_weight=None):
+    def __init__(self, n_states=None, n_features=None, inference_method=None,
+                 class_weight=None, directed=False):
+        self.directed = directed
         CRF.__init__(self, n_states, n_features, inference_method,
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
-        self.size_psi = (n_states * self.n_features
-                         + n_states * (n_states + 1) / 2)
 
-    def get_edges(self, x):
+    def _set_size_psi(self):
+        # try to set the size of psi if possible
+        if self.n_features is not None and self.n_states is not None:
+            if self.directed:
+                self.size_psi = (self.n_states * self.n_features +
+                                 self.n_states ** 2)
+            else:
+                self.size_psi = (self.n_states * self.n_features
+                                 + self.n_states * (self.n_states + 1) / 2)
+
+    def _get_edges(self, x):
         return x[1]
 
-    def get_features(self, x):
+    def _get_features(self, x):
         return x[0]
 
-    def get_pairwise_potentials(self, x, w):
+    def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
         Parameters
@@ -84,15 +107,12 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        pairwise_flat = np.asarray(w[self.n_states * self.n_features:])
-        pairwise_params = np.zeros((self.n_states, self.n_states))
-        # set lower triangle of matrix, then make symmetric
-        # we could try to redo this using ``scipy.spatial.distance`` somehow
-        pairwise_params[np.tri(self.n_states, dtype=np.bool)] = pairwise_flat
-        return (pairwise_params + pairwise_params.T -
-                np.diag(np.diag(pairwise_params)))
+        pw = w[self.n_states * self.n_features:]
+        if self.directed:
+            return pw.reshape(self.n_states, self.n_states)
+        return expand_sym(pw)
 
-    def get_unary_potentials(self, x, w):
+    def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
 
         Parameters
@@ -110,7 +130,7 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         unary_params = w[:self.n_states * self.n_features].reshape(
             self.n_states, self.n_features)
 
@@ -140,7 +160,7 @@ class GraphCRF(CRF):
 
         """
         self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x)
+        features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
 
         if isinstance(y, tuple):
@@ -163,131 +183,10 @@ class GraphCRF(CRF):
                         unary_marginals[edges[:, 1]])
 
         unaries_acc = np.dot(unary_marginals.T, features)
-        pw = pw + pw.T - np.diag(np.diag(pw))  # make symmetric
-
-        psi_vector = np.hstack([unaries_acc.ravel(),
-                                pw[np.tri(self.n_states, dtype=np.bool)]])
-        return psi_vector
-
-
-class EdgeTypeGraphCRF(GraphCRF):
-    """CRF with several kinds of edges, each having their own parameters.
-
-    Pairwise potentials are not symmetric and are independend for each kind of
-    edges. This leads to n_classes * n_features parameters for unary potentials
-    and n_edge_types * n_classes ** 2 parameters for edge potentials.
-
-    Unary evidence is given as a tuple of shape (n_nodes, n_features),
-    An instance ``x`` is represented as a tuple ``(unaries, edges)``.
-    Edges is a list of arrays of shape (n_edges_i, 2), one array
-    per type of edge.
-
-    Labels ``y`` are given as array of shape (n_features).
-
-    Parameters
-    ----------
-    n_states : int, default=2
-        Number of states for all variables.
-
-    inference_method : string, default="lp"
-        Function to call do do inference and loss-augmented inference.
-        Possible values are:
-
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
-            - 'lp' for Linear Programming relaxation using GLPK.
-            - 'ad3' for AD3 dual decomposition.
-
-    n_edge_types : int, default=1
-        How many different edge-types there are.
-
-    """
-    def __init__(self, n_states=2, n_features=None, inference_method='lp',
-                 n_edge_types=1):
-        GraphCRF.__init__(self, n_states, n_features,
-                          inference_method=inference_method,)
-        self.n_edge_types = n_edge_types
-        self.size_psi = (n_states * self.n_features
-                         + self.n_edge_types * n_states ** 2)
-
-    def get_edges(self, x, flat=True):
-        if flat:
-            # flatten edge-types
-            return np.vstack(x[1])
-        return x[1]
-
-    def psi(self, x, y):
-        """Feature vector associated with instance (x, y).
-
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
-
-        Parameters
-        ----------
-        x : tuple
-            Input representation.
-
-        y : ndarray or tuple
-            Either y is an integral ndarray of shape (n_nodes,), giving
-            a complete labeling for x.
-            Or it is the result of a linear programming relaxation. In this
-            case, ``y=(unary_marginals, pariwise_marginals)``, where
-            unary_marginals is an array of shape (n_nodes, n_states) and
-            pairwise_marginals is an array of shape (n_states, n_states) of
-            accumulated pairwise marginals.
-
-        Returns
-        -------
-        p : ndarray, shape (size_psi,)
-            Feature vector associated with state (x, y).
-
-        """
-        # x is unaries
-        self._check_size_x(x)
-        features, edges = self.get_features(x), self.get_edges(x, flat=False)
-        n_nodes = features.shape[0]
-        # y is a labeling
-        if isinstance(y, tuple):
-            # y can also be continuous (from lp)
-            # in this case, it comes with accumulated edge marginals
-            unary_marginals, pw = y
-
-            # pw contains separate entries for all edges
-            # we need to find out which belong to which kind
-            n_edges = [len(e) for e in edges]
-            n_edges.insert(0, 0)
-            edge_boundaries = np.cumsum(n_edges)
-            pw_accumulated = []
-            for i, j in zip(edge_boundaries[:-1], edge_boundaries[1:]):
-                pw_accumulated.append(pw[i:j].sum(axis=0))
-            pw = np.vstack(pw_accumulated)
+        if self.directed:
+            pw = pw.ravel()
         else:
-            ##accumulated pairwise
-            #make one hot encoding
-            y = y.reshape(n_nodes)
-            unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
-            gx = np.ogrid[:n_nodes]
-            unary_marginals[gx, y] = 1
+            pw = compress_sym(pw)
 
-            ##accumulated pairwise
-            pw = []
-            for edge_type in edges:
-                pw.append(np.dot(unary_marginals[edge_type[:, 0]].T,
-                                 unary_marginals[edge_type[:, 1]]))
-            pw = np.vstack(pw)
-
-        unaries_acc = np.dot(unary_marginals.reshape(-1, self.n_states).T,
-                             features)
-        feature = np.hstack([unaries_acc.ravel(), pw.ravel()])
-        return feature
-
-    def get_pairwise_potentials(self, x, w):
-        self._check_size_w(w)
-        self._check_size_x(x)
-        edges = self.get_edges(x, flat=False)
-        n_edges = [len(e) for e in edges]
-        pairwise_params = w[self.n_states * self.n_features:].reshape(
-            self.n_edge_types, self.n_states, self.n_states)
-        edge_weights = [np.repeat(pw[np.newaxis, :, :], n, axis=0)
-                        for pw, n in zip(pairwise_params, n_edges)]
-        return np.vstack(edge_weights)
+        psi_vector = np.hstack([unaries_acc.ravel(), pw])
+        return psi_vector

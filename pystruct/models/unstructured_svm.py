@@ -4,7 +4,7 @@ from .base import StructuredModel
 from .utils import crammer_singer_psi
 
 
-class BinarySVMModel(StructuredModel):
+class BinaryClf(StructuredModel):
     """Formulate standard linear binary SVM in CRF framework.
 
     Inputs x are simply feature arrays, labels y are -1 or 1.
@@ -20,13 +20,21 @@ class BinarySVMModel(StructuredModel):
 
     Parameters
     ----------
-    n_features : int
+    n_features : int or None, default=None
         Number of features of inputs x.
     """
-    def __init__(self, n_features):
+    def __init__(self, n_features=None):
         self.size_psi = n_features
         self.n_states = 2
         self.inference_calls = 0
+
+    def initialize(self, X, Y):
+        n_features = X.shape[1]
+        if self.size_psi is None:
+            self.size_psi = n_features
+        elif self.size_psi != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.size_psi, n_features))
 
     def __repr__(self):
         return ("%s, n_features: %d"
@@ -121,7 +129,7 @@ class BinarySVMModel(StructuredModel):
         return Y != Y_hat
 
 
-class CrammerSingerSVMModel(StructuredModel):
+class MultiClassClf(StructuredModel):
     """Formulate linear multiclass SVM in C-S style in CRF framework.
 
     Inputs x are simply feature arrays, labels y are 0 to n_classes.
@@ -151,24 +159,37 @@ class CrammerSingerSVMModel(StructuredModel):
         Whether the class-weights should be used to rescale C (liblinear-style)
         or just rescale the loss.
     """
-    def __init__(self, n_features, n_classes=2, class_weight=None,
+    def __init__(self, n_features=None, n_classes=None, class_weight=None,
                  rescale_C=False):
         # one weight-vector per class
-        self.size_psi = n_classes * n_features
         self.n_states = n_classes
         self.n_features = n_features
         self.rescale_C = rescale_C
-        if class_weight is not None:
-            if len(class_weight) != n_classes:
-                raise ValueError("class_weight must have length n_classes or"
-                                 " be None")
-            class_weight = np.array(class_weight)
-            self.uniform_class_weight = False
-        else:
-            self.uniform_class_weight = True
-            class_weight = np.ones(n_classes)
         self.class_weight = class_weight
         self.inference_calls = 0
+        self._set_size_psi()
+        self._set_class_weight()
+
+    def _set_size_psi(self):
+        if not None in [self.n_states, self.n_features]:
+            self.size_psi = self.n_states * self.n_features
+
+    def initialize(self, X, Y):
+        n_features = X.shape[1]
+        if self.n_features is None:
+            self.n_features = n_features
+        elif self.n_features != n_features:
+            raise ValueError("Expected %d features, got %d"
+                             % (self.n_features, n_features))
+
+        n_classes = len(np.unique(np.hstack([y.ravel() for y in Y])))
+        if self.n_states is None:
+            self.n_states = n_classes
+        elif self.n_states != n_classes:
+            raise ValueError("Expected %d classes, got %d"
+                             % (self.n_states, n_classes))
+        self._set_size_psi()
+        self._set_class_weight()
 
     def __repr__(self):
         return ("%s(n_features=%d, n_classes=%d)"
