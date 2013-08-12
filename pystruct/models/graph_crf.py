@@ -1,5 +1,4 @@
 import numpy as np
-import pdb
 
 from .crf import CRF
 from ..utils import expand_sym, compress_sym
@@ -172,7 +171,6 @@ class GraphCRF(CRF):
             Feature vector associated with state (x, y).
 
         """
-        #pdb.set_trace()
         self._check_size_x(x)
         features, edges = self._get_features(x), self._get_edges(x)
         n_nodes = features.shape[0]
