@@ -9,6 +9,7 @@ class GraphCRF(CRF):
 
     Pairwise potentials are symmetric and the same for all edges.
     This leads to n_classes parameters for unary potentials.
+
     If ``directed=True``, there are ``n_classes * n_classes`` parameters
     for pairwise potentials, if ``directed=False``, there are only
     ``n_classes * (n_classes + 1) / 2`` (for a symmetric matrix).
@@ -18,9 +19,36 @@ class GraphCRF(CRF):
     features is a numpy array of shape (n_nodes, n_attributes), and
     edges is is an array of shape (n_edges, 2), representing the graph.
 
-    Labels, Y, are given as an interable of n_examples. Each label, y, in Y
+    Labels, Y, are given as an iterable of n_examples. Each label, y, in Y
     is given by a numpy array of shape (n_nodes,).
+    
+    There are n_states * n_features parameters for unary
+    potentials. For edge potential parameters, there are n_state *
+    n_states permutations, i.e.
+    
+            state_1 state_2 state 3
+    state_1       1       2       3
+    state_2       2       3       4
+    state_3       3       4       5
+        
+    The fitted parameters of this model will be returned as an array
+    with the first n_states * n_features elements representing the
+    unary potentials parameters, followed by the edge potential
+    parameters.
 
+    Say we have two state, A and B, and two features 1 and 2. The unary
+    potential parameters will be returned as [A1, A2, B1, B2].
+
+    If ``directed=True`` the edge potential parameters will return 
+    n_states * n_states parameters. The above edge potential parameter
+    example would be returned as [1, 2, 3, 2, 3, 4, 3, 4, 5] 
+    (see numpy.ravel).
+
+    Otherwise, the edge potential parameter matrix is assumed to be
+    symmetric an only the lower triangle is returned, i.e.
+    [1, 2, 3, 3, 4, 5].
+
+    
     Parameters
     ----------
     n_states : int, default=2
@@ -48,6 +76,7 @@ class GraphCRF(CRF):
         Whether to model directed or undirected connections.
         In undirected models, interaction terms are symmetric,
         so an edge ``a -> b`` has the same energy as ``b -> a``.
+
     """
     def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None, directed=False):
