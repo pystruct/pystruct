@@ -100,7 +100,10 @@ class LatentNodeCRF(GraphCRF):
                  latent_node_features=False):
         self.n_labels = n_labels
         self.n_hidden_states = n_hidden_states
-        n_states = n_hidden_states + n_labels
+        if n_labels is not None:
+            n_states = n_hidden_states + n_labels
+        else:
+            n_states = None
         self.latent_node_features = latent_node_features
 
         GraphCRF.__init__(self, n_states, n_features,
@@ -133,6 +136,7 @@ class LatentNodeCRF(GraphCRF):
         elif self.n_labels != n_labels:
             raise ValueError("Expected %d labels, got %d"
                              % (self.n_labels, n_labels))
+        self.n_states = self.n_hidden_states + n_labels
         self._set_size_psi()
         self._set_class_weight()
 

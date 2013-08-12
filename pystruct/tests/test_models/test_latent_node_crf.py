@@ -2,19 +2,36 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_almost_equal)
 
+from nose.tools import assert_raises
+
 from pystruct.datasets import generate_blocks_multinomial
 from pystruct.inference.linear_programming import lp_general_graph
-from pystruct.utils import make_grid_edges
+from pystruct.utils import make_grid_edges, edge_list_to_features
 from pystruct.models import LatentNodeCRF, EdgeFeatureLatentNodeCRF
 from pystruct.inference import get_installed
 
 
-def edge_list_to_features(edge_list):
-    edges = np.vstack(edge_list)
-    edge_features = np.zeros((edges.shape[0], 2))
-    edge_features[:len(edge_list[0]), 0] = 1
-    edge_features[len(edge_list[0]):, 1] = 1
-    return edge_features
+def test_initialize():
+    # 17 nodes, three features, 5 visible states, 2 hidden states
+    rnd = np.random.RandomState(0)
+    feats = rnd.normal(size=(17, 3))
+    edges = np.zeros((0, 2), dtype=np.int)  # no edges
+    x = (feats, edges, 4)   # 4 latent variables
+    y = rnd.randint(5, size=17)
+    crf = LatentNodeCRF(n_labels=5, n_features=3)
+    # no-op
+    crf.initialize([x], [y])
+    assert_equal(crf.n_states, 5 + 2)
+
+    #test initialization works
+    crf = LatentNodeCRF()
+    crf.initialize([x], [y])
+    assert_equal(crf.n_labels, 5)
+    assert_equal(crf.n_states, 5 + 2)
+    assert_equal(crf.n_features, 3)
+
+    crf = LatentNodeCRF(n_labels=3)
+    assert_raises(ValueError, crf.initialize, X=[x], Y=[y])
 
 
 def test_inference_trivial():
