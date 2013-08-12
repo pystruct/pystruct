@@ -105,6 +105,7 @@ Inference
    inference.inference_dai
    inference.inference_lp
    inference.inference_ad3
+   inference.inference_ogm
 
 Utilities
 ===========
