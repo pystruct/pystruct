@@ -17,10 +17,10 @@ class FrankWolfeSSVM(BaseSSVM):
         self.dual_check_every = dual_check_every
 
     def _calc_dual_gap(self, X, Y, l):
-        lam = 1.0 / self.C
+        n_samples = len(X)
+        lam = 1.0 / (self.C * n_samples)
         ls = 0
         ws = 0.0
-        n_samples = len(X)
         n_pos_slack = 0
         for x, y in zip(X, Y):
             y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
@@ -42,7 +42,7 @@ class FrankWolfeSSVM(BaseSSVM):
         # Algorithm 2: Batch Frank-Wolfe
         l = 0.0
         n_samples = float(len(X))
-        lam = 1.0 / self.C
+        lam = 1.0 / (self.C * n_samples)
         for k in xrange(self.max_iter):
             ls = 0
             ws = np.zeros(self.model.size_psi)
@@ -81,7 +81,7 @@ class FrankWolfeSSVM(BaseSSVM):
         w_mat = np.zeros((n_samples, self.model.size_psi))
         l_mat = np.zeros(n_samples)
 
-        lam = 1.0 / self.C
+        lam = 1.0 / (self.C * n_samples)
         l = 0
         k = 0
         for p in xrange(self.max_iter):
