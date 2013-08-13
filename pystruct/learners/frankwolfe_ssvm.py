@@ -122,8 +122,8 @@ class FrankWolfeSSVM(BaseSSVM):
                     dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
                     print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
                           % (p, dual_val, dual_gap, primal_val, n_pos_slack))
-                    if dual_gap < 0.01:
-                        return
+                    #if dual_gap < 0.01:
+                        #return
 
     def fit(self, X, Y):
         self.model.initialize(X, Y)
