@@ -1,5 +1,7 @@
-from pystruct.learners.ssvm import BaseSSVM
+from time import time
 import numpy as np
+
+from pystruct.learners.ssvm import BaseSSVM
 from pystruct.utils import find_constraint
 
 
@@ -35,6 +37,9 @@ class FrankWolfeSSVM(BaseSSVM):
         w_diff = self.w - ws
         dual_gap = 1.0 / (self.C * n_samples) * w_diff.T.dot(self.w) - l + ls
         primal_val = dual_val + dual_gap
+        self.primal_objective_curve_.append(primal_val)
+        self.objective_curve_.append(dual_val)
+        self.timestamps_.append(time() - self.timestamps_[0])
         return dual_val, dual_gap, primal_val, n_pos_slack
 
     def _frank_wolfe_batch(self, X, Y):
@@ -119,6 +124,8 @@ class FrankWolfeSSVM(BaseSSVM):
 
     def fit(self, X, Y):
         self.model.initialize(X, Y)
+        self.objective_curve_, self.primal_objective_curve_ = [], []
+        self.timestamps_ = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         if self.batch_mode:
             self._frank_wolfe_batch(X, Y)
