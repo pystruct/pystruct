@@ -4,9 +4,9 @@ from pystruct.utils import find_constraint
 
 
 class FrankWolfeSSVM(BaseSSVM):
-    def __init__(self, model, max_iter=100, C=1.0, verbose=0, n_jobs=1,
+    def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=True,
-                 line_search=True, dual_check_every=1, tol=.01):
+                 line_search=True, dual_check_every=1, tol=.001):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
