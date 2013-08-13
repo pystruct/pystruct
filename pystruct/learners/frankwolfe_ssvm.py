@@ -73,8 +73,9 @@ class FrankWolfeSSVM(BaseSSVM):
             l = (1.0 - gamma) * l + gamma * ls
 
             dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-            print("k = %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f, n_pos_slack: %f"
-                  % (k, dual_val, dual_gap, primal_val, gamma, n_pos_slack))
+            if self.verbose > 0:
+                print("k = %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f, n_pos_slack: %f"
+                      % (k, dual_val, dual_gap, primal_val, gamma, n_pos_slack))
             if dual_gap < self.tol:
                 return
 
@@ -117,8 +118,9 @@ class FrankWolfeSSVM(BaseSSVM):
 
                 if (self.dual_check_every != 0) and (k % self.dual_check_every == 0):
                     dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-                    print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
-                          % (p, dual_val, dual_gap, primal_val, n_pos_slack))
+                    if self.verbose > 0:
+                        print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
+                              % (p, dual_val, dual_gap, primal_val, n_pos_slack))
                     if dual_gap < self.tol:
                         return
 
