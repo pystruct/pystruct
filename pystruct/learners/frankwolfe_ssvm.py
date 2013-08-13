@@ -18,7 +18,6 @@ class FrankWolfeSSVM(BaseSSVM):
 
     def _calc_dual_gap(self, X, Y, l):
         n_samples = len(X)
-        lam = 1.0 / (self.C * n_samples)
         ls = 0
         ws = 0.0
         n_pos_slack = 0
@@ -29,12 +28,12 @@ class FrankWolfeSSVM(BaseSSVM):
             ls += loss
             if slack > 0:
                 n_pos_slack += 1
-        ws /= (lam * n_samples)
+        ws *= self.C
         ls /= n_samples
 
-        dual_val = -0.5 * lam * np.sum(self.w ** 2) + l
+        dual_val = -0.5 / (self.C * n_samples) * np.sum(self.w ** 2) + l
         w_diff = self.w - ws
-        dual_gap = lam * w_diff.T.dot(self.w) - l + ls
+        dual_gap = 1.0 / (self.C * n_samples) * w_diff.T.dot(self.w) - l + ls
         primal_val = dual_val + dual_gap
         return dual_val, dual_gap, primal_val, n_pos_slack
 
@@ -42,25 +41,24 @@ class FrankWolfeSSVM(BaseSSVM):
         # Algorithm 2: Batch Frank-Wolfe
         l = 0.0
         n_samples = float(len(X))
-        lam = 1.0 / (self.C * n_samples)
         for k in xrange(self.max_iter):
             ls = 0
             ws = np.zeros(self.model.size_psi)
             n_pos_slack = 0
             for x, y in zip(X, Y):
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-                ws += (delta_psi / (lam * n_samples))
+                ws += delta_psi  * self.C
                 ls += (loss / n_samples)
                 if slack > 0:
                     n_pos_slack += 1
 
             w_diff = self.w - ws
-            dual_gap = lam * w_diff.T.dot(self.w) - l + ls
+            dual_gap = 1.0 / (self.C * n_samples)* w_diff.T.dot(self.w) - l + ls
 
             # line search for gamma
             if self.line_search:
                 eps = 2.2204e-16
-                gamma = dual_gap / (lam * (np.sum(w_diff ** 2)) + eps)
+                gamma = dual_gap / (np.sum(w_diff ** 2) / (self.C * n_samples) + eps)
                 gamma = max(0.0, min(1.0, gamma))
             else:
                 gamma = 2.0 / (k + 2.0)
@@ -81,7 +79,6 @@ class FrankWolfeSSVM(BaseSSVM):
         w_mat = np.zeros((n_samples, self.model.size_psi))
         l_mat = np.zeros(n_samples)
 
-        lam = 1.0 / (self.C * n_samples)
         l = 0
         k = 0
         for p in xrange(self.max_iter):
@@ -91,14 +88,14 @@ class FrankWolfeSSVM(BaseSSVM):
                 x, y = X[i], Y[i]
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
                 # ws and ls
-                ws = delta_psi / (n_samples * lam)
+                ws = delta_psi * self.C
                 ls = loss / n_samples
 
                 # line search
                 if self.line_search:
                     eps = 1e-15
                     w_diff = w_mat[i] - ws
-                    gamma = (w_diff.T.dot(self.w) - 1.0/lam*(l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
+                    gamma = (w_diff.T.dot(self.w) - (self.C * n_samples)*(l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
                     gamma = max(0.0, min(1.0, gamma))
                 else:
                     gamma = 2.0 * n_samples / (k + 2.0 * n_samples)
