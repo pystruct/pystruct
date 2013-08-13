@@ -1,28 +1,27 @@
-from pystruct.learners.ssvm import BaseSSVM 
+from pystruct.learners.ssvm import BaseSSVM
 import numpy as np
 from pystruct.utils import find_constraint
 
 
 class FrankWolfeSSVM(BaseSSVM):
-    def __init__(self, model, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0, logger=None, 
-                 batch_mode=True, line_search=True, dual_check_every=1):
-        
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0, n_jobs=1,
+                 show_loss_every=0, logger=None, batch_mode=True,
+                 line_search=True, dual_check_every=1):
+
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
         self.batch_mode = batch_mode
         self.line_search = line_search
         self.dual_check_every = dual_check_every
-    
+
     def _calc_dual_gap(self, X, Y, l):
-        # 
         lam = 1.0 / self.C
         ls = 0
         ws = 0.0
         n_samples = len(X)
         n_pos_slack = 0
-        for x, y in zip(X, Y): 
+        for x, y in zip(X, Y):
             y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
             if not isinstance(y_hat, int):
                 loss = float(loss) / len(y.ravel())
@@ -39,9 +38,9 @@ class FrankWolfeSSVM(BaseSSVM):
         dual_gap = lam * w_diff.T.dot(self.w) - l + ls
         primal_val = dual_val + dual_gap
         return dual_val, dual_gap, primal_val, n_pos_slack
-          
+
     def _frank_wolfe_batch(self, X, Y):
-        # Algorithm 2: Batch Frank-Wolfe 
+        # Algorithm 2: Batch Frank-Wolfe
         l = 0.0
         n_samples = float(len(X))
         lam = 1.0 / self.C
@@ -49,7 +48,7 @@ class FrankWolfeSSVM(BaseSSVM):
             ls = 0
             ws = np.zeros(self.model.size_psi)
             n_pos_slack = 0
-            for x, y in zip(X, Y): 
+            for x, y in zip(X, Y):
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
                 if not isinstance(y_hat, int):
                     loss = float(loss) / len(y.ravel())
@@ -84,11 +83,13 @@ class FrankWolfeSSVM(BaseSSVM):
         n_samples = len(X)
         w_mat = np.zeros((n_samples, self.model.size_psi))
         l_mat = np.zeros(n_samples)
-                
+
         lam = 1.0 / self.C
         l = 0
         k = 0
         for p in xrange(self.max_iter):
+            if self.verbose > 0:
+                print("Iteration %d" % p)
             for i in range(n_samples):
                 x, y = X[i], Y[i]
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
@@ -97,7 +98,7 @@ class FrankWolfeSSVM(BaseSSVM):
                 # ws and ls
                 ws = delta_psi / (n_samples * lam)
                 ls = loss / n_samples
-                
+
                 # line search
                 if self.line_search:
                     eps = 1e-15
@@ -116,14 +117,14 @@ class FrankWolfeSSVM(BaseSSVM):
                 l += l_mat[i]
 
                 k += 1
-                                
+
                 if (self.dual_check_every != 0) and (k % self.dual_check_every == 0):
                     dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
                     print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
                           % (p, dual_val, dual_gap, primal_val, n_pos_slack))
                     if dual_gap < 0.01:
                         return
-            
+
     def fit(self, X, Y):
         self.model.initialize(X, Y)
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
