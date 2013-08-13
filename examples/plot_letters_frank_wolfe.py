@@ -29,7 +29,7 @@ window features or non-linear kernels. This example is more meant to give a
 demonstration of the CRF than to show its superiority.
 """
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 from sklearn.svm import LinearSVC
 #from sklearn.metrics import confusion_matrix
@@ -37,7 +37,7 @@ from sklearn.svm import LinearSVC
 from pystruct.datasets import load_letters
 from pystruct.models import ChainCRF
 from pystruct.learners import OneSlackSSVM
-from frankwolfe_ssvm import FrankWolfeSSVM
+from pystruct.learners import FrankWolfeSSVM
 abc = "abcdefghijklmnopqrstuvwxyz"
 from pystruct.models import MultiClassClf
 
@@ -48,7 +48,7 @@ X, y, folds = letters['data'], letters['labels'], letters['folds']
 for i, x in enumerate(X):
     X[i] = np.hstack([x, np.ones((x.shape[0], 1))])
 
-cur_fold = 0
+cur_fold = 1
 X, y = np.array(X), np.array(y)
 X_train, X_test = X[folds == cur_fold], X[folds != cur_fold]
 y_train, y_test = y[folds == cur_fold], y[folds != cur_fold]
@@ -60,7 +60,7 @@ svm.fit(np.vstack(X_train), np.hstack(y_train))
 print("Test score with linear SVM: %f" % svm.score(np.vstack(X_train),
                                                    np.hstack(y_train)))
 
-if True:
+if False:
     # multi class SVM
     svm2 = FrankWolfeSSVM(MultiClassClf(n_features=129, n_classes=26), C=100, max_iter=200, line_search=True,
                           batch_mode=False, dual_check_every=np.vstack(X_train).shape[0])
@@ -80,11 +80,12 @@ if False:
     svm1.fit(X_train, y_train)
     print("%f" % svm1.score(X_train, y_train))
 
-if False:
-    svm2 = FrankWolfeSSVM(ChainCRF(inference_method='dai'), C=100, max_iter=50, line_search=True, batch_mode=False,
-                          dual_check_every=626)
+if True:
+    svm2 = FrankWolfeSSVM(ChainCRF(), C=.1, max_iter=500, line_search=True, batch_mode=False,
+                          dual_check_every=5000, verbose=1)
     svm2.fit(X_train, y_train)
     print(" %f" % svm2.score(X_train, y_train))
+    print(" %f" % svm2.score(X_test, y_test))
 
 # plot some word sequenced
 # n_words = 4

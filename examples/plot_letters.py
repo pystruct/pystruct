@@ -54,8 +54,8 @@ svm = LinearSVC(dual=False, C=.1)
 svm.fit(np.vstack(X_train), np.hstack(y_train))
 
 # Train linear chain CRF
-model = ChainCRF(inference_method='qpbo')
-ssvm = OneSlackSSVM(model=model, C=.1, inference_cache=50, tol=0.1)
+model = ChainCRF()
+ssvm = OneSlackSSVM(model=model, C=.1, inference_cache=50, tol=0.1, verbose=3)
 ssvm.fit(X_train, y_train)
 
 print("Test score with chain CRF: %f" % ssvm.score(X_test, y_test))
@@ -67,7 +67,7 @@ print("Test score with linear SVM: %f" % svm.score(np.vstack(X_test),
 n_words = 4
 rnd = np.random.RandomState(1)
 selected = rnd.randint(len(y_test), size=n_words)
-max_word_len = max([len(y) for y in y_test[selected]])
+max_word_len = max([len(y_) for y_ in y_test[selected]])
 fig, axes = plt.subplots(n_words, max_word_len, figsize=(10, 10))
 fig.subplots_adjust(wspace=0)
 for ind, axes_row in zip(selected, axes):
