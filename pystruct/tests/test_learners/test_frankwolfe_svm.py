@@ -9,7 +9,7 @@ from pystruct.learners import FrankWolfeSSVM
 
 
 def test_multinomial_blocks_frankwolfe():
-    X, Y = generate_blocks_multinomial(n_samples=50, noise=0.4,
+    X, Y = generate_blocks_multinomial(n_samples=50, noise=0.5,
                                        seed=0)
     crf = GridCRF(inference_method='qpbo')
     clf = FrankWolfeSSVM(model=crf, C=1, line_search=True,
