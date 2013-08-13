@@ -28,8 +28,8 @@ class GraphCRF(CRF):
     
             state_1 state_2 state 3
     state_1       1       2       3
-    state_2       2       3       4
-    state_3       3       4       5
+    state_2       4       5       6
+    state_3       7       8       9
         
     The fitted parameters of this model will be returned as an array
     with the first n_states * n_features elements representing the
@@ -40,13 +40,16 @@ class GraphCRF(CRF):
     potential parameters will be returned as [A1, A2, B1, B2].
 
     If ``directed=True`` the edge potential parameters will return 
-    n_states * n_states parameters. The above edge potential parameter
-    example would be returned as [1, 2, 3, 2, 3, 4, 3, 4, 5] 
-    (see numpy.ravel).
+    n_states * n_states parameters. The rows are senders and the
+    columns are recievers, i.e. the edge potential state_2 -> state_1
+    is [2,1]; 4 in the above matrix.
+    
+    The above edge potential parameterm example would be returned as 
+    [1, 2, 3, 4, 5, 6, 7, 8, 9] (see numpy.ravel).
 
     Otherwise, the edge potential parameter matrix is assumed to be
-    symmetric an only the lower triangle is returned, i.e.
-    [1, 2, 3, 3, 4, 5].
+    symmetric and only the lower triangle is returned, i.e.
+    [1, 4, 5, 7, 8, 9].
 
     
     Parameters
