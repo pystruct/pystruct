@@ -31,11 +31,11 @@ class FrankWolfeSSVM(BaseSSVM):
             if slack > 0:
                 n_pos_slack += 1
         ws *= self.C
-        ls /= n_samples
+        l = l * n_samples
 
-        dual_val = -0.5 / (self.C * n_samples) * np.sum(self.w ** 2) + l
+        dual_val = -0.5 / self.C * np.sum(self.w ** 2) + l
         w_diff = self.w - ws
-        dual_gap = 1.0 / (self.C * n_samples) * w_diff.T.dot(self.w) - l + ls
+        dual_gap = 1.0 / self.C * w_diff.T.dot(self.w) - l + ls
         primal_val = dual_val + dual_gap
         self.primal_objective_curve_.append(primal_val)
         self.objective_curve_.append(dual_val)
