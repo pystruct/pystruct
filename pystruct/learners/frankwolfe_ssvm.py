@@ -6,11 +6,12 @@ from pystruct.utils import find_constraint
 class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=True,
-                 line_search=True, dual_check_every=1):
+                 line_search=True, dual_check_every=1, tol=.01):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
+        self.tol = tol
         self.batch_mode = batch_mode
         self.line_search = line_search
         self.dual_check_every = dual_check_every
@@ -69,10 +70,10 @@ class FrankWolfeSSVM(BaseSSVM):
             l = (1.0 - gamma) * l + gamma * ls
 
             dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-            #dual_val = -0.5 * lam * np.sum(self.w ** 2) + l
-            #primal_val = dual_val + dual_gap
             print("k = %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f, n_pos_slack: %f"
                   % (k, dual_val, dual_gap, primal_val, gamma, n_pos_slack))
+            if dual_gap < self.tol:
+                return
 
     def _frank_wolfe_bc(self, X, Y):
         # Algorithm 3: block-coordinate Frank-Wolfe
@@ -89,8 +90,6 @@ class FrankWolfeSSVM(BaseSSVM):
             for i in range(n_samples):
                 x, y = X[i], Y[i]
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-                if not isinstance(y_hat, int):
-                    loss = float(loss) / len(y.ravel())
                 # ws and ls
                 ws = delta_psi / (n_samples * lam)
                 ls = loss / n_samples
@@ -118,8 +117,8 @@ class FrankWolfeSSVM(BaseSSVM):
                     dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
                     print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
                           % (p, dual_val, dual_gap, primal_val, n_pos_slack))
-                    #if dual_gap < 0.01:
-                        #return
+                    if dual_gap < self.tol:
+                        return
 
     def fit(self, X, Y):
         self.model.initialize(X, Y)
