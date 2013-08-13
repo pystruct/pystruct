@@ -127,8 +127,11 @@ class FrankWolfeSSVM(BaseSSVM):
         self.objective_curve_, self.primal_objective_curve_ = [], []
         self.timestamps_ = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
-        if self.batch_mode:
-            self._frank_wolfe_batch(X, Y)
-        else:
-            self._frank_wolfe_bc(X, Y)
+        try:
+            if self.batch_mode:
+                self._frank_wolfe_batch(X, Y)
+            else:
+                self._frank_wolfe_bc(X, Y)
+        except KeyboardInterrupt:
+            pass
         return self
