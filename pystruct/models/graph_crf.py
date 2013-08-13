@@ -44,11 +44,11 @@ class GraphCRF(CRF):
     columns are recievers, i.e. the edge potential state_2 -> state_1
     is [2,1]; 4 in the above matrix.
     
-    The above edge potential parameterm example would be returned as 
+    The above edge potential parameters example would be returned as 
     [1, 2, 3, 4, 5, 6, 7, 8, 9] (see numpy.ravel).
 
-    Otherwise, the edge potential parameter matrix is assumed to be
-    symmetric and only the lower triangle is returned, i.e.
+    If edges are undirected, the edge potential parameter matrix is 
+    assumed to be symmetric and only the lower triangle is returned, i.e.
     [1, 4, 5, 7, 8, 9].
 
     
