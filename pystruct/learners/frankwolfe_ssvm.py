@@ -23,8 +23,6 @@ class FrankWolfeSSVM(BaseSSVM):
         n_pos_slack = 0
         for x, y in zip(X, Y):
             y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-            if not isinstance(y_hat, int):
-                loss = float(loss) / len(y.ravel())
 
             ws += delta_psi
             ls += loss
@@ -50,8 +48,6 @@ class FrankWolfeSSVM(BaseSSVM):
             n_pos_slack = 0
             for x, y in zip(X, Y):
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-                if not isinstance(y_hat, int):
-                    loss = float(loss) / len(y.ravel())
                 ws += (delta_psi / (lam * n_samples))
                 ls += (loss / n_samples)
                 if slack > 0:
