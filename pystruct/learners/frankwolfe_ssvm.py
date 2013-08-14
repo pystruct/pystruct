@@ -115,14 +115,16 @@ class FrankWolfeSSVM(BaseSSVM):
                 l += l_mat[i]
 
                 k += 1
+                if self.verbose > 1:
+                    print("Approximate loss: %f" %l)
 
-                if (self.dual_check_every != 0) and (p % self.dual_check_every == 0):
-                    dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-                    if self.verbose > 0:
-                        print("dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
-                              % (dual_val, dual_gap, primal_val, n_pos_slack))
-                    if dual_gap < self.tol:
-                        return
+        if (self.dual_check_every != 0) and (p % self.dual_check_every == 0):
+            dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
+            if self.verbose > 0:
+                print("dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
+                      % (dual_val, dual_gap, primal_val, n_pos_slack))
+            if dual_gap < self.tol:
+                return
 
     def fit(self, X, Y, constraints=None, initialize=True):
         if initialize:
