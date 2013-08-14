@@ -116,16 +116,17 @@ class FrankWolfeSSVM(BaseSSVM):
 
                 k += 1
 
-                if (self.dual_check_every != 0) and (k % self.dual_check_every == 0):
+                if (self.dual_check_every != 0) and (p % self.dual_check_every == 0):
                     dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
                     if self.verbose > 0:
-                        print("p = %d, dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
-                              % (p, dual_val, dual_gap, primal_val, n_pos_slack))
+                        print("dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
+                              % (dual_val, dual_gap, primal_val, n_pos_slack))
                     if dual_gap < self.tol:
                         return
 
-    def fit(self, X, Y):
-        self.model.initialize(X, Y)
+    def fit(self, X, Y, constraints=None, initialize=True):
+        if initialize:
+            self.model.initialize(X, Y)
         self.objective_curve_, self.primal_objective_curve_ = [], []
         self.timestamps_ = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
