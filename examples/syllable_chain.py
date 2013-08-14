@@ -1,4 +1,10 @@
-import urllib2
+from __future__ import print_function
+
+try:
+    from urllib.request import urlopen  # Py3k
+except ImportError:
+    from urllib2 import urlopen  # Py2
+
 import numpy as np
 
 from sklearn.feature_extraction import FeatureHasher
@@ -55,7 +61,7 @@ def numbered_nb(y):
 
 
 if __name__ == '__main__':
-    url = urllib2.urlopen(NETTALK)
+    url = urlopen(NETTALK)
     for _ in xrange(10):  # skip header
         url.readline()
     lines = [nettalk_line(line) for line in url]
