@@ -16,8 +16,7 @@ from sklearn.svm import LinearSVC
 
 from pystruct.models import MultiClassClf
 from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
-                               SubgradientSSVM)
-from frankwolfe_ssvm import FrankWolfeSSVM
+                               SubgradientSSVM, FrankWolfeSSVM)
 
 # do a binary digit classification
 digits = fetch_mldata("USPS")
