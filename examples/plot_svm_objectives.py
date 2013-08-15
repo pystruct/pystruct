@@ -18,7 +18,7 @@ from pystruct.learners import (NSlackSSVM, OneSlackSSVM, SubgradientSSVM,
                                FrankWolfeSSVM)
 from pystruct.datasets import generate_crosses_explicit
 
-X, Y = generate_crosses_explicit(n_samples=500, noise=10, size=6, n_crosses=1)
+X, Y = generate_crosses_explicit(n_samples=50, noise=10, size=6, n_crosses=1)
 n_labels = len(np.unique(Y))
 crf = GridCRF(n_states=n_labels, inference_method="dai")
 
@@ -28,7 +28,7 @@ one_slack_svm = OneSlackSSVM(crf, check_constraints=False,
                              max_iter=100, tol=0.001, inference_cache=50)
 subgradient_svm = SubgradientSSVM(crf, learning_rate=0.001, max_iter=20,
                                   decay_exponent=0, momentum=0)
-bcfw_svm = FrankWolfeSSVM(crf, max_iter=400, verbose=2, check_dual_every=4)
+bcfw_svm = FrankWolfeSSVM(crf, max_iter=50, verbose=2, check_dual_every=4)
 
 #n-slack cutting plane ssvm
 n_slack_svm.fit(X, Y)
