@@ -18,6 +18,8 @@ from pystruct.utils import find_constraint
 class FrankWolfeSSVM(BaseSSVM):
     """Structured SVM solver using Block-coordinate Frank-Wolfe.
 
+    This implementation is somewhat experimental. Use with care.
+
     This implementation follows the paper:
         Lacoste-Julien, Jaggi, Schmidt, Pletscher JMLR 2013
         Block-Coordinage Frank-Wolfe Optimization for Structural SVMs
