@@ -1,3 +1,13 @@
+######################
+# Authors:
+#   Xianghang Liu <xianghangliu@gmail.com>
+#   Andreas Mueller <amueller@ais.uni-bonn.de>
+#
+# License: BSD 3-clause
+#
+# Implements structured SVM as described in Joachims et. al.
+# Cutting-Plane Training of Structural SVMs
+
 from time import time
 import numpy as np
 
@@ -6,11 +16,87 @@ from pystruct.utils import find_constraint
 
 
 class FrankWolfeSSVM(BaseSSVM):
+    """Structured SVM solver using Block-coordinate Frank-Wolfe.
+
+    This implementation follows the paper:
+        Lacoste-Julien, Jaggi, Schmidt, Pletscher JMLR 2013
+        Block-Coordinage Frank-Wolfe Optimization for Structural SVMs
+
+    With batch_mode=False, the implementation if online and
+    give an attractive alternative to subgradient methods, as no
+    learning rate is needed and a duality gap guarantee is given.
+
+    Parameters
+    ----------
+    model : StructuredModel
+        Object containing the model structure. Has to implement
+        `loss`, `inference` and `loss_augmented_inference`.
+
+    max_iter : int, default=1000
+        Maximum number of passes over dataset to find constraints.
+
+    C : float, default=1
+        Regularization parameter. Corresponds to 1 / (lambda * n_samples).
+
+    verbose : int
+        Verbosity.
+
+    n_jobs : int, default=1
+        Number of parallel processes. Currently only n_jobs=1 is supported.
+
+    show_loss_every : int, default=0
+        How often the training set loss should be computed.
+        Zero corresponds to never.
+
+    tol : float, default=1e-3
+        Convergence tolerance on the duality gap.
+
+    logger : logger object, default=None
+        Pystruct logger for storing the model or extracting additional
+        information.
+
+    batch_mode : boolean, default=False
+        Whether to use batch updates. Will slow down learning enormously.
+
+    line_search : boolean, default=True
+        Whether to compute the optimum step size in each step.
+        The line-search is done in closed form and cheap.
+        There is usually no reason to turn this off.
+
+    check_dual_every : int, default=10
+        How often the stopping criterion should be checked. Computing
+        the stopping criterion is as costly as doing one pass over the dataset,
+        so check_dual_every=1 will make learning twice as slow.
+
+    do_averaging : bool, default=True
+        Whether to use weight averaging as described in the reference paper.
+
+
+    Attributes
+    ----------
+    w : nd-array, shape=(model.size_psi,)
+        The learned weights of the SVM.
+
+    ``loss_curve_`` : list of float
+        List of loss values if show_loss_every > 0.
+
+    ``objective_curve_`` : list of float
+       Cutting plane objective after each pass through the dataset.
+
+    ``primal_objective_curve_`` : list of float
+        Primal objective after each pass through the dataset.
+
+    ``timestamps_`` : list of int
+       Total training time stored before each iteration.
+    """
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
-                 show_loss_every=0, logger=None, batch_mode=True,
-                 line_search=True, check_dual_every=1, tol=.001,
+                 show_loss_every=0, logger=None, batch_mode=False,
+                 line_search=True, check_dual_every=10, tol=.001,
                  do_averaging=True):
 
+        if n_jobs != 1:
+            raise ValueError("FrankWolfeSSVM does not support multiprocessing"
+                             " yet. Ignoring n_jobs != 1.")
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
@@ -45,7 +131,13 @@ class FrankWolfeSSVM(BaseSSVM):
         return dual_val, dual_gap, primal_val, n_pos_slack
 
     def _frank_wolfe_batch(self, X, Y):
-        # Algorithm 2: Batch Frank-Wolfe
+        """Batch Frank-Wolfe learning.
+
+        This is basically included for reference / comparision only,
+        as the block-coordinate version is much faster.
+
+        Compare Algorithm 2 in the reference paper.
+        """
         l = 0.0
         n_samples = float(len(X))
         for k in xrange(self.max_iter):
@@ -82,7 +174,10 @@ class FrankWolfeSSVM(BaseSSVM):
                 return
 
     def _frank_wolfe_bc(self, X, Y):
-        # Algorithm 3: block-coordinate Frank-Wolfe
+        """Block-Coordinate Frank-Wolfe learning.
+
+        Compare Algorithm 3 in the reference paper.
+        """
         n_samples = len(X)
         w = self.w.copy()
         w_mat = np.zeros((n_samples, self.model.size_psi))
@@ -136,6 +231,24 @@ class FrankWolfeSSVM(BaseSSVM):
                 return
 
     def fit(self, X, Y, constraints=None, initialize=True):
+        """Learn parameters using (block-coordinate) Frank-Wolfe learning.
+
+        Parameters
+        ----------
+        X : iterable
+            Traing instances. Contains the structured input objects.
+            No requirement on the particular form of entries of X is made.
+
+        Y : iterable
+            Training labels. Contains the strctured labels for inputs in X.
+            Needs to have the same length as X.
+
+        contraints : ignored
+
+        initialize : boolean, default=True
+            Whether to initialize the model for the data.
+            Leave this true except if you really know what you are doing.
+        """
         if initialize:
             self.model.initialize(X, Y)
         self.objective_curve_, self.primal_objective_curve_ = [], []

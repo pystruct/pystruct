@@ -35,11 +35,11 @@ class OneSlackSSVM(BaseSSVM):
         Object containing the model structure. Has to implement
         `loss`, `inference` and `loss_augmented_inference`.
 
-    max_iter : int
+    max_iter : int, default=10000
         Maximum number of passes over dataset to find constraints.
 
-    C : float (default=1)
-        Regularization parameter
+    C : float, default=1
+        Regularization parameter.
 
     check_constraints : bool
         Whether to check if the new "most violated constraint" is
@@ -47,14 +47,14 @@ class OneSlackSSVM(BaseSSVM):
         and debugging, but costly.
 
     verbose : int
-        Verbosity
+        Verbosity.
 
     negativity_constraint: list of ints
         Indices of parmeters that are constraint to be negative.
         This is useful for learning submodular CRFs (inference is formulated
         as maximization in SSVMs, flipping some signs).
 
-    break_on_bad: bool (default=False)
+    break_on_bad: bool default=False
         Whether to break (start debug mode) when inference was approximate.
 
     n_jobs : int, default=1
@@ -97,6 +97,10 @@ class OneSlackSSVM(BaseSSVM):
         Switch to the given inference method if the previous method does not
         find any more constraints.
 
+    logger : logger object, default=None
+        Pystruct logger for storing the model or extracting additional
+        information.
+
     Attributes
     ----------
     w : nd-array, shape=(model.size_psi,)
@@ -116,6 +120,7 @@ class OneSlackSSVM(BaseSSVM):
 
     ``timestamps_`` : list of int
        Total training time stored before each iteration.
+
     """
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
