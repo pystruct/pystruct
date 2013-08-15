@@ -85,6 +85,10 @@ class NSlackSSVM(BaseSSVM):
         Switch to the given inference method if the previous method does not
         find any more constraints.
 
+    logger : logger object, default=None
+        Pystruct logger for storing the model or extracting additional
+        information.
+
     Attributes
     ----------
     w : nd-array, shape=(model.size_psi,)
