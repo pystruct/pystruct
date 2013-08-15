@@ -110,17 +110,12 @@ class FrankWolfeSSVM(BaseSSVM):
 
     def _calc_dual_gap(self, X, Y, l):
         n_samples = len(X)
-        ls = 0
-        ws = 0.0
-        n_pos_slack = 0
-        for x, y in zip(X, Y):
-            y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-
-            ws += delta_psi
-            ls += loss
-            if slack > 0:
-                n_pos_slack += 1
-        ws *= self.C
+        psi_gt = self.model.batch_psi(X, Y, Y)  # FIXME don't calculate this again
+        Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
+                                                          relaxed=True)
+        dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
+        ls = np.sum(self.model.batch_loss(Y, Y_hat))
+        ws = dpsi * self.C
         l = l * n_samples * self.C
 
         dual_val = -0.5 * np.sum(self.w ** 2) + l
@@ -130,7 +125,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.primal_objective_curve_.append(primal_val)
         self.objective_curve_.append(dual_val)
         self.timestamps_.append(time() - self.timestamps_[0])
-        return dual_val, dual_gap, primal_val, n_pos_slack
+        return dual_val, dual_gap, primal_val
 
     def _frank_wolfe_batch(self, X, Y):
         """Batch Frank-Wolfe learning.
@@ -142,16 +137,15 @@ class FrankWolfeSSVM(BaseSSVM):
         """
         l = 0.0
         n_samples = float(len(X))
+        psi_gt = self.model.batch_psi(X, Y, Y)
+
         for k in xrange(self.max_iter):
             ls = 0
-            ws = np.zeros(self.model.size_psi)
-            n_pos_slack = 0
-            for x, y in zip(X, Y):
-                y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-                ws += delta_psi * self.C
-                ls += (loss / n_samples)
-                if slack > 0:
-                    n_pos_slack += 1
+            Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
+                                                              relaxed=True)
+            dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
+            ls = np.mean(self.model.batch_loss(Y, Y_hat))
+            ws = dpsi * self.C
 
             w_diff = self.w - ws
             dual_gap = 1.0 / (self.C * n_samples)* w_diff.T.dot(self.w) - l + ls
@@ -168,12 +162,14 @@ class FrankWolfeSSVM(BaseSSVM):
             self.w = (1.0 - gamma) * self.w + gamma * ws
             l = (1.0 - gamma) * l + gamma * ls
 
-            dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-            if self.verbose > 0:
-                print("k = %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f, n_pos_slack: %f"
-                      % (k, dual_val, dual_gap, primal_val, gamma, n_pos_slack))
-            if dual_gap < self.tol:
-                return
+            if (self.check_dual_every != 0) and (k % self.check_dual_every == 0):
+                # FIXME we shouldn't need to recompute everything here, right?
+                dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y, l)
+                if self.verbose > 0:
+                    print("k = %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f"
+                          % (k, dual_val, dual_gap, primal_val, gamma))
+                if dual_gap < self.tol:
+                    return
 
     def _frank_wolfe_bc(self, X, Y):
         """Block-Coordinate Frank-Wolfe learning.
@@ -227,7 +223,7 @@ class FrankWolfeSSVM(BaseSSVM):
         if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
             dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
             if self.verbose > 0:
-                print("dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
+                print("dual: %f, dual_gap: %f, primal: %f"
                       % (dual_val, dual_gap, primal_val, n_pos_slack))
             if dual_gap < self.tol:
                 return
