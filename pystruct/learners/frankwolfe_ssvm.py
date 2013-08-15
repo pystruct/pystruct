@@ -22,8 +22,9 @@ class FrankWolfeSSVM(BaseSSVM):
         Lacoste-Julien, Jaggi, Schmidt, Pletscher JMLR 2013
         Block-Coordinage Frank-Wolfe Optimization for Structural SVMs
 
-    With batch_mode=False, the implementation if online and
-    give an attractive alternative to subgradient methods, as no
+    With batch_mode=False, this implements the online (block-coordinate)
+    version of the algorithm (BCFW)
+    BCFW is an attractive alternative to subgradient methods, as no
     learning rate is needed and a duality gap guarantee is given.
 
     Parameters
@@ -70,6 +71,7 @@ class FrankWolfeSSVM(BaseSSVM):
 
     do_averaging : bool, default=True
         Whether to use weight averaging as described in the reference paper.
+        Currently this is only supported in the block-coordinate version.
 
 
     Attributes
