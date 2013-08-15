@@ -219,16 +219,14 @@ class FrankWolfeSSVM(BaseSSVM):
                 else:
                     self.w = w
                 k += 1
-                if self.verbose > 1:
-                    print("Approximate loss: %f" %l)
 
-        if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
-            dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
-            if self.verbose > 0:
-                print("dual: %f, dual_gap: %f, primal: %f"
-                      % (dual_val, dual_gap, primal_val, n_pos_slack))
-            if dual_gap < self.tol:
-                return
+            if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
+                dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y, l)
+                if self.verbose > 0:
+                    print("dual: %f, dual_gap: %f, primal: %f"
+                          % (dual_val, dual_gap, primal_val))
+                if dual_gap < self.tol:
+                    return
 
     def fit(self, X, Y, constraints=None, initialize=True):
         """Learn parameters using (block-coordinate) Frank-Wolfe learning.
