@@ -8,7 +8,8 @@ from pystruct.utils import find_constraint
 class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=True,
-                 line_search=True, dual_check_every=1, tol=.001):
+                 line_search=True, dual_check_every=1, tol=.001,
+                 do_averaging=True):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
@@ -17,6 +18,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.batch_mode = batch_mode
         self.line_search = line_search
         self.dual_check_every = dual_check_every
+        self.do_averaging = do_averaging
 
     def _calc_dual_gap(self, X, Y, l):
         n_samples = len(X)
@@ -33,7 +35,7 @@ class FrankWolfeSSVM(BaseSSVM):
         ws *= self.C
         l = l * n_samples * self.C
 
-        dual_val = -0.5  * np.sum(self.w ** 2) + l
+        dual_val = -0.5 * np.sum(self.w ** 2) + l
         w_diff = self.w - ws
         dual_gap = w_diff.T.dot(self.w) - l + ls * self.C
         primal_val = dual_val + dual_gap
@@ -52,7 +54,7 @@ class FrankWolfeSSVM(BaseSSVM):
             n_pos_slack = 0
             for x, y in zip(X, Y):
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
-                ws += delta_psi  * self.C
+                ws += delta_psi * self.C
                 ls += (loss / n_samples)
                 if slack > 0:
                     n_pos_slack += 1
@@ -62,7 +64,7 @@ class FrankWolfeSSVM(BaseSSVM):
 
             # line search for gamma
             if self.line_search:
-                eps = 2.2204e-16
+                eps = 1e-15
                 gamma = dual_gap / (np.sum(w_diff ** 2) / (self.C * n_samples) + eps)
                 gamma = max(0.0, min(1.0, gamma))
             else:
@@ -82,17 +84,18 @@ class FrankWolfeSSVM(BaseSSVM):
     def _frank_wolfe_bc(self, X, Y):
         # Algorithm 3: block-coordinate Frank-Wolfe
         n_samples = len(X)
+        w = self.w.copy()
         w_mat = np.zeros((n_samples, self.model.size_psi))
         l_mat = np.zeros(n_samples)
-
-        l = 0
+        l_avg = 0.0
+        l = 0.0
         k = 0
         for p in xrange(self.max_iter):
             if self.verbose > 0:
                 print("Iteration %d" % p)
             for i in range(n_samples):
                 x, y = X[i], Y[i]
-                y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, self.w)
+                y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, w)
                 # ws and ls
                 ws = delta_psi * self.C
                 ls = loss / n_samples
@@ -101,19 +104,25 @@ class FrankWolfeSSVM(BaseSSVM):
                 if self.line_search:
                     eps = 1e-15
                     w_diff = w_mat[i] - ws
-                    gamma = (w_diff.T.dot(self.w) - (self.C * n_samples)*(l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
+                    gamma = (w_diff.T.dot(w) - (self.C * n_samples)*(l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
                     gamma = max(0.0, min(1.0, gamma))
                 else:
                     gamma = 2.0 * n_samples / (k + 2.0 * n_samples)
 
-                self.w -= w_mat[i]
+                w -= w_mat[i]
                 w_mat[i] = (1.0 - gamma) * w_mat[i] + gamma * ws
-                self.w += w_mat[i]
+                w += w_mat[i]
 
                 l -= l_mat[i]
                 l_mat[i] = (1.0 - gamma) * l_mat[i] + gamma * ls
                 l += l_mat[i]
 
+                if self.do_averaging:
+                    rho = 2.0 / (k + 2.0)
+                    self.w = (1.0 - rho) * self.w + rho * w
+                    l_avg = (1.0 - rho) * l_avg + rho * l
+                else:
+                    self.w = w
                 k += 1
                 if self.verbose > 1:
                     print("Approximate loss: %f" %l)
