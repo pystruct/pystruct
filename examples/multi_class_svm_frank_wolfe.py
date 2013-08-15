@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.datasets import fetch_mldata
 #from sklearn.datasets import load_digits
 from sklearn.cross_validation import train_test_split
-from sklearn.svm import LinearSVC
+#from sklearn.svm import LinearSVC
 
 from pystruct.models import MultiClassClf
 from pystruct.learners import (NSlackSSVM, OneSlackSSVM,
@@ -38,11 +38,11 @@ one_slack_svm = OneSlackSSVM(model, verbose=2, C=.10, tol=.001)
 subgradient_svm = SubgradientSSVM(model, C=0.1, learning_rate=0.000001,
                                   max_iter=1000, verbose=1)
 
-fw_batch_svm = FrankWolfeSSVM(model, C=1e2, max_iter=500, line_search=True, batch_mode=True)
+fw_batch_svm = FrankWolfeSSVM(model, C=1e2, max_iter=500, line_search=True, batch_mode=True, verbose=10)
 fw_bc_svm = FrankWolfeSSVM(model, C=1e2, max_iter=20, line_search=True, batch_mode=False, check_dual_every=6000)
 
 start = time()
-fw_bc_svm.fit(X_train_bias, y_train)
+fw_batch_svm.fit(X_train_bias, y_train)
 y_pred = np.hstack(fw_bc_svm.predict(X_test_bias))
 time_fw_bc_svm = time() - start
 print("Score with pystruct frankwolfe_bc ssvm: %f (took %f seconds)" % (np.mean(y_pred == y_test), time_fw_bc_svm))
