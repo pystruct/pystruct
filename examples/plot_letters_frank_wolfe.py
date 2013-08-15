@@ -63,7 +63,7 @@ print("Test score with linear SVM: %f" % svm.score(np.vstack(X_train),
 if False:
     # multi class SVM
     svm2 = FrankWolfeSSVM(MultiClassClf(n_features=129, n_classes=26), C=100, max_iter=200, line_search=True,
-                          batch_mode=False, dual_check_every=np.vstack(X_train).shape[0])
+                          batch_mode=False, check_dual_every=np.vstack(X_train).shape[0])
     svm2.fit(np.vstack(X_train), np.hstack(y_train))
     print svm2.score(np.vstack(X_train), np.hstack(y_train))
 
@@ -82,7 +82,7 @@ if False:
 
 if True:
     svm2 = FrankWolfeSSVM(ChainCRF(), C=.1, max_iter=500, line_search=True, batch_mode=False,
-                          dual_check_every=5000, verbose=1)
+                          check_dual_every=5000, verbose=1)
     svm2.fit(X_train, y_train)
     print(" %f" % svm2.score(X_train, y_train))
     print(" %f" % svm2.score(X_test, y_test))

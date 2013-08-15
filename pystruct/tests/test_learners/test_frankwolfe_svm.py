@@ -13,7 +13,7 @@ def test_multinomial_blocks_frankwolfe():
                                        seed=0)
     crf = GridCRF(inference_method='qpbo')
     clf = FrankWolfeSSVM(model=crf, C=1, line_search=True,
-                         batch_mode=False, dual_check_every=500)
+                         batch_mode=False, check_dual_every=500)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

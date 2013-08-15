@@ -40,7 +40,7 @@ subgradient_svm = SubgradientSSVM(model, C=0.1, learning_rate=0.000001,
                                   max_iter=1000, verbose=1)
 
 fw_batch_svm = FrankWolfeSSVM(model, C=1e2, max_iter=500, line_search=True, batch_mode=True)
-fw_bc_svm = FrankWolfeSSVM(model, C=1e2, max_iter=20, line_search=True, batch_mode=False, dual_check_every=6000)
+fw_bc_svm = FrankWolfeSSVM(model, C=1e2, max_iter=20, line_search=True, batch_mode=False, check_dual_every=6000)
 
 start = time()
 fw_bc_svm.fit(X_train_bias, y_train)

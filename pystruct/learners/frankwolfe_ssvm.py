@@ -8,7 +8,7 @@ from pystruct.utils import find_constraint
 class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=True,
-                 line_search=True, dual_check_every=1, tol=.001,
+                 line_search=True, check_dual_every=1, tol=.001,
                  do_averaging=True):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
@@ -17,7 +17,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.tol = tol
         self.batch_mode = batch_mode
         self.line_search = line_search
-        self.dual_check_every = dual_check_every
+        self.check_dual_every = check_dual_every
         self.do_averaging = do_averaging
 
     def _calc_dual_gap(self, X, Y, l):
@@ -127,7 +127,7 @@ class FrankWolfeSSVM(BaseSSVM):
                 if self.verbose > 1:
                     print("Approximate loss: %f" %l)
 
-        if (self.dual_check_every != 0) and (p % self.dual_check_every == 0):
+        if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
             dual_val, dual_gap, primal_val, n_pos_slack = self._calc_dual_gap(X, Y, l)
             if self.verbose > 0:
                 print("dual: %f, dual_gap: %f, primal: %f, positive slack: %d"
