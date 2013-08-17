@@ -305,12 +305,12 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose > 10:
                 print("Empty cache.")
             raise NoConstraint
-        if (self.cache_tol == 'auto' and
-                (self.primal_objective_curve_[-1] - self.objective_curve_[-1])
-                < self.cache_tol_):
+        gap = self.primal_objective_curve_[-1] - self.objective_curve_[-1]
+        if (self.cache_tol == 'auto' and gap < self.cache_tol_):
             # do inference if gap has become to small
             if self.verbose > 1:
-                print("Last gap too small, not loading constraint from cache.")
+                print("Last gap too small (%f < %f), not loading constraint from cache."
+                      % (gap, self.cache_tol_))
             raise NoConstraint
 
         Y_hat = []
