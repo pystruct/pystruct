@@ -26,8 +26,12 @@ connected by the edge, the CRF can solve the task.
 
 From an inference point of view, this task is very hard.  QPBO move-making is
 not able to solve it alone, so we use the relaxed AD3 inference for learning.
+
+PS: This example runs a bit (5 minutes on 12 cores, 20 minutes on one core for me).
+But it does work as well as Decision Tree Fields ;)
 """
 import numpy as np
+import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -88,20 +92,19 @@ def prepare_data(X):
     return X_directions, X_edge_features
 
 
-
-
 def main():
+    print("Please be patient. Will take 5-20 minutes.")
     snakes = load_snakes()
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
 
     X_train = [one_hot_colors(x) for x in X_train]
-    Y_train_flat = [y.ravel() for y in Y_train]
+    Y_train_flat = [y_.ravel() for y_ in Y_train]
 
     X_train_directions, X_train_edge_features = prepare_data(X_train)
 
     # first, train on X with directions only:
     crf = EdgeFeatureGraphCRF(inference_method='qpbo')
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.3, switch_to='ad3',
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
                         n_jobs=-1)
     ssvm.fit(X_train_directions, Y_train_flat)
 
@@ -109,7 +112,7 @@ def main():
     # Clearly the middel of the snake is the hardest part.
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
     X_test = [one_hot_colors(x) for x in X_test]
-    Y_test_flat = [y.ravel() for y in Y_test]
+    Y_test_flat = [y_.ravel() for y_ in Y_test]
     X_test_directions, X_test_edge_features = prepare_data(X_test)
     Y_pred = ssvm.predict(X_test_directions)
     print("Results using only directional features for edges")
@@ -119,14 +122,33 @@ def main():
 
     # now, use more informative edge features:
     crf = EdgeFeatureGraphCRF(inference_method='qpbo')
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.3, switch_to='ad3',
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
                         n_jobs=-1)
     ssvm.fit(X_train_edge_features, Y_train_flat)
-    Y_pred = ssvm.predict(X_test_edge_features)
+    Y_pred2 = ssvm.predict(X_test_edge_features)
     print("Results using also input features for edges")
     print("Test accuracy: %.3f"
-          % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-    print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+          % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
+    print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
+
+    # plot stuff
+    fig, axes = plt.subplots(2, 2)
+    axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
+    axes[0, 0].set_title('Input')
+    y = Y_test[0].astype(np.int)
+    bg = 2 * (y != 0)  # enhance contrast
+    axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
+    axes[0, 1].set_title("Ground Truth")
+    axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+    axes[1, 0].set_title("Prediction w/o edge features")
+    axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+    axes[1, 1].set_title("Prediction with edge features")
+    for a in axes.ravel():
+        a.set_xticks(())
+        a.set_yticks(())
+    plt.show()
+    from IPython.core.debugger import Tracer
+    Tracer()()
 
 
 if __name__ == "__main__":
