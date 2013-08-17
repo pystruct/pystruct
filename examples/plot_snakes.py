@@ -34,7 +34,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import load_snakes
-from pystruct.utils import SaveLogger, make_grid_edges, edge_list_to_features
+from pystruct.utils import make_grid_edges, edge_list_to_features
 from pystruct.models import EdgeFeatureGraphCRF
 
 
@@ -47,18 +47,20 @@ def one_hot_colors(x):
 
 def neighborhood_feature(x):
     """Add a 3x3 neighborhood around each pixel as a feature."""
+    # we could also use a four neighborhood, that would work even better
+    # but one might argue then we are using domain knowledge ;)
+    features = np.zeros((x.shape[0], x.shape[1], 5, 9))
     # position 3 is background.
-    features = np.zeros((x.shape[0], x.shape[1], 5, 5))
     features[:, :, 3, :] = 1
-    #features[1:, 1:, :, 0] = x[:-1, :-1, :]
-    features[:, 1:, :, 0] = x[:, :-1, :]
-    #features[:-1, 1:, :, 2] = x[1:, :-1, :]
-    features[1:, :, :, 1] = x[:-1, :, :]
-    #features[:-1, :-1, :, 4] = x[1:, 1:, :]
-    features[:-1, :, :, 2] = x[1:, :, :]
-    #features[1:, :-1, :, 6] = x[:-1, 1:, :]
-    features[:, :-1, :, 3] = x[:, 1:, :]
-    features[:, :, :, 4] = x[:, :, :]
+    features[1:, 1:, :, 0] = x[:-1, :-1, :]
+    features[:, 1:, :, 1] = x[:, :-1, :]
+    features[:-1, 1:, :, 2] = x[1:, :-1, :]
+    features[1:, :, :, 3] = x[:-1, :, :]
+    features[:-1, :-1, :, 4] = x[1:, 1:, :]
+    features[:-1, :, :, 5] = x[1:, :, :]
+    features[1:, :-1, :, 6] = x[:-1, 1:, :]
+    features[:, :-1, :, 7] = x[:, 1:, :]
+    features[:, :, :, 8] = x[:, :, :]
     return features.reshape(x.shape[0] * x.shape[1], -1)
 
 
@@ -80,6 +82,7 @@ def prepare_data(X):
         edge_features[:len(right), :, 1] = features[right[:, 1]]
         edge_features[len(right):, :, 0] = features[down[:, 0]]
         edge_features[len(right):, :, 1] = features[down[:, 1]]
+        edge_features = edge_features.reshape(edges.shape[0], -1)
         X_directions.append((features, edges, edge_features_directions))
         X_edge_features.append((features, edges, edge_features))
     return X_directions, X_edge_features
@@ -97,11 +100,9 @@ def main():
     X_train_directions, X_train_edge_features = prepare_data(X_train)
 
     # first, train on X with directions only:
-    logger = SaveLogger(save_every=10, file_name="snakes_C1_4neighbors_bb.pickle")
     crf = EdgeFeatureGraphCRF(inference_method='qpbo')
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=1, verbose=2,
-                        show_loss_every=100, inactive_threshold=1e-5, tol=1e-1,
-                        switch_to="ad3", n_jobs=1, logger=logger)
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.3, switch_to='ad3',
+                        n_jobs=-1)
     ssvm.fit(X_train_directions, Y_train_flat)
 
     # Evaluate using confusion matrix.
@@ -112,37 +113,21 @@ def main():
     X_test_directions, X_test_edge_features = prepare_data(X_test)
     Y_pred = ssvm.predict(X_test_directions)
     print("Results using only directional features for edges")
-    print("Test accuracy: %.3f" % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+    print("Test accuracy: %.3f"
+          % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
 
     # now, use more informative edge features:
     crf = EdgeFeatureGraphCRF(inference_method='qpbo')
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=1, verbose=2,
-                        show_loss_every=100, inactive_threshold=1e-5, tol=1e-1,
-                        switch_to="ad3", n_jobs=1, logger=logger)
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.3, switch_to='ad3',
+                        n_jobs=-1)
     ssvm.fit(X_train_edge_features, Y_train_flat)
     Y_pred = ssvm.predict(X_test_edge_features)
     print("Results using also input features for edges")
-    print("Test accuracy: %.3f" % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+    print("Test accuracy: %.3f"
+          % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
 
 
 if __name__ == "__main__":
     main()
-    # results directional grid C=0.1 0.795532646048
-    # results one-hot grid C=0.1 0.788395453344
-    # completely flat C=1 svc 0.767909066878
-    # non-one-hot flat: 0.765662172879
-    # with directional grid 3x3 features C=0.1: 0.870737509913
-    # ad3 refit C=0.1 0.882632831086
-    # unary inference: 0.825270948982
-    # pairwise feature classe C=0.1: 0.933254031192
-    #final primal objective: 62.272486 gap: 24.587289
-    # ad3bb C=0.1 :1.0  test: 0.99703823371
-    # tol=.1
-    # ad3bb C=0.0001 : 0.751255617235
-    # ad3bb C=0.001 0.962727993656
-    # ad3bb C=0.01 0.983478720592
-    # qpbo C=0.1 : 93 / 90
-    # ad3 relaxed 4 neighborhood 0.9997
-
