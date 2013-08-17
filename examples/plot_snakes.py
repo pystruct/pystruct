@@ -1,43 +1,41 @@
+"""
+==============================================
+Conditional Interactions on the Snakes Dataset
+==============================================
+This example uses the snake dataset introduced in
+Nowozin, Rother, Bagon, Sharp, Yao, Kohli: Decision Tree Fields ICCV 2011
+
+This dataset is specifically designed to require the pairwise interaction terms
+to be conditioned on the input, in other words to use non-trival edge-features.
+
+The task is as following: a "snake" of length ten wandered over a grid. For
+each cell, it had the option to go up, down, left or right (unless it came from
+there). The input consists of these decisions, while the desired output is an
+annotation of the snake from 0 (head) to 9 (tail).  See the plots for an
+example.
+
+As input features we use a 3x3 window around each pixel (and pad with background
+where necessary). We code the five different input colors (for up, down, left, right,
+background) using a one-hot encoding. This is a rather naive approach, not using any
+information about the dataset (other than that it is a 2d grid).
+
+The task can not be solved using the simple DirectionalGridCRF - which can only
+infer head and tail (which are also possible to infer just from the unary
+features). If we add edge-features that contain the features of the nodes that are
+connected by the edge, the CRF can solve the task.
+
+From an inference point of view, this task is very hard.  QPBO move-making is
+not able to solve it alone, so we use the relaxed AD3 inference for learning.
+"""
 import numpy as np
 
 from sklearn.preprocessing import label_binarize
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 
-from pystruct.models import DirectionalGridCRF, EdgeFeatureGraphCRF, CRF
 from pystruct.learners import OneSlackSSVM
-#from pystruct.learners import NSlackSSVM
 from pystruct.datasets import load_snakes
-
-
-class DirectionalGridCRFFeatures(DirectionalGridCRF):
-    def __init__(self, n_states=None, n_features=None, inference_method=None,
-                 neighborhood=4):
-        self.neighborhood = neighborhood
-        EdgeFeatureGraphCRF.__init__(self, n_states, n_features,
-                                     inference_method=inference_method)
-
-    def initialize(self, X, Y):
-        n_edge_features = X[0].shape[-1] * 4
-        if self.n_edge_features is None:
-            self.n_edge_features = n_edge_features
-        elif self.n_edge_features != n_edge_features:
-            raise ValueError("Expected %d edge features, got %d"
-                             % (self.n_edge_features, n_edge_features))
-        CRF.initialize(self, X, Y)
-
-    def _get_edge_features(self, x):
-        right, down = self._get_edges(x, flat=False)
-        feat = self._get_features(x)
-        all_edges = np.vstack([right, down])
-        # there are two kind of edges, and both have "from" and "to"
-        # resulting in four possible features.
-        edge_features = np.zeros((all_edges.shape[0], x.shape[2], 4))
-        edge_features[:len(right), :, 0] = feat[right[:, 0]]
-        edge_features[:len(right), :, 1] = feat[right[:, 1]]
-        edge_features[len(right):, :, 0] = feat[down[:, 0]]
-        edge_features[len(right):, :, 1] = feat[down[:, 1]]
-        return edge_features.reshape(all_edges.shape[0], -1)
-
+from pystruct.utils import SaveLogger, make_grid_edges, edge_list_to_features
+from pystruct.models import EdgeFeatureGraphCRF
 
 
 def one_hot_colors(x):
@@ -50,18 +48,42 @@ def one_hot_colors(x):
 def neighborhood_feature(x):
     """Add a 3x3 neighborhood around each pixel as a feature."""
     # position 3 is background.
-    features = np.zeros((x.shape[0], x.shape[1], 5, 9))
+    features = np.zeros((x.shape[0], x.shape[1], 5, 5))
     features[:, :, 3, :] = 1
-    features[1:, 1:, :, 0] = x[:-1, :-1, :]
-    features[:, 1:, :, 1] = x[:, :-1, :]
-    features[:-1, 1:, :, 2] = x[1:, :-1, :]
-    features[1:, :, :, 3] = x[:-1, :, :]
-    features[:-1, :-1, :, 4] = x[1:, 1:, :]
-    features[:-1, :, :, 5] = x[1:, :, :]
-    features[1:, :-1, :, 6] = x[:-1, 1:, :]
-    features[:, :-1, :, 7] = x[:, 1:, :]
-    features[:, :, :, 8] = x[:, :, :]
-    return features.reshape(x.shape[0], x.shape[1], -1)
+    #features[1:, 1:, :, 0] = x[:-1, :-1, :]
+    features[:, 1:, :, 0] = x[:, :-1, :]
+    #features[:-1, 1:, :, 2] = x[1:, :-1, :]
+    features[1:, :, :, 1] = x[:-1, :, :]
+    #features[:-1, :-1, :, 4] = x[1:, 1:, :]
+    features[:-1, :, :, 2] = x[1:, :, :]
+    #features[1:, :-1, :, 6] = x[:-1, 1:, :]
+    features[:, :-1, :, 3] = x[:, 1:, :]
+    features[:, :, :, 4] = x[:, :, :]
+    return features.reshape(x.shape[0] * x.shape[1], -1)
+
+
+def prepare_data(X):
+    X_directions = []
+    X_edge_features = []
+    for x in X:
+        # get edges in grid
+        right, down = make_grid_edges(x, return_lists=True)
+        edges = np.vstack([right, down])
+        # use 3x3 patch around each point
+        features = neighborhood_feature(x)
+        # simple edge feature that encodes just if an edge is horizontal or
+        # vertical
+        edge_features_directions = edge_list_to_features([right, down])
+        # edge feature that contains features from the nodes that the edge connects
+        edge_features = np.zeros((edges.shape[0], features.shape[1], 4))
+        edge_features[:len(right), :, 0] = features[right[:, 0]]
+        edge_features[:len(right), :, 1] = features[right[:, 1]]
+        edge_features[len(right):, :, 0] = features[down[:, 0]]
+        edge_features[len(right):, :, 1] = features[down[:, 1]]
+        X_directions.append((features, edges, edge_features_directions))
+        X_edge_features.append((features, edges, edge_features))
+    return X_directions, X_edge_features
+
 
 
 
@@ -70,19 +92,39 @@ def main():
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
 
     X_train = [one_hot_colors(x) for x in X_train]
+    Y_train_flat = [y.ravel() for y in Y_train]
 
-    X_train = [neighborhood_feature(x) for x in X_train]
+    X_train_directions, X_train_edge_features = prepare_data(X_train)
 
-    crf = DirectionalGridCRFFeatures(inference_method='qpbo')
-    ssvm = OneSlackSSVM(crf, inference_cache=0, C=.1, verbose=2,
-                        show_loss_every=100, inactive_threshold=1e-5,
-                        tol=1e-3, switch_to=("ad3", {"branch_and_bound": True}))
-    ssvm.fit(X_train, Y_train)
-    print(ssvm.score(X_train, Y_train))
-    Y_pred = ssvm.predict(X_train)
-    y_pred = np.hstack([y.ravel() for y in Y_pred])
-    y_train = np.hstack([y.ravel() for y in Y_train])
-    print(confusion_matrix(y_train, y_pred))
+    # first, train on X with directions only:
+    logger = SaveLogger(save_every=10, file_name="snakes_C1_4neighbors_bb.pickle")
+    crf = EdgeFeatureGraphCRF(inference_method='qpbo')
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=1, verbose=2,
+                        show_loss_every=100, inactive_threshold=1e-5, tol=1e-1,
+                        switch_to="ad3", n_jobs=1, logger=logger)
+    ssvm.fit(X_train_directions, Y_train_flat)
+
+    # Evaluate using confusion matrix.
+    # Clearly the middel of the snake is the hardest part.
+    X_test, Y_test = snakes['X_test'], snakes['Y_test']
+    X_test = [one_hot_colors(x) for x in X_test]
+    Y_test_flat = [y.ravel() for y in Y_test]
+    X_test_directions, X_test_edge_features = prepare_data(X_test)
+    Y_pred = ssvm.predict(X_test_directions)
+    print("Results using only directional features for edges")
+    print("Test accuracy: %.3f" % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+    print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+
+    # now, use more informative edge features:
+    crf = EdgeFeatureGraphCRF(inference_method='qpbo')
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=1, verbose=2,
+                        show_loss_every=100, inactive_threshold=1e-5, tol=1e-1,
+                        switch_to="ad3", n_jobs=1, logger=logger)
+    ssvm.fit(X_train_edge_features, Y_train_flat)
+    Y_pred = ssvm.predict(X_test_edge_features)
+    print("Results using also input features for edges")
+    print("Test accuracy: %.3f" % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
+    print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
 
 
 if __name__ == "__main__":
@@ -96,5 +138,11 @@ if __name__ == "__main__":
     # unary inference: 0.825270948982
     # pairwise feature classe C=0.1: 0.933254031192
     #final primal objective: 62.272486 gap: 24.587289
-    # ad3bb C=0.1 :1.0
+    # ad3bb C=0.1 :1.0  test: 0.99703823371
+    # tol=.1
+    # ad3bb C=0.0001 : 0.751255617235
+    # ad3bb C=0.001 0.962727993656
+    # ad3bb C=0.01 0.983478720592
+    # qpbo C=0.1 : 93 / 90
+    # ad3 relaxed 4 neighborhood 0.9997
 
