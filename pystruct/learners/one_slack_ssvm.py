@@ -247,7 +247,8 @@ class OneSlackSSVM(BaseSSVM):
         if tol is None:
             tol = self.tol
         if violation_difference < tol:
-            print("new constraint too weak.")
+            if self.verbose:
+                print("new constraint too weak.")
             return True
         equals = [True for dpsi_, loss_ in old_constraints
                   if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
@@ -385,7 +386,8 @@ class OneSlackSSVM(BaseSSVM):
             Whether to initialize the model for the data.
             Leave this true except if you really know what you are doing.
         """
-        print("Training 1-slack dual structural SVM")
+        if self.verbose:
+            print("Training 1-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 3
         if initialize:
             self.model.initialize(X, Y)
@@ -446,12 +448,14 @@ class OneSlackSSVM(BaseSSVM):
                             X, Y, psi_gt, constraints)
                         self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
-                        print("no additional constraints")
+                        if self.verbose:
+                            print("no additional constraints")
                         if (self.switch_to is not None
                                 and self.model.inference_method !=
                                 self.switch_to):
-                            print("Switching to %s inference" %
-                                  str(self.switch_to))
+                            if self.verbose:
+                                print("Switching to %s inference" %
+                                      str(self.switch_to))
                             self.model.inference_method_ = \
                                 self.model.inference_method
                             self.model.inference_method = self.switch_to
