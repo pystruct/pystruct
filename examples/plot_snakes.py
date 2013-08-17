@@ -75,7 +75,8 @@ def main():
 
     crf = DirectionalGridCRFFeatures(inference_method='qpbo')
     ssvm = OneSlackSSVM(crf, inference_cache=0, C=.1, verbose=2,
-                        show_loss_every=100, inactive_threshold=1e-5, tol=1e-3)
+                        show_loss_every=100, inactive_threshold=1e-5,
+                        tol=1e-3, switch_to=("ad3", {"branch_and_bound": True}))
     ssvm.fit(X_train, Y_train)
     print(ssvm.score(X_train, Y_train))
     Y_pred = ssvm.predict(X_train)
@@ -93,3 +94,7 @@ if __name__ == "__main__":
     # with directional grid 3x3 features C=0.1: 0.870737509913
     # ad3 refit C=0.1 0.882632831086
     # unary inference: 0.825270948982
+    # pairwise feature classe C=0.1: 0.933254031192
+    #final primal objective: 62.272486 gap: 24.587289
+    # ad3bb C=0.1 :1.0
+

@@ -1,32 +1,7 @@
-import numpy as np
-
 from .graph_crf import GraphCRF
 from .edge_feature_graph_crf import EdgeFeatureGraphCRF
 from .crf import CRF
 from ..utils import make_grid_edges, edge_list_to_features
-
-
-def pairwise_grid_features(grid_labels, neighborhood=4):
-    if neighborhood not in [4, 8]:
-        raise ValueError("neighborhood has to be 4 or 8.")
-    n_states = grid_labels.shape[-1]
-    features = []
-    # horizontal edges
-    right = np.dot(grid_labels[:, :-1, :].reshape(-1, n_states).T,
-                   grid_labels[:, 1:, :].reshape(-1, n_states))
-    features.append(right)
-    # vertical edges
-    down = np.dot(grid_labels[:-1, :, :].reshape(-1, n_states).T,
-                  grid_labels[1:, :, :].reshape(-1, n_states))
-    features.append(down)
-    if neighborhood == 8:
-        upright = np.dot(grid_labels[1:, :-1, :].reshape(-1, n_states).T,
-                         grid_labels[:-1, 1:, :].reshape(-1, n_states))
-        features.append(upright)
-        downright = np.dot(grid_labels[:-1, :-1, :].reshape(-1, n_states).T,
-                           grid_labels[1:, 1:, :].reshape(-1, n_states))
-        features.append(downright)
-    return features
 
 
 class GridCRF(GraphCRF):
