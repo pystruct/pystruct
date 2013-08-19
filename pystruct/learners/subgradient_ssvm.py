@@ -49,8 +49,10 @@ class SubgradientSSVM(BaseSSVM):
         Number of parallel jobs for inference. -1 means as many as cpus.
 
     batch_size : int, default=None
-        Ignored if n_jobs > 1. If n_jobs=1, inference will be done in batches
-        of size batch_size.
+        Ignored if n_jobs > 1. If n_jobs=1, inference will be done in mini
+        batches of size batch_size. If n_jobs=-1, batch learning will be
+        performed, that is the whole dataset will be used to compute each
+        subgradient.
 
     show_loss_every : int, default=0
         Controlls how often the hamming loss is computed (for monitoring
@@ -170,8 +172,7 @@ class SubgradientSSVM(BaseSSVM):
                     objective, positive_slacks = self._parallel_learning(X, Y)
 
                 # some statistics
-                objective *= self.C
-                objective += np.sum(self.w ** 2) / 2.
+                objective = objective * self.C + np.sum(self.w ** 2) / 2.
 
                 if positive_slacks == 0:
                     print("No additional constraints")
@@ -195,10 +196,25 @@ class SubgradientSSVM(BaseSSVM):
 
         except KeyboardInterrupt:
             pass
+
+        if self.verbose:
+            print("Computing final objective")
+
+        Y_hat = self.model.batch_loss_augmented_inference(
+            X, Y, self.w, relaxed=True)
+        delta_psi = (self.model.batch_psi(X, Y)
+                     - self.model.batch_psi(X, Y_hat))
+        loss = np.sum(self.model.batch_loss(Y, Y_hat))
+        violation = np.maximum(0, loss - np.dot(self.w, delta_psi))
+        objective = np.sum(violation) * self.C + np.sum(self.w ** 2) / 2.
+        self.timestamps_.append(time() - self.timestamps_[0])
+        self.objective_curve_.append(objective)
+
         if self.objective_curve_:
             print("final objective: %f" % self.objective_curve_[-1])
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
+
         return self
 
     def _parallel_learning(self, X, Y):
@@ -250,8 +266,11 @@ class SubgradientSSVM(BaseSSVM):
                 self._solve_subgradient(delta_psi, n_samples)
         else:
             # mini batch learning
-            n_batches = int(np.ceil(float(len(X)) / self.batch_size))
-            slices = gen_even_slices(n_samples, n_batches)
+            if self.batch_size == -1:
+                slices = [slice(0, len(X)), None]
+            else:
+                n_batches = int(np.ceil(float(len(X)) / self.batch_size))
+                slices = gen_even_slices(n_samples, n_batches)
             for batch in slices:
                 X_b = X[batch]
                 Y_b = Y[batch]
@@ -261,7 +280,7 @@ class SubgradientSSVM(BaseSSVM):
                              - self.model.batch_psi(X_b, Y_hat))
                 loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
 
-                violation = loss - np.dot(self.w, delta_psi)
+                violation = np.maximum(0, loss - np.dot(self.w, delta_psi))
                 objective += violation
                 positive_slacks += self.batch_size
                 self._solve_subgradient(delta_psi / len(X_b), n_samples)
