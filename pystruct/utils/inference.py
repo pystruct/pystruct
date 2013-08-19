@@ -102,16 +102,22 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
 
 
 # easy debugging
-def objective_primal(model, w, X, Y, C):
+def objective_primal(model, w, X, Y, C, variant='n_slack'):
     objective = 0
     psi = model.psi
     for x, y in zip(X, Y):
         y_hat = model.loss_augmented_inference(x, y, w)
         loss = model.loss(y, y_hat)
         delta_psi = psi(x, y) - psi(x, y_hat)
-        objective += loss - np.dot(w, delta_psi)
-    objective /= float(len(X))
-    objective += np.sum(w ** 2) / float(C) / 2.
+        if variant == 'n_slack':
+            objective += np.maximum(loss - np.dot(w, delta_psi), 0)
+        else:
+            objective += loss - np.dot(w, delta_psi)
+    if variant == 'one_slack':
+        objective = np.maximum(objective, 0)
+
+    objective *= C
+    objective += np.sum(w ** 2) / 2.
     return objective
 
 
