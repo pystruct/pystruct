@@ -415,7 +415,7 @@ def generate_example_rst(app):
 
     .figure {
         float: left;
-        margin: 20px;
+        margin: 16px;
         top: 0;
         left: 0;
         -webkit-border-radius: 10px; /* Saf3-4, iOS 1-3.2, Android <1.6 */
@@ -429,11 +429,8 @@ def generate_example_rst(app):
         transition: all 0.15s ease-out;
         background-repeat: no-repeat;
         /* --> Thumbnail image size */
-        width: 140px;
+        width: 150px;
         height: 130px;
-        -webkit-background-size: 150px 100px; /* Saf3-4 */
-        -moz-background-size: 150px 100px; /* FF3.6 */
-        background-size: 150px 100px; /* Opera, IE9, Saf5, Chrome, FF4 */
     }
 
     .figure img {
@@ -441,7 +438,6 @@ def generate_example_rst(app):
         }
 
     .figure .caption {
-        width: 150px;
         text-align: center !important;
     }
     </style>
