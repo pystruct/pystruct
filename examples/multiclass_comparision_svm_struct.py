@@ -1,7 +1,7 @@
 """
-==================================================================
-Comparing PyStruct and SVM-Struct for multi-class classification
-==================================================================
+=================================
+Comparing PyStruct and SVM-Struct
+=================================
 This example compares the performance of pystruct and SVM^struct on a
 multi-class problem.
 For the example to work, you need to install SVM^multiclass and
