@@ -64,10 +64,16 @@ def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
     if y_hat is None:
         y_hat = model.loss_augmented_inference(x, y, w, relaxed=relaxed)
     psi = model.psi
-    if compute_difference:
-        delta_psi = psi(x, y) - psi(x, y_hat)
+    if getattr(model, 'rescale_C', False):
+        delta_psi = -psi(x, y_hat, y)
     else:
         delta_psi = -psi(x, y_hat)
+    if compute_difference:
+        if getattr(model, 'rescale_C', False):
+            delta_psi += psi(x, y, y)
+        else:
+            delta_psi += psi(x, y)
+
     if isinstance(y_hat, tuple):
         # continuous label
         loss = model.continuous_loss(y, y_hat[0])
