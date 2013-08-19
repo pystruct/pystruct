@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.externals.joblib import Parallel, delayed
 from sklearn.base import BaseEstimator
 
-from ..utils import inference
+from ..utils import inference, objective_primal
 
 
 class BaseSSVM(BaseEstimator):
@@ -79,3 +79,11 @@ class BaseSSVM(BaseEstimator):
             if self.verbose > 0:
                 print("current loss: %f" % (display_loss))
             self.loss_curve_.append(display_loss)
+
+    def _objective(self, X, Y):
+        if type(self).__name__ == 'OneSlackSSVM':
+            variant = 'one_slack'
+        else:
+            variant = 'n_slack'
+        return objective_primal(self.model, self.w, X, Y, self.C,
+                                variant=variant, n_jobs=self.n_jobs)

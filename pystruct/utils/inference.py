@@ -1,4 +1,5 @@
 import itertools
+from sklearn.externals.joblib import Parallel, delayed
 
 import numpy as np
 
@@ -102,23 +103,21 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
 
 
 # easy debugging
-def objective_primal(model, w, X, Y, C, variant='n_slack'):
+def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
     objective = 0
-    psi = model.psi
-    for x, y in zip(X, Y):
-        y_hat = model.loss_augmented_inference(x, y, w)
-        loss = model.loss(y, y_hat)
-        delta_psi = psi(x, y) - psi(x, y_hat)
-        if variant == 'n_slack':
-            objective += np.maximum(loss - np.dot(w, delta_psi), 0)
-        else:
-            objective += loss - np.dot(w, delta_psi)
-    if variant == 'one_slack':
-        objective = np.maximum(objective, 0)
+    constraints = Parallel(
+        n_jobs=n_jobs)(delayed(find_constraint)(
+            model, x, y, w)
+            for x, y in zip(X, Y))
+    slacks = zip(*constraints)[2]
 
-    objective *= C
-    objective += np.sum(w ** 2) / 2.
+    if variant == 'n_slack':
+        slacks = np.maximum(slacks, 0)
+
+    objective = np.sum(np.maximum(slacks, 0)) * C + np.sum(w ** 2) / 2.
     return objective
+
+
 
 
 def exhaustive_loss_augmented_inference(model, x, y, w):

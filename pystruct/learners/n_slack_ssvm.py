@@ -378,19 +378,9 @@ class NSlackSSVM(BaseSSVM):
 
         if verbose:
             print("Computing final objective.")
-
-        results = Parallel(
-            n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(find_constraint)(self.model, x, y, self.w)
-                for x, y in zip(X, Y))
-        slacks = zip(*results)[2]
-        slack_sum = np.sum(np.maximum(slacks, 0))
-        primal_objective = (self.C * slack_sum + np.sum(self.w ** 2) / 2)
-        # we recompute the primal using inference
-        self.primal_objective_curve_.append(primal_objective)
-        # add dummy points to objective_curve and timestamps
-        self.objective_curve_.append(objective)
         self.timestamps_.append(time() - self.timestamps_[0])
+        self.primal_objective_curve_.append(self._objective(X, Y))
+        self.objective_curve_.append(objective)
         return self
 
     def prune_constraints(self, constraints, a):

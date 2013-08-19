@@ -200,20 +200,13 @@ class SubgradientSSVM(BaseSSVM):
         if self.verbose:
             print("Computing final objective")
 
-        Y_hat = self.model.batch_loss_augmented_inference(
-            X, Y, self.w, relaxed=True)
-        delta_psi = (self.model.batch_psi(X, Y)
-                     - self.model.batch_psi(X, Y_hat))
-        loss = np.sum(self.model.batch_loss(Y, Y_hat))
-        violation = np.maximum(0, loss - np.dot(self.w, delta_psi))
-        objective = np.sum(violation) * self.C + np.sum(self.w ** 2) / 2.
         self.timestamps_.append(time() - self.timestamps_[0])
-        self.objective_curve_.append(objective)
-
-        if self.objective_curve_:
-            print("final objective: %f" % self.objective_curve_[-1])
-        if self.verbose and self.n_jobs == 1:
-            print("calls to inference: %d" % self.model.inference_calls)
+        self.objective_curve_.append(self._objective(X, Y))
+        if self.verbose:
+            if self.objective_curve_:
+                print("final objective: %f" % self.objective_curve_[-1])
+            if self.verbose and self.n_jobs == 1:
+                print("calls to inference: %d" % self.model.inference_calls)
 
         return self
 

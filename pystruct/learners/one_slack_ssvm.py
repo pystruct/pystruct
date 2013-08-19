@@ -507,18 +507,10 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
-        Y_hat, dpsi, loss_mean = self._find_new_constraint(
-            X, Y, psi_gt, constraints, check=False)
-        last_slack = -np.dot(self.w, dpsi) + loss_mean
-        primal_objective = (self.C * len(X)
-                            * np.max(last_slack, 0)
-                            + np.sum(self.w ** 2) / 2)
-        # we recompute the primal using inference
-        self.primal_objective_curve_.append(primal_objective)
-        # add dummy points to objective_curve and timestamps
+        self.timestamps_.append(time() - self.timestamps_[0])
+        self.primal_objective_curve_.append(self._objective(X, Y))
         self.objective_curve_.append(objective)
         self.cached_constraint_.append(False)
-        self.timestamps_.append(time() - self.timestamps_[0])
 
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
