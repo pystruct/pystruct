@@ -502,15 +502,17 @@ class OneSlackSSVM(BaseSSVM):
                     print(self.w)
         except KeyboardInterrupt:
             pass
-        if self.logger is not None:
-            self.logger(self, 'final')
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
         self.timestamps_.append(time() - self.timestamps_[0])
-        self.primal_objective_curve_.append(self._objective(X, Y))
+        primal_objective = self._objective(X, Y)
+        self.primal_objective_curve_.append(primal_objective)
         self.objective_curve_.append(objective)
         self.cached_constraint_.append(False)
+
+        if self.logger is not None:
+            self.logger(self, 'final')
 
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"

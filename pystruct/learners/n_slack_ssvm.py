@@ -369,8 +369,6 @@ class NSlackSSVM(BaseSSVM):
                     self.logger(self, iteration)
         except KeyboardInterrupt:
             pass
-        if self.logger is not None:
-            self.logger(self, 'final')
 
         self.constraints_ = constraints
         if self.verbose and self.n_jobs == 1:
@@ -381,6 +379,8 @@ class NSlackSSVM(BaseSSVM):
         self.timestamps_.append(time() - self.timestamps_[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
         self.objective_curve_.append(objective)
+        if self.logger is not None:
+            self.logger(self, 'final')
         return self
 
     def prune_constraints(self, constraints, a):

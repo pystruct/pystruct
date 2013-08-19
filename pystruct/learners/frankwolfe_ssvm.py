@@ -187,6 +187,9 @@ class FrankWolfeSSVM(BaseSSVM):
             self.w = (1.0 - gamma) * self.w + gamma * ws
             l = (1.0 - gamma) * l + gamma * ls
 
+            if self.logger is not None:
+                self.logger(self, k)
+
             if dual_gap < self.tol:
                 return
 
@@ -247,6 +250,8 @@ class FrankWolfeSSVM(BaseSSVM):
                     self.w = w
                 k += 1
 
+            if self.logger is not None:
+                self.logger(self, p)
             if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
                 dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y, l)
                 self.primal_objective_curve_.append(primal_val)
@@ -294,5 +299,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.timestamps_.append(time() - self.timestamps_[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
         self.objective_curve_.append(self.objective_curve_[-1])
+        if self.logger is not None:
+            self.logger(self, 'final')
 
         return self
