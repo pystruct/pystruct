@@ -213,9 +213,15 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
         except KeyboardInterrupt:
             pass
-        print("final objective: %f" % self.objective_curve_[-1])
-        if self.verbose and self.n_jobs == 1:
-            print("calls to inference: %d" % self.model.inference_calls)
+        self.timestamps_.append(time() - self.timestamps_[0])
+        self.objective_curve_.append(self._objective(X, Y))
+        if self.logger is not None:
+            self.logger(self, 'final')
+        if self.verbose:
+            if self.objective_curve_:
+                print("final objective: %f" % self.objective_curve_[-1])
+            if self.verbose and self.n_jobs == 1:
+                print("calls to inference: %d" % self.model.inference_calls)
         return self
 
     def predict(self, X):
