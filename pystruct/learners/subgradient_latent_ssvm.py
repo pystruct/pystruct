@@ -258,3 +258,15 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                       for y, y_pred in zip(Y, self.predict(X))]
         max_losses = [self.model.max_loss(y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
+
+    def _objective(self, X, Y):
+        constraints = Parallel(
+            n_jobs=self.n_jobs,
+            verbose=self.verbose - 1)(delayed(find_constraint_latent)(
+                self.model, x, y, self.w)
+                for x, y in zip(X, Y))
+        slacks = zip(*constraints)[2]
+        slacks = np.maximum(slacks, 0)
+
+        objective = np.sum(slacks) * self.C + np.sum(self.w ** 2) / 2.
+        return objective
