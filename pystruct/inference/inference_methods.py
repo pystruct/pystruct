@@ -146,7 +146,8 @@ def _validate_params(unary_potentials, pairwise_params, edges):
 
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='dd', init=None, **kwargs):
+                  return_energy=False, alg='dd', init=None,
+                  reserveNumFactorsPerVariable=2, **kwargs):
     """Inference with OpenGM backend.
 
     Parameters
@@ -177,6 +178,12 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     init : nd-array
         Initial solution for starting inference (ignored by some algorithms).
 
+    reserveNumFactorsPerVariable :
+        reserve a certain number of factors for each variable can speed up 
+        the building of a graphical model.
+        ( For a 2d grid with second order factors one should set this to 5 
+         4 2-factors and 1 unary factor for most pixels )
+
     Returns
     -------
     labels : nd-array
@@ -187,12 +194,46 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
     n_nodes = len(unary_potentials)
-    gm = opengm.gm([n_states] * n_nodes)
+
+    gm = opengm.gm(numpy.ones(n_nodes, dtype=opengm.label_type)*n_states)
+
+    nFactors = int(n_nodes+edges.shape[0])
+    gm.reserveFactors(nFactors)
+    gm.reserveFunctions(nFactors,'explicit')
+    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edge.shapep[0])*n_states**2 )
+
+    # all unaries as one numpy array 
+    # (opengm's value_type == float64 but all types are accepted)
+    unaries = numpy.require(unary_potentials,dtype=opengm.value_type)*-1.0
+    # add all unart functions at once
+    fidUnaries = gm.addFunctions(unaries)
+    visUnaries = numpy.arange(n_nodes,dtype=opengm.label_type)
+    # add all unary factors at once
+    gm.addFactors(fidUnaries,visUnaries)
+
+    # add all pariwise functions at once 
+    # - first axis of secondOrderFunctions iterates over the function)
+    assert secondOrderFunctions.ndim == 3
+    assert secondOrderFunctions.shape[1] == n_states
+    assert secondOrderFunctions.shape[2] == n_states
+
+    secondOrderFunctions = numpy.require(pw,dtype=opengm.value_type)*-1.0
+    fidSecondOrder = gm.addFunctions(secondOrderFunctions)
+    # add all second order functions at once
+    assert edges.ndim==2 
+    assert edges.shape[0]==secondOrderFunctions.shape[0]
+    assert edges.shape[1]=2
+    gm.addFactors(fidSecondOrder,edges)
+
+
+    """
     for i, un in enumerate(unary_potentials):
         gm.addFactor(gm.addFunction(-un.astype(np.float32)), i)
     for pw, edge in zip(pairwise_potentials, edges):
         gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
                      edge.astype(np.uint64))
+    """
+
     if alg == 'bp':
         inference = opengm.inference.BeliefPropagation(gm)
     elif alg == 'dd':
@@ -227,7 +268,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     # because otherwise we are sure to shoot ourself in the foot
     res = inference.arg().astype(np.int)
     if return_energy:
-        return res, gm.evaluate(res)
+        return res, gm.evaluate(res)  # inference.value() should also do the trick
     return res
 
 
