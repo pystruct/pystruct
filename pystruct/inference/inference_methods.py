@@ -195,7 +195,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         _validate_params(unary_potentials, pairwise_potentials, edges)
     n_nodes = len(unary_potentials)
 
-    gm = opengm.gm(numpy.ones(n_nodes, dtype=opengm.label_type)*n_states)
+    gm = opengm.gm(np.ones(n_nodes, dtype=opengm.label_type)*n_states)
 
     nFactors = int(n_nodes+edges.shape[0])
     gm.reserveFactors(nFactors)
@@ -204,10 +204,10 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     # all unaries as one numpy array 
     # (opengm's value_type == float64 but all types are accepted)
-    unaries = numpy.require(unary_potentials,dtype=opengm.value_type)*-1.0
+    unaries = np.require(unary_potentials,dtype=opengm.value_type)*-1.0
     # add all unart functions at once
     fidUnaries = gm.addFunctions(unaries)
-    visUnaries = numpy.arange(n_nodes,dtype=opengm.label_type)
+    visUnaries = np.arange(n_nodes,dtype=opengm.label_type)
     # add all unary factors at once
     gm.addFactors(fidUnaries,visUnaries)
 
@@ -217,7 +217,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     assert secondOrderFunctions.shape[1] == n_states
     assert secondOrderFunctions.shape[2] == n_states
 
-    secondOrderFunctions = numpy.require(pw,dtype=opengm.value_type)*-1.0
+    secondOrderFunctions = np.require(pw,dtype=opengm.value_type)*-1.0
     fidSecondOrder = gm.addFunctions(secondOrderFunctions)
     # add all second order functions at once
     assert edges.ndim==2 
