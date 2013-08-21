@@ -200,7 +200,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     nFactors = int(n_nodes+edges.shape[0])
     gm.reserveFactors(nFactors)
     gm.reserveFunctions(nFactors,'explicit')
-    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edge.shapep[0])*n_states**2 )
+    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edge.shape[0])*n_states**2 )
 
     # all unaries as one numpy array 
     # (opengm's value_type == float64 but all types are accepted)
@@ -222,7 +222,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     # add all second order functions at once
     assert edges.ndim==2 
     assert edges.shape[0]==secondOrderFunctions.shape[0]
-    assert edges.shape[1]=2
+    assert edges.shape[1]==2
     gm.addFactors(fidSecondOrder,edges)
 
 
