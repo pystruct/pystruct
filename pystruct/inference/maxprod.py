@@ -37,7 +37,7 @@ def is_tree(edges, n_vertices=None):
 
 
 def inference_max_product(unary_potentials, pairwise_potentials, edges,
-                          max_iter=30, damping=0.5, tol=1e-5):
+                          max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
     """Max-product inference.
 
     In case the edges specify a tree, dynamic programming is used
