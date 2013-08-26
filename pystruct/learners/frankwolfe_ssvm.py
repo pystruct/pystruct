@@ -10,6 +10,7 @@
 
 from time import time
 import numpy as np
+from sklearn.utils import check_random_state
 
 from pystruct.learners.ssvm import BaseSSVM
 from pystruct.utils import find_constraint
@@ -75,6 +76,12 @@ class FrankWolfeSSVM(BaseSSVM):
         Whether to use weight averaging as described in the reference paper.
         Currently this is only supported in the block-coordinate version.
 
+    random_state : int, RandomState instance or None, optional (default=None)
+        If int, random_state is the seed used by the random number generator;
+        If RandomState instance, random_state is the random number generator;
+        If None, the random number generator is the RandomState instance used
+        by `np.random`.
+
 
     Attributes
     ----------
@@ -96,7 +103,7 @@ class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=False,
                  line_search=True, check_dual_every=10, tol=.001,
-                 do_averaging=True, sample_method='perm'):
+                 do_averaging=True, sample_method='perm', random_state=None):
 
         if n_jobs != 1:
             raise ValueError("FrankWolfeSSVM does not support multiprocessing"
@@ -114,6 +121,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.check_dual_every = check_dual_every
         self.do_averaging = do_averaging
         self.sample_method = sample_method
+        self.random_state = random_state
 
     def _calc_dual_gap(self, X, Y, l):
         n_samples = len(X)
@@ -194,16 +202,17 @@ class FrankWolfeSSVM(BaseSSVM):
         l_avg = 0.0
         l = 0.0
         k = 0
-        np.random.seed(0)
+
+        rng = check_random_state(self.random_state)
         for p in xrange(self.max_iter):
             if self.verbose > 0:
                 print("Iteration %d" % p)
 
             perm = np.arange(n_samples)
             if self.sample_method == 'perm':
-                np.random.shuffle(perm)
+                rng.shuffle(perm)
             elif self.sample_method == 'rnd':
-                perm = np.random.randint(low=0, high=n_samples, size=n_samples)
+                perm = rng.randint(low=0, high=n_samples, size=n_samples)
 
             for j in range(n_samples):
                 i = perm[j]
