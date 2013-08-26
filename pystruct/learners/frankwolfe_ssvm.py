@@ -96,11 +96,15 @@ class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=False,
                  line_search=True, check_dual_every=10, tol=.001,
-                 do_averaging=True):
+                 do_averaging=True, sample_method='perm'):
 
         if n_jobs != 1:
             raise ValueError("FrankWolfeSSVM does not support multiprocessing"
                              " yet. Ignoring n_jobs != 1.")
+
+        if sample_method not in ['perm', 'rnd', 'seq']:
+            raise ValueError("sample_method can only be perm, rnd, or seq")
+
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
@@ -109,6 +113,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.line_search = line_search
         self.check_dual_every = check_dual_every
         self.do_averaging = do_averaging
+        self.sample_method = sample_method
 
     def _calc_dual_gap(self, X, Y, l):
         n_samples = len(X)
@@ -189,10 +194,19 @@ class FrankWolfeSSVM(BaseSSVM):
         l_avg = 0.0
         l = 0.0
         k = 0
+        np.random.seed(0)
         for p in xrange(self.max_iter):
             if self.verbose > 0:
                 print("Iteration %d" % p)
-            for i in range(n_samples):
+
+            perm = np.arange(n_samples)
+            if self.sample_method == 'perm':
+                np.random.shuffle(perm)
+            elif self.sample_method == 'rnd':
+                perm = np.random.randint(low=0, high=n_samples, size=n_samples)
+
+            for j in range(n_samples):
+                i = perm[j]
                 x, y = X[i], Y[i]
                 y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, w)
                 # ws and ls
