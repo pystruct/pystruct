@@ -200,7 +200,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     nFactors = int(n_nodes+edges.shape[0])
     gm.reserveFactors(nFactors)
     gm.reserveFunctions(nFactors,'explicit')
-    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edge.shape[0])*n_states**2 )
+    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edges.shape[0])*n_states**2 )
 
     # all unaries as one numpy array 
     # (opengm's value_type == float64 but all types are accepted)
@@ -213,14 +213,15 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     # add all pariwise functions at once 
     # - first axis of secondOrderFunctions iterates over the function)
+    # add all second order functions at once
+    secondOrderFunctions = np.require(pairwise_potentials, dtype=opengm.value_type)*-1.0
+    fidSecondOrder = gm.addFunctions(secondOrderFunctions)
+
     assert secondOrderFunctions.ndim == 3
     assert secondOrderFunctions.shape[1] == n_states
     assert secondOrderFunctions.shape[2] == n_states
 
-    secondOrderFunctions = np.require(pw,dtype=opengm.value_type)*-1.0
-    fidSecondOrder = gm.addFunctions(secondOrderFunctions)
-    # add all second order functions at once
-    assert edges.ndim==2 
+    assert edges.ndim==2
     assert edges.shape[0]==secondOrderFunctions.shape[0]
     assert edges.shape[1]==2
     gm.addFactors(fidSecondOrder,edges)
