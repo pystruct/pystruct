@@ -2,7 +2,7 @@ import numpy as np
 
 from .base import StructuredModel
 from ..inference import inference_dispatch, get_installed
-#from .utils import loss_augment_unaries
+from .utils import loss_augment_unaries
 
 
 class CRF(StructuredModel):
@@ -103,12 +103,7 @@ class CRF(StructuredModel):
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
-        # do loss-augmentation
-        for l in np.arange(self.n_states):
-            # for each class, decrement features
-            # for loss-agumention
-            mask = y != l
-            unary_potentials[mask, l] += self.class_weight[y][mask]
+        loss_augment_unaries(unary_potentials, y, self.class_weight)
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
