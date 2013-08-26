@@ -179,9 +179,9 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
         Initial solution for starting inference (ignored by some algorithms).
 
     reserveNumFactorsPerVariable :
-        reserve a certain number of factors for each variable can speed up 
+        reserve a certain number of factors for each variable can speed up
         the building of a graphical model.
-        ( For a 2d grid with second order factors one should set this to 5 
+        ( For a 2d grid with second order factors one should set this to 5
          4 2-factors and 1 unary factor for most pixels )
 
     Returns
@@ -200,7 +200,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     nFactors = int(n_nodes+edges.shape[0])
     gm.reserveFactors(nFactors)
     gm.reserveFunctions(nFactors,'explicit')
-    gm.reserveFactorsVarialbeIndices(n_nodes*n_states + int(edge.shape[0])*n_states**2 )
+    #gm.reserveFactorsVariableIndices(n_nodes*n_states + int(edges.shape[0])*n_states**2 )
 
     # all unaries as one numpy array 
     # (opengm's value_type == float64 but all types are accepted)
@@ -213,26 +213,24 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     # add all pariwise functions at once 
     # - first axis of secondOrderFunctions iterates over the function)
+
+    secondOrderFunctions = np.require(pairwise_potentials,dtype=opengm.value_type)*-1.0
+    fidSecondOrder = gm.addFunctions(secondOrderFunctions)
     assert secondOrderFunctions.ndim == 3
     assert secondOrderFunctions.shape[1] == n_states
     assert secondOrderFunctions.shape[2] == n_states
-
-    secondOrderFunctions = np.require(pw,dtype=opengm.value_type)*-1.0
-    fidSecondOrder = gm.addFunctions(secondOrderFunctions)
-    # add all second order functions at once
-    assert edges.ndim==2 
+    assert edges.ndim==2
     assert edges.shape[0]==secondOrderFunctions.shape[0]
     assert edges.shape[1]==2
-    gm.addFactors(fidSecondOrder,edges)
+    gm.addFactors(fidSecondOrder,edges.astype(np.uint64))
 
 
-    """
-    for i, un in enumerate(unary_potentials):
-        gm.addFactor(gm.addFunction(-un.astype(np.float32)), i)
-    for pw, edge in zip(pairwise_potentials, edges):
-        gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
-                     edge.astype(np.uint64))
-    """
+    #for i, un in enumerate(unary_potentials):
+        #gm.addFactor(gm.addFunction(-un.astype(np.float32)), i)
+    #for pw, edge in zip(pairwise_potentials, edges):
+        #gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
+                     #edge.astype(np.uint64))
+
 
     if alg == 'bp':
         inference = opengm.inference.BeliefPropagation(gm)
