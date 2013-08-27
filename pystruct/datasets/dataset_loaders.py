@@ -24,11 +24,11 @@ def load_letters():
 
 def load_scene():
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'scene.pickle'))
+    data_file = open(join(module_path, 'scene.pickle'),'rb')
     return cPickle.load(data_file)
 
 
 def load_snakes():
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'snakes.pickle'))
+    data_file = open(join(module_path, 'snakes.pickle'),'rb')
     return cPickle.load(data_file)
