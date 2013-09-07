@@ -8,6 +8,7 @@
 # Implements structured SVM as described in Joachims et. al.
 # Cutting-Plane Training of Structural SVMs
 
+import warnings
 from time import time
 import numpy as np
 from sklearn.utils import check_random_state
@@ -106,8 +107,8 @@ class FrankWolfeSSVM(BaseSSVM):
                  do_averaging=True, sample_method='perm', random_state=None):
 
         if n_jobs != 1:
-            raise ValueError("FrankWolfeSSVM does not support multiprocessing"
-                             " yet. Ignoring n_jobs != 1.")
+            warnings.warn("FrankWolfeSSVM does not support multiprocessing"
+                          " yet. Ignoring n_jobs != 1.")
 
         if sample_method not in ['perm', 'rnd', 'seq']:
             raise ValueError("sample_method can only be perm, rnd, or seq")
