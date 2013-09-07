@@ -224,7 +224,7 @@ class SubgradientSSVM(BaseSSVM):
         if self.n_jobs == -1:
             n_jobs = cpu_count()
         else:
-            n_jobs = self.j_jobs
+            n_jobs = self.n_jobs
 
         n_batches = int(np.ceil(float(len(X)) / n_jobs))
         slices = gen_even_slices(n_samples, n_batches)
