@@ -41,10 +41,6 @@ class SubgradientSSVM(BaseSSVM):
     momentum : float, default=0.9
         Momentum used in subgradient descent.
 
-    adagrad : bool (default=False)
-        Whether to use adagrad gradient scaling.
-        Ignores if True, momentum is ignored.
-
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
@@ -62,12 +58,10 @@ class SubgradientSSVM(BaseSSVM):
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
@@ -89,7 +83,7 @@ class SubgradientSSVM(BaseSSVM):
        Total training time stored before each iteration.
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learning_rate=0.001, adagrad=False, n_jobs=1,
+                 learning_rate=0.001, n_jobs=1,
                  show_loss_every=0, decay_exponent=0,
                  break_on_no_constraints=True, logger=None, batch_size=None,
                  decay_t0=10):
@@ -100,32 +94,23 @@ class SubgradientSSVM(BaseSSVM):
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.t = 0
-        self.adagrad = adagrad
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0
         self.batch_size = batch_size
 
     def _solve_subgradient(self, dpsi, n_samples):
         """Do a single subgradient step."""
-
         grad = (dpsi - self.w / (self.C * n_samples))
 
-        if self.adagrad:
-            self.grad_old += grad ** 2
-            self.w += self.learning_rate * grad / (1. + np.sqrt(self.grad_old))
-            print("grad old %f" % np.mean(self.grad_old))
-            print("effective lr %f" % (self.learning_rate /
-                                       np.mean(1. + np.sqrt(self.grad_old))))
+        self.grad_old = ((1 - self.momentum) * grad
+                         + self.momentum * self.grad_old)
+        if self.decay_exponent == 0:
+            effective_lr = self.learning_rate
         else:
-            self.grad_old = ((1 - self.momentum) * grad
-                             + self.momentum * self.grad_old)
-            if self.decay_exponent == 0:
-                effective_lr = self.learning_rate
-            else:
-                effective_lr = (self.learning_rate
-                                / (self.t + self.decay_t0)
-                                ** self.decay_exponent)
-            self.w += effective_lr * self.grad_old
+            effective_lr = (self.learning_rate
+                            / (self.t + self.decay_t0)
+                            ** self.decay_exponent)
+        self.w += effective_lr * self.grad_old
 
         self.t += 1.
 
