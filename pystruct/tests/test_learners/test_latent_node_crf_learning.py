@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_equal, assert_true
-from pystruct.models import GraphCRF, LatentNodeCRF
+from pystruct.models import GraphCRF, LatentNodeCRF, EdgeFeatureLatentNodeCRF
 from pystruct.learners import (NSlackSSVM, LatentSSVM,
                                SubgradientLatentSSVM, OneSlackSSVM,
                                SubgradientSSVM)
@@ -164,3 +164,37 @@ def test_latent_node_boxes_standard_latent_features():
 
         # we actually become prefect ^^
         assert_true(.98 < latent_svm.score(X_[10:], Y_flat[10:]) <= 1)
+
+
+def test_latent_node_boxes_edge_features():
+    # learn the "easy" 2x2 boxes dataset.
+    # smoketest using a single constant edge feature
+
+    X, Y = make_simple_2x2(seed=1, n_samples=40)
+    latent_crf = EdgeFeatureLatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
+    base_svm = OneSlackSSVM(latent_crf)
+    base_svm.C = 10
+    latent_svm = LatentSSVM(base_svm,
+                            latent_iter=10)
+
+    G = [make_grid_edges(x) for x in X]
+
+    # make edges for hidden states:
+    edges = make_edges_2x2()
+
+    G = [np.vstack([make_grid_edges(x), edges]) for x in X]
+
+    # reshape / flatten x and y
+    X_flat = [x.reshape(-1, 1) for x in X]
+    Y_flat = [y.ravel() for y in Y]
+
+    #X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
+    # add edge features
+    X_ = [(x, g, np.ones((len(g), 1)), 4) for x, g in zip(X_flat, G)]
+    latent_svm.fit(X_[:20], Y_flat[:20])
+
+    assert_array_equal(latent_svm.predict(X_[:20]), Y_flat[:20])
+    assert_equal(latent_svm.score(X_[:20], Y_flat[:20]), 1)
+
+    # test that score is not always 1
+    assert_true(.98 < latent_svm.score(X_[20:], Y_flat[20:]) < 1)
