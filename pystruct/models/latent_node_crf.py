@@ -23,7 +23,13 @@ def kmeans_init(X, Y, n_labels, n_hidden_states, latent_node_features=False):
     # iterate over samples
     for x, y in zip(X, Y):
         # first, get neighbor counts from nodes
-        features, edges, n_hidden = x
+        if len(x) == 3:
+            features, edges, n_hidden = x
+        elif len(x) == 4:
+            # edge features are discarded
+            features, edges, _, n_hidden = x
+        else:
+            raise ValueError("Something is fishy!")
         n_visible = features.shape[0]
         if latent_node_features:
             n_visible -= n_hidden
@@ -318,7 +324,7 @@ class LatentNodeCRF(GraphCRF):
             return np.sum(self.class_weight[y])
 
 
-class EdgeFeatureLatentNodeCRF(GraphCRF):
+class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
     """CRF with latent variables and edge features.
 
     Yeah that's totally not a mess.
@@ -380,18 +386,14 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
         n_states = n_hidden_states + n_labels
         self.n_edge_features = n_edge_features
 
-        GraphCRF.__init__(self, n_states, n_features,
-                          inference_method=inference_method,
-                          class_weight=class_weight)
-
         if latent_node_features:
             n_input_states = n_states
         else:
             n_input_states = n_labels
 
         self.n_input_states = n_input_states
-        self.size_psi = (n_input_states * self.n_features
-                         + self.n_edge_features
+        self.size_psi = (n_input_states * n_features
+                         + n_edge_features
                          * n_states ** 2)
         self.latent_node_features = latent_node_features
 
@@ -408,6 +410,24 @@ class EdgeFeatureLatentNodeCRF(GraphCRF):
 
         self.symmetric_edge_features = symmetric_edge_features
         self.antisymmetric_edge_features = antisymmetric_edge_features
+
+        GraphCRF.__init__(self, n_states, n_features,
+                          inference_method=inference_method,
+                          class_weight=class_weight)
+
+    def _set_size_psi(self):
+        if None in [self.n_states, self.n_features]:
+            return
+
+        if self.latent_node_features:
+            n_input_states = self.n_states
+        else:
+            n_input_states = self.n_labels
+        self.n_input_states = n_input_states
+        self.size_psi = (n_input_states * self.n_features
+                         + self.n_edge_features * self.n_states ** 2  )
+
+
 
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
