@@ -7,6 +7,9 @@ ctypedef fused some_int:
     cython.int
     cython.long
     cython.longlong
+    cython.uchar
+    cython.char
+    cython.uint
 
 def crammer_singer_psi(double[:,:] X, some_int[:] Y, double[:, :] out):
     cdef int y, i
@@ -15,7 +18,6 @@ def crammer_singer_psi(double[:,:] X, some_int[:] Y, double[:, :] out):
         for j in xrange(X.shape[1]):
             out[y, j] += X[i, j]
 
-# untested!
 def loss_augment_unaries(double[:,:] unary_potentials, some_int[:] y, double[:] class_weight):
    cdef int i
    cdef int n_states = unary_potentials.shape[1]
