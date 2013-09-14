@@ -46,10 +46,6 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     momentum : float, default=0.9
         Momentum used in subgradient descent.
 
-    adagrad : bool (default=False)
-        Whether to use adagrad gradient scaling.
-        Ignores if True, momentum is ignored.
-
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
@@ -61,12 +57,10 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     decay_exponent : float, default=0
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
@@ -88,13 +82,13 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learning_rate=0.001, adagrad=False, n_jobs=1,
+                 learning_rate=0.001, n_jobs=1,
                  show_loss_every=0, decay_exponent=0, decay_t0=10,
                  break_on_no_constraints=True, logger=None):
         SubgradientSSVM.__init__(
             self, model, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
-            momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
+            momentum=momentum, learning_rate=learning_rate,
             break_on_no_constraints=break_on_no_constraints, logger=logger,
             decay_t0=decay_t0)
 
