@@ -13,7 +13,7 @@ import cvxopt
 import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed
-from sklearn.utils import gen_even_slices
+from sklearn.utils import gen_even_slices, deprecated
 
 from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
@@ -100,7 +100,7 @@ class NSlackSSVM(BaseSSVM):
     ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-    ``objective_curve_`` : list of float
+    ``dual_objective_curve_`` : list of float
         Cutting plane objective after each pass through the dataset.
 
     ``primal_objective_curve_`` : list of float
@@ -128,6 +128,13 @@ class NSlackSSVM(BaseSSVM):
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
         self.switch_to = switch_to
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to"
+                "dual_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.dual_objective_curve_
+
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
@@ -264,7 +271,7 @@ class NSlackSSVM(BaseSSVM):
             # fresh start
             constraints = [[] for i in xrange(n_samples)]
             self.last_active = [[] for i in xrange(n_samples)]
-            self.objective_curve_ = []
+            self.dual_objective_curve_ = []
             self.primal_objective_curve_ = []
             self.timestamps_ = [time()]
         else:
@@ -330,7 +337,7 @@ class NSlackSSVM(BaseSSVM):
                                                            n_samples)
                         new_constraints += new_constraints_batch
 
-                self.objective_curve_.append(objective)
+                self.dual_objective_curve_.append(objective)
                 self._compute_training_loss(X, Y, iteration)
 
                 primal_objective = (self.C
@@ -347,8 +354,8 @@ class NSlackSSVM(BaseSSVM):
                     print("no additional constraints")
                     stopping_criterion = True
 
-                if (iteration > 1 and self.objective_curve_[-1]
-                        - self.objective_curve_[-2] < self.tol):
+                if (iteration > 1 and self.dual_objective_curve_[-1]
+                        - self.dual_objective_curve_[-2] < self.tol):
                     print("objective converged.")
                     stopping_criterion = True
 
@@ -381,7 +388,7 @@ class NSlackSSVM(BaseSSVM):
             print("Computing final objective.")
         self.timestamps_.append(time() - self.timestamps_[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
-        self.objective_curve_.append(objective)
+        self.dual_objective_curve_.append(objective)
         if self.logger is not None:
             self.logger(self, 'final')
         return self

@@ -2,7 +2,7 @@ from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from sklearn.utils import gen_even_slices, shuffle
+from sklearn.utils import gen_even_slices, shuffle, deprecated
 
 from .ssvm import BaseSSVM
 from ..utils import find_constraint
@@ -91,7 +91,7 @@ class SubgradientSSVM(BaseSSVM):
     ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-    ``objective_curve_`` : list of float
+    ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
 
     ``timestamps_`` : list of int
@@ -114,6 +114,12 @@ class SubgradientSSVM(BaseSSVM):
         self.decay_t0 = decay_t0
         self.batch_size = batch_size
         self.shuffle = shuffle
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to"
+                "primal_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.primal_objective_curve_
 
     def _solve_subgradient(self, dpsi, n_samples, w):
         """Do a single subgradient step."""
@@ -170,7 +176,8 @@ class SubgradientSSVM(BaseSSVM):
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         w = self.w.copy()
         if not warm_start:
-            self.objective_curve_ = []
+            self.w = getattr(self, "w", np.zeros(self.model.size_psi))
+            self.primal_objective_curve_ = []
             self.timestamps_ = [time()]
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
@@ -202,7 +209,7 @@ class SubgradientSSVM(BaseSSVM):
                           "objective: %f" %
                           (positive_slacks, objective))
                 self.timestamps_.append(time() - self.timestamps_[0])
-                self.objective_curve_.append(self._objective(X, Y))
+                self.primal_objective_curve_.append(objective)
 
                 if self.verbose > 2:
                     print(self.w)
@@ -218,12 +225,12 @@ class SubgradientSSVM(BaseSSVM):
             print("Computing final objective")
 
         self.timestamps_.append(time() - self.timestamps_[0])
-        self.objective_curve_.append(self._objective(X, Y))
+        self.primal_objective_curve_.append(self._objective(X, Y))
         if self.logger is not None:
             self.logger(self, 'final')
         if self.verbose:
-            if self.objective_curve_:
-                print("final objective: %f" % self.objective_curve_[-1])
+            if self.primal_objective_curve_:
+                print("final objective: %f" % self.primal_objective_curve_[-1])
             if self.verbose and self.n_jobs == 1:
                 print("calls to inference: %d" % self.model.inference_calls)
 
