@@ -165,7 +165,10 @@ class NSlackSSVM(BaseSSVM):
 
         # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
-        solution = cvxopt.solvers.qp(P, q, G, h)
+        try:
+            solution = cvxopt.solvers.qp(P, q, G, h)
+        except ValueError:
+            solution = {'status': 'error'}
         if solution['status'] != "optimal":
             print("regularizing QP!")
             P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T)

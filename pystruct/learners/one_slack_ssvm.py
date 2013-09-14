@@ -188,7 +188,10 @@ class OneSlackSSVM(BaseSSVM):
         #else:
             #initvals = {}
         #solution = cvxopt.solvers.qp(P, q, G, h, A, b, initvals=initvals)
-        solution = cvxopt.solvers.qp(P, q, G, h, A, b)
+        try:
+            solution = cvxopt.solvers.qp(P, q, G, h, A, b)
+        except ValueError:
+            solution = {'status': 'error'}
         if solution['status'] != "optimal":
             print("regularizing QP!")
             P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T)
