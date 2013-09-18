@@ -506,7 +506,7 @@ class OneSlackSSVM(BaseSSVM):
                 self.dual_objective_curve_.append(objective)
                 self.constraints_ = constraints
                 if self.logger is not None:
-                    self.logger(self, iteration)
+                    self.logger(self, X, Y, iteration)
 
                 if self.verbose > 5:
                     print(self.w)
@@ -522,7 +522,7 @@ class OneSlackSSVM(BaseSSVM):
         self.cached_constraint_.append(False)
 
         if self.logger is not None:
-            self.logger(self, 'final')
+            self.logger(self, X, Y, iteration, force=True)
 
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
