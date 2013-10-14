@@ -36,10 +36,10 @@ class SubgradientSSVM(BaseSSVM):
         Verbosity.
 
     learning_rate : float or 'auto', default='auto'
-        Learning rate used in subgradient descent. If 'auto', the pegasos schedule is used,
-        which starts with learning_rate = n_samples * C.
+        Learning rate used in subgradient descent. If 'auto', the pegasos
+        schedule is used, which starts with ``learning_rate = n_samples * C``.
 
-    momentum : float, default=0.9
+    momentum : float, default=0.0
         Momentum used in subgradient descent.
 
     n_jobs : int, default=1
@@ -56,26 +56,26 @@ class SubgradientSSVM(BaseSSVM):
         purposes). Zero means never, otherwise it will be computed very
         show_loss_every'th epoch.
 
-    decay_exponent : float, default=0
+    decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        ``learning_rate / (t0 + t)** decay_exponent``.
 
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
 
     logger : logger object.
 
-    averaging : string, default='linear'
+    averaging : string, default=None
         Whether and how to average weights. Possible options are 'linear', 'squared' and None.
         The string reflects the weighting of the averaging:
 
-            - linear: w_avg ~ w_1 + 2 * w_2 + ... + t * w_t
+            - ``linear: w_avg ~ w_1 + 2 * w_2 + ... + t * w_t``
 
-            - squared: w_avg ~ w_1 + 4 * w_2 + ... + t**2 * w_t
+            - ``squared: w_avg ~ w_1 + 4 * w_2 + ... + t**2 * w_t``
 
         Uniform averaging is not implemented as it is worth than linear
         weighted averaging or no averaging.
@@ -202,7 +202,7 @@ class SubgradientSSVM(BaseSSVM):
                           "objective: %f" %
                           (positive_slacks, objective))
                 self.timestamps_.append(time() - self.timestamps_[0])
-                self.objective_curve_.append(objective)
+                self.objective_curve_.append(self._objective(X, Y))
 
                 if self.verbose > 2:
                     print(self.w)
