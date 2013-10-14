@@ -74,8 +74,7 @@ def test_latent_node_boxes_standard_latent():
     latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
     one_slack = OneSlackSSVM(latent_crf)
     n_slack = NSlackSSVM(latent_crf)
-    subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
-                                  momentum=0)
+    subgradient = SubgradientSSVM(latent_crf, max_iter=100)
     for base_svm in [one_slack, n_slack, subgradient]:
         base_svm.C = 10
         latent_svm = LatentSSVM(base_svm,
@@ -107,8 +106,7 @@ def test_latent_node_boxes_latent_subgradient():
 
     X, Y = make_simple_2x2(seed=1)
     latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=2, n_features=1)
-    latent_svm = SubgradientLatentSSVM(model=latent_crf, max_iter=250, C=10,
-                                       learning_rate=0.1, momentum=0)
+    latent_svm = SubgradientLatentSSVM(model=latent_crf, max_iter=50, C=10)
 
     G = [make_grid_edges(x) for x in X]
 
@@ -135,8 +133,7 @@ def test_latent_node_boxes_standard_latent_features():
                                latent_node_features=True)
     one_slack = OneSlackSSVM(latent_crf)
     n_slack = NSlackSSVM(latent_crf)
-    subgradient = SubgradientSSVM(latent_crf, max_iter=100, learning_rate=0.01,
-                                  momentum=0)
+    subgradient = SubgradientSSVM(latent_crf, max_iter=100)
     for base_svm in [one_slack, n_slack, subgradient]:
         base_svm.C = 10
         latent_svm = LatentSSVM(base_svm,
