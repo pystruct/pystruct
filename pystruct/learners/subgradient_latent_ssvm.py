@@ -40,15 +40,12 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     verbose : int, default=0
         Verbosity.
 
-    learning_rate : float, default=0.001
-        Learning rate used in subgradient descent.
+    learning_rate : float or 'auto', default='auto'
+        Learning rate used in subgradient descent. If 'auto', the pegasos
+        schedule is used, which starts with ``learning_rate = n_samples * C``.
 
-    momentum : float, default=0.9
+    momentum : float, default=0.0
         Momentum used in subgradient descent.
-
-    adagrad : bool (default=False)
-        Whether to use adagrad gradient scaling.
-        Ignores if True, momentum is ignored.
 
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
@@ -58,18 +55,28 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         purposes). Zero means never, otherwise it will be computed very
         show_loss_every'th epoch.
 
-    decay_exponent : float, default=0
+    decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
-        Ignored if adagrad=True.
+        ``learning_rate / (t0 + t)** decay_exponent``.
 
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
+
+    averaging : string, default=None
+        Whether and how to average weights. Possible options are 'linear', 'squared' and None.
+        The string reflects the weighting of the averaging:
+
+            - linear: ``w_avg ~ w_1 + 2 * w_2 + ... + t * w_t``
+
+            - squared: ``w_avg ~ w_1 + 4 * w_2 + ... + t**2 * w_t``
+
+        Uniform averaging is not implemented as it is worth than linear
+        weighted averaging or no averaging.
+
 
 
     Attributes
@@ -87,16 +94,16 @@ class SubgradientLatentSSVM(SubgradientSSVM):
        Total training time stored before each iteration.
 
     """
-    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learning_rate=0.001, adagrad=False, n_jobs=1,
-                 show_loss_every=0, decay_exponent=0, decay_t0=10,
-                 break_on_no_constraints=True, logger=None):
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.,
+                 learning_rate='auto', n_jobs=1,
+                 show_loss_every=0, decay_exponent=1, decay_t0=10,
+                 break_on_no_constraints=True, logger=None, averaging=None):
         SubgradientSSVM.__init__(
             self, model, max_iter, C, verbose=verbose, n_jobs=n_jobs,
             show_loss_every=show_loss_every, decay_exponent=decay_exponent,
-            momentum=momentum, learning_rate=learning_rate, adagrad=adagrad,
+            momentum=momentum, learning_rate=learning_rate,
             break_on_no_constraints=break_on_no_constraints, logger=logger,
-            decay_t0=decay_t0)
+            decay_t0=decay_t0, averaging=averaging)
 
     def fit(self, X, Y, H_init=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
@@ -131,9 +138,14 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                 0, 1, size=self.model.size_psi))
             self.timestamps_ = [time()]
             self.objective_curve_ = []
+            if self.learning_rate == "auto":
+                self.learning_rate_ = self.C * len(X)
+            else:
+                self.learning_rate_ = self.learning_rate
         else:
             # hackety hack
             self.timestamps_[0] = time() - self.timestamps_[-1]
+        w = self.w.copy()
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
@@ -146,17 +158,17 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                 if self.n_jobs == 1:
                     # online learning
                     for x, y in zip(X, Y):
-                        h = self.model.latent(x, y, self.w)
+                        h = self.model.latent(x, y, w)
                         h_hat = self.model.loss_augmented_inference(
-                            x, h, self.w, relaxed=True)
+                            x, h, w, relaxed=True)
                         delta_psi = (self.model.psi(x, h)
                                      - self.model.psi(x, h_hat))
-                        slack = (-np.dot(delta_psi, self.w)
+                        slack = (-np.dot(delta_psi, w)
                                  + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                        self._solve_subgradient(delta_psi, n_samples)
+                        w = self._solve_subgradient(delta_psi, n_samples, w)
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
@@ -174,7 +186,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         candidate_constraints = Parallel(
                             n_jobs=self.n_jobs,
                             verbose=verbose)(delayed(find_constraint_latent)(
-                                self.model, x, y, self.w)
+                                self.model, x, y, w)
                                 for x, y in zip(X_b, Y_b))
                         dpsi = np.zeros(self.model.size_psi)
                         for x, y, constraint in zip(X_b, Y_b,
@@ -185,12 +197,11 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                             if slack > 0:
                                 positive_slacks += 1
                         dpsi /= float(len(X_b))
-                        self._solve_subgradient(dpsi, n_samples)
+                        w = self._solve_subgradient(dpsi, n_samples, w)
 
                 # some statistics
                 objective *= self.C
                 objective += np.sum(self.w ** 2) / 2.
-                #objective /= float(n_samples)
 
                 if positive_slacks == 0:
                     print("No additional constraints")
