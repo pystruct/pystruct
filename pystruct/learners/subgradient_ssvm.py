@@ -170,7 +170,7 @@ class SubgradientSSVM(BaseSSVM):
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         w = self.w.copy()
         if not warm_start:
-            self.primal_objective_curve_ = []
+            self.objective_curve_ = []
             self.timestamps_ = [time()]
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
