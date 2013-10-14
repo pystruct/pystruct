@@ -19,22 +19,20 @@ inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
 
 def test_multinomial_blocks_subgradient():
     #testing cutting plane ssvm on easy multinomial dataset
-    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=1)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.6, seed=1)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10, momentum=.98,
-                          learning_rate=0.001)
+    clf = SubgradientSSVM(model=crf, max_iter=50)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
 
 
 def test_multinomial_checker_subgradient():
-    X, Y = generate_checker_multinomial(n_samples=10, noise=0.0)
+    X, Y = generate_checker_multinomial(n_samples=10, noise=0.4)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-    clf = SubgradientSSVM(model=crf, max_iter=50, C=10,
-                          momentum=.98, learning_rate=0.01)
+    clf = SubgradientSSVM(model=crf, max_iter=50)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -57,8 +55,7 @@ def test_binary_blocks():
     #testing subgradient ssvm on easy binary dataset
     X, Y = generate_blocks(n_samples=5)
     crf = GridCRF(inference_method=inference_method)
-    clf = SubgradientSSVM(model=crf, C=100, learning_rate=1, decay_exponent=1,
-                          momentum=0, decay_t0=10)
+    clf = SubgradientSSVM(model=crf)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -77,8 +74,7 @@ def test_subgradient_svm_as_crf_pickling():
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
     logger = SaveLogger(file_name)
-    svm = SubgradientSSVM(pbl, C=10, n_jobs=1, logger=logger,
-                          max_iter=50, momentum=0, learning_rate=0.01)
+    svm = SubgradientSSVM(pbl, logger=logger, max_iter=100)
     svm.fit(X_train, y_train)
 
     assert_less(.97, svm.score(X_test, y_test))
