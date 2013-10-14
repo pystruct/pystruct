@@ -30,13 +30,14 @@ class SubgradientSSVM(BaseSSVM):
         updates.
 
     C : float, default=1.
-        Regularization parameter
+        Regularization parameter.
 
     verbose : int, default=0
         Verbosity.
 
-    learning_rate : float, default=0.001
-        Learning rate used in subgradient descent.
+    learning_rate : float or 'auto', default='auto'
+        Learning rate used in subgradient descent. If 'auto', the pegasos schedule is used,
+        which starts with learning_rate = n_samples * C.
 
     momentum : float, default=0.9
         Momentum used in subgradient descent.
@@ -69,8 +70,18 @@ class SubgradientSSVM(BaseSSVM):
     logger : logger object.
 
     averaging : string, default='linear'
-        Whether and how to average weights. Possible options are 'linear', 'squared' and 'none'.
-        Currently this is only supported in the block-coordinate version.
+        Whether and how to average weights. Possible options are 'linear', 'squared' and None.
+        The string reflects the weighting of the averaging:
+
+            - linear: w_avg ~ w_1 + 2 * w_2 + ... + t * w_t
+
+            - squared: w_avg ~ w_1 + 4 * w_2 + ... + t**2 * w_t
+
+        Uniform averaging is not implemented as it is worth than linear
+        weighted averaging or no averaging.
+
+    shuffle : bool, default=False
+        Whether to shuffle the dataset in each iteration.
 
     Attributes
     ----------
@@ -86,9 +97,9 @@ class SubgradientSSVM(BaseSSVM):
     ``timestamps_`` : list of int
        Total training time stored before each iteration.
     """
-    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.9,
-                 learning_rate=0.001, n_jobs=1,
-                 show_loss_every=0, decay_exponent=0,
+    def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.0,
+                 learning_rate='auto', n_jobs=1,
+                 show_loss_every=0, decay_exponent=1,
                  break_on_no_constraints=True, logger=None, batch_size=None,
                  decay_t0=10, averaging=None, shuffle=False):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
@@ -111,9 +122,9 @@ class SubgradientSSVM(BaseSSVM):
         self.grad_old = ((1 - self.momentum) * grad
                          + self.momentum * self.grad_old)
         if self.decay_exponent == 0:
-            effective_lr = self.learning_rate
+            effective_lr = self.learning_rate_
         else:
-            effective_lr = (self.learning_rate
+            effective_lr = (self.learning_rate_
                             / (self.t + self.decay_t0)
                             ** self.decay_exponent)
         w += effective_lr * self.grad_old
@@ -161,6 +172,10 @@ class SubgradientSSVM(BaseSSVM):
         if not warm_start:
             self.primal_objective_curve_ = []
             self.timestamps_ = [time()]
+            if self.learning_rate == "auto":
+                self.learning_rate_ = self.C * len(X)
+            else:
+                self.learning_rate_ = self.learning_rate
         else:
             self.timestamps_ = (np.array(self.timestamps_) - time()).tolist()
         try:
