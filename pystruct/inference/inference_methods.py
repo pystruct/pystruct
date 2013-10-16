@@ -133,15 +133,28 @@ def _validate_params(unary_potentials, pairwise_params, edges):
         # only one matrix given
         pairwise_potentials = np.repeat(pairwise_params[np.newaxis, :, :],
                                         edges.shape[0], axis=0)
-    else:
-        if pairwise_params.shape != (edges.shape[0], n_states, n_states):
-            raise ValueError("Expected pairwise_params either to "
-                             "be of shape n_states x n_states "
-                             "or n_edges x n_states x n_states, but"
-                             " got shape %s. n_states=%d, n_edge=%d."
-                             % (repr(pairwise_params.shape), n_states,
-                                edges.shape[0]))
+    elif pairwise_params.shape == (edges.shape[0], n_states, n_states):
         pairwise_potentials = pairwise_params
+    elif pairwise_params.shape == (edges.shape[0], 2) :
+        pairwise_potentials = np.repeat(pairwise_params[:, 0], 
+                                        n_states * n_states).reshape(edges.shape[0],
+                                                                     n_states,
+                                                                     n_states)
+        for i in xrange(edges.shape[0]) :
+            for j in xrange(n_states) :
+                pairwise_potentials[i, j, j] = pairwise_params[i, 1]
+
+
+
+    else :
+        raise ValueError("Expected pairwise_params either to "
+                         "be of shape n_states x n_states; "
+                         "n_edges x n_states x n_states; or "
+                         "n_edges x 2 x 2 but got shape %s. " 
+                         "n_states=%d, n_edge=%d."
+                         % (repr(pairwise_params.shape), n_states,
+                            edges.shape[0]))
+ 
     return n_states, pairwise_potentials
 
 
