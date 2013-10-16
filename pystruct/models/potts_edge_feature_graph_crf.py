@@ -83,9 +83,9 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
         pairwise = np.dot(edge_features, pairwise)
 
         matrix_potentials = np.repeat(pairwise, 
-                                       self.n_states ** 2).reshape(n_edges,
-                                                                   self.n_states,
-                                                                   self.n_states)
+                                      self.n_states ** 2).reshape(n_edges,
+                                                                  self.n_states,
+                                                                  self.n_states)
         for i in xrange(n_edges) :
              for j in xrange(self.n_states) :
                  matrix_potentials[i, j, j] = 0
