@@ -92,10 +92,6 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
 
         return matrix_potentials
 
-        # potentials = np.dot(edge_features, pairwise).reshape(n_edges, 2)
-
-
-        # return matrix_potentials
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -141,16 +137,6 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
 
             class_pair_ind = y[edges[:, 0]] != y[edges[:, 1]]
             pw = np.sum(edge_features[class_pair_ind], axis=0)
-            # ## pairwise
-            # pw = np.zeros((edges.shape[0], 2))
-            # # what's this?
-            # class_pair_ind = (y[edges[:, 1]] == y[edges[:, 0]]).astype(np.int) 
-            # pw[np.arange(len(edges)), class_pair_ind] = 1
-
-        print y
-        print sum(class_pair_ind)
-
-        #pw = np.dot(edge_features.T, pw)
 
         unaries_acc = np.dot(unary_marginals.T, features)
 
