@@ -1,7 +1,7 @@
 import numpy as np
 
 from .edge_feature_graph_crf import EdgeFeatureGraphCRF
-
+from ..inference import inference_dispatch
 
 class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
     """Potts CRF with features/strength associated to each edge.
@@ -142,4 +142,84 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
 
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
+
+    def loss(self, y, y_hat, x):
+        edges = self._get_edges(x)
+        ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
+        predicted = y_hat[edges[:, 0]] != y_hat[edges[:, 1]]
+        difference = (ground_truth != predicted).astype(np.int)
+        difference[ground_truth] *= 20
+        print 'loss', sum(difference)
+        return sum(difference)
+
+
+    def loss_augmented_inference(self, x, y, w, relaxed=False,
+                                 return_energy=False):
+        """Loss-augmented Inference for x relative to y using parameters w.
+
+        Finds (approximately)
+        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(y, y_hat)
+        using self.inference_method.
+
+
+        Parameters
+        ----------
+        x : tuple
+            Instance of a graph with unary evidence.
+            x=(unaries, edges)
+            unaries are an nd-array of shape (n_nodes, n_features),
+            edges are an nd-array of shape (n_edges, 2)
+
+        y : ndarray, shape (n_nodes,)
+            Ground truth labeling relative to which the loss
+            will be measured.
+
+        w : ndarray, shape=(size_psi,)
+            Parameters for the CRF energy function.
+
+        relaxed : bool, default=False
+            Whether relaxed inference should be performed.
+            Only meaningful if inference method is 'lp' or 'ad3'.
+            By default fractional solutions are rounded. If relaxed=True,
+            fractional solutions are returned directly.
+
+        return_energy : bool, default=False
+            Whether to return the energy of the solution (x, y) that was found.
+
+        Returns
+        -------
+        y_pred : ndarray or tuple
+            By default an inter ndarray of shape=(n_nodes)
+            of variable assignments for x is returned.
+            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
+            a tuple (unary_marginals, pairwise_marginals)
+            containing the relaxed inference result is returned.
+            unary marginals is an array of shape (n_nodes, n_states),
+            pairwise_marginals is an array of
+            shape (n_states, n_states) of accumulated pairwise marginals.
+
+        """
+        self.inference_calls += 1
+        self._check_size_w(w)
+        unary_potentials = self._get_unary_potentials(x, w)
+        pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x)
+
+        ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
+
+        for i in range(edges.shape[0]) :
+            if ground_truth[i] :
+                for j in xrange(self.n_states) :
+                    pairwise_potentials[i, j, j] += 20
+            else :
+                pairwise_potentials[i, :, :] += 1
+                for j in xrange(self.n_states) :
+                    pairwise_potentials[i, j, j] -= 1
+
+
+        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                  self.inference_method, relaxed=relaxed,
+                                  return_energy=return_energy)
+        
+
 
