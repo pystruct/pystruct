@@ -70,12 +70,12 @@ def test_constraint_removal():
     assert_less(np.mean(clf.predict(X) != clf_no_removal.predict(X)), 0.02)
 
     # without removal, have as many constraints as iterations
-    assert_equal(len(clf_no_removal.objective_curve_),
+    assert_equal(len(clf_no_removal.dual_objective_curve_),
                  len(clf_no_removal.constraints_))
 
     # with removal, there are less constraints than iterations
     assert_less(len(clf.constraints_),
-                len(clf.objective_curve_))
+                len(clf.dual_objective_curve_))
 
 
 def test_binary_blocks_one_slack_graph():
@@ -186,6 +186,6 @@ def test_switch_to_ad3():
     assert_equal(ssvm_with_switch.model.inference_method, 'ad3')
     # we check that the dual is higher with ad3 inference
     # as it might use the relaxation, that is pretty much guraranteed
-    assert_greater(ssvm_with_switch.objective_curve_[-1],
-                   ssvm.objective_curve_[-1])
-    print(ssvm_with_switch.objective_curve_[-1], ssvm.objective_curve_[-1])
+    assert_greater(ssvm_with_switch.dual_objective_curve_[-1],
+                   ssvm.dual_objective_curve_[-1])
+    print(ssvm_with_switch.dual_objective_curve_[-1], ssvm.dual_objective_curve_[-1])

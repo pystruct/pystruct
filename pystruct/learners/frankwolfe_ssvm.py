@@ -92,7 +92,7 @@ class FrankWolfeSSVM(BaseSSVM):
     ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-    ``objective_curve_`` : list of float
+    ``dual_objective_curve_`` : list of float
        Cutting plane objective after each pass through the dataset.
 
     ``primal_objective_curve_`` : list of float
@@ -175,7 +175,7 @@ class FrankWolfeSSVM(BaseSSVM):
             primal_val = dual_val + dual_gap_display
 
             self.primal_objective_curve_.append(primal_val)
-            self.objective_curve_.append(dual_val)
+            self.dual_objective_curve_.append(dual_val)
             self.timestamps_.append(time() - self.timestamps_[0])
             if self.verbose > 0:
                 print("iteration %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f"
@@ -251,7 +251,7 @@ class FrankWolfeSSVM(BaseSSVM):
             if (self.check_dual_every != 0) and (iteration % self.check_dual_every == 0):
                 dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y)
                 self.primal_objective_curve_.append(primal_val)
-                self.objective_curve_.append(dual_val)
+                self.dual_objective_curve_.append(dual_val)
                 self.timestamps_.append(time() - self.timestamps_[0])
                 if self.verbose > 0:
                     print("dual: %f, dual_gap: %f, primal: %f"
@@ -284,7 +284,7 @@ class FrankWolfeSSVM(BaseSSVM):
         """
         if initialize:
             self.model.initialize(X, Y)
-        self.objective_curve_, self.primal_objective_curve_ = [], []
+        self.dual_objective_curve_, self.primal_objective_curve_ = [], []
         self.timestamps_ = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         self.l = getattr(self, "l", 0)
@@ -299,7 +299,7 @@ class FrankWolfeSSVM(BaseSSVM):
             print("Calculating final objective.")
         self.timestamps_.append(time() - self.timestamps_[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
-        self.objective_curve_.append(self.objective_curve_[-1])
+        self.dual_objective_curve_.append(self.objective_curve_[-1])
         if self.logger is not None:
             self.logger(self, X, Y, self._iteration, force=True)
         return self

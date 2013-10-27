@@ -67,7 +67,7 @@ def test_ssvm_objectives():
     clf = SubgradientSSVM(model=crf, max_iter=5, C=1, batch_size=-1)
     clf.fit(X, Y)
     primal_objective = objective_primal(clf.model, clf.w, X, Y, clf.C)
-    assert_almost_equal(clf.objective_curve_[-1], primal_objective)
+    assert_almost_equal(clf.primal_objective_curve_[-1], primal_objective)
 
     # frank wolfe
     clf = FrankWolfeSSVM(model=crf, max_iter=5, C=1, batch_mode=True)

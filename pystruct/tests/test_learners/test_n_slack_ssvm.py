@@ -90,9 +90,9 @@ def test_switch_to_ad3():
     assert_equal(ssvm_with_switch.model.inference_method, 'ad3')
     # we check that the dual is higher with ad3 inference
     # as it might use the relaxation, that is pretty much guraranteed
-    assert_greater(ssvm_with_switch.objective_curve_[-1],
-                   ssvm.objective_curve_[-1])
-    print(ssvm_with_switch.objective_curve_[-1], ssvm.objective_curve_[-1])
+    assert_greater(ssvm_with_switch.dual_objective_curve_[-1],
+                   ssvm.dual_objective_curve_[-1])
+    print(ssvm_with_switch.dual_objective_curve_[-1], ssvm.dual_objective_curve_[-1])
 
     # test that convergence also results in switch
     ssvm_with_switch = NSlackSSVM(crf, max_iter=10000, switch_to=('ad3'),

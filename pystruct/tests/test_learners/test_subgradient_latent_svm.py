@@ -54,7 +54,7 @@ def test_objective():
                           momentum=0.98)
     clf.fit(X, Y)
     assert_array_almost_equal(clf.w, clfl.w)
-    assert_almost_equal(clf.objective_curve_[-1], clfl.objective_curve_[-1])
+    assert_almost_equal(clf.primal_objective_curve_[-1], clfl.primal_objective_curve_[-1])
     assert_array_equal(clf.predict(X), clfl.predict(X))
     assert_array_equal(clf.predict(X), Y)
 

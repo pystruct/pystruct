@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from sklearn.utils import gen_even_slices
+from sklearn.utils import gen_even_slices, deprecated
 
 from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
@@ -87,7 +87,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-    ``objective_curve_`` : list of float
+    ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
 
     ``timestamps_`` : list of int
@@ -104,6 +104,12 @@ class SubgradientLatentSSVM(SubgradientSSVM):
             momentum=momentum, learning_rate=learning_rate,
             break_on_no_constraints=break_on_no_constraints, logger=logger,
             decay_t0=decay_t0, averaging=averaging)
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to"
+                "primal_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.primal_objective_curve_
 
     def fit(self, X, Y, H_init=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
@@ -137,7 +143,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
             self.w = getattr(self, "w", np.random.normal(
                 0, 1, size=self.model.size_psi))
             self.timestamps_ = [time()]
-            self.objective_curve_ = []
+            self.primal_objective_curve_ = []
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
             else:
@@ -213,7 +219,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                     print("positive slacks: %d, "
                           "objective: %f" %
                           (positive_slacks, objective))
-                self.objective_curve_.append(objective)
+                self.primal_objective_curve_.append(objective)
 
                 if self.verbose > 2:
                     print(self.w)
@@ -225,12 +231,12 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         except KeyboardInterrupt:
             pass
         self.timestamps_.append(time() - self.timestamps_[0])
-        self.objective_curve_.append(self._objective(X, Y))
+        self.primal_objective_curve_.append(self._objective(X, Y))
         if self.logger is not None:
             self.logger(self, X, Y, iteration, force=True)
         if self.verbose:
-            if self.objective_curve_:
-                print("final objective: %f" % self.objective_curve_[-1])
+            if self.primal_objective_curve_:
+                print("final objective: %f" % self.primal_objective_curve_[-1])
             if self.verbose and self.n_jobs == 1:
                 print("calls to inference: %d" % self.model.inference_calls)
         return self
