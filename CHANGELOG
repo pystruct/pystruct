@@ -1,0 +1,7 @@
+0.2
+===
+- Added BCFW.
+- Added averaging in stochastic gradient descent.
+- Added "snakes" dataset.
+- Much faster interface to OpenGM.
+- Speed improvements in loss-augmented inference.
