@@ -57,11 +57,11 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
     decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``. Zero means no decay.
+        ``learning_rate / (decay_t0 + t)** decay_exponent``. Zero means no decay.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
-        ``learning_rate / (t0 + t)** decay_exponent``.
+        ``learning_rate / (decay_t0 + t)** decay_exponent``.
 
     break_on_no_constraints : bool, default=True
         Break when there are no new constraints found.
@@ -74,7 +74,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
             - squared: ``w_avg ~ w_1 + 4 * w_2 + ... + t**2 * w_t``
 
-        Uniform averaging is not implemented as it is worth than linear
+        Uniform averaging is not implemented as it is worse than linear
         weighted averaging or no averaging.
 
 
