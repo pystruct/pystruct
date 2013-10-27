@@ -9,7 +9,7 @@ from pystruct.models import GridCRF, GraphCRF, BinaryClf
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
                                generate_checker)
-from pystruct.utils import make_grid_edges, SaveLogger, train_test_split
+from pystruct.utils import make_grid_edges, AnalysisLogger, train_test_split
 from pystruct.inference import get_installed
 
 # we always try to get the fastest installed inference method
@@ -41,7 +41,7 @@ def test_svm_as_crf_pickling():
     _, file_name = mkstemp()
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
-    logger = SaveLogger(file_name)
+    logger = AnalysisLogger(file_name)
     svm = OneSlackSSVM(pbl, check_constraints=True, C=1, n_jobs=1,
                        logger=logger)
     svm.fit(X_train, y_train)
