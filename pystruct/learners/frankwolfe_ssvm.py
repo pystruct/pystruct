@@ -153,6 +153,7 @@ class FrankWolfeSSVM(BaseSSVM):
         psi_gt = self.model.batch_psi(X, Y, Y)
 
         for iteration in xrange(self.max_iter):
+            self._iteration = iteration
             Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                               relaxed=True)
             dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
@@ -205,6 +206,7 @@ class FrankWolfeSSVM(BaseSSVM):
 
         rng = check_random_state(self.random_state)
         for iteration in xrange(self.max_iter):
+            self._iteration = iteration
             if self.verbose > 0:
                 print("Iteration %d" % iteration)
 
