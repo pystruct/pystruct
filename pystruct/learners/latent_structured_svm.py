@@ -118,7 +118,7 @@ class LatentSSVM(BaseSSVM):
             w = self.base_ssvm.w
             ws.append(w)
             if self.logger is not None:
-                self.logger(self, iteration)
+                self.logger(self, X, Y, iteration)
 
     def predict(self, X):
         prediction = self.base_ssvm.predict(X)

@@ -258,7 +258,7 @@ class FrankWolfeSSVM(BaseSSVM):
                           % (dual_val, dual_gap, primal_val))
 
             if self.logger is not None:
-                self.logger(self, iteration)
+                self.logger(self, X, Y, iteration)
 
             if dual_gap < self.tol:
                 return
@@ -299,7 +299,7 @@ class FrankWolfeSSVM(BaseSSVM):
             print("Calculating final objective.")
         self.timestamps_.append(time() - self.timestamps_[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
-        self.dual_objective_curve_.append(self.objective_curve_[-1])
+        self.dual_objective_curve_.append(self.dual_objective_curve_[-1])
         if self.logger is not None:
             self.logger(self, X, Y, self._iteration, force=True)
         return self
