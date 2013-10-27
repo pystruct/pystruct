@@ -124,7 +124,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.sample_method = sample_method
         self.random_state = random_state
 
-    def _calc_dual_gap(self, X, Y, l):
+    def _calc_dual_gap(self, X, Y):
         n_samples = len(X)
         psi_gt = self.model.batch_psi(X, Y, Y)  # FIXME don't calculate this again
         Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
@@ -132,15 +132,12 @@ class FrankWolfeSSVM(BaseSSVM):
         dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
         ls = np.sum(self.model.batch_loss(Y, Y_hat))
         ws = dpsi * self.C
-        l = l * n_samples * self.C
+        l_rescaled = self.l * n_samples * self.C
 
-        dual_val = -0.5 * np.sum(self.w ** 2) + l
+        dual_val = -0.5 * np.sum(self.w ** 2) + l_rescaled
         w_diff = self.w - ws
-        dual_gap = w_diff.T.dot(self.w) - l + ls * self.C
+        dual_gap = w_diff.T.dot(self.w) - l_rescaled + ls * self.C
         primal_val = dual_val + dual_gap
-        self.primal_objective_curve_.append(primal_val)
-        self.objective_curve_.append(dual_val)
-        self.timestamps_.append(time() - self.timestamps_[0])
         return dual_val, dual_gap, primal_val
 
     def _frank_wolfe_batch(self, X, Y):
@@ -203,7 +200,6 @@ class FrankWolfeSSVM(BaseSSVM):
         w = self.w.copy()
         w_mat = np.zeros((n_samples, self.model.size_psi))
         l_mat = np.zeros(n_samples)
-        l_avg = 0.0
         l = 0.0
         k = 0
 
@@ -244,25 +240,28 @@ class FrankWolfeSSVM(BaseSSVM):
                 l += l_mat[i]
 
                 if self.do_averaging:
-                    rho = 2.0 / (k + 2.0)
-                    self.w = (1.0 - rho) * self.w + rho * w
-                    l_avg = (1.0 - rho) * l_avg + rho * l
+                    rho = 2. / (k + 2.)
+                    self.w = (1. - rho) * self.w + rho * w
+                    self.l = (1. - rho) * self.l + rho * l
                 else:
                     self.w = w
+                    self.l = l
                 k += 1
 
-            if self.logger is not None:
-                self.logger(self, p)
             if (self.check_dual_every != 0) and (p % self.check_dual_every == 0):
-                dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y, l)
+                dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y)
                 self.primal_objective_curve_.append(primal_val)
                 self.objective_curve_.append(dual_val)
                 self.timestamps_.append(time() - self.timestamps_[0])
                 if self.verbose > 0:
                     print("dual: %f, dual_gap: %f, primal: %f"
                           % (dual_val, dual_gap, primal_val))
-                if dual_gap < self.tol:
-                    return
+
+            if self.logger is not None:
+                self.logger(self, p)
+
+            if dual_gap < self.tol:
+                return
 
     def fit(self, X, Y, constraints=None, initialize=True):
         """Learn parameters using (block-coordinate) Frank-Wolfe learning.
@@ -288,6 +287,7 @@ class FrankWolfeSSVM(BaseSSVM):
         self.objective_curve_, self.primal_objective_curve_ = [], []
         self.timestamps_ = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
+        self.l = getattr(self, "l", 0)
         try:
             if self.batch_mode:
                 self._frank_wolfe_batch(X, Y)
