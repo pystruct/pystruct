@@ -22,7 +22,7 @@ def test_multinomial_blocks_frankwolfe():
 
 
 def test_multinomial_blocks_frankwolfe_batch():
-    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.5, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     crf = GridCRF(inference_method='qpbo')
     clf = FrankWolfeSSVM(model=crf, C=1, max_iter=500, verbose=3, batch_mode=True)
     clf.fit(X, Y)
