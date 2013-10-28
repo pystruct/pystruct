@@ -2,7 +2,7 @@ import numpy as np
 
 from .base import StructuredModel
 from ..inference import inference_dispatch, get_installed
-from .utils import loss_augment_unaries
+from .utils import loss_augment_unaries, loss_augment_unaries_weighted
 
 
 class CRF(StructuredModel):
@@ -53,11 +53,12 @@ class CRF(StructuredModel):
                              % (self.n_features, features.shape[1]))
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
-                                 return_energy=False):
+                                 return_energy=False,
+                                 loss_weights=None):
         """Loss-augmented Inference for x relative to y using parameters w.
 
         Finds (approximately)
-        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(y, y_hat)
+        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(x, y, y_hat)
         using self.inference_method.
 
 
@@ -85,6 +86,9 @@ class CRF(StructuredModel):
         return_energy : bool, default=False
             Whether to return the energy of the solution (x, y) that was found.
 
+        loss_weights : None or ndarray with shape=(n_nodes,)
+            Node weights for weighted hamming loss.
+
         Returns
         -------
         y_pred : ndarray or tuple
@@ -103,7 +107,12 @@ class CRF(StructuredModel):
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        if loss_weights == None:
+            loss_augment_unaries(unary_potentials, np.asarray(y),
+                                 self.class_weight)
+        else:
+            loss_augment_unaries_weighted(unary_potentials, np.asarray(y),
+                                 self.class_weight, loss_weights)
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,

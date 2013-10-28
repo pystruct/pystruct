@@ -2,6 +2,7 @@ import numpy as np
 
 from .graph_crf import GraphCRF
 from .crf import CRF
+from .base import StructuredModel
 
 
 class EdgeFeatureGraphCRF(GraphCRF):
@@ -54,12 +55,17 @@ class EdgeFeatureGraphCRF(GraphCRF):
     antisymmetric_edge_features : None or list
         Indices of edge features that are forced to be anti-symmetric.
 
+    weighted_loss : bool
+        If True, ``x`` is represented as a tuple ``(node_features, edges,
+    edge_features, node_weights)``, and loss is calculated as sum(node_weights[y != y_hat]) instead of just sum(y != y_hat).
     """
     def __init__(self, n_states=None, n_features=None, n_edge_features=None,
                  inference_method=None, class_weight=None,
                  symmetric_edge_features=None,
-                 antisymmetric_edge_features=None):
+                 antisymmetric_edge_features=None,
+                 weighted_loss=False):
         self.n_edge_features = n_edge_features
+        self.weighted_loss = weighted_loss
 
         if symmetric_edge_features is None:
             symmetric_edge_features = []
@@ -108,16 +114,26 @@ class EdgeFeatureGraphCRF(GraphCRF):
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
 
-        _, edges, edge_features = x
+        edges = x[1]
+        edge_features = x[2]
         if edges.shape[0] != edge_features.shape[0]:
             raise ValueError("Got %d edges but %d edge features."
                              % (edges.shape[0], edge_features.shape[0]))
         if edge_features.shape[1] != self.n_edge_features:
             raise ValueError("Got edge features of size %d, but expected %d."
                              % (edge_features.shape[1], self.n_edge_features))
+        if self.weighted_loss:
+            node_features = x[0]
+            node_weights = x[3]
+            if (node_features.shape[0],) != node_weights.shape:
+                raise ValueError("Got node weights of shape %s, but expected %d."
+                                 % (node_weights.shape, node_features.shape[0]))
 
     def _get_edge_features(self, x):
         return x[2]
+
+    def _get_node_weights(self, x):
+            return x[3] if self.weighted_loss else None
 
     def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
@@ -204,3 +220,19 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
+
+    def loss_augmented_inference(self, x, y, w, relaxed=False,
+                                 return_energy=False):
+        return CRF.loss_augmented_inference(self, x, y, w, relaxed, return_energy,                                self._get_node_weights(x))
+
+    def loss(self, x, y, y_hat):
+        return StructuredModel.loss(self, x, y, y_hat,
+                                    node_weights=self._get_node_weights(x))
+
+    def max_loss(self, x, y):
+        return StructuredModel.max_loss(self, x, y,
+                                        node_weights=self._get_node_weights(x))
+
+    def continuous_loss(self, x, y, y_hat):
+        return StructuredModel.continuous_loss(self, x, y, y_hat,
+                                node_weights=self._get_node_weights(x))
