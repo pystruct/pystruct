@@ -15,8 +15,8 @@ class BaseSSVM(BaseEstimator):
         self.C = C
         self.verbose = verbose
         if show_loss_every != 0:
-            warnings.warn(DeprecationWarning,
-                          "show_loss_every and loss_curve_ are deprecated. Use a logger instead.")
+            warnings.warn("show_loss_every and loss_curve_ are deprecated. Use"
+                          " a logger instead.", DeprecationWarning)
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
         self.logger = logger

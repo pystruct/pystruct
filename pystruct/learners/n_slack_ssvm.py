@@ -127,7 +127,7 @@ class NSlackSSVM(BaseSSVM):
         self.switch_to = switch_to
 
     @property
-    @deprecated("Attribute objective_curve was renamed to"
+    @deprecated("Attribute objective_curve was renamed to "
                 "dual_objective_curve to avoid confusion.")
     def objective_curve_(self):
         return self.dual_objective_curve_

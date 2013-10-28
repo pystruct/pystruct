@@ -108,7 +108,7 @@ class SubgradientSSVM(BaseSSVM):
         self.shuffle = shuffle
 
     @property
-    @deprecated("Attribute objective_curve was renamed to"
+    @deprecated("Attribute objective_curve was renamed to "
                 "primal_objective_curve to avoid confusion.")
     def objective_curve_(self):
         return self.primal_objective_curve_

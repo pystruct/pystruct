@@ -63,7 +63,7 @@ latent_crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2,
                            inference_method='lp')
 
 ssvm = OneSlackSSVM(model=latent_crf, max_iter=200, C=100, verbose=1,
-                    n_jobs=-1, show_loss_every=10, inference_cache=50)
+                    n_jobs=-1, inference_cache=50)
 latent_svm = LatentSSVM(ssvm)
 
 # make edges for hidden states:
