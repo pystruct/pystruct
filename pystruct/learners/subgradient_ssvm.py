@@ -84,7 +84,10 @@ class SubgradientSSVM(BaseSSVM):
         The learned weights of the SVM.
 
     ``primal_objective_curve_`` : list of float
-       Primal objective after each pass through the dataset.
+       Primal objective for each pass through the dataset.
+       This is computed using an online approximation at no additional cost.
+       If the dataset is not i.i.d. (if you didn't shuffle) and your learning
+       rate is high, this might be a very bad approximation.
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.0,
                  learning_rate='auto', n_jobs=1,
