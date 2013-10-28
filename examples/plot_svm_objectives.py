@@ -47,19 +47,19 @@ inference_run = ~np.array(one_slack_svm.cached_constraint_)
 time_one = np.array(one_slack_svm.timestamps_[1:])[inference_run]
 
 # plot stuff
-plt.plot(n_slack_svm.timestamps_[1:], n_slack_svm.objective_curve_,
+plt.plot(n_slack_svm.timestamps_[1:], n_slack_svm.dual_objective_curve_,
          label="n-slack cutting plane")
 plt.plot(n_slack_svm.timestamps_[1:], n_slack_svm.primal_objective_curve_,
          label="n-slack primal")
 plt.plot(time_one,
-         np.array(one_slack_svm.objective_curve_)[inference_run],
+         np.array(one_slack_svm.dual_objective_curve_)[inference_run],
          label="one-slack cutting_plane")
 plt.plot(time_one,
          np.array(one_slack_svm.primal_objective_curve_)[inference_run],
          label="one-slack primal")
-plt.plot(subgradient_svm.timestamps_[1:], subgradient_svm.objective_curve_,
+plt.plot(subgradient_svm.timestamps_[1:], subgradient_svm.primal_objective_curve_,
          label="subgradient")
-plt.plot(bcfw_svm.timestamps_[1:], bcfw_svm.objective_curve_,
+plt.plot(bcfw_svm.timestamps_[1:], bcfw_svm.dual_objective_curve_,
          label="Block-Coordinate Frank-Wolfe Dual")
 plt.plot(bcfw_svm.timestamps_[1:], bcfw_svm.primal_objective_curve_,
          label="Block-Coordinate Frank-Wolfe Primal")

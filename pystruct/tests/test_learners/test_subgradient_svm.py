@@ -62,7 +62,6 @@ def test_binary_blocks():
 
 
 def test_subgradient_svm_as_crf_pickling():
-
     iris = load_iris()
     X, y = iris.data, iris.target
 

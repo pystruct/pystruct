@@ -13,7 +13,7 @@ import cvxopt
 import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed
-from sklearn.utils import gen_even_slices
+from sklearn.utils import gen_even_slices, deprecated
 
 from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
@@ -100,14 +100,11 @@ class NSlackSSVM(BaseSSVM):
     ``loss_curve_`` : list of float
         List of loss values if show_loss_every > 0.
 
-    ``objective_curve_`` : list of float
+    ``dual_objective_curve_`` : list of float
         Cutting plane objective after each pass through the dataset.
 
     ``primal_objective_curve_`` : list of float
         Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
@@ -128,6 +125,13 @@ class NSlackSSVM(BaseSSVM):
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
         self.switch_to = switch_to
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to "
+                "dual_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.dual_objective_curve_
+
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
@@ -264,9 +268,9 @@ class NSlackSSVM(BaseSSVM):
             # fresh start
             constraints = [[] for i in xrange(n_samples)]
             self.last_active = [[] for i in xrange(n_samples)]
-            self.objective_curve_ = []
+            self.dual_objective_curve_ = []
             self.primal_objective_curve_ = []
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
         else:
             # warm start
             objective = self._solve_n_slack_qp(constraints, n_samples)
@@ -275,7 +279,7 @@ class NSlackSSVM(BaseSSVM):
             # we have to update at least once after going through the dataset
             for iteration in xrange(self.max_iter):
                 # main loop
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
                 if self.verbose > 2:
@@ -330,7 +334,7 @@ class NSlackSSVM(BaseSSVM):
                                                            n_samples)
                         new_constraints += new_constraints_batch
 
-                self.objective_curve_.append(objective)
+                self.dual_objective_curve_.append(objective)
                 self._compute_training_loss(X, Y, iteration)
 
                 primal_objective = (self.C
@@ -347,8 +351,8 @@ class NSlackSSVM(BaseSSVM):
                     print("no additional constraints")
                     stopping_criterion = True
 
-                if (iteration > 1 and self.objective_curve_[-1]
-                        - self.objective_curve_[-2] < self.tol):
+                if (iteration > 1 and self.primal_objective_curve_[-1]
+                        - self.dual_objective_curve_[-1] < self.tol):
                     print("objective converged.")
                     stopping_criterion = True
 
@@ -369,7 +373,7 @@ class NSlackSSVM(BaseSSVM):
                     print(self.w)
 
                 if self.logger is not None:
-                    self.logger(self, iteration)
+                    self.logger(self, X, Y, iteration)
         except KeyboardInterrupt:
             pass
 
@@ -379,11 +383,11 @@ class NSlackSSVM(BaseSSVM):
 
         if verbose:
             print("Computing final objective.")
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
-        self.objective_curve_.append(objective)
+        self.dual_objective_curve_.append(objective)
         if self.logger is not None:
-            self.logger(self, 'final')
+            self.logger(self, X, Y, iteration, force=True)
         return self
 
     def prune_constraints(self, constraints, a):
@@ -415,3 +419,9 @@ class NSlackSSVM(BaseSSVM):
             for j in np.where(to_remove)[0][::-1]:
                 del sample[j]
             assert(len(sample) == len(self.last_active[i]))
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

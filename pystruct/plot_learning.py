@@ -43,7 +43,10 @@ def plot_learning(ssvm, time=True):
     print(ssvm)
     if hasattr(ssvm, 'base_ssvm'):
         ssvm = ssvm.base_ssvm
-    print("Iterations: %d" % len(ssvm.objective_curve_))
+    n_iterations = max(len(getattr(ssvm, 'dual_objective_curve', [])),
+                       len(getattr(ssvm, 'primal_objective_curve', [])))
+
+    print("Iterations: %d" % n_iterations)
     print("Objective: %f" % ssvm.objective_curve_[-1])
     inference_run = None
     if hasattr(ssvm, 'cached_constraint_'):

@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from sklearn.utils import gen_even_slices
+from sklearn.utils import gen_even_slices, deprecated
 
 from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
@@ -50,11 +50,6 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
-    show_loss_every : int, default=0
-        Controlls how often the hamming loss is computed (for monitoring
-        purposes). Zero means never, otherwise it will be computed very
-        show_loss_every'th epoch.
-
     decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (decay_t0 + t)** decay_exponent``. Zero means no decay.
@@ -84,15 +79,8 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
-    ``loss_curve_`` : list of float
-        List of loss values if show_loss_every > 0.
-
-    ``objective_curve_`` : list of float
+    ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
-
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.,
                  learning_rate='auto', n_jobs=1,
@@ -104,6 +92,12 @@ class SubgradientLatentSSVM(SubgradientSSVM):
             momentum=momentum, learning_rate=learning_rate,
             break_on_no_constraints=break_on_no_constraints, logger=logger,
             decay_t0=decay_t0, averaging=averaging)
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to "
+                "primal_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.primal_objective_curve_
 
     def fit(self, X, Y, H_init=None, warm_start=False, initialize=True):
         """Learn parameters using subgradient descent.
@@ -136,21 +130,21 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(
                 0, 1, size=self.model.size_psi))
-            self.timestamps_ = [time()]
-            self.objective_curve_ = []
+            self._timestamps = [time()]
+            self.primal_objective_curve_ = []
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
             else:
                 self.learning_rate_ = self.learning_rate
         else:
             # hackety hack
-            self.timestamps_[0] = time() - self.timestamps_[-1]
+            self._timestamps[0] = time() - self._timestamps[-1]
         w = self.w.copy()
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 positive_slacks = 0
                 objective = 0.
                 #verbose = max(0, self.verbose - 3)
@@ -213,24 +207,24 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                     print("positive slacks: %d, "
                           "objective: %f" %
                           (positive_slacks, objective))
-                self.objective_curve_.append(objective)
+                self.primal_objective_curve_.append(objective)
 
                 if self.verbose > 2:
                     print(self.w)
 
                 self._compute_training_loss(X, Y, iteration)
                 if self.logger is not None:
-                    self.logger(self, iteration)
+                    self.logger(self, X, Y, iteration)
 
         except KeyboardInterrupt:
             pass
-        self.timestamps_.append(time() - self.timestamps_[0])
-        self.objective_curve_.append(self._objective(X, Y))
+        self._timestamps.append(time() - self._timestamps[0])
+        self.primal_objective_curve_.append(self._objective(X, Y))
         if self.logger is not None:
-            self.logger(self, 'final')
+            self.logger(self, X, Y, iteration, force=True)
         if self.verbose:
-            if self.objective_curve_:
-                print("final objective: %f" % self.objective_curve_[-1])
+            if self.primal_objective_curve_:
+                print("final objective: %f" % self.primal_objective_curve_[-1])
             if self.verbose and self.n_jobs == 1:
                 print("calls to inference: %d" % self.model.inference_calls)
         return self
@@ -281,3 +275,9 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
         objective = np.sum(slacks) * self.C + np.sum(self.w ** 2) / 2.
         return objective
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

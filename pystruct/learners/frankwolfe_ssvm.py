@@ -11,7 +11,7 @@
 import warnings
 from time import time
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import check_random_state, deprecated
 
 from pystruct.learners.ssvm import BaseSSVM
 from pystruct.utils import find_constraint
@@ -49,10 +49,6 @@ class FrankWolfeSSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel processes. Currently only n_jobs=1 is supported.
 
-    show_loss_every : int, default=0
-        How often the training set loss should be computed.
-        Zero corresponds to never.
-
     tol : float, default=1e-3
         Convergence tolerance on the duality gap.
 
@@ -89,17 +85,11 @@ class FrankWolfeSSVM(BaseSSVM):
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
-    ``loss_curve_`` : list of float
-        List of loss values if show_loss_every > 0.
-
-    ``objective_curve_`` : list of float
+    ``dual_objective_curve_`` : list of float
        Cutting plane objective after each pass through the dataset.
 
     ``primal_objective_curve_`` : list of float
         Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
     """
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=False,
@@ -153,6 +143,7 @@ class FrankWolfeSSVM(BaseSSVM):
         psi_gt = self.model.batch_psi(X, Y, Y)
 
         for iteration in xrange(self.max_iter):
+            self._iteration = iteration
             Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                               relaxed=True)
             dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
@@ -175,8 +166,8 @@ class FrankWolfeSSVM(BaseSSVM):
             primal_val = dual_val + dual_gap_display
 
             self.primal_objective_curve_.append(primal_val)
-            self.objective_curve_.append(dual_val)
-            self.timestamps_.append(time() - self.timestamps_[0])
+            self.dual_objective_curve_.append(dual_val)
+            self._timestamps.append(time() - self._timestamps[0])
             if self.verbose > 0:
                 print("iteration %d, dual: %f, dual_gap: %f, primal: %f, gamma: %f"
                       % (iteration, dual_val, dual_gap_display, primal_val, gamma))
@@ -186,7 +177,7 @@ class FrankWolfeSSVM(BaseSSVM):
             l = (1.0 - gamma) * l + gamma * ls
 
             if self.logger is not None:
-                self.logger(self, iteration)
+                self.logger(self, X, Y, iteration)
 
             if dual_gap < self.tol:
                 return
@@ -205,6 +196,7 @@ class FrankWolfeSSVM(BaseSSVM):
 
         rng = check_random_state(self.random_state)
         for iteration in xrange(self.max_iter):
+            self._iteration = iteration
             if self.verbose > 0:
                 print("Iteration %d" % iteration)
 
@@ -251,14 +243,14 @@ class FrankWolfeSSVM(BaseSSVM):
             if (self.check_dual_every != 0) and (iteration % self.check_dual_every == 0):
                 dual_val, dual_gap, primal_val = self._calc_dual_gap(X, Y)
                 self.primal_objective_curve_.append(primal_val)
-                self.objective_curve_.append(dual_val)
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self.dual_objective_curve_.append(dual_val)
+                self._timestamps.append(time() - self._timestamps[0])
                 if self.verbose > 0:
                     print("dual: %f, dual_gap: %f, primal: %f"
                           % (dual_val, dual_gap, primal_val))
 
             if self.logger is not None:
-                self.logger(self, iteration)
+                self.logger(self, X, Y, iteration)
 
             if dual_gap < self.tol:
                 return
@@ -284,8 +276,8 @@ class FrankWolfeSSVM(BaseSSVM):
         """
         if initialize:
             self.model.initialize(X, Y)
-        self.objective_curve_, self.primal_objective_curve_ = [], []
-        self.timestamps_ = [time()]
+        self.dual_objective_curve_, self.primal_objective_curve_ = [], []
+        self._timestamps = [time()]
         self.w = getattr(self, "w", np.zeros(self.model.size_psi))
         self.l = getattr(self, "l", 0)
         try:
@@ -297,9 +289,16 @@ class FrankWolfeSSVM(BaseSSVM):
             pass
         if self.verbose:
             print("Calculating final objective.")
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
-        self.objective_curve_.append(self.objective_curve_[-1])
+        self.dual_objective_curve_.append(self.dual_objective_curve_[-1])
         if self.logger is not None:
-            self.logger(self, 'final')
+            self.logger(self, X, Y, self._iteration, force=True)
         return self
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps
+

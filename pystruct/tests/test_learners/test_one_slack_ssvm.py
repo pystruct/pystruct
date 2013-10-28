@@ -9,7 +9,7 @@ from pystruct.models import GridCRF, GraphCRF, BinaryClf
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
                                generate_checker)
-from pystruct.utils import make_grid_edges, SaveLogger, train_test_split
+from pystruct.utils import make_grid_edges, AnalysisLogger, train_test_split
 from pystruct.inference import get_installed
 
 # we always try to get the fastest installed inference method
@@ -41,7 +41,7 @@ def test_svm_as_crf_pickling():
     _, file_name = mkstemp()
 
     pbl = GraphCRF(n_features=4, n_states=3, inference_method='unary')
-    logger = SaveLogger(file_name)
+    logger = AnalysisLogger(file_name)
     svm = OneSlackSSVM(pbl, check_constraints=True, C=1, n_jobs=1,
                        logger=logger)
     svm.fit(X_train, y_train)
@@ -70,12 +70,12 @@ def test_constraint_removal():
     assert_less(np.mean(clf.predict(X) != clf_no_removal.predict(X)), 0.02)
 
     # without removal, have as many constraints as iterations
-    assert_equal(len(clf_no_removal.objective_curve_),
+    assert_equal(len(clf_no_removal.dual_objective_curve_),
                  len(clf_no_removal.constraints_))
 
     # with removal, there are less constraints than iterations
     assert_less(len(clf.constraints_),
-                len(clf.objective_curve_))
+                len(clf.dual_objective_curve_))
 
 
 def test_binary_blocks_one_slack_graph():
@@ -186,6 +186,6 @@ def test_switch_to_ad3():
     assert_equal(ssvm_with_switch.model.inference_method, 'ad3')
     # we check that the dual is higher with ad3 inference
     # as it might use the relaxation, that is pretty much guraranteed
-    assert_greater(ssvm_with_switch.objective_curve_[-1],
-                   ssvm.objective_curve_[-1])
-    print(ssvm_with_switch.objective_curve_[-1], ssvm.objective_curve_[-1])
+    assert_greater(ssvm_with_switch.dual_objective_curve_[-1],
+                   ssvm.dual_objective_curve_[-1])
+    print(ssvm_with_switch.dual_objective_curve_[-1], ssvm.dual_objective_curve_[-1])

@@ -12,6 +12,7 @@ import cvxopt
 import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed
+from sklearn.utils import deprecated
 
 from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
@@ -60,11 +61,6 @@ class OneSlackSSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel jobs for inference. -1 means as many as cpus.
 
-    show_loss_every : int, default=0
-        Controlls how often the hamming loss is computed (for monitoring
-        purposes). Zero means never, otherwise it will be computed very
-        show_loss_every'th epoch.
-
     tol : float, default=1e-3
         Convergence tolerance. If dual objective decreases less than tol,
         learning is stopped. The default corresponds to ignoring the behavior
@@ -109,18 +105,11 @@ class OneSlackSSVM(BaseSSVM):
     old_solution : dict
         The last solution found by the qp solver.
 
-    ``loss_curve_`` : list of float
-        List of loss values if show_loss_every > 0.
-
-    ``objective_curve_`` : list of float
+    ``dual_objective_curve_`` : list of float
        Cutting plane objective after each pass through the dataset.
 
     ``primal_objective_curve_`` : list of float
         Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
-
     """
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
@@ -143,6 +132,12 @@ class OneSlackSSVM(BaseSSVM):
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
         self.switch_to = switch_to
+
+    @property
+    @deprecated("Attribute objective_curve was renamed to "
+                "dual_objective_curve to avoid confusion.")
+    def objective_curve_(self):
+        return self.dual_objective_curve_
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
@@ -309,7 +304,7 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose > 10:
                 print("Empty cache.")
             raise NoConstraint
-        gap = self.primal_objective_curve_[-1] - self.objective_curve_[-1]
+        gap = self.primal_objective_curve_[-1] - self.dual_objective_curve_[-1]
         if (self.cache_tol == 'auto' and gap < self.cache_tol_):
             # do inference if gap has become to small
             if self.verbose > 1:
@@ -404,14 +399,14 @@ class OneSlackSSVM(BaseSSVM):
         if not warm_start:
             self.w = np.zeros(self.model.size_psi)
             constraints = []
-            self.objective_curve_, self.primal_objective_curve_ = [], []
+            self.dual_objective_curve_, self.primal_objective_curve_ = [], []
             self.cached_constraint_ = []
             self.alphas = []  # dual solutions
             # append constraint given by ground truth to make our life easier
             constraints.append((np.zeros(self.model.size_psi), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
         elif warm_start == "soft":
             self.w = np.zeros(self.model.size_psi)
             constraints = []
@@ -466,7 +461,7 @@ class OneSlackSSVM(BaseSSVM):
                         else:
                             break
 
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
@@ -496,10 +491,10 @@ class OneSlackSSVM(BaseSSVM):
                           % (objective, primal_objective))
                 # we only do this here because we didn't add the gt to the
                 # constraints, which makes the dual behave a bit oddly
-                self.objective_curve_.append(objective)
+                self.dual_objective_curve_.append(objective)
                 self.constraints_ = constraints
                 if self.logger is not None:
-                    self.logger(self, iteration)
+                    self.logger(self, X, Y, iteration)
 
                 if self.verbose > 5:
                     print(self.w)
@@ -508,17 +503,23 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         primal_objective = self._objective(X, Y)
         self.primal_objective_curve_.append(primal_objective)
-        self.objective_curve_.append(objective)
+        self.dual_objective_curve_.append(objective)
         self.cached_constraint_.append(False)
 
         if self.logger is not None:
-            self.logger(self, 'final')
+            self.logger(self, X, Y, iteration, force=True)
 
         if self.verbose > 0:
             print("final primal objective: %f gap: %f"
                   % (primal_objective, primal_objective - objective))
 
         return self
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

@@ -1,4 +1,5 @@
 import numpy as np
+from tempfile import mkstemp
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true
 
@@ -6,8 +7,9 @@ from pystruct.models import LatentGridCRF, LatentDirectionalGridCRF
 from pystruct.learners import (LatentSSVM, NSlackSSVM, OneSlackSSVM,
                                SubgradientSSVM)
 
-from pystruct.datasets import generate_crosses, generate_easy
+from pystruct.datasets import generate_crosses, generate_easy, generate_blocks_multinomial
 from pystruct.inference import get_installed
+from pystruct.utils import SaveLogger
 
 inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
 
@@ -126,3 +128,21 @@ def test_switch_to_ad3():
     assert_array_equal(np.array(Y_pred), Y)
     # test that score is not always 1
     assert_true(.98 < clf.score(X_test, Y_test) < 1)
+
+
+def test_latent_crf_pickling():
+    # don't have latent variables, just checking pickling
+    _, file_name = mkstemp()
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=.3, seed=1)
+    inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
+    n_labels = 3
+    crfl = LatentGridCRF(n_labels=n_labels, n_states_per_label=1,
+                         inference_method=inference_method)
+    logger = SaveLogger(file_name)
+    clfl = LatentSSVM(OneSlackSSVM(model=crfl), logger=logger)
+    crfl.initialize(X, Y)
+    clfl.w = np.zeros(crfl.size_psi)  # this disables random init
+    clfl.fit(X, Y)
+
+    assert_equal(1, clfl.score(X, Y))
+    assert_equal(1, logger.load().score(X, Y))
