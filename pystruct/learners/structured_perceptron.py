@@ -59,9 +59,6 @@ class StructuredPerceptron(BaseSSVM):
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
 
-   ``loss_curve_`` : list of float
-        List of loss values after each pass thorugh the dataset.
-
     References
     ----------
     Michael Collins. Discriminative training methods for hidden Markov models:

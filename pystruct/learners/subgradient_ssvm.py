@@ -51,11 +51,6 @@ class SubgradientSSVM(BaseSSVM):
         performed, that is the whole dataset will be used to compute each
         subgradient.
 
-    show_loss_every : int, default=0
-        Controlls how often the hamming loss is computed (for monitoring
-        purposes). Zero means never, otherwise it will be computed very
-        show_loss_every'th epoch.
-
     decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
         ``learning_rate / (decay_t0 + t)** decay_exponent``. Zero means no decay.
@@ -87,9 +82,6 @@ class SubgradientSSVM(BaseSSVM):
     ----------
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
-
-    ``loss_curve_`` : list of float
-        List of loss values if show_loss_every > 0.
 
     ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.

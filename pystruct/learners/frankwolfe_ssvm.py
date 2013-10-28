@@ -49,10 +49,6 @@ class FrankWolfeSSVM(BaseSSVM):
     n_jobs : int, default=1
         Number of parallel processes. Currently only n_jobs=1 is supported.
 
-    show_loss_every : int, default=0
-        How often the training set loss should be computed.
-        Zero corresponds to never.
-
     tol : float, default=1e-3
         Convergence tolerance on the duality gap.
 
@@ -88,9 +84,6 @@ class FrankWolfeSSVM(BaseSSVM):
     ----------
     w : nd-array, shape=(model.size_psi,)
         The learned weights of the SVM.
-
-    ``loss_curve_`` : list of float
-        List of loss values if show_loss_every > 0.
 
     ``dual_objective_curve_`` : list of float
        Cutting plane objective after each pass through the dataset.
