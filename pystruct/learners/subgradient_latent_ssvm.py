@@ -164,7 +164,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         delta_psi = (self.model.psi(x, h)
                                      - self.model.psi(x, h_hat))
                         slack = (-np.dot(delta_psi, w)
-                                 + self.model.loss(h, h_hat))
+                                 + self.model.loss(x, h, h_hat))
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
@@ -263,11 +263,11 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         """
         if hasattr(self.model, 'batch_loss'):
             losses = self.model.batch_loss(
-                Y, self.model.batch_inference(X, self.w))
+                X, Y, self.model.batch_inference(X, self.w))
         else:
-            losses = [self.model.loss(y, self.model.inference(y, self.w))
-                      for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.model.max_loss(y) for y in Y]
+            losses = [self.model.loss(x, y, self.model.inference(y, self.w))
+                      for x, y, y_pred in zip(X, Y, self.predict(X))]
+        max_losses = [self.model.max_loss(x, y) for x, y in zip(X, Y)]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _objective(self, X, Y):

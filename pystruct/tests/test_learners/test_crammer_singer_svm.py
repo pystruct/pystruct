@@ -31,7 +31,7 @@ def test_crammer_singer_model():
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(x, Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)
@@ -42,8 +42,8 @@ def test_crammer_singer_model():
     Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
     assert_array_equal(Y_batch, Y_)
 
-    loss_batch = pbl.batch_loss(Y, Y_)
-    loss = [pbl.loss(y, y_) for y, y_ in zip(Y, Y_)]
+    loss_batch = pbl.batch_loss(X, Y, Y_)
+    loss = [pbl.loss(x, y, y_) for x, y, y_ in zip(X, Y, Y_)]
     assert_array_equal(loss_batch, loss)
 
 
@@ -67,7 +67,7 @@ def test_crammer_singer_model_class_weight():
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(x, Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)
@@ -78,8 +78,8 @@ def test_crammer_singer_model_class_weight():
     Y_ = [pbl.loss_augmented_inference(x, y, w) for x, y in zip(X, Y)]
     assert_array_equal(Y_batch, Y_)
 
-    loss_batch = pbl.batch_loss(Y, Y_)
-    loss = [pbl.loss(y, y_) for y, y_ in zip(Y, Y_)]
+    loss_batch = pbl.batch_loss(X, Y, Y_)
+    loss = [pbl.loss(x, y, y_) for y, y_ in zip(Y, Y_)]
     assert_array_equal(loss_batch, loss)
 
 

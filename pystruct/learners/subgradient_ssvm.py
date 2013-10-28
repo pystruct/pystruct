@@ -290,7 +290,7 @@ class SubgradientSSVM(BaseSSVM):
                     X_b, Y_b, w, relaxed=True)
                 delta_psi = (self.model.batch_psi(X_b, Y_b)
                              - self.model.batch_psi(X_b, Y_hat))
-                loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
+                loss = np.sum(self.model.batch_loss(X_b, Y_b, Y_hat))
 
                 violation = np.maximum(0, loss - np.dot(w, delta_psi))
                 objective += violation

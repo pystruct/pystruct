@@ -130,7 +130,7 @@ class FrankWolfeSSVM(BaseSSVM):
         Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                           relaxed=True)
         dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
-        ls = np.sum(self.model.batch_loss(Y, Y_hat))
+        ls = np.sum(self.model.batch_loss(X, Y, Y_hat))
         ws = dpsi * self.C
         l_rescaled = self.l * n_samples * self.C
 
@@ -156,7 +156,7 @@ class FrankWolfeSSVM(BaseSSVM):
             Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                               relaxed=True)
             dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
-            ls = np.mean(self.model.batch_loss(Y, Y_hat))
+            ls = np.mean(self.model.batch_loss(X, Y, Y_hat))
             ws = dpsi * self.C
 
             w_diff = self.w - ws

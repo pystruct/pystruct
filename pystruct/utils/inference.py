@@ -76,9 +76,9 @@ def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
 
     if isinstance(y_hat, tuple):
         # continuous label
-        loss = model.continuous_loss(y, y_hat[0])
+        loss = model.continuous_loss(x, y, y_hat[0])
     else:
-        loss = model.loss(y, y_hat)
+        loss = model.loss(x, y, y_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return y_hat, delta_psi, slack, loss
 
@@ -95,7 +95,7 @@ def find_constraint_latent(model, x, y, w, relaxed=True):
     psi = model.psi
     delta_psi = psi(x, h) - psi(x, h_hat)
 
-    loss = model.loss(y, h_hat)
+    loss = model.loss(x, y, h_hat)
     slack = max(loss - np.dot(w, delta_psi), 0)
     return h_hat, delta_psi, slack, loss
 
@@ -134,7 +134,7 @@ def exhaustive_loss_augmented_inference(model, x, y, w):
         y_hat = np.array(y_hat).reshape(y.shape)
         #print("trying %s" % repr(y_hat))
         psi = model.psi(x, y_hat)
-        energy = -model.loss(y, y_hat) - np.dot(w, psi)
+        energy = -model.loss(x, y, y_hat) - np.dot(w, psi)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat

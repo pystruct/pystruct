@@ -301,7 +301,7 @@ class OneSlackSSVM(BaseSSVM):
             # the idea is that if we cache, inference is way more expensive
             # and this doesn't matter much.
             sample.append((self.model.psi(x, y_hat),
-                           self.model.loss(y, y_hat), y_hat))
+                           self.model.loss(x, y, y_hat), y_hat))
 
     def _constraint_from_cache(self, X, Y, psi_gt, constraints):
         if (not getattr(self, 'inference_cache_', False) or
@@ -358,7 +358,7 @@ class OneSlackSSVM(BaseSSVM):
         else:
             dpsi = (psi_gt - self.model.batch_psi(X, Y_hat)) / len(X)
 
-        loss_mean = np.mean(self.model.batch_loss(Y, Y_hat))
+        loss_mean = np.mean(self.model.batch_loss(X, Y, Y_hat))
 
         violation = loss_mean - np.dot(self.w, dpsi)
         if check and self._check_bad_constraint(

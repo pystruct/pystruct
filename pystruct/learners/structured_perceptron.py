@@ -111,7 +111,7 @@ class StructuredPerceptron(BaseSSVM):
             w_bar = np.zeros(size_psi)
             n_obs = 0
         self.loss_curve_ = []
-        max_losses = np.sum([self.model.max_loss(y) for y in Y])
+        max_losses = np.sum([self.model.max_loss(x, y) for x, y in zip(X, Y)])
         try:
             for iteration in xrange(self.max_iter):
                 if self.average == -1:
@@ -129,7 +129,7 @@ class StructuredPerceptron(BaseSSVM):
                         delayed(inference)(self.model, x, self.w) for x, y in
                         zip(X, Y)))
                     for x, y, y_hat in zip(X, Y, Y_hat):
-                        current_loss = self.model.loss(y, y_hat)
+                        current_loss = self.model.loss(x, y, y_hat)
                         losses += current_loss
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -
@@ -142,7 +142,7 @@ class StructuredPerceptron(BaseSSVM):
                     # standard online update
                     for x, y in zip(X, Y):
                         y_hat = self.model.inference(x, self.w)
-                        current_loss = self.model.loss(y, y_hat)
+                        current_loss = self.model.loss(x, y, y_hat)
                         losses += current_loss
                         if current_loss:
                             self.w += effective_lr * (self.model.psi(x, y) -

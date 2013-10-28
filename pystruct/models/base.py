@@ -54,25 +54,25 @@ class StructuredModel(object):
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 
-    def loss(self, y, y_hat):
+    def loss(self, x, y, y_hat):
         # hamming loss:
         if isinstance(y_hat, tuple):
-            return self.continuous_loss(y, y_hat[0])
+            return self.continuous_loss(x, y, y_hat[0])
         if hasattr(self, 'class_weight'):
             return np.sum(self.class_weight[y] * (y != y_hat))
         return np.sum(y != y_hat)
 
-    def batch_loss(self, Y, Y_hat):
+    def batch_loss(self, X, Y, Y_hat):
         # default implementation of batch loss
-        return [self.loss(y, y_hat) for y, y_hat in zip(Y, Y_hat)]
+        return [self.loss(x, y, y_hat) for x, y, y_hat in zip(X, Y, Y_hat)]
 
-    def max_loss(self, y):
+    def max_loss(self, x, y):
         # maximum possible los on y for macro averages
         if hasattr(self, 'class_weight'):
             return np.sum(self.class_weight[y])
         return y.size
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y is the result of linear programming
         if y.ndim == 2:

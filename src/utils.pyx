@@ -26,3 +26,12 @@ def loss_augment_unaries(double[:,:] unary_potentials, some_int[:] y, double[:] 
            if s == y[i]:
                continue
            unary_potentials[i, s] += class_weight[y[i]]
+
+def loss_augment_unaries_weighted(double[:,:] unary_potentials, some_int[:] y, double[:] class_weight, double[:] node_weight):
+   cdef int i
+   cdef int n_states = unary_potentials.shape[1]
+   for i in range(unary_potentials.shape[0]):
+       for s in range(n_states):
+           if s == y[i]:
+               continue
+           unary_potentials[i, s] += node_weight[i] * class_weight[y[i]]

@@ -62,11 +62,11 @@ class BaseSSVM(BaseEstimator):
             Average of 1 - loss over training examples.
         """
         if hasattr(self.model, 'batch_loss'):
-            losses = self.model.batch_loss(Y, self.predict(X))
+            losses = self.model.batch_loss(X, Y, self.predict(X))
         else:
-            losses = [self.model.loss(y, y_pred)
-                      for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.model.max_loss(y) for y in Y]
+            losses = [self.model.loss(x, y, y_pred)
+                      for x, y, y_pred in zip(X, Y, self.predict(X))]
+        max_losses = [self.model.max_loss(x, y) for x, y in zip(X, Y)]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _compute_training_loss(self, X, Y, iteration):

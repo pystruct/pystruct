@@ -243,23 +243,23 @@ class LatentNodeCRF(GraphCRF):
     def label_from_latent(self, h):
         return h[h < self.n_labels]
 
-    def loss(self, h, h_hat):
+    def loss(self, x, h, h_hat):
         if isinstance(h_hat, tuple):
-            return self.continuous_loss(h, h_hat[0])
-        return GraphCRF.loss(self, self.label_from_latent(h),
+            return self.continuous_loss(x, h, h_hat[0])
+        return GraphCRF.loss(self, x, self.label_from_latent(h),
                              self.label_from_latent(h_hat))
 
-    def base_loss(self, y, y_hat):
+    def base_loss(self, x, y, y_hat):
         if isinstance(y_hat, tuple):
-            return GraphCRF.continuous_loss(self, y, y_hat)
-        return GraphCRF.loss(self, y, y_hat)
+            return GraphCRF.continuous_loss(self, x, y, y_hat)
+        return GraphCRF.loss(self, x, y, y_hat)
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming
         y_org = self.label_from_latent(y)
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
-        return GraphCRF.continuous_loss(self, y_org, y_hat_org)
+        return GraphCRF.continuous_loss(self, x, y_org, y_hat_org)
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -317,7 +317,7 @@ class LatentNodeCRF(GraphCRF):
                            n_hidden_states=self.n_hidden_states,
                            latent_node_features=self.latent_node_features)
 
-    def max_loss(self, h):
+    def max_loss(self, x, h):
         # maximum possible los on y for macro averages
         y = self.label_from_latent(h)
         if hasattr(self, 'class_weight'):
@@ -543,23 +543,23 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
     def label_from_latent(self, h):
         return h[h < self.n_labels]
 
-    def loss(self, h, h_hat):
+    def loss(self, x, h, h_hat):
         if isinstance(h_hat, tuple):
-            return self.continuous_loss(h, h_hat[0])
-        return GraphCRF.loss(self, self.label_from_latent(h),
+            return self.continuous_loss(x, h, h_hat[0])
+        return GraphCRF.loss(self, x, self.label_from_latent(h),
                              self.label_from_latent(h_hat))
 
-    def base_loss(self, y, y_hat):
+    def base_loss(self, x, y, y_hat):
         if isinstance(y_hat, tuple):
-            return GraphCRF.continuous_loss(self, y, y_hat)
-        return GraphCRF.loss(self, y, y_hat)
+            return GraphCRF.continuous_loss(self, x, y, y_hat)
+        return GraphCRF.loss(self, x, y, y_hat)
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming
         y_org = self.label_from_latent(y)
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
-        return GraphCRF.continuous_loss(self, y_org, y_hat_org)
+        return GraphCRF.continuous_loss(self, x, y_org, y_hat_org)
 
     def psi(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -629,7 +629,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
                            n_hidden_states=self.n_hidden_states,
                            latent_node_features=self.latent_node_features)
 
-    def max_loss(self, h):
+    def max_loss(self, x, h):
         # maximum possible los on y for macro averages
         y = self.label_from_latent(h)
         if hasattr(self, 'class_weight'):
