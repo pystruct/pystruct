@@ -54,25 +54,31 @@ class StructuredModel(object):
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 
-    def loss(self, x, y, y_hat):
+    def loss(self, x, y, y_hat, node_weights=None):
         # hamming loss:
         if isinstance(y_hat, tuple):
-            return self.continuous_loss(x, y, y_hat[0])
+            return self.continuous_loss(x, y, y_hat[0], node_weights)
+        if node_weights == None:
+            node_weights = 1
         if hasattr(self, 'class_weight'):
-            return np.sum(self.class_weight[y] * (y != y_hat))
-        return np.sum(y != y_hat)
+            return np.sum(self.class_weight[y] * (y != y_hat) * node_weights)
+        return np.sum((y != y_hat) * node_weights)
 
     def batch_loss(self, X, Y, Y_hat):
         # default implementation of batch loss
         return [self.loss(x, y, y_hat) for x, y, y_hat in zip(X, Y, Y_hat)]
 
-    def max_loss(self, x, y):
+    def max_loss(self, x, y, node_weights=None):
         # maximum possible los on y for macro averages
         if hasattr(self, 'class_weight'):
-            return np.sum(self.class_weight[y])
-        return y.size
+            if node_weights == None:
+                node_weights = 1
+            return np.sum(self.class_weight[y] * node_weights)
+        if node_weights == None:
+            return y.size
+        return sum(node_weights)
 
-    def continuous_loss(self, x, y, y_hat):
+    def continuous_loss(self, x, y, y_hat, node_weights=None):
         # continuous version of the loss
         # y is the result of linear programming
         if y.ndim == 2:
@@ -81,9 +87,11 @@ class StructuredModel(object):
 
         # all entries minus correct ones
         result = 1 - y_hat[gx, y]
+        if node_weights == None:
+            node_weights = 1
         if hasattr(self, 'class_weight'):
-            return np.sum(self.class_weight[y] * result)
-        return np.sum(result)
+            return np.sum(self.class_weight[y] * result * node_weights)
+        return np.sum(result * node_weights)
 
     def loss_augmented_inference(self, x, y, w, relaxed=None):
         print("FALLBACK no loss augmented inference found")
