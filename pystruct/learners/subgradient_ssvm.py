@@ -93,9 +93,6 @@ class SubgradientSSVM(BaseSSVM):
 
     ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.0,
                  learning_rate='auto', n_jobs=1,
@@ -178,13 +175,13 @@ class SubgradientSSVM(BaseSSVM):
         if not warm_start:
             self.w = getattr(self, "w", np.zeros(self.model.size_psi))
             self.primal_objective_curve_ = []
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
             else:
                 self.learning_rate_ = self.learning_rate
         else:
-            self.timestamps_ = (np.array(self.timestamps_) - time()).tolist()
+            self._timestamps = (np.array(self._timestamps) - time()).tolist()
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
@@ -208,7 +205,7 @@ class SubgradientSSVM(BaseSSVM):
                     print("positive slacks: %d,"
                           "objective: %f" %
                           (positive_slacks, objective))
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 self.primal_objective_curve_.append(objective)
 
                 if self.verbose > 2:
@@ -224,7 +221,7 @@ class SubgradientSSVM(BaseSSVM):
         if self.verbose:
             print("Computing final objective")
 
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
         if self.logger is not None:
             self.logger(self, X, Y, iteration, force=True)
@@ -304,3 +301,9 @@ class SubgradientSSVM(BaseSSVM):
                 positive_slacks += self.batch_size
                 self._solve_subgradient(delta_psi / len(X_b), n_samples, w)
         return objective, positive_slacks, w
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

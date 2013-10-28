@@ -89,10 +89,6 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
     ``primal_objective_curve_`` : list of float
        Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
-
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.,
                  learning_rate='auto', n_jobs=1,
@@ -142,7 +138,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(
                 0, 1, size=self.model.size_psi))
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
             self.primal_objective_curve_ = []
             if self.learning_rate == "auto":
                 self.learning_rate_ = self.C * len(X)
@@ -150,13 +146,13 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                 self.learning_rate_ = self.learning_rate
         else:
             # hackety hack
-            self.timestamps_[0] = time() - self.timestamps_[-1]
+            self._timestamps[0] = time() - self._timestamps[-1]
         w = self.w.copy()
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
             for iteration in xrange(self.max_iter):
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 positive_slacks = 0
                 objective = 0.
                 #verbose = max(0, self.verbose - 3)
@@ -230,7 +226,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
         except KeyboardInterrupt:
             pass
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
         if self.logger is not None:
             self.logger(self, X, Y, iteration, force=True)
@@ -287,3 +283,9 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
         objective = np.sum(slacks) * self.C + np.sum(self.w ** 2) / 2.
         return objective
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

@@ -118,10 +118,6 @@ class OneSlackSSVM(BaseSSVM):
 
     ``primal_objective_curve_`` : list of float
         Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
-
     """
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
@@ -418,7 +414,7 @@ class OneSlackSSVM(BaseSSVM):
             constraints.append((np.zeros(self.model.size_psi), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
         elif warm_start == "soft":
             self.w = np.zeros(self.model.size_psi)
             constraints = []
@@ -473,7 +469,7 @@ class OneSlackSSVM(BaseSSVM):
                         else:
                             break
 
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 self._compute_training_loss(X, Y, iteration)
                 constraints.append((dpsi, loss_mean))
 
@@ -515,7 +511,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose and self.n_jobs == 1:
             print("calls to inference: %d" % self.model.inference_calls)
         # compute final objective:
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         primal_objective = self._objective(X, Y)
         self.primal_objective_curve_.append(primal_objective)
         self.dual_objective_curve_.append(objective)
@@ -529,3 +525,9 @@ class OneSlackSSVM(BaseSSVM):
                   % (primal_objective, primal_objective - objective))
 
         return self
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps

@@ -105,9 +105,6 @@ class NSlackSSVM(BaseSSVM):
 
     ``primal_objective_curve_`` : list of float
         Primal objective after each pass through the dataset.
-
-    ``timestamps_`` : list of int
-       Total training time stored before each iteration.
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,
@@ -273,7 +270,7 @@ class NSlackSSVM(BaseSSVM):
             self.last_active = [[] for i in xrange(n_samples)]
             self.dual_objective_curve_ = []
             self.primal_objective_curve_ = []
-            self.timestamps_ = [time()]
+            self._timestamps = [time()]
         else:
             # warm start
             objective = self._solve_n_slack_qp(constraints, n_samples)
@@ -282,7 +279,7 @@ class NSlackSSVM(BaseSSVM):
             # we have to update at least once after going through the dataset
             for iteration in xrange(self.max_iter):
                 # main loop
-                self.timestamps_.append(time() - self.timestamps_[0])
+                self._timestamps.append(time() - self._timestamps[0])
                 if self.verbose > 0:
                     print("iteration %d" % iteration)
                 if self.verbose > 2:
@@ -386,7 +383,7 @@ class NSlackSSVM(BaseSSVM):
 
         if verbose:
             print("Computing final objective.")
-        self.timestamps_.append(time() - self.timestamps_[0])
+        self._timestamps.append(time() - self._timestamps[0])
         self.primal_objective_curve_.append(self._objective(X, Y))
         self.dual_objective_curve_.append(objective)
         if self.logger is not None:
@@ -422,3 +419,9 @@ class NSlackSSVM(BaseSSVM):
             for j in np.where(to_remove)[0][::-1]:
                 del sample[j]
             assert(len(sample) == len(self.last_active[i]))
+
+    @property
+    @deprecated("Attribute timestamps_ is deprecated and will be removed. Use a"
+                " logging object instead.")
+    def timestamps_(self):
+        return self._timestamps
