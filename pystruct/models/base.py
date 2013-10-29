@@ -57,7 +57,10 @@ class StructuredModel(object):
     def loss(self, x, y, y_hat, node_weights=None):
         # hamming loss:
         if isinstance(y_hat, tuple):
-            return self.continuous_loss(x, y, y_hat[0], node_weights)
+            if node_weights == None:
+                return self.continuous_loss(x, y, y_hat[0])
+            else:
+                return self.continuous_loss(x, y, y_hat[0], node_weights)
         if node_weights == None:
             node_weights = 1
         if hasattr(self, 'class_weight'):
