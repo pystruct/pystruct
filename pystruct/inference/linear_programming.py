@@ -21,8 +21,8 @@ def lp_general_graph(unaries, edges, edge_weights):
     n_variables = n_nodes * n_states + n_edges * n_states ** 2
 
     # constraints: one per node,
-    # and n_nodes * n_states for pairwise
-    n_constraints = n_nodes + 2 * n_edges * n_states
+    # and n_nodes * n_states for pairwise minus one redundant per edge
+    n_constraints = n_nodes + n_edges * (2 * n_states - 1)
 
     # offset to get to the edge variables in columns
     edges_offset = n_nodes * n_states
@@ -36,10 +36,10 @@ def lp_general_graph(unaries, edges, edge_weights):
             I.append(i)
             J.append(i * n_states + j)
             #constraints[i, i * n_states + j] = 1
-
+    # we row_idx tracks constraints = rows in constraint matrix
+    row_idx = n_nodes
     # edge marginalization constraint
     for i in xrange(2 * n_edges * n_states):
-        row_idx = i + n_nodes
         #print("i: %d" % i)
         edge = i // (2 * n_states)
         #print("edge: %d" % edge)
@@ -47,6 +47,9 @@ def lp_general_graph(unaries, edges, edge_weights):
         #print("state: %d" % state)
         vertex_in_edge = i % (2 * n_states) // n_states
         vertex = edges[edge][vertex_in_edge]
+        if vertex_in_edge == 1 and state == n_states - 1:
+            # the last summation constraint is redundant.
+            continue
         #print("vertex: %d" % vertex)
         # for one vertex iterate over all states of the other vertex
         #[row_idx, int(vertex) * n_states + state] = -1
@@ -68,6 +71,7 @@ def lp_general_graph(unaries, edges, edge_weights):
                 I.append(row_idx)
                 J.append(edge_var_index + j * n_states + state)
                 #[row_idx, edge_var_index + j * n_states + state] = 1
+        row_idx += 1
 
     coef = np.ravel(unaries)
     # pairwise:
@@ -80,14 +84,18 @@ def lp_general_graph(unaries, edges, edge_weights):
     h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
     # unary and pairwise summation constratints
     A = cvxopt.spmatrix(data, I, J)
-    b_ = np.zeros(n_constraints)  # zeros for pairwise summation constraints
-    b_[:n_nodes] = 1    # ones for unary cummation constraints
+    print("expected constraints: %d" % n_constraints)
+    print("got constraints: %d" % A.size[0])
+    assert(n_constraints == A.size[0])
+    b_ = np.zeros(A.size[0])  # zeros for pairwise summation constraints
+    b_[:n_nodes] = 1    # ones for unary summation constraints
     b = cvxopt.matrix(b_)
 
-    # silence glpk
-    cvxopt.solvers.options['LPX_K_MSGLEV'] = False
-
-    result = cvxopt.solvers.lp(c, G, h, A, b, solver='glpk')
+    # don't be verbose.
+    show_progress_backup = cvxopt.solvers.options.get('show_progress', False)
+    cvxopt.solvers.options['show_progress'] = False
+    result = cvxopt.solvers.lp(c, G, h, A, b)
+    cvxopt.solvers.options['show_progress'] = show_progress_backup
 
     x = np.array(result['x'])
     unary_variables = x[:n_nodes * n_states].reshape(n_nodes, n_states)
