@@ -8,17 +8,20 @@ def test_chain():
     # test LP, AD3, AD3-BB and JT on a chain.
     # they should all be exact
     rnd = np.random.RandomState(0)
-    algorithms = get_installed([('ad3', {'branch_and_bound':False}),
-                                ('ad3', {'branch_and_bound':True}),
-                                ('ogm', {'alg':'dyn'}),
-                                ('ogm', {'alg':'dd'}),
-                                ('ogm', {'alg':'trw'}),
-                                ('dai', {'alg':'jt'})])
+    algorithms = get_installed([('ad3', {'branch_and_bound': False}),
+                                ('ad3', {'branch_and_bound': True}),
+                                ('ogm', {'alg': 'dyn'}),
+                                ('ogm', {'alg': 'dd'}),
+                                ('ogm', {'alg': 'trw'}),
+                                ('dai', {'alg': 'jt'})])
+    n_states = 3
+    n_nodes = 10
+
     for i in xrange(10):
-        forward = np.c_[np.arange(9), np.arange(1, 10)]
-        backward = np.c_[np.arange(1, 10), np.arange(9)]
-        unary_potentials = rnd.normal(size=(10, 3))
-        pairwise_potentials = rnd.normal(size=(3, 3))
+        forward = np.c_[np.arange(n_nodes - 1), np.arange(1, n_nodes)]
+        backward = np.c_[np.arange(1, n_nodes), np.arange(n_nodes - 1)]
+        unary_potentials = rnd.normal(size=(n_nodes, n_states))
+        pairwise_potentials = rnd.normal(size=(n_states, n_states))
         # test that reversing edges is same as transposing pairwise potentials
         y_forward = inference_dispatch(unary_potentials, pairwise_potentials,
                                        forward, 'lp')
