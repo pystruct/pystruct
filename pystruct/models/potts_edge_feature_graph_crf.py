@@ -1,6 +1,7 @@
 import numpy as np
 
 from .edge_feature_graph_crf import EdgeFeatureGraphCRF
+from .utils import loss_augment_unaries
 from ..inference import inference_dispatch
 
 class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
@@ -44,7 +45,10 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
 
     """
     def __init__(self, n_states=None, n_features=None, n_edge_features=None,
-                 inference_method=None, class_weight=None):
+                 inference_method=None, class_weight=None,
+                 markers=None):
+
+        self.markers = markers
 
         EdgeFeatureGraphCRF.__init__(self, n_states, 
                                      n_features, 
@@ -56,7 +60,7 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
         if not None in [self.n_states, self.n_features, self.n_edge_features]:
             self.size_psi = (self.n_states * self.n_features
                              + self.n_edge_features)
-
+    
 
     def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
@@ -143,14 +147,14 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
 
-    def loss(self, y, y_hat, x):
-        edges = self._get_edges(x)
-        ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
-        predicted = y_hat[edges[:, 0]] != y_hat[edges[:, 1]]
-        difference = (ground_truth != predicted).astype(np.int)
-        difference[ground_truth] *= 20
-        print 'loss', sum(difference)
-        return sum(difference)
+    # def loss(self, y, y_hat, x):
+    #     edges = self._get_edges(x)
+    #     ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
+    #     predicted = y_hat[edges[:, 0]] != y_hat[edges[:, 1]]
+    #     difference = (ground_truth != predicted).astype(np.int)
+    #     difference[ground_truth] *= 100
+    #     print 'loss', sum(difference)
+    #     return sum(difference)
 
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
@@ -204,17 +208,12 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
+        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
 
-        ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
-
-        for i in range(edges.shape[0]) :
-            if ground_truth[i] :
-                for j in xrange(self.n_states) :
-                    pairwise_potentials[i, j, j] += 20
-            else :
-                pairwise_potentials[i, :, :] += 1
-                for j in xrange(self.n_states) :
-                    pairwise_potentials[i, j, j] -= 1
+        for i, label in self.markers :
+            unary_potentials[i,:label] += 0.05
+            unary_potentials[i,label+1:] += 0.05
+            
 
 
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,

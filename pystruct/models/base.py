@@ -54,7 +54,7 @@ class StructuredModel(object):
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 
-    def loss(self, y, y_hat):
+    def loss(self, y, y_hat, x=None):
         # hamming loss:
         if isinstance(y_hat, tuple):
             return self.continuous_loss(y, y_hat[0])
