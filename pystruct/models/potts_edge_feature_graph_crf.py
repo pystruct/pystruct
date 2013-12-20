@@ -209,7 +209,6 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
         loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)           
-
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
