@@ -129,6 +129,34 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
             unary_marginals = unary_marginals.reshape(n_nodes, self.n_states)
+            
+            mask = np.ones((self.n_states, self.n_states)) - np.eye(self.n_states)
+            mask = mask.ravel()
+            
+            pw = np.sum(pw * mask, axis=1) 
+
+            print "shapes!"
+            print pw.shape
+            print edge_features.shape
+
+            pw = np.dot(edge_features.T, pw)
+            
+
+            print pw
+
+            print pw.shape
+            
+
+        # for i in self.symmetric_edge_features:
+        #     pw_ = pw[i].reshape(self.n_states, self.n_states)
+        #     pw[i] = (pw_ + pw_.T).ravel() / 2.
+
+        # for i in self.antisymmetric_edge_features:
+        #     pw_ = pw[i].reshape(self.n_states, self.n_states)
+        #     pw[i] = (pw_ - pw_.T).ravel() / 2.
+        #     print pw
+        #     print pw.shape
+        #     print edge_features.shape
 
         else:
             y = y.reshape(n_nodes)
@@ -143,6 +171,7 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
             pw = np.sum(edge_features[class_pair_ind], axis=0)
 
         unaries_acc = np.dot(unary_marginals.T, features)
+        print unaries_acc
 
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
@@ -200,7 +229,8 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
             containing the relaxed inference result is returned.
             unary marginals is an array of shape (n_nodes, n_states),
             pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
+            shape (n_edges, n_states x n_states) of accumulated 
+            pairwise marginals.
 
         """
         self.inference_calls += 1
