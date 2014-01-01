@@ -135,28 +135,8 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
             
             pw = np.sum(pw * mask, axis=1) 
 
-            print "shapes!"
-            print pw.shape
-            print edge_features.shape
-
             pw = np.dot(edge_features.T, pw)
             
-
-            print pw
-
-            print pw.shape
-            
-
-        # for i in self.symmetric_edge_features:
-        #     pw_ = pw[i].reshape(self.n_states, self.n_states)
-        #     pw[i] = (pw_ + pw_.T).ravel() / 2.
-
-        # for i in self.antisymmetric_edge_features:
-        #     pw_ = pw[i].reshape(self.n_states, self.n_states)
-        #     pw[i] = (pw_ - pw_.T).ravel() / 2.
-        #     print pw
-        #     print pw.shape
-        #     print edge_features.shape
 
         else:
             y = y.reshape(n_nodes)
@@ -171,20 +151,9 @@ class PottsEdgeFeatureGraphCRF(EdgeFeatureGraphCRF):
             pw = np.sum(edge_features[class_pair_ind], axis=0)
 
         unaries_acc = np.dot(unary_marginals.T, features)
-        print unaries_acc
 
         psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
         return psi_vector
-
-    # def loss(self, y, y_hat, x):
-    #     edges = self._get_edges(x)
-    #     ground_truth = y[edges[:, 0]] != y[edges[:, 1]]
-    #     predicted = y_hat[edges[:, 0]] != y_hat[edges[:, 1]]
-    #     difference = (ground_truth != predicted).astype(np.int)
-    #     difference[ground_truth] *= 100
-    #     print 'loss', sum(difference)
-    #     return sum(difference)
-
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
