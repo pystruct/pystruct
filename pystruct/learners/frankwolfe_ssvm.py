@@ -22,9 +22,11 @@ class FrankWolfeSSVM(BaseSSVM):
 
     This implementation is somewhat experimental. Use with care.
 
-    This implementation follows the paper:
-        Lacoste-Julien, Jaggi, Schmidt, Pletscher JMLR 2013
-        Block-Coordinage Frank-Wolfe Optimization for Structural SVMs
+    References
+    ----------
+    * Lacoste-Julien, Jaggi, Schmidt, Pletscher:
+        Block-Coordinage Frank-Wolfe Optimization for Structural SVMs,xi
+        JMLR 2013
 
     With batch_mode=False, this implements the online (block-coordinate)
     version of the algorithm (BCFW)

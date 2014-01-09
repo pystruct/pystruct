@@ -108,6 +108,15 @@ class NSlackSSVM(BaseSSVM):
 
     ``timestamps_`` : list of int
        Total training time stored before each iteration.
+
+    References
+    ----------
+    * Tsochantaridis, Ioannis and Joachims, Thorsten and Hofmann, Thomas and
+        Altun, Yasemin and Singer, Yoram: Large margin methods for structured
+        and interdependent output variables, JMLR 2006
+
+    * Joachims, Thorsten and Finley, Thomas and Yu, Chun-Nam John:
+        Cutting-plane training of structural SVMs, JMLR 2009
     """
 
     def __init__(self, model, max_iter=100, C=1.0, check_constraints=True,

@@ -58,7 +58,8 @@ class SubgradientSSVM(BaseSSVM):
 
     decay_exponent : float, default=1
         Exponent for decaying learning rate. Effective learning rate is
-        ``learning_rate / (decay_t0 + t)** decay_exponent``. Zero means no decay.
+        ``learning_rate / (decay_t0 + t)** decay_exponent``. Zero means no
+        decay.
 
     decay_t0 : float, default=10
         Offset for decaying learning rate. Effective learning rate is
@@ -70,7 +71,8 @@ class SubgradientSSVM(BaseSSVM):
     logger : logger object.
 
     averaging : string, default=None
-        Whether and how to average weights. Possible options are 'linear', 'squared' and None.
+        Whether and how to average weights. Possible options are 'linear',
+        'squared' and None.
         The string reflects the weighting of the averaging:
 
             - ``linear: w_avg ~ w_1 + 2 * w_2 + ... + t * w_t``
@@ -96,6 +98,15 @@ class SubgradientSSVM(BaseSSVM):
 
     ``timestamps_`` : list of int
        Total training time stored before each iteration.
+
+    References
+    ----------
+    * Nathan Ratliff, J. Andrew Bagnell and Martin Zinkevich:
+        (Online) Subgradient Methods for Structured Prediction, AISTATS 2007
+
+    * Shalev-Shwartz, Shai and Singer, Yoram and Srebro, Nathan and Cotter,
+        Andrew: Pegasos: Primal estimated sub-gradient solver for svm,
+        Mathematical Programming 2011
     """
     def __init__(self, model, max_iter=100, C=1.0, verbose=0, momentum=0.0,
                  learning_rate='auto', n_jobs=1,

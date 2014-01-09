@@ -49,12 +49,12 @@ class OneSlackSSVM(BaseSSVM):
     verbose : int
         Verbosity.
 
-    negativity_constraint: list of ints
+    negativity_constraint : list of ints
         Indices of parmeters that are constraint to be negative.
         This is useful for learning submodular CRFs (inference is formulated
         as maximization in SSVMs, flipping some signs).
 
-    break_on_bad: bool default=False
+    break_on_bad : bool default=False
         Whether to break (start debug mode) when inference was approximate.
 
     n_jobs : int, default=1
@@ -120,6 +120,11 @@ class OneSlackSSVM(BaseSSVM):
 
     ``timestamps_`` : list of int
        Total training time stored before each iteration.
+
+    References
+    ----------
+    * Joachims, Thorsten and Finley, Thomas and Yu, Chun-Nam John:
+        Cutting-plane training of structural SVMs, JMLR 2009
 
     """
 
@@ -313,7 +318,8 @@ class OneSlackSSVM(BaseSSVM):
         if (self.cache_tol == 'auto' and gap < self.cache_tol_):
             # do inference if gap has become to small
             if self.verbose > 1:
-                print("Last gap too small (%f < %f), not loading constraint from cache."
+                print("Last gap too small (%f < %f), not loading constraint"
+                      " from cache."
                       % (gap, self.cache_tol_))
             raise NoConstraint
 
