@@ -21,7 +21,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
     edge_features)`` where edges is an array of shape (n_edges, 2),
     representing the graph.
 
-    Labels ``y`` are given as array of shape (n_features)
+    Labels ``y`` are given as array of shape (n_nodes)
 
     Parameters
     ----------
