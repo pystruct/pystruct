@@ -42,11 +42,11 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
         res = LatentGraphCRF.latent(self, x, y.ravel(), w)
         return res.reshape(y.shape)
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming
         return LatentGraphCRF.continuous_loss(
-            self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
+            self, x, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
 
 
 class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
@@ -65,6 +65,7 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
         self.symmetric_edge_features = []
         self.antisymmetric_edge_features = []
         self.n_edge_features = 2 if neighborhood == 4 else 4
+        self.weighted_loss = False
         LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
 

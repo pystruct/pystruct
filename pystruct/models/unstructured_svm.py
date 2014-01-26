@@ -98,7 +98,7 @@ class BinaryClf(StructuredModel):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
-        np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        np.dot(psi(x, y_hat), w) + loss(x, y, y_hat)
         which is just
         sign(np.dot(x, w) + b - y)
 
@@ -125,7 +125,7 @@ class BinaryClf(StructuredModel):
     def batch_loss_augmented_inference(self, X, Y, w, relaxed=None):
         return np.sign(np.dot(X, w) - Y)
 
-    def batch_loss(self, Y, Y_hat):
+    def batch_loss(self, X, Y, Y_hat):
         return Y != Y_hat
 
 
@@ -281,7 +281,7 @@ class MultiClassClf(StructuredModel):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
-        np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        np.dot(psi(x, y_hat), w) + loss(x, y, y_hat)
 
         Parameters
         ----------
@@ -325,8 +325,8 @@ class MultiClassClf(StructuredModel):
         scores = np.dot(X, w.reshape(self.n_states, -1).T)
         return np.argmax(scores, axis=1)
 
-    def batch_loss(self, Y, Y_hat):
+    def batch_loss(self, X, Y, Y_hat):
         return self.class_weight[Y] * (Y != Y_hat)
 
-    def loss(self, y, y_hat):
+    def loss(self, x, y, y_hat):
         return self.class_weight[y] * (y != y_hat)

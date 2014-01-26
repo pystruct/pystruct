@@ -70,11 +70,11 @@ class GridCRF(GraphCRF):
                                                   return_energy=return_energy)
         return self._reshape_y(y_hat, x.shape, return_energy)
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming
         return GraphCRF.continuous_loss(
-            self, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
+            self, x, y.ravel(), y_hat.reshape(-1, y_hat.shape[-1]))
 
 
 class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):

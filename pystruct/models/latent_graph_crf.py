@@ -184,22 +184,22 @@ class LatentGraphCRF(GraphCRF):
             h = np.hstack([0, np.cumsum(self.n_states_per_label)])[y]
         return h
 
-    def loss(self, h, h_hat):
+    def loss(self, x, h, h_hat):
         if isinstance(h_hat, tuple):
-            return self.continuous_loss(h, h_hat[0])
-        return GraphCRF.loss(self, self.label_from_latent(h),
+            return self.continuous_loss(x, h, h_hat[0])
+        return GraphCRF.loss(self, x, self.label_from_latent(h),
                              self.label_from_latent(h_hat))
 
-    def continuous_loss(self, y, y_hat):
+    def continuous_loss(self, x, y, y_hat):
         # continuous version of the loss
         # y_hat is the result of linear programming
         y_hat_org = np.zeros((y_hat.shape[0], self.n_labels))
         for s in xrange(self.n_states):
             y_hat_org[:, self._states_map[s]] += y_hat[:, s]
         y_org = self.label_from_latent(y)
-        return GraphCRF.continuous_loss(self, y_org, y_hat_org)
+        return GraphCRF.continuous_loss(self, x, y_org, y_hat_org)
 
-    def base_loss(self, y, y_hat):
+    def base_loss(self, x, y, y_hat):
         if isinstance(y_hat, tuple):
-            return GraphCRF.continuous_loss(self, y, y_hat)
-        return GraphCRF.loss(self, y, y_hat)
+            return GraphCRF.continuous_loss(self, x, y, y_hat)
+        return GraphCRF.loss(self, x, y, y_hat)

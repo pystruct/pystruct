@@ -72,7 +72,7 @@ def test_inference_trivial():
 
     # test loss
     h_unaries = crf.latent(x, y_unaries, w)
-    assert_equal(crf.loss(h, h_unaries), 2)
+    assert_equal(crf.loss(x, h, h_unaries), 2)
 
     # continuous inference and psi:
     h_continuous, energy_lp = crf.inference(x, w, return_energy=True,
@@ -81,13 +81,13 @@ def test_inference_trivial():
     assert_almost_equal(energy_psi, -energy_lp)
 
     # test continuous loss
-    assert_equal(crf.loss(h, h_continuous), 0)
+    assert_equal(crf.loss(x, h, h_continuous), 0)
 
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
     assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
-                        crf.loss(h_hat, y))
+                        crf.loss(x, h_hat, y))
     #print(h_hat)
     #print(h)
     #print(crf.loss(h_hat, h))
@@ -169,7 +169,7 @@ def test_inference_trivial_features():
 
     # test loss
     h_unaries = crf.latent(x, y_unaries, w)
-    assert_equal(crf.loss(h, h_unaries), 2)
+    assert_equal(crf.loss(x, h, h_unaries), 2)
 
     # continuous inference and psi:
     h_continuous, energy_lp = crf.inference(x, w, return_energy=True,
@@ -178,13 +178,13 @@ def test_inference_trivial_features():
     assert_almost_equal(energy_psi, -energy_lp)
 
     # test continuous loss
-    assert_equal(crf.loss(h, h_continuous), 0)
+    assert_equal(crf.loss(x, h, h_continuous), 0)
 
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
     assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
-                        crf.loss(h_hat, y))
+                        crf.loss(x, h_hat, y))
 
 
 def test_edge_feature_latent_node_crf_no_latent():

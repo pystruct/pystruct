@@ -48,8 +48,8 @@ def test_continuous_y():
             assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
             # test loss:
-            assert_almost_equal(crf.loss(y, const[0]),
-                                crf.continuous_loss(y, const_cont[0][0]))
+            assert_almost_equal(crf.loss(x, y, const[0]),
+                                crf.continuous_loss(x, y, const_cont[0][0]))
 
 
 def test_energy_lp():
@@ -80,7 +80,7 @@ def test_loss_augmentation():
     crf.initialize(X, Y)
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
 
-    assert_almost_equal(energy + crf.loss(y, y_hat),
+    assert_almost_equal(energy + crf.loss(x, y, y_hat),
                         -np.dot(w, crf.psi(x, y_hat)))
 
 

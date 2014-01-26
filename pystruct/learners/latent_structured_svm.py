@@ -146,9 +146,9 @@ class LatentSSVM(BaseSSVM):
         score : float
             Average of 1 - loss over training examples.
         """
-        losses = [self.model.base_loss(y, y_pred)
-                  for y, y_pred in zip(Y, self.predict(X))]
-        max_losses = [self.model.max_loss(y) for y in Y]
+        losses = [self.model.base_loss(x, y, y_pred)
+                  for x, y, y_pred in zip(X, Y, self.predict(X))]
+        max_losses = [self.model.max_loss(x, y) for y in Y]
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     @property

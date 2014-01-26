@@ -113,7 +113,7 @@ def test_blocks_crf():
     assert_array_equal(y, h_hat / 2)
 
     h = crf.latent(x, y, w)
-    assert_equal(crf.loss(h, h_hat), 0)
+    assert_equal(crf.loss(x, h, h_hat), 0)
 
 
 def test_blocks_crf_directional():
@@ -192,7 +192,7 @@ def test_loss_augmented_inference_energy_graph():
                                                      relaxed=True,
                                                      return_energy=True)
         assert_almost_equal(-energy, np.dot(w, crf.psi((x, e), h_hat))
-                            + crf.loss(y * 2, h_hat))
+                            + crf.loss(x, y * 2, h_hat))
 
 
 def test_latent_consistency_zero_pw_grid():
@@ -265,5 +265,5 @@ def test_continuous_y():
             assert_array_equal(const[0], np.argmax(const_cont[0][0], axis=-1))
 
             # test loss:
-            assert_almost_equal(crf.loss(y, const[0]),
-                                crf.continuous_loss(y, const_cont[0][0]))
+            assert_almost_equal(crf.loss(x, y, const[0]),
+                                crf.continuous_loss(x, y, const_cont[0][0]))
