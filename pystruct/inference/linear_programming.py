@@ -40,17 +40,13 @@ def lp_general_graph(unaries, edges, edge_weights):
     row_idx = n_nodes
     # edge marginalization constraint
     for i in xrange(2 * n_edges * n_states):
-        #print("i: %d" % i)
         edge = i // (2 * n_states)
-        #print("edge: %d" % edge)
         state = (i % n_states)
-        #print("state: %d" % state)
         vertex_in_edge = i % (2 * n_states) // n_states
         vertex = edges[edge][vertex_in_edge]
         if vertex_in_edge == 1 and state == n_states - 1:
             # the last summation constraint is redundant.
             continue
-        #print("vertex: %d" % vertex)
         # for one vertex iterate over all states of the other vertex
         #[row_idx, int(vertex) * n_states + state] = -1
         data.append(-1)
@@ -84,8 +80,6 @@ def lp_general_graph(unaries, edges, edge_weights):
     h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
     # unary and pairwise summation constratints
     A = cvxopt.spmatrix(data, I, J)
-    print("expected constraints: %d" % n_constraints)
-    print("got constraints: %d" % A.size[0])
     assert(n_constraints == A.size[0])
     b_ = np.zeros(A.size[0])  # zeros for pairwise summation constraints
     b_[:n_nodes] = 1    # ones for unary summation constraints
