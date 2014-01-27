@@ -234,8 +234,9 @@ def test_edge_feature_latent_node_crf_no_latent():
                                        n_edge_features=2, n_hidden_states=5)
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
-        assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states + 5))
-        assert_array_almost_equal(res[1], y_pred[1])
+        assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states + 5),
+                                  4)
+        assert_array_almost_equal(res[1], y_pred[1], 4)
         assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):

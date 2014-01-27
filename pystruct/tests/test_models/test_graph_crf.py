@@ -100,7 +100,7 @@ def test_graph_crf_energy_lp_integral():
     assert_array_almost_equal(np.max(inf_res[0], axis=-1), 1)
     y = np.argmax(inf_res[0], axis=-1)
     # energy and psi check out
-    assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x_1, g_1), y)))
+    assert_almost_equal(energy_lp, -np.dot(w, crf.psi((x_1, g_1), y)), 4)
 
 
 def test_graph_crf_energy_lp_relaxed():
