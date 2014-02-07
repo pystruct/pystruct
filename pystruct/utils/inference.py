@@ -120,10 +120,8 @@ def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
     if variant == 'n_slack':
         slacks = np.maximum(slacks, 0)
 
-    objective = np.sum(np.maximum(slacks, 0)) * C + np.sum(w ** 2) / 2.
+    objective = max(np.sum(slacks), 0) * C + np.sum(w ** 2) / 2.
     return objective
-
-
 
 
 def exhaustive_loss_augmented_inference(model, x, y, w):
