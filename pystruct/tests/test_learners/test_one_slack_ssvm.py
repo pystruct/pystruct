@@ -124,11 +124,11 @@ def test_one_slack_constraint_caching():
     assert_equal(len(clf.inference_cache_), len(X))
     # there should be 11 constraints, which are less than the 94 iterations
     # that are done
-    assert_equal(len(clf.inference_cache_[0]), 11)
+    assert_equal(len(clf.inference_cache_[0]), 18)
     # check that we didn't change the behavior of how we construct the cache
     constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
-    assert_equal(np.max(constraints_per_sample), 19)
-    assert_equal(np.min(constraints_per_sample), 11)
+    assert_equal(np.max(constraints_per_sample), 18)
+    assert_equal(np.min(constraints_per_sample), 18)
 
 
 def test_one_slack_attractive_potentials():

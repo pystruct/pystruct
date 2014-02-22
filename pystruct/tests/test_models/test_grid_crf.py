@@ -40,8 +40,8 @@ def test_continuous_y():
         const_cont = find_constraint(crf, x, y, w, relaxed=True)
 
         # dpsi and loss are equal:
-        assert_array_almost_equal(const[1], const_cont[1])
-        assert_almost_equal(const[2], const_cont[2])
+        assert_array_almost_equal(const[1], const_cont[1], 4)
+        assert_almost_equal(const[2], const_cont[2], 4)
 
         # returned y_hat is one-hot version of other
         if isinstance(const_cont[0], tuple):
@@ -49,7 +49,7 @@ def test_continuous_y():
 
             # test loss:
             assert_almost_equal(crf.loss(y, const[0]),
-                                crf.continuous_loss(y, const_cont[0][0]))
+                                crf.continuous_loss(y, const_cont[0][0]), 4)
 
 
 def test_energy_lp():

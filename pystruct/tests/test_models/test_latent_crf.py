@@ -185,8 +185,8 @@ def test_loss_augmented_inference_energy_graph():
                          inference_method='lp')
     for i in xrange(10):
         w = np.random.normal(size=18)
-        y = np.random.randint(2, size=(2))
-        x = np.random.normal(size=(2, 2))
+        y = np.random.randint(2, size=(3))
+        x = np.random.normal(size=(3, 2))
         e = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int)
         h_hat, energy = crf.loss_augmented_inference((x, e), y * 2, w,
                                                      relaxed=True,
@@ -251,14 +251,14 @@ def test_continuous_y():
         pw = vert + horz
 
         psi_cont = crf.psi(x, (y_cont, pw))
-        assert_array_almost_equal(psi, psi_cont)
+        assert_array_almost_equal(psi, psi_cont, 4)
 
         const = find_constraint(crf, x, y, w, relaxed=False)
         const_cont = find_constraint(crf, x, y, w, relaxed=True)
 
         # dpsi and loss are equal:
-        assert_array_almost_equal(const[1], const_cont[1])
-        assert_almost_equal(const[2], const_cont[2])
+        assert_array_almost_equal(const[1], const_cont[1], 4)
+        assert_almost_equal(const[2], const_cont[2], 4)
 
         if isinstance(const_cont[0], tuple):
             # returned y_hat is one-hot version of other
@@ -266,4 +266,4 @@ def test_continuous_y():
 
             # test loss:
             assert_almost_equal(crf.loss(y, const[0]),
-                                crf.continuous_loss(y, const_cont[0][0]))
+                                crf.continuous_loss(y, const_cont[0][0]), 4)
