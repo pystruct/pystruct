@@ -97,7 +97,7 @@ def test_overflow_averaged():
 
 def test_averaged():
     # Under a lot of noise, averaging helps.  This fails with less noise.
-    X, Y = generate_blocks_multinomial(n_samples=15, noise=2, seed=0)
+    X, Y = generate_blocks_multinomial(n_samples=15, noise=3, seed=0)
     X_train, Y_train = X[:10], Y[:10]
     X_test, Y_test = X[10:], Y[10:]
     crf = GridCRF(n_states=X.shape[-1], inference_method='lp')
