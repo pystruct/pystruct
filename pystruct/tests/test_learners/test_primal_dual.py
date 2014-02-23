@@ -3,9 +3,6 @@
 #from structured_svm import objective_primal, PrimalDSStructuredSVM
 #from toy_datasets import binary
 
-#from IPython.core.debugger import Tracer
-#tracer = Tracer()
-
 
 #def test_primal_dual_binary():
     #for C in [1, 100, 100000]:

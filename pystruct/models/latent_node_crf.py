@@ -535,8 +535,6 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
                                self.inference_method, relaxed=False)
         if (h[:len(y)] != y).any():
             print("inconsistent h and y")
-            from IPython.core.debugger import Tracer
-            Tracer()()
             h[:len(y)] = y
         return h
 
