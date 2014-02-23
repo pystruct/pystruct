@@ -23,12 +23,27 @@ def load_letters():
 
 
 def load_scene():
+    """Load the scene multi-label dataset.
+
+    This is a benchmark multilabel dataset.
+    """
     module_path = dirname(__file__)
     data_file = open(join(module_path, 'scene.pickle'),'rb')
     return cPickle.load(data_file)
 
 
 def load_snakes():
+    """Load the synthetic snake datasets.
+
+    Taken from:
+    Nowozin, S., Rother, C., Bagon, S., Sharp, T., Yao, B., & Kohli, P.
+    Decision Tree Fields, ICCV 2011
+
+    This is a 2d grid labeling task where conditinal pairwise interactions are
+    important.
+    See the reference for an explanation.
+    """
+
     module_path = dirname(__file__)
     data_file = open(join(module_path, 'snakes.pickle'),'rb')
     return cPickle.load(data_file)
