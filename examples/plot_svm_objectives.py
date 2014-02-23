@@ -20,7 +20,7 @@ from pystruct.datasets import generate_crosses_explicit
 
 X, Y = generate_crosses_explicit(n_samples=50, noise=10, size=6, n_crosses=1)
 n_labels = len(np.unique(Y))
-crf = GridCRF(n_states=n_labels, inference_method="dai")
+crf = GridCRF(n_states=n_labels, inference_method="lp")
 
 n_slack_svm = NSlackSSVM(crf, check_constraints=False,
                          max_iter=50, batch_size=1, tol=0.001)
