@@ -89,5 +89,3 @@ y_pred = np.hstack(fw_batch_svm.predict(X_test_bias))
 time_fw_batch_svm = time() - start
 print("Score with pystruct frankwolfe batch ssvm: %f (took %f seconds)" %
       (np.mean(y_pred == y_test), time_fw_batch_svm))
-#from IPython.core.debugger import Tracer
-#Tracer()()

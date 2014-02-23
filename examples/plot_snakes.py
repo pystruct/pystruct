@@ -45,7 +45,7 @@ from pystruct.inference import get_installed
 
 def one_hot_colors(x):
     x = x / 255
-    flat = np.dot(x.reshape(-1, 3),  2 **  np.arange(3))
+    flat = np.dot(x.reshape(-1, 3),  2 ** np.arange(3))
     one_hot = label_binarize(flat, classes=[1, 2, 3, 4, 6])
     return one_hot.reshape(x.shape[0], x.shape[1], 5)
 
@@ -102,7 +102,7 @@ def main():
     Y_train_flat = [y_.ravel() for y_ in Y_train]
 
     X_train_directions, X_train_edge_features = prepare_data(X_train)
-    
+
     if 'ogm' in get_installed():
         inference = ('ogm', {'alg': 'fm'})
     else:
@@ -152,8 +152,6 @@ def main():
         a.set_xticks(())
         a.set_yticks(())
     plt.show()
-    from IPython.core.debugger import Tracer
-    Tracer()()
 
 
 if __name__ == "__main__":

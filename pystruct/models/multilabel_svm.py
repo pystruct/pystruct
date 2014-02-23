@@ -82,8 +82,6 @@ class MultiLabelClf(CRF):
 
     def joint_feature(self, x, y):
         if isinstance(y, tuple):
-            #from IPython.core.debugger import Tracer
-            #Tracer()()
             y_cont, pairwise_marginals = y
             y_signs = 2 * y_cont[:, 1] - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
