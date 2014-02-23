@@ -88,7 +88,7 @@ class FrankWolfeSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
     ``loss_curve_`` : list of float
@@ -128,12 +128,12 @@ class FrankWolfeSSVM(BaseSSVM):
 
     def _calc_dual_gap(self, X, Y):
         n_samples = len(X)
-        psi_gt = self.model.batch_psi(X, Y, Y)  # FIXME don't calculate this again
+        joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)  # FIXME don't calculate this again
         Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                           relaxed=True)
-        dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
+        djoint_feature = joint_feature_gt - self.model.batch_joint_feature(X, Y_hat)
         ls = np.sum(self.model.batch_loss(Y, Y_hat))
-        ws = dpsi * self.C
+        ws = djoint_feature * self.C
         l_rescaled = self.l * n_samples * self.C
 
         dual_val = -0.5 * np.sum(self.w ** 2) + l_rescaled
@@ -152,14 +152,14 @@ class FrankWolfeSSVM(BaseSSVM):
         """
         l = 0.0
         n_samples = float(len(X))
-        psi_gt = self.model.batch_psi(X, Y, Y)
+        joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)
 
         for iteration in xrange(self.max_iter):
             Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                               relaxed=True)
-            dpsi = psi_gt - self.model.batch_psi(X, Y_hat)
+            djoint_feature = joint_feature_gt - self.model.batch_joint_feature(X, Y_hat)
             ls = np.mean(self.model.batch_loss(Y, Y_hat))
-            ws = dpsi * self.C
+            ws = djoint_feature * self.C
 
             w_diff = self.w - ws
             dual_gap = 1.0 / (self.C * n_samples) * w_diff.T.dot(self.w) - l + ls
@@ -200,7 +200,7 @@ class FrankWolfeSSVM(BaseSSVM):
         """
         n_samples = len(X)
         w = self.w.copy()
-        w_mat = np.zeros((n_samples, self.model.size_psi))
+        w_mat = np.zeros((n_samples, self.model.size_joint_feature))
         l_mat = np.zeros(n_samples)
         l = 0.0
         k = 0
@@ -219,9 +219,9 @@ class FrankWolfeSSVM(BaseSSVM):
             for j in range(n_samples):
                 i = perm[j]
                 x, y = X[i], Y[i]
-                y_hat, delta_psi, slack, loss = find_constraint(self.model, x, y, w)
+                y_hat, delta_joint_feature, slack, loss = find_constraint(self.model, x, y, w)
                 # ws and ls
-                ws = delta_psi * self.C
+                ws = delta_joint_feature * self.C
                 ls = loss / n_samples
 
                 # line search
@@ -288,7 +288,7 @@ class FrankWolfeSSVM(BaseSSVM):
             self.model.initialize(X, Y)
         self.objective_curve_, self.primal_objective_curve_ = [], []
         self.timestamps_ = [time()]
-        self.w = getattr(self, "w", np.zeros(self.model.size_psi))
+        self.w = getattr(self, "w", np.zeros(self.model.size_joint_feature))
         self.l = getattr(self, "l", 0)
         try:
             if self.batch_mode:

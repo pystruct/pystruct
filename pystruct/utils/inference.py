@@ -54,50 +54,50 @@ def compress_sym(sym_expanded, make_symmetric=True):
 def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
                     compute_difference=True):
     """Find most violated constraint, or, given y_hat,
-    find slack and dpsi for this constraing.
+    find slack and djoint_feature for this constraing.
 
     As for finding the most violated constraint, it is enough to compute
-    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
     using compute_differences=False
     """
 
     if y_hat is None:
         y_hat = model.loss_augmented_inference(x, y, w, relaxed=relaxed)
-    psi = model.psi
+    joint_feature = model.joint_feature
     if getattr(model, 'rescale_C', False):
-        delta_psi = -psi(x, y_hat, y)
+        delta_joint_feature = -joint_feature(x, y_hat, y)
     else:
-        delta_psi = -psi(x, y_hat)
+        delta_joint_feature = -joint_feature(x, y_hat)
     if compute_difference:
         if getattr(model, 'rescale_C', False):
-            delta_psi += psi(x, y, y)
+            delta_joint_feature += joint_feature(x, y, y)
         else:
-            delta_psi += psi(x, y)
+            delta_joint_feature += joint_feature(x, y)
 
     if isinstance(y_hat, tuple):
         # continuous label
         loss = model.continuous_loss(y, y_hat[0])
     else:
         loss = model.loss(y, y_hat)
-    slack = max(loss - np.dot(w, delta_psi), 0)
-    return y_hat, delta_psi, slack, loss
+    slack = max(loss - np.dot(w, delta_joint_feature), 0)
+    return y_hat, delta_joint_feature, slack, loss
 
 
 def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
     As for finding the most violated constraint, it is enough to compute
-    psi(x, y_hat), not dpsi, we can optionally skip computing psi(x, y)
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
     using compute_differences=False
     """
     h = model.latent(x, y, w)
     h_hat = model.loss_augmented_inference(x, h, w, relaxed=relaxed)
-    psi = model.psi
-    delta_psi = psi(x, h) - psi(x, h_hat)
+    joint_feature = model.joint_feature
+    delta_joint_feature = joint_feature(x, h) - joint_feature(x, h_hat)
 
     loss = model.loss(y, h_hat)
-    slack = max(loss - np.dot(w, delta_psi), 0)
-    return h_hat, delta_psi, slack, loss
+    slack = max(loss - np.dot(w, delta_joint_feature), 0)
+    return h_hat, delta_joint_feature, slack, loss
 
 
 def inference(model, x, w):
@@ -131,8 +131,8 @@ def exhaustive_loss_augmented_inference(model, x, y, w):
     for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(y.shape)
         #print("trying %s" % repr(y_hat))
-        psi = model.psi(x, y_hat)
-        energy = -model.loss(y, y_hat) - np.dot(w, psi)
+        joint_feature = model.joint_feature(x, y_hat)
+        energy = -model.loss(y, y_hat) - np.dot(w, joint_feature)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat
@@ -151,8 +151,8 @@ def exhaustive_inference(model, x, w):
     for y_hat in itertools.product(range(model.n_states), repeat=size):
         y_hat = np.array(y_hat).reshape(feats.shape[:-1])
         #print("trying %s" % repr(y_hat))
-        psi = model.psi(x, y_hat)
-        energy = -np.dot(w, psi)
+        joint_feature = model.joint_feature(x, y_hat)
+        energy = -np.dot(w, joint_feature)
         if energy < best_energy:
             best_energy = energy
             best_y = y_hat

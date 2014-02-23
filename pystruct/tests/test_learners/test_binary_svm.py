@@ -22,13 +22,13 @@ def test_model_1d():
     Y_pred = np.hstack([pbl.inference(x, w) for x in X])
     assert_array_equal(Y, Y_pred)
 
-    # check that sign of psi and inference agree
+    # check that sign of joint_feature and inference agree
     for x, y in zip(X, Y):
-        assert_true(np.dot(w, pbl.psi(x, y)) > np.dot(w, pbl.psi(x, -y)))
+        assert_true(np.dot(w, pbl.joint_feature(x, y)) > np.dot(w, pbl.joint_feature(x, -y)))
 
-    # check that sign of psi and the sign of y correspond
+    # check that sign of joint_feature and the sign of y correspond
     for x, y in zip(X, Y):
-        assert_true(np.dot(w, pbl.psi(x, y)) == -np.dot(w, pbl.psi(x, -y)))
+        assert_true(np.dot(w, pbl.joint_feature(x, y)) == -np.dot(w, pbl.joint_feature(x, -y)))
 
 
 def test_simple_1d_dataset_cutting_plane():
@@ -97,13 +97,13 @@ def test_blobs_batch():
 
     pbl = BinaryClf(n_features=2)
 
-    # test psi
-    psi_mean = pbl.batch_psi(X, Y)
-    psi_mean2 = np.sum([pbl.psi(x, y) for x, y in zip(X, Y)], axis=0)
-    assert_array_equal(psi_mean, psi_mean2)
+    # test joint_feature
+    joint_feature_mean = pbl.batch_joint_feature(X, Y)
+    joint_feature_mean2 = np.sum([pbl.joint_feature(x, y) for x, y in zip(X, Y)], axis=0)
+    assert_array_equal(joint_feature_mean, joint_feature_mean2)
 
     # test inference
-    w = np.random.uniform(-1, 1, size=pbl.size_psi)
+    w = np.random.uniform(-1, 1, size=pbl.size_joint_feature)
     Y_hat = pbl.batch_inference(X, w)
     for i, (x, y_hat) in enumerate(zip(X, Y_hat)):
         assert_array_equal(Y_hat[i], pbl.inference(x, w))

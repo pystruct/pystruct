@@ -13,6 +13,7 @@ from pystruct.utils import objective_primal
 # we always try to get the fastest installed inference method
 inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
 
+
 def test_symmetric_tools_symmetric():
     rnd = np.random.RandomState(0)
     # generate random symmetric matrix
@@ -42,6 +43,7 @@ def test_symmetric_tools_upper():
 
         uncompressed = expand_sym(compressed)
         assert_array_equal(x_, uncompressed)
+
 
 def test_ssvm_objectives():
     # test that the algorithms provide consistent objective curves.

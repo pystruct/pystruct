@@ -21,7 +21,7 @@ def test_continuous_y():
 
         crf = GridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
-        psi = crf.psi(x, y)
+        joint_feature = crf.joint_feature(x, y)
         y_cont = np.zeros_like(x)
         gx, gy = np.indices(x.shape[:-1])
         y_cont[gx, gy, y] = 1
@@ -33,13 +33,13 @@ def test_continuous_y():
                       y_cont[:, :-1, :].reshape(-1, 2))
         pw = vert + horz
 
-        psi_cont = crf.psi(x, (y_cont, pw))
-        assert_array_almost_equal(psi, psi_cont)
+        joint_feature_cont = crf.joint_feature(x, (y_cont, pw))
+        assert_array_almost_equal(joint_feature, joint_feature_cont)
 
         const = find_constraint(crf, x, y, w, relaxed=False)
         const_cont = find_constraint(crf, x, y, w, relaxed=True)
 
-        # dpsi and loss are equal:
+        # djoint_feature and loss are equal:
         assert_array_almost_equal(const[1], const_cont[1], 4)
         assert_almost_equal(const[2], const_cont[2], 4)
 
@@ -61,11 +61,11 @@ def test_energy_lp():
                       inference_method=inference_method)
         while not found_fractional:
             x = np.random.normal(size=(2, 2, 4))
-            w = np.random.uniform(size=crf.size_psi)
+            w = np.random.uniform(size=crf.size_joint_feature)
             inf_res, energy_lp = crf.inference(x, w, relaxed=True,
                                                return_energy=True)
             assert_almost_equal(energy_lp,
-                                -np.dot(w, crf.psi(x, inf_res)))
+                                -np.dot(w, crf.joint_feature(x, inf_res)))
             found_fractional = np.any(np.max(inf_res[0], axis=-1) != 1)
 
 
@@ -81,7 +81,7 @@ def test_loss_augmentation():
     y_hat, energy = crf.loss_augmented_inference(x, y, w, return_energy=True)
 
     assert_almost_equal(energy + crf.loss(y, y_hat),
-                        -np.dot(w, crf.psi(x, y_hat)))
+                        -np.dot(w, crf.joint_feature(x, y_hat)))
 
 
 def test_binary_blocks_crf():
@@ -167,7 +167,7 @@ def test_multinomial_grid_unaries():
         n_labels = len(np.unique(Y))
         crf = GridCRF(n_states=n_labels)
         crf.initialize(X, Y)
-        w_unaries_only = np.zeros(crf.size_psi)
+        w_unaries_only = np.zeros(crf.size_joint_feature)
         w_unaries_only[:n_labels ** 2] = np.eye(n_labels).ravel()
         # test that inference with unaries only is the
         # same as argmax

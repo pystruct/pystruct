@@ -117,9 +117,9 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
                                      n_edge_features,
                                      inference_method=inference_method)
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if self.n_features is not None and self.n_states is not None:
-            self.size_psi = (self.n_states * self.n_features
+            self.size_joint_feature = (self.n_states * self.n_features
                              + self.n_edge_features * self.n_states ** 2)
 
     def _check_size_x(self, x):
@@ -133,11 +133,11 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         return make_grid_edges(x, neighborhood=self.neighborhood,
                                return_lists=not flat)
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -155,11 +155,11 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
 
         """
-        return EdgeFeatureGraphCRF.psi(self, x, y)
+        return EdgeFeatureGraphCRF.joint_feature(self, x, y)
 
     def _get_edge_features(self, x):
         return edge_list_to_features(self._get_edges(x, flat=False))

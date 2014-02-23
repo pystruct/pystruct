@@ -76,5 +76,5 @@ class ChainCRF(GraphCRF):
             raise ValueError("Expected %d states, got %d"
                              % (self.n_states, n_states))
 
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()

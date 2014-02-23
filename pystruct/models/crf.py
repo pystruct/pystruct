@@ -17,7 +17,7 @@ class CRF(StructuredModel):
         self.inference_calls = 0
         self.n_features = n_features
         self.class_weight = class_weight
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def initialize(self, X, Y):
@@ -37,7 +37,7 @@ class CRF(StructuredModel):
             raise ValueError("Expected %d states, got %d"
                              % (self.n_states, n_states))
 
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def __repr__(self):
@@ -57,7 +57,7 @@ class CRF(StructuredModel):
         """Loss-augmented Inference for x relative to y using parameters w.
 
         Finds (approximately)
-        armin_y_hat np.dot(w, psi(x, y_hat)) + loss(y, y_hat)
+        armin_y_hat np.dot(w, joint_feature(x, y_hat)) + loss(y, y_hat)
         using self.inference_method.
 
 
@@ -73,7 +73,7 @@ class CRF(StructuredModel):
             Ground truth labeling relative to which the loss
             will be measured.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Parameters for the CRF energy function.
 
         relaxed : bool, default=False
@@ -113,7 +113,7 @@ class CRF(StructuredModel):
         """Inference for x using parameters w.
 
         Finds (approximately)
-        armin_y np.dot(w, psi(x, y))
+        armin_y np.dot(w, joint_feature(x, y))
         using self.inference_method.
 
 
@@ -125,7 +125,7 @@ class CRF(StructuredModel):
             unaries are an nd-array of shape (n_nodes, n_states),
             edges are an nd-array of shape (n_edges, 2)
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Parameters for the CRF energy function.
 
         relaxed : bool, default=False

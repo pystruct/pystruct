@@ -5,46 +5,46 @@ class StructuredModel(object):
     """Interface definition for Structured Learners.
 
     This class defines what is necessary to use the structured svm.
-    You have to implement at least psi and inference.
+    You have to implement at least joint_feature and inference.
     """
     def __repr__(self):
-        return ("%s, size_psi: %d"
-                % (type(self).__name__, self.size_psi))
+        return ("%s, size_joint_feature: %d"
+                % (type(self).__name__, self.size_joint_feature))
 
     def __init__(self):
         """Initialize the model.
-        Needs to set self.size_psi, the dimensionalty of the joint features for
+        Needs to set self.size_joint_feature, the dimensionalty of the joint features for
         an instance with labeling (x, y).
         """
-        self.size_psi = None
+        self.size_joint_feature = None
 
     def _check_size_w(self, w):
-        if w.shape != (self.size_psi,):
+        if w.shape != (self.size_joint_feature,):
             raise ValueError("Got w of wrong shape. Expected %s, got %s" %
-                             (self.size_psi, w.shape))
+                             (self.size_joint_feature, w.shape))
 
     def initialize(self, X, Y):
         # set any data-specific parameters in the model
         pass
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         raise NotImplementedError()
 
-    def batch_psi(self, X, Y, Y_true=None):
-        psi_ = np.zeros(self.size_psi)
+    def batch_joint_feature(self, X, Y, Y_true=None):
+        joint_feature_ = np.zeros(self.size_joint_feature)
         if getattr(self, 'rescale_C', False):
             for x, y, y_true in zip(X, Y, Y_true):
-                psi_ += self.psi(x, y, y_true)
+                joint_feature_ += self.joint_feature(x, y, y_true)
         else:
             for x, y in zip(X, Y):
-                psi_ += self.psi(x, y)
-        return psi_
+                joint_feature_ += self.joint_feature(x, y)
+        return joint_feature_
 
-    def _loss_augmented_dpsi(self, x, y, y_hat, w):
+    def _loss_augmented_djoint_feature(self, x, y, y_hat, w):
         # debugging only!
         x_loss_augmented = self.loss_augment(x, y, w)
-        return (self.psi(x_loss_augmented, y)
-                - self.psi(x_loss_augmented, y_hat))
+        return (self.joint_feature(x_loss_augmented, y)
+                - self.joint_feature(x_loss_augmented, y_hat))
 
     def inference(self, x, w, relaxed=None):
         raise NotImplementedError()
@@ -95,7 +95,7 @@ class StructuredModel(object):
                 for x, y in zip(X, Y)]
 
     def _set_class_weight(self):
-        if not hasattr(self, 'size_psi'):
+        if not hasattr(self, 'size_joint_feature'):
             # we are not initialized yet
             return
 

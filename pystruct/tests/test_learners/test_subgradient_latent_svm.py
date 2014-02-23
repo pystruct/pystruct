@@ -46,7 +46,7 @@ def test_objective():
     clfl = SubgradientLatentSSVM(model=crfl, max_iter=20, C=10.,
                                  learning_rate=0.001, momentum=0.98)
     crfl.initialize(X, Y)
-    clfl.w = np.zeros(crfl.size_psi)  # this disables random init
+    clfl.w = np.zeros(crfl.size_joint_feature)  # this disables random init
     clfl.fit(X, Y)
 
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)

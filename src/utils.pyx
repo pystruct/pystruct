@@ -11,7 +11,7 @@ ctypedef fused some_int:
     cython.char
     cython.uint
 
-def crammer_singer_psi(double[:,:] X, some_int[:] Y, double[:, :] out):
+def crammer_singer_joint_feature(double[:,:] X, some_int[:] Y, double[:, :] out):
     cdef int y, i
     for i in xrange(X.shape[0]):
         y = Y[i]

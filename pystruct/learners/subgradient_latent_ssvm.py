@@ -81,7 +81,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
     ``loss_curve_`` : list of float
@@ -132,10 +132,10 @@ class SubgradientLatentSSVM(SubgradientSSVM):
             print("Training latent subgradient structural SVM")
         if initialize:
             self.model.initialize(X, Y)
-        self.grad_old = np.zeros(self.model.size_psi)
+        self.grad_old = np.zeros(self.model.size_joint_feature)
         if not warm_start:
             self.w = getattr(self, "w", np.random.normal(
-                0, 1, size=self.model.size_psi))
+                0, 1, size=self.model.size_joint_feature))
             self.timestamps_ = [time()]
             self.objective_curve_ = []
             if self.learning_rate == "auto":
@@ -161,14 +161,14 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         h = self.model.latent(x, y, w)
                         h_hat = self.model.loss_augmented_inference(
                             x, h, w, relaxed=True)
-                        delta_psi = (self.model.psi(x, h)
-                                     - self.model.psi(x, h_hat))
-                        slack = (-np.dot(delta_psi, w)
+                        delta_joint_feature = (self.model.joint_feature(x, h)
+                                     - self.model.joint_feature(x, h_hat))
+                        slack = (-np.dot(delta_joint_feature, w)
                                  + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)
                         if slack > 0:
                             positive_slacks += 1
-                        w = self._solve_subgradient(delta_psi, n_samples, w)
+                        w = self._solve_subgradient(delta_joint_feature, n_samples, w)
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
@@ -188,16 +188,16 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                             verbose=verbose)(delayed(find_constraint_latent)(
                                 self.model, x, y, w)
                                 for x, y in zip(X_b, Y_b))
-                        dpsi = np.zeros(self.model.size_psi)
+                        djoint_feature = np.zeros(self.model.size_joint_feature)
                         for x, y, constraint in zip(X_b, Y_b,
                                                     candidate_constraints):
-                            y_hat, delta_psi, slack, loss = constraint
+                            y_hat, delta_joint_feature, slack, loss = constraint
                             objective += slack
-                            dpsi += delta_psi
+                            djoint_feature += delta_joint_feature
                             if slack > 0:
                                 positive_slacks += 1
-                        dpsi /= float(len(X_b))
-                        w = self._solve_subgradient(dpsi, n_samples, w)
+                        djoint_feature /= float(len(X_b))
+                        w = self._solve_subgradient(djoint_feature, n_samples, w)
 
                 # some statistics
                 objective *= self.C

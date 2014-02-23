@@ -66,19 +66,19 @@ def test_inference_trivial():
     y_unaries = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
     assert_array_equal(y_unaries, features > 0)
 
-    # test psi
-    energy_psi = np.dot(w, crf.psi(x, h))
-    assert_almost_equal(energy_psi, -energy_lp)
+    # test joint_feature
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
+    assert_almost_equal(energy_joint_feature, -energy_lp)
 
     # test loss
     h_unaries = crf.latent(x, y_unaries, w)
     assert_equal(crf.loss(h, h_unaries), 2)
 
-    # continuous inference and psi:
+    # continuous inference and joint_feature:
     h_continuous, energy_lp = crf.inference(x, w, return_energy=True,
                                             relaxed=True)
-    energy_psi = np.dot(w, crf.psi(x, h))
-    assert_almost_equal(energy_psi, -energy_lp)
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
+    assert_almost_equal(energy_joint_feature, -energy_lp)
 
     # test continuous loss
     assert_equal(crf.loss(h, h_continuous), 0)
@@ -86,7 +86,7 @@ def test_inference_trivial():
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
-    assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
+    assert_almost_equal(-energy_lp, np.dot(w, crf.joint_feature(x, h_hat)) +
                         crf.loss(h_hat, y))
     #print(h_hat)
     #print(h)
@@ -117,16 +117,16 @@ def test_inference_chain():
     x = (features.reshape(-1, 1), all_edges, 2)
     h, energy_lp = crf.inference(x, w, return_energy=True)
     y = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
-    energy_psi = np.dot(w, crf.psi(x, h))
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
 
-    assert_almost_equal(energy_psi, -energy_lp)
+    assert_almost_equal(energy_joint_feature, -energy_lp)
     assert_array_equal(y, features > 0)
     assert_array_equal(h, [0, 0, 0, 1, 1, 1, 2, 3])
 
-    # continuous inference and psi:
+    # continuous inference and joint_feature:
     h, energy_lp = crf.inference(x, w, return_energy=True, relaxed=True)
-    energy_psi = np.dot(w, crf.psi(x, h))
-    assert_almost_equal(energy_psi, -energy_lp)
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
+    assert_almost_equal(energy_joint_feature, -energy_lp)
 
 
 def test_inference_trivial_features():
@@ -163,19 +163,19 @@ def test_inference_trivial_features():
     y_unaries = np.argmax(crf._get_unary_potentials(x, w), axis=1)[:6]
     assert_array_equal(y_unaries, features[:6] > 0)
 
-    # test psi
-    energy_psi = np.dot(w, crf.psi(x, h))
-    assert_almost_equal(energy_psi, -energy_lp)
+    # test joint_feature
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
+    assert_almost_equal(energy_joint_feature, -energy_lp)
 
     # test loss
     h_unaries = crf.latent(x, y_unaries, w)
     assert_equal(crf.loss(h, h_unaries), 2)
 
-    # continuous inference and psi:
+    # continuous inference and joint_feature:
     h_continuous, energy_lp = crf.inference(x, w, return_energy=True,
                                             relaxed=True)
-    energy_psi = np.dot(w, crf.psi(x, h))
-    assert_almost_equal(energy_psi, -energy_lp)
+    energy_joint_feature = np.dot(w, crf.joint_feature(x, h))
+    assert_almost_equal(energy_joint_feature, -energy_lp)
 
     # test continuous loss
     assert_equal(crf.loss(h, h_continuous), 0)
@@ -183,7 +183,7 @@ def test_inference_trivial_features():
     #test loss-augmented inference energy
     h_hat, energy_lp = crf.loss_augmented_inference(x, h, w,
                                                     return_energy=True)
-    assert_almost_equal(-energy_lp, np.dot(w, crf.psi(x, h_hat)) +
+    assert_almost_equal(-energy_lp, np.dot(w, crf.joint_feature(x, h_hat)) +
                         crf.loss(h_hat, y))
 
 

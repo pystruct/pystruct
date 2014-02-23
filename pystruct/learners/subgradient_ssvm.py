@@ -87,7 +87,7 @@ class SubgradientSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
     ``loss_curve_`` : list of float
@@ -126,9 +126,9 @@ class SubgradientSSVM(BaseSSVM):
         self.batch_size = batch_size
         self.shuffle = shuffle
 
-    def _solve_subgradient(self, dpsi, n_samples, w):
+    def _solve_subgradient(self, djoint_feature, n_samples, w):
         """Do a single subgradient step."""
-        grad = (dpsi - w / (self.C * n_samples))
+        grad = (djoint_feature - w / (self.C * n_samples))
 
         self.grad_old = ((1 - self.momentum) * grad
                          + self.momentum * self.grad_old)
@@ -177,8 +177,8 @@ class SubgradientSSVM(BaseSSVM):
         if initialize:
             self.model.initialize(X, Y)
         print("Training primal subgradient structural SVM")
-        self.grad_old = np.zeros(self.model.size_psi)
-        self.w = getattr(self, "w", np.zeros(self.model.size_psi))
+        self.grad_old = np.zeros(self.model.size_joint_feature)
+        self.w = getattr(self, "w", np.zeros(self.model.size_joint_feature))
         w = self.w.copy()
         if not warm_start:
             self.objective_curve_ = []
@@ -264,15 +264,15 @@ class SubgradientSSVM(BaseSSVM):
                 verbose=verbose)(delayed(find_constraint)(
                     self.model, x, y, w)
                     for x, y in zip(X_b, Y_b))
-            dpsi = np.zeros(self.model.size_psi)
+            djoint_feature = np.zeros(self.model.size_joint_feature)
             for x, y, constraint in zip(X_b, Y_b,
                                         candidate_constraints):
-                y_hat, delta_psi, slack, loss = constraint
+                y_hat, delta_joint_feature, slack, loss = constraint
                 if slack > 0:
                     objective += slack
-                    dpsi += delta_psi
+                    djoint_feature += delta_joint_feature
                     positive_slacks += 1
-            w = self._solve_subgradient(dpsi, n_samples, w)
+            w = self._solve_subgradient(djoint_feature, n_samples, w)
         return objective, positive_slacks, w
 
     def _sequential_learning(self, X, Y, w):
@@ -281,12 +281,12 @@ class SubgradientSSVM(BaseSSVM):
         if self.batch_size in [None, 1]:
             # online learning
             for x, y in zip(X, Y):
-                y_hat, delta_psi, slack, loss = \
+                y_hat, delta_joint_feature, slack, loss = \
                     find_constraint(self.model, x, y, w)
                 objective += slack
                 if slack > 0:
                     positive_slacks += 1
-                self._solve_subgradient(delta_psi, n_samples, w)
+                self._solve_subgradient(delta_joint_feature, n_samples, w)
         else:
             # mini batch learning
             if self.batch_size == -1:
@@ -299,12 +299,12 @@ class SubgradientSSVM(BaseSSVM):
                 Y_b = Y[batch]
                 Y_hat = self.model.batch_loss_augmented_inference(
                     X_b, Y_b, w, relaxed=True)
-                delta_psi = (self.model.batch_psi(X_b, Y_b)
-                             - self.model.batch_psi(X_b, Y_hat))
+                delta_joint_feature = (self.model.batch_joint_feature(X_b, Y_b)
+                             - self.model.batch_joint_feature(X_b, Y_hat))
                 loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
 
-                violation = np.maximum(0, loss - np.dot(w, delta_psi))
+                violation = np.maximum(0, loss - np.dot(w, delta_joint_feature))
                 objective += violation
                 positive_slacks += self.batch_size
-                self._solve_subgradient(delta_psi / len(X_b), n_samples, w)
+                self._solve_subgradient(delta_joint_feature / len(X_b), n_samples, w)
         return objective, positive_slacks, w
