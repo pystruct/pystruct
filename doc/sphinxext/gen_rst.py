@@ -816,9 +816,11 @@ def embed_code_links(app, exception):
 
         # Add resolvers for the packages for which we want to show links
         doc_resolvers = {}
-        doc_resolvers['sklearn'] = SphinxDocLinkResolver(app.builder.outdir,
+        doc_resolvers['pystruct'] = SphinxDocLinkResolver(app.builder.outdir,
                                                          relative=True)
 
+        doc_resolvers['sklearn'] = SphinxDocLinkResolver(
+            'http://scikit-learn.org/stable')
         doc_resolvers['matplotlib'] = SphinxDocLinkResolver(
             'http://matplotlib.org')
 
