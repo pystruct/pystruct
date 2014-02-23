@@ -56,7 +56,7 @@ class StructuredPerceptron(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
    ``loss_curve_`` : list of float
@@ -98,8 +98,8 @@ class StructuredPerceptron(BaseSSVM):
         """
         if initialize:
             self.model.initialize(X, Y)
-        size_psi = self.model.size_psi
-        self.w = np.zeros(size_psi)
+        size_joint_feature = self.model.size_joint_feature
+        self.w = np.zeros(size_joint_feature)
         if self.average is not False:
             if self.average is True:
                 self.average = 0
@@ -108,7 +108,7 @@ class StructuredPerceptron(BaseSSVM):
                                      "implemented at the moment is `-1`. Try "
                                      "`max_iter - k` but be aware of the "
                                      "possibility of early stopping.")
-            w_bar = np.zeros(size_psi)
+            w_bar = np.zeros(size_joint_feature)
             n_obs = 0
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
@@ -132,8 +132,8 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            self.w += effective_lr * (self.model.psi(x, y) -
-                                                      self.model.psi(x, y_hat))
+                            self.w += effective_lr * (self.model.joint_feature(x, y) -
+                                                      self.model.joint_feature(x, y_hat))
                     if self.average is not False and iteration >= self.average:
                         n_obs += 1
                         w_bar = ((1 - 1. / n_obs) * w_bar +
@@ -145,8 +145,8 @@ class StructuredPerceptron(BaseSSVM):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss
                         if current_loss:
-                            self.w += effective_lr * (self.model.psi(x, y) -
-                                                      self.model.psi(x, y_hat))
+                            self.w += effective_lr * (self.model.joint_feature(x, y) -
+                                                      self.model.joint_feature(x, y_hat))
                         if (self.average is not False and
                                 iteration >= self.average):
                             n_obs += 1

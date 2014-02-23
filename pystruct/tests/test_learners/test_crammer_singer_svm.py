@@ -20,18 +20,18 @@ def test_crammer_singer_model():
 
     # test inference energy
     rng = np.random.RandomState(0)
-    w = rng.uniform(size=pbl.size_psi)
+    w = rng.uniform(size=pbl.size_joint_feature)
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)))
+    assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)))
 
     # test inference result:
-    energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
+    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in xrange(3)]
     assert_equal(np.argmax(energies), y)
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)) + pbl.loss(Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)
@@ -55,19 +55,19 @@ def test_crammer_singer_model_class_weight():
     pbl = MultiClassClf(n_features=3, n_classes=3, class_weight=[1, 2, 1])
 
     rng = np.random.RandomState(0)
-    w = rng.uniform(size=pbl.size_psi)
+    w = rng.uniform(size=pbl.size_joint_feature)
     # test inference energy
     x = X[0]
     y, energy = pbl.inference(x, w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)))
+    assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)))
 
     # test inference_result:
-    energies = [np.dot(w, pbl.psi(x, y_hat)) for y_hat in xrange(3)]
+    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in xrange(3)]
     assert_equal(np.argmax(energies), y)
 
     # test loss_augmented inference energy
     y, energy = pbl.loss_augmented_inference(x, Y[0], w, return_energy=True)
-    assert_almost_equal(energy, np.dot(w, pbl.psi(x, y)) + pbl.loss(Y[0], y))
+    assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)) + pbl.loss(Y[0], y))
 
     # test batch versions
     Y_batch = pbl.batch_inference(X, w)

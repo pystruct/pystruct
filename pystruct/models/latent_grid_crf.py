@@ -16,8 +16,8 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
                          n_features=self.n_features, neighborhood=neighborhood,
                          inference_method=inference_method)
 
-    def _set_size_psi(self):
-        LatentGraphCRF._set_size_psi(self)
+    def _set_size_joint_feature(self):
+        LatentGraphCRF._set_size_joint_feature(self)
 
     def initialize(self, X, Y):
         LatentGraphCRF.initialize(self, X, Y)
@@ -68,9 +68,9 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
         LatentGridCRF.__init__(self, n_labels, n_features, n_states_per_label,
                                inference_method=inference_method)
 
-    def _set_size_psi(self):
-        LatentGridCRF._set_size_psi(self)
-        DirectionalGridCRF._set_size_psi(self)
+    def _set_size_joint_feature(self):
+        LatentGridCRF._set_size_joint_feature(self)
+        DirectionalGridCRF._set_size_joint_feature(self)
 
     def initialize(self, X, Y):
         LatentGridCRF.initialize(self, X, Y)

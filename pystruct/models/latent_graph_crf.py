@@ -96,7 +96,7 @@ class LatentGraphCRF(GraphCRF):
         GraphCRF.__init__(self, n_states=None, n_features=n_features,
                           inference_method=inference_method)
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if None in [self.n_features, self.n_labels]:
             return
 
@@ -119,7 +119,7 @@ class LatentGraphCRF(GraphCRF):
         for l in xrange(1, self.n_labels):
             states_map[ranges[l - 1]: ranges[l]] = l
         self._states_map = states_map
-        GraphCRF._set_size_psi(self)
+        GraphCRF._set_size_joint_feature(self)
 
     def initialize(self, X, Y):
         n_features = X[0][0].shape[1]
@@ -135,7 +135,7 @@ class LatentGraphCRF(GraphCRF):
         elif self.n_labels != n_labels:
             raise ValueError("Expected %d states, got %d"
                              % (self.n_labels, n_labels))
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def label_from_latent(self, h):

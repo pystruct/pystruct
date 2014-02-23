@@ -153,9 +153,9 @@ def test_blocks_crf_directional():
     h_hat_d = directional_crf.loss_augmented_inference(x, y, w_directional)
     assert_array_equal(h_hat, h_hat_d)
 
-    psi = crf.psi(x, h_hat)
-    psi_d = directional_crf.psi(x, h_hat)
-    assert_array_equal(np.dot(psi, w), np.dot(psi_d, w_directional))
+    joint_feature = crf.joint_feature(x, h_hat)
+    joint_feature_d = directional_crf.joint_feature(x, h_hat)
+    assert_array_equal(np.dot(joint_feature, w), np.dot(joint_feature_d, w_directional))
 
 
 def test_latent_consistency_zero_pw_graph():
@@ -191,7 +191,7 @@ def test_loss_augmented_inference_energy_graph():
         h_hat, energy = crf.loss_augmented_inference((x, e), y * 2, w,
                                                      relaxed=True,
                                                      return_energy=True)
-        assert_almost_equal(-energy, np.dot(w, crf.psi((x, e), h_hat))
+        assert_almost_equal(-energy, np.dot(w, crf.joint_feature((x, e), h_hat))
                             + crf.loss(y * 2, h_hat))
 
 
@@ -238,7 +238,7 @@ def test_continuous_y():
 
         crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=1,
                             inference_method=inference_method)
-        psi = crf.psi(x, y)
+        joint_feature = crf.joint_feature(x, y)
         y_cont = np.zeros_like(x)
         gx, gy = np.indices(x.shape[:-1])
         y_cont[gx, gy, y] = 1
@@ -250,13 +250,13 @@ def test_continuous_y():
                       y_cont[:, :-1, :].reshape(-1, 2))
         pw = vert + horz
 
-        psi_cont = crf.psi(x, (y_cont, pw))
-        assert_array_almost_equal(psi, psi_cont, 4)
+        joint_feature_cont = crf.joint_feature(x, (y_cont, pw))
+        assert_array_almost_equal(joint_feature, joint_feature_cont, 4)
 
         const = find_constraint(crf, x, y, w, relaxed=False)
         const_cont = find_constraint(crf, x, y, w, relaxed=True)
 
-        # dpsi and loss are equal:
+        # djoint_feature and loss are equal:
         assert_array_almost_equal(const[1], const_cont[1], 4)
         assert_almost_equal(const[2], const_cont[2], 4)
 

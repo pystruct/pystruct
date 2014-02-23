@@ -91,7 +91,7 @@ class NSlackSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
     old_solution : dict
@@ -140,12 +140,12 @@ class NSlackSSVM(BaseSSVM):
 
     def _solve_n_slack_qp(self, constraints, n_samples):
         C = self.C
-        psis = [c[1] for sample in constraints for c in sample]
+        joint_features = [c[1] for sample in constraints for c in sample]
         losses = [c[2] for sample in constraints for c in sample]
 
-        psi_matrix = np.vstack(psis).astype(np.float)
-        n_constraints = len(psis)
-        P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
+        joint_feature_matrix = np.vstack(joint_features).astype(np.float)
+        n_constraints = len(joint_features)
+        P = cvxopt.matrix(np.dot(joint_feature_matrix, joint_feature_matrix.T))
         # q contains loss from margin-rescaling
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
         # constraints are a bit tricky. first, all alpha must be >zero
@@ -161,14 +161,14 @@ class NSlackSSVM(BaseSSVM):
         if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
-            psis_constr = np.zeros((0, n_constraints))
+            joint_features_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.negativity_constraint]
+            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
             zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, blocks,
-                                                   psis_constr))))
+                                                   joint_features_constr))))
         tmp2 = np.ones(n_samples) * C
         h = cvxopt.matrix(np.hstack((tmp1, tmp2, zero_constr)))
 
@@ -180,8 +180,8 @@ class NSlackSSVM(BaseSSVM):
             solution = {'status': 'error'}
         if solution['status'] != "optimal":
             print("regularizing QP!")
-            P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T)
-                              + 1e-8 * np.eye(psi_matrix.shape[0]))
+            P = cvxopt.matrix(np.dot(joint_feature_matrix, joint_feature_matrix.T)
+                              + 1e-8 * np.eye(joint_feature_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h)
             if solution['status'] != "optimal":
                 raise ValueError("QP solver failed. Try regularizing your QP.")
@@ -200,7 +200,7 @@ class NSlackSSVM(BaseSSVM):
             # calculate per example box constraint:
             print("Box constraints at C: %d" % np.sum(1 - box / C < 1e-3))
             print("dual objective: %f" % -solution['primal objective'])
-        self.w = np.dot(a, psi_matrix)
+        self.w = np.dot(a, joint_feature_matrix)
         return -solution['primal objective']
 
     def _check_bad_constraint(self, y_hat, slack, old_constraints):
@@ -253,8 +253,8 @@ class NSlackSSVM(BaseSSVM):
         contraints : iterable
             Known constraints for warm-starts. List of same length as X.
             Each entry is itself a list of constraints for a given instance x .
-            Each constraint is of the form [y_hat, delta_psi, loss], where
-            y_hat is a labeling, ``delta_psi = psi(x, y) - psi(x, y_hat)``
+            Each constraint is of the form [y_hat, delta_joint_feature, loss], where
+            y_hat is a labeling, ``delta_joint_feature = joint_feature(x, y) - joint_feature(x, y_hat)``
             and loss is the loss for predicting y_hat instead of the true label
             y.
 
@@ -266,7 +266,7 @@ class NSlackSSVM(BaseSSVM):
         cvxopt.solvers.options['show_progress'] = self.verbose > 3
         if initialize:
             self.model.initialize(X, Y)
-        self.w = np.zeros(self.model.size_psi)
+        self.w = np.zeros(self.model.size_joint_feature)
         n_samples = len(X)
         stopping_criterion = False
         if constraints is None:
@@ -315,7 +315,7 @@ class NSlackSSVM(BaseSSVM):
                     for i, x, y, constraint in zip(indices_b, X_b, Y_b,
                                                    candidate_constraints):
                         # loop over samples in batch
-                        y_hat, delta_psi, slack, loss = constraint
+                        y_hat, delta_joint_feature, slack, loss = constraint
                         slack_sum += slack
 
                         if self.verbose > 3:
@@ -323,14 +323,14 @@ class NSlackSSVM(BaseSSVM):
 
                         if not loss > 0:
                             # can have y != y_hat but loss = 0 in latent svm.
-                            # we need this here as dpsi is then != 0
+                            # we need this here as djoint_feature is then != 0
                             continue
 
                         if self._check_bad_constraint(y_hat, slack,
                                                       constraints[i]):
                             continue
 
-                        constraints[i].append([y_hat, delta_psi, loss])
+                        constraints[i].append([y_hat, delta_joint_feature, loss])
                         new_constraints_batch += 1
 
                     # after processing the slice, solve the qp

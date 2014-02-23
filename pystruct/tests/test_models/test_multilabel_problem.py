@@ -17,7 +17,7 @@ def test_initialization():
     assert_equal(model.n_states, 2)
     assert_equal(model.n_labels, 3)
     assert_equal(model.n_features, 5)
-    assert_equal(model.size_psi, 5 * 3)
+    assert_equal(model.size_joint_feature, 5 * 3)
 
     # setting and then initializing is no-op
     model = MultiLabelClf(n_features=5, n_labels=3)
@@ -43,17 +43,17 @@ def test_multilabel_independent():
     y_ = np.dot(w.reshape(n_labels, n_features), x) > 0
     assert_array_equal(y, y_)
 
-    # test psi / energy
-    psi = model.psi(x, y)
+    # test joint_feature / energy
+    joint_feature = model.joint_feature(x, y)
     energy = compute_energy(model._get_unary_potentials(x, w),
                             model._get_pairwise_potentials(x, w), edges, y)
-    assert_almost_equal(energy, np.dot(psi, w))
+    assert_almost_equal(energy, np.dot(joint_feature, w))
 
     # for continuous y
     y_continuous = np.zeros((n_labels, 2))
     y_continuous[np.arange(n_labels), y] = 1
     assert_array_almost_equal(
-        psi, model.psi(x, (y_continuous, np.zeros((0, n_labels, n_labels)))))
+        joint_feature, model.joint_feature(x, (y_continuous, np.zeros((0, n_labels, n_labels)))))
 
 
 def test_multilabel_fully():
@@ -69,11 +69,11 @@ def test_multilabel_fully():
     w = rnd.normal(size=n_features * n_labels + 4 * len(edges))
     y = model.inference(x, w)
 
-    # test psi / energy
-    psi = model.psi(x, y)
+    # test joint_feature / energy
+    joint_feature = model.joint_feature(x, y)
     energy = compute_energy(model._get_unary_potentials(x, w),
                             model._get_pairwise_potentials(x, w), edges, y)
-    assert_almost_equal(energy, np.dot(psi, w))
+    assert_almost_equal(energy, np.dot(joint_feature, w))
 
     # for continuous y
     #y_cont = model.inference(x, w, relaxed=True)
@@ -89,4 +89,4 @@ def test_multilabel_fully():
 
     y_continuous[np.arange(n_labels), y] = 1
     assert_array_almost_equal(
-        psi, model.psi(x, (y_continuous, pairwise_marginals)))
+        joint_feature, model.joint_feature(x, (y_continuous, pairwise_marginals)))

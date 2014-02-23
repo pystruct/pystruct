@@ -40,12 +40,12 @@ class MultiLabelClf(CRF):
         self.edges = edges
         CRF.__init__(self, 2, n_features, inference_method)
 
-    def _set_size_psi(self):
-        # try to set the size of psi if possible
+    def _set_size_joint_feature(self):
+        # try to set the size of joint_feature if possible
         if self.n_features is not None and self.n_states is not None:
             if self.edges is None:
                 self.edges = np.zeros(shape=(0, 2), dtype=np.int)
-            self.size_psi = (self.n_features * self.n_labels
+            self.size_joint_feature = (self.n_features * self.n_labels
                              + 4 * self.edges.shape[0])
 
     def initialize(self, X, Y):
@@ -63,7 +63,7 @@ class MultiLabelClf(CRF):
             raise ValueError("Expected %d labels, got %d"
                              % (self.n_labels, n_labels))
 
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def _get_edges(self, x):
@@ -80,7 +80,7 @@ class MultiLabelClf(CRF):
             self.edges.shape[0], self.n_states, self.n_states)
         return pairwise_params
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         if isinstance(y, tuple):
             #from IPython.core.debugger import Tracer
             #Tracer()()

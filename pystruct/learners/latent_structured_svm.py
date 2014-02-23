@@ -42,7 +42,7 @@ class LatentSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
     """
 
@@ -76,7 +76,7 @@ class LatentSSVM(BaseSSVM):
         """
 
         self.model.initialize(X, Y)
-        w = np.zeros(self.model.size_psi)
+        w = np.zeros(self.model.size_joint_feature)
         constraints = None
         ws = []
         if H_init is None:
@@ -106,8 +106,8 @@ class LatentSSVM(BaseSSVM):
                         for constraint in sample:
                             const = find_constraint(self.model, X[i], h, w,
                                                     constraint[0])
-                            y_hat, dpsi, _, loss = const
-                            constraints[i].append([y_hat, dpsi, loss])
+                            y_hat, djoint_feature, _, loss = const
+                            constraints[i].append([y_hat, djoint_feature, loss])
                 H = H_new
             if iteration > 0:
                 self.base_ssvm.fit(X, H, constraints=constraints,

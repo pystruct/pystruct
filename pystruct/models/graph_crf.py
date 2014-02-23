@@ -88,14 +88,14 @@ class GraphCRF(CRF):
                      class_weight=class_weight)
         # n_states unary parameters, upper triangular for pairwise
 
-    def _set_size_psi(self):
-        # try to set the size of psi if possible
+    def _set_size_joint_feature(self):
+        # try to set the size of joint_feature if possible
         if self.n_features is not None and self.n_states is not None:
             if self.directed:
-                self.size_psi = (self.n_states * self.n_features +
+                self.size_joint_feature = (self.n_states * self.n_features +
                                  self.n_states ** 2)
             else:
-                self.size_psi = (self.n_states * self.n_features
+                self.size_joint_feature = (self.n_states * self.n_features
                                  + self.n_states * (self.n_states + 1) / 2)
 
     def _get_edges(self, x):
@@ -112,7 +112,7 @@ class GraphCRF(CRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -135,7 +135,7 @@ class GraphCRF(CRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -151,11 +151,11 @@ class GraphCRF(CRF):
 
         return np.dot(features, unary_params.T)
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -170,7 +170,7 @@ class GraphCRF(CRF):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
 
         """
@@ -203,5 +203,5 @@ class GraphCRF(CRF):
         else:
             pw = compress_sym(pw)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), pw])
-        return psi_vector
+        joint_feature_vector = np.hstack([unaries_acc.ravel(), pw])
+        return joint_feature_vector

@@ -103,7 +103,7 @@ class OneSlackSSVM(BaseSSVM):
 
     Attributes
     ----------
-    w : nd-array, shape=(model.size_psi,)
+    w : nd-array, shape=(model.size_joint_feature,)
         The learned weights of the SVM.
 
     old_solution : dict
@@ -151,12 +151,12 @@ class OneSlackSSVM(BaseSSVM):
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
-        psis = [c[0] for c in constraints]
+        joint_features = [c[0] for c in constraints]
         losses = [c[1] for c in constraints]
 
-        psi_matrix = np.vstack(psis)
-        n_constraints = len(psis)
-        P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T))
+        joint_feature_matrix = np.vstack(joint_features)
+        n_constraints = len(joint_features)
+        P = cvxopt.matrix(np.dot(joint_feature_matrix, joint_feature_matrix.T))
         # q contains loss from margin-rescaling
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
         # constraints: all alpha must be >zero
@@ -166,13 +166,13 @@ class OneSlackSSVM(BaseSSVM):
         if self.negativity_constraint is None:
             #empty constraints
             zero_constr = np.zeros(0)
-            psis_constr = np.zeros((0, n_constraints))
+            joint_features_constr = np.zeros((0, n_constraints))
         else:
-            psis_constr = psi_matrix.T[self.negativity_constraint]
+            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
             zero_constr = np.zeros(len(self.negativity_constraint))
 
         # put together
-        G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, psis_constr))))
+        G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, joint_features_constr))))
         h = cvxopt.matrix(np.hstack((tmp1, zero_constr)))
 
         # equality constraint: sum of all alpha must be = C
@@ -199,8 +199,8 @@ class OneSlackSSVM(BaseSSVM):
             solution = {'status': 'error'}
         if solution['status'] != "optimal":
             print("regularizing QP!")
-            P = cvxopt.matrix(np.dot(psi_matrix, psi_matrix.T)
-                              + 1e-8 * np.eye(psi_matrix.shape[0]))
+            P = cvxopt.matrix(np.dot(joint_feature_matrix, joint_feature_matrix.T)
+                              + 1e-8 * np.eye(joint_feature_matrix.shape[0]))
             solution = cvxopt.solvers.qp(P, q, G, h, A, b)
             if solution['status'] != "optimal":
                 raise ValueError("QP solver failed. Try regularizing your QP.")
@@ -215,7 +215,7 @@ class OneSlackSSVM(BaseSSVM):
         if self.verbose > 1:
             print("%d support vectors out of %d points" % (np.sum(sv),
                                                            n_constraints))
-        self.w = np.dot(a, psi_matrix)
+        self.w = np.dot(a, joint_feature_matrix)
         # we needed to flip the sign to make the dual into a minimization
         # model
         return -solution['primal objective']
@@ -243,7 +243,7 @@ class OneSlackSSVM(BaseSSVM):
                 del constraints[idx]
                 del self.alphas[idx]
 
-    def _check_bad_constraint(self, violation, dpsi_mean, loss,
+    def _check_bad_constraint(self, violation, djoint_feature_mean, loss,
                               old_constraints, break_on_bad, tol=None):
         violation_difference = violation - self.last_slack_
         if self.verbose > 1:
@@ -258,8 +258,8 @@ class OneSlackSSVM(BaseSSVM):
             if self.verbose:
                 print("new constraint too weak.")
             return True
-        equals = [True for dpsi_, loss_ in old_constraints
-                  if (np.all(dpsi_ == dpsi_mean) and loss == loss_)]
+        equals = [True for djoint_feature_, loss_ in old_constraints
+                  if (np.all(djoint_feature_ == djoint_feature_mean) and loss == loss_)]
 
         if np.any(equals):
             return True
@@ -305,10 +305,10 @@ class OneSlackSSVM(BaseSSVM):
             # this makes it a little less efficient in the caching case.
             # the idea is that if we cache, inference is way more expensive
             # and this doesn't matter much.
-            sample.append((self.model.psi(x, y_hat),
+            sample.append((self.model.joint_feature(x, y_hat),
                            self.model.loss(y, y_hat), y_hat))
 
-    def _constraint_from_cache(self, X, Y, psi_gt, constraints):
+    def _constraint_from_cache(self, X, Y, joint_feature_gt, constraints):
         if (not getattr(self, 'inference_cache_', False) or
                 self.inference_cache_ is False):
             if self.verbose > 10:
@@ -324,29 +324,29 @@ class OneSlackSSVM(BaseSSVM):
             raise NoConstraint
 
         Y_hat = []
-        psi_acc = np.zeros(self.model.size_psi)
+        joint_feature_acc = np.zeros(self.model.size_joint_feature)
         loss_mean = 0
         for cached in self.inference_cache_:
-            # cached has entries of form (psi, loss, y_hat)
-            violations = [np.dot(psi, self.w) + loss
-                          for psi, loss, _ in cached]
-            psi, loss, y_hat = cached[np.argmax(violations)]
+            # cached has entries of form (joint_feature, loss, y_hat)
+            violations = [np.dot(joint_feature, self.w) + loss
+                          for joint_feature, loss, _ in cached]
+            joint_feature, loss, y_hat = cached[np.argmax(violations)]
             Y_hat.append(y_hat)
-            psi_acc += psi
+            joint_feature_acc += joint_feature
             loss_mean += loss
 
-        dpsi = (psi_gt - psi_acc) / len(X)
+        djoint_feature = (joint_feature_gt - joint_feature_acc) / len(X)
         loss_mean = loss_mean / len(X)
 
-        violation = loss_mean - np.dot(self.w, dpsi)
-        if self._check_bad_constraint(violation, dpsi, loss_mean, constraints,
+        violation = loss_mean - np.dot(self.w, djoint_feature)
+        if self._check_bad_constraint(violation, djoint_feature, loss_mean, constraints,
                                       break_on_bad=False):
             if self.verbose > 1:
                 print("No constraint from cache.")
             raise NoConstraint
-        return Y_hat, dpsi, loss_mean
+        return Y_hat, djoint_feature, loss_mean
 
-    def _find_new_constraint(self, X, Y, psi_gt, constraints, check=True):
+    def _find_new_constraint(self, X, Y, joint_feature_gt, constraints, check=True):
         if self.n_jobs != 1:
             # do inference in parallel
             verbose = max(0, self.verbose - 3)
@@ -357,21 +357,23 @@ class OneSlackSSVM(BaseSSVM):
         else:
             Y_hat = self.model.batch_loss_augmented_inference(
                 X, Y, self.w, relaxed=True)
-        # compute the mean over psis and losses
+        # compute the mean over joint_features and losses
 
         if getattr(self.model, 'rescale_C', False):
-            dpsi = (psi_gt - self.model.batch_psi(X, Y_hat, Y)) / len(X)
+            djoint_feature = (joint_feature_gt
+                              - self.model.batch_joint_feature(X, Y_hat, Y)) / len(X)
         else:
-            dpsi = (psi_gt - self.model.batch_psi(X, Y_hat)) / len(X)
+            djoint_feature = (joint_feature_gt
+                              - self.model.batch_joint_feature(X, Y_hat)) / len(X)
 
         loss_mean = np.mean(self.model.batch_loss(Y, Y_hat))
 
-        violation = loss_mean - np.dot(self.w, dpsi)
+        violation = loss_mean - np.dot(self.w, djoint_feature)
         if check and self._check_bad_constraint(
-                violation, dpsi, loss_mean, constraints,
+                violation, djoint_feature, loss_mean, constraints,
                 break_on_bad=self.break_on_bad):
             raise NoConstraint
-        return Y_hat, dpsi, loss_mean
+        return Y_hat, djoint_feature, loss_mean
 
     def fit(self, X, Y, constraints=None, warm_start=False, initialize=True):
         """Learn parameters using cutting plane method.
@@ -408,22 +410,22 @@ class OneSlackSSVM(BaseSSVM):
             self.cache_tol_ = self.cache_tol
 
         if not warm_start:
-            self.w = np.zeros(self.model.size_psi)
+            self.w = np.zeros(self.model.size_joint_feature)
             constraints = []
             self.objective_curve_, self.primal_objective_curve_ = [], []
             self.cached_constraint_ = []
             self.alphas = []  # dual solutions
             # append constraint given by ground truth to make our life easier
-            constraints.append((np.zeros(self.model.size_psi), 0))
+            constraints.append((np.zeros(self.model.size_joint_feature), 0))
             self.alphas.append([self.C])
             self.inference_cache_ = None
             self.timestamps_ = [time()]
         elif warm_start == "soft":
-            self.w = np.zeros(self.model.size_psi)
+            self.w = np.zeros(self.model.size_joint_feature)
             constraints = []
             self.alphas = []  # dual solutions
             # append constraint given by ground truth to make our life easier
-            constraints.append((np.zeros(self.model.size_psi), 0))
+            constraints.append((np.zeros(self.model.size_joint_feature), 0))
             self.alphas.append([self.C])
 
         else:
@@ -431,11 +433,11 @@ class OneSlackSSVM(BaseSSVM):
 
         self.last_slack_ = -1
 
-        # get the psi of the ground truth
+        # get the joint_feature of the ground truth
         if getattr(self.model, 'rescale_C', False):
-            psi_gt = self.model.batch_psi(X, Y, Y)
+            joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)
         else:
-            psi_gt = self.model.batch_psi(X, Y)
+            joint_feature_gt = self.model.batch_joint_feature(X, Y)
 
         try:
             # catch ctrl+c to stop training
@@ -448,13 +450,13 @@ class OneSlackSSVM(BaseSSVM):
                 if self.verbose > 2:
                     print(self)
                 try:
-                    Y_hat, dpsi, loss_mean = self._constraint_from_cache(
-                        X, Y, psi_gt, constraints)
+                    Y_hat, djoint_feature, loss_mean = self._constraint_from_cache(
+                        X, Y, joint_feature_gt, constraints)
                     cached_constraint = True
                 except NoConstraint:
                     try:
-                        Y_hat, dpsi, loss_mean = self._find_new_constraint(
-                            X, Y, psi_gt, constraints)
+                        Y_hat, djoint_feature, loss_mean = self._find_new_constraint(
+                            X, Y, joint_feature_gt, constraints)
                         self._update_cache(X, Y, Y_hat)
                     except NoConstraint:
                         if self.verbose:
@@ -474,10 +476,10 @@ class OneSlackSSVM(BaseSSVM):
 
                 self.timestamps_.append(time() - self.timestamps_[0])
                 self._compute_training_loss(X, Y, iteration)
-                constraints.append((dpsi, loss_mean))
+                constraints.append((djoint_feature, loss_mean))
 
                 # compute primal objective
-                last_slack = -np.dot(self.w, dpsi) + loss_mean
+                last_slack = -np.dot(self.w, djoint_feature) + loss_mean
                 primal_objective = (self.C * len(X)
                                     * max(last_slack, 0)
                                     + np.sum(self.w ** 2) / 2)
@@ -491,8 +493,8 @@ class OneSlackSSVM(BaseSSVM):
                 if self.cache_tol == "auto" and not cached_constraint:
                     self.cache_tol_ = (primal_objective - objective) / 4
 
-                self.last_slack_ = np.max([(-np.dot(self.w, dpsi) + loss_mean)
-                                           for dpsi, loss_mean in constraints])
+                self.last_slack_ = np.max([(-np.dot(self.w, djoint_feature) + loss_mean)
+                                           for djoint_feature, loss_mean in constraints])
                 self.last_slack_ = max(self.last_slack_, 0)
 
                 if self.verbose > 0:

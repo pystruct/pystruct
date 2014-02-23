@@ -1,7 +1,7 @@
 import numpy as np
 
 from .base import StructuredModel
-from .utils import crammer_singer_psi
+from .utils import crammer_singer_joint_feature
 
 
 class BinaryClf(StructuredModel):
@@ -24,27 +24,27 @@ class BinaryClf(StructuredModel):
         Number of features of inputs x.
     """
     def __init__(self, n_features=None):
-        self.size_psi = n_features
+        self.size_joint_feature = n_features
         self.n_states = 2
         self.inference_calls = 0
 
     def initialize(self, X, Y):
         n_features = X.shape[1]
-        if self.size_psi is None:
-            self.size_psi = n_features
-        elif self.size_psi != n_features:
+        if self.size_joint_feature is None:
+            self.size_joint_feature = n_features
+        elif self.size_joint_feature != n_features:
             raise ValueError("Expected %d features, got %d"
-                             % (self.size_psi, n_features))
+                             % (self.size_joint_feature, n_features))
 
     def __repr__(self):
         return ("%s, n_features: %d"
-                % (type(self).__name__, self.size_psi))
+                % (type(self).__name__, self.size_joint_feature))
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Compute joint feature vector of x and y.
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -56,20 +56,20 @@ class BinaryClf(StructuredModel):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
         """
         if y not in [-1, 1]:
             raise ValueError("y has to be either -1 or +1, got %s" % repr(y))
         return y * x / 2.
 
-    def batch_psi(self, X, Y):
+    def batch_joint_feature(self, X, Y):
         return np.sum(X * np.array(Y)[:, np.newaxis] / 2., axis=0)
 
     def inference(self, x, w, relaxed=None):
         """Inference for x using parameters w.
 
-        Finds armin_y np.dot(w, psi(x, y)), i.e. best possible prediction.
+        Finds armin_y np.dot(w, joint_feature(x, y)), i.e. best possible prediction.
 
         For a binary SVM, this is just sign(np.dot(w, x) + b))
 
@@ -78,7 +78,7 @@ class BinaryClf(StructuredModel):
         x : ndarray, shape (n_features,)
             Input sample features.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Parameters of the SVM.
 
         relaxed : ignored
@@ -98,7 +98,7 @@ class BinaryClf(StructuredModel):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
-        np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        np.dot(joint_feature(x, y_hat), w) + loss(y, y_hat)
         which is just
         sign(np.dot(x, w) + b - y)
 
@@ -111,7 +111,7 @@ class BinaryClf(StructuredModel):
             Ground truth labeling relative to which the loss
             will be measured.
 
-        w : ndarray, shape (size_psi,)
+        w : ndarray, shape (size_joint_feature,)
             Weights that will be used for inference.
 
         Returns
@@ -167,12 +167,12 @@ class MultiClassClf(StructuredModel):
         self.rescale_C = rescale_C
         self.class_weight = class_weight
         self.inference_calls = 0
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if not None in [self.n_states, self.n_features]:
-            self.size_psi = self.n_states * self.n_features
+            self.size_joint_feature = self.n_states * self.n_features
 
     def initialize(self, X, Y):
         n_features = X.shape[1]
@@ -188,18 +188,18 @@ class MultiClassClf(StructuredModel):
         elif self.n_states != n_classes:
             raise ValueError("Expected %d classes, got %d"
                              % (self.n_states, n_classes))
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def __repr__(self):
         return ("%s(n_features=%d, n_classes=%d)"
                 % (type(self).__name__, self.n_features, self.n_states))
 
-    def psi(self, x, y, y_true=None):
+    def joint_feature(self, x, y, y_true=None):
         """Compute joint feature vector of x and y.
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -215,7 +215,7 @@ class MultiClassClf(StructuredModel):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
         """
         # put feature vector in the place of the weights corresponding to y
@@ -224,17 +224,17 @@ class MultiClassClf(StructuredModel):
         if self.rescale_C:
             if y_true is None:
                 raise ValueError("rescale_C is true, but no y_true was passed"
-                                 " to psi.")
+                                 " to joint_feature.")
             result *= self.class_weight[y_true]
 
         return result.ravel()
 
-    def batch_psi(self, X, Y, Y_true=None):
+    def batch_joint_feature(self, X, Y, Y_true=None):
         result = np.zeros((self.n_states, self.n_features))
         if self.rescale_C:
             if Y_true is None:
                 raise ValueError("rescale_C is true, but no y_true was passed"
-                                 " to psi.")
+                                 " to joint_feature.")
             for l in xrange(self.n_states):
                 mask = Y == l
                 class_weight = self.class_weight[Y_true[mask]][:, np.newaxis]
@@ -244,13 +244,13 @@ class MultiClassClf(StructuredModel):
             # implementation
             assert(X.shape[0] == Y.shape[0])
             assert(X.shape[1] == self.n_features)
-            crammer_singer_psi(X, Y, result)
+            crammer_singer_joint_feature(X, Y, result)
         return result.ravel()
 
     def inference(self, x, w, relaxed=None, return_energy=False):
         """Inference for x using parameters w.
 
-        Finds armin_y np.dot(w, psi(x, y)), i.e. best possible prediction.
+        Finds armin_y np.dot(w, joint_feature(x, y)), i.e. best possible prediction.
 
         For an unstructured multi-class model (this model), this
         can easily done by enumerating all possible y.
@@ -260,7 +260,7 @@ class MultiClassClf(StructuredModel):
         x : ndarray, shape (n_features,)
             Input sample features.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Parameters of the SVM.
 
         relaxed : ignored
@@ -281,7 +281,7 @@ class MultiClassClf(StructuredModel):
         """Loss-augmented inference for x and y using parameters w.
 
         Minimizes over y_hat:
-        np.dot(psi(x, y_hat), w) + loss(y, y_hat)
+        np.dot(joint_feature(x, y_hat), w) + loss(y, y_hat)
 
         Parameters
         ----------
@@ -292,7 +292,7 @@ class MultiClassClf(StructuredModel):
             Ground truth labeling relative to which the loss
             will be measured.
 
-        w : ndarray, shape (size_psi,)
+        w : ndarray, shape (size_joint_feature,)
             Weights that will be used for inference.
 
         Returns

@@ -116,7 +116,7 @@ class LatentNodeCRF(GraphCRF):
                           inference_method=inference_method,
                           class_weight=class_weight)
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if None in [self.n_states, self.n_features]:
             return
 
@@ -125,8 +125,8 @@ class LatentNodeCRF(GraphCRF):
         else:
             n_input_states = self.n_labels
         self.n_input_states = n_input_states
-        self.size_psi = (n_input_states * self.n_features
-                         + self.n_states * (self.n_states + 1) / 2)
+        self.size_joint_feature = (n_input_states * self.n_features +
+                                   self.n_states * (self.n_states + 1) / 2)
 
     def initialize(self, X, Y):
         n_features = X[0][0].shape[1]
@@ -143,7 +143,7 @@ class LatentNodeCRF(GraphCRF):
             raise ValueError("Expected %d labels, got %d"
                              % (self.n_labels, n_labels))
         self.n_states = self.n_hidden_states + n_labels
-        self._set_size_psi()
+        self._set_size_joint_feature()
         self._set_class_weight()
 
     def _get_pairwise_potentials(self, x, w):
@@ -154,7 +154,7 @@ class LatentNodeCRF(GraphCRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -174,7 +174,7 @@ class LatentNodeCRF(GraphCRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -261,11 +261,12 @@ class LatentNodeCRF(GraphCRF):
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the
+        configuration (x, y) and a weight vector w is given by
+        np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -280,7 +281,7 @@ class LatentNodeCRF(GraphCRF):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
 
         """
@@ -308,8 +309,9 @@ class LatentNodeCRF(GraphCRF):
         unaries_acc = np.dot(unary_marginals[:n_visible,
                                              :self.n_input_states].T, features)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), compress_sym(pw)])
-        return psi_vector
+        joint_feature_vector = np.hstack([unaries_acc.ravel(),
+                                          compress_sym(pw)])
+        return joint_feature_vector
 
     def init_latent(self, X, Y):
         # treat all edges the same
@@ -392,9 +394,8 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
             n_input_states = n_labels
 
         self.n_input_states = n_input_states
-        self.size_psi = (n_input_states * n_features
-                         + n_edge_features
-                         * n_states ** 2)
+        self.size_joint_feature = (
+            n_input_states * n_features + n_edge_features * n_states ** 2)
         self.latent_node_features = latent_node_features
 
         if symmetric_edge_features is None:
@@ -415,7 +416,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
                           inference_method=inference_method,
                           class_weight=class_weight)
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if None in [self.n_states, self.n_features]:
             return
 
@@ -424,10 +425,9 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         else:
             n_input_states = self.n_labels
         self.n_input_states = n_input_states
-        self.size_psi = (n_input_states * self.n_features
-                         + self.n_edge_features * self.n_states ** 2  )
-
-
+        self.size_joint_feature = (
+            n_input_states * self.n_features + self.n_edge_features *
+            self.n_states ** 2)
 
     def _check_size_x(self, x):
         GraphCRF._check_size_x(self, x)
@@ -448,7 +448,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -472,7 +472,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -561,11 +561,12 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         y_hat_org = y_hat[:y_org.size, :self.n_labels]
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the
+        configuration (x, y) and a weight vector w is given by
+        np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -580,7 +581,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
 
         """
@@ -620,8 +621,8 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         unaries_acc = np.dot(unary_marginals[:n_visible,
                                              :self.n_input_states].T, features)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
-        return psi_vector
+        joint_feature_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
+        return joint_feature_vector
 
     def init_latent(self, X, Y):
         # treat all edges the same

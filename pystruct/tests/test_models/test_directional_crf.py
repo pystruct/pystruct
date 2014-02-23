@@ -61,28 +61,28 @@ def test_inference():
         assert_array_equal(y, y_pred)
 
 
-def test_psi_discrete():
+def test_joint_feature_discrete():
     X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
     x, y = X[0], Y[0]
     for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         crf = DirectionalGridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
-        psi_y = crf.psi(x, y)
-        assert_equal(psi_y.shape, (crf.size_psi,))
+        joint_feature_y = crf.joint_feature(x, y)
+        assert_equal(joint_feature_y.shape, (crf.size_joint_feature,))
         # first horizontal, then vertical
         # we trust the unaries ;)
-        pw_psi_horz, pw_psi_vert = psi_y[crf.n_states *
+        pw_joint_feature_horz, pw_joint_feature_vert = joint_feature_y[crf.n_states *
                                          crf.n_features:].reshape(
                                              2, crf.n_states, crf.n_states)
         xx, yy = np.indices(y.shape)
-        assert_array_equal(pw_psi_vert, np.diag([9 * 4, 9 * 4, 9 * 4]))
-        vert_psi = np.diag([10 * 3, 10 * 3, 10 * 3])
-        vert_psi[0, 1] = 10
-        vert_psi[1, 2] = 10
-        assert_array_equal(pw_psi_horz, vert_psi)
+        assert_array_equal(pw_joint_feature_vert, np.diag([9 * 4, 9 * 4, 9 * 4]))
+        vert_joint_feature = np.diag([10 * 3, 10 * 3, 10 * 3])
+        vert_joint_feature[0, 1] = 10
+        vert_joint_feature[1, 2] = 10
+        assert_array_equal(pw_joint_feature_horz, vert_joint_feature)
 
 
-def test_psi_continuous():
+def test_joint_feature_continuous():
     # FIXME
     # first make perfect prediction, including pairwise part
     X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1)
@@ -106,12 +106,12 @@ def test_psi_continuous():
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
 
-        # compute psi for prediction
-        psi_y = crf.psi(x, y_pred)
-        assert_equal(psi_y.shape, (crf.size_psi,))
+        # compute joint_feature for prediction
+        joint_feature_y = crf.joint_feature(x, y_pred)
+        assert_equal(joint_feature_y.shape, (crf.size_joint_feature,))
         # first horizontal, then vertical
         # we trust the unaries ;)
-        #pw_psi_horz, pw_psi_vert = psi_y[crf.n_states *
+        #pw_joint_feature_horz, pw_joint_feature_vert = joint_feature_y[crf.n_states *
                                  #crf.n_features:].reshape(2,
                                                           #crf.n_states,
                                                           #crf.n_states)
@@ -133,15 +133,15 @@ def test_energy():
             res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
             found_fractional = np.any(np.max(res[0], axis=-1) != 1)
 
-            psi = crf.psi(x, res)
-            energy_svm = np.dot(psi, w)
+            joint_feature = crf.joint_feature(x, res)
+            energy_svm = np.dot(joint_feature, w)
 
             assert_almost_equal(energy, -energy_svm)
             if not found_fractional:
                 # exact discrete labels, test non-relaxed version
                 res, energy = crf.inference(x, w, relaxed=False,
                                             return_energy=True)
-                psi = crf.psi(x, res)
-                energy_svm = np.dot(psi, w)
+                joint_feature = crf.joint_feature(x, res)
+                energy_svm = np.dot(joint_feature, w)
 
                 assert_almost_equal(energy, -energy_svm)

@@ -71,9 +71,9 @@ class EdgeFeatureGraphCRF(GraphCRF):
         GraphCRF.__init__(self, n_states, n_features, inference_method,
                           class_weight=class_weight)
 
-    def _set_size_psi(self):
+    def _set_size_joint_feature(self):
         if not None in [self.n_states, self.n_features, self.n_edge_features]:
-            self.size_psi = (self.n_states * self.n_features
+            self.size_joint_feature = (self.n_states * self.n_features
                              + self.n_edge_features
                              * self.n_states ** 2)
 
@@ -127,7 +127,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
         x : tuple
             Instance Representation.
 
-        w : ndarray, shape=(size_psi,)
+        w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
 
         Returns
@@ -143,11 +143,11 @@ class EdgeFeatureGraphCRF(GraphCRF):
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
 
-    def psi(self, x, y):
+    def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
 
-        Feature representation psi, such that the energy of the configuration
-        (x, y) and a weight vector w is given by np.dot(w, psi(x, y)).
+        Feature representation joint_feature, such that the energy of the configuration
+        (x, y) and a weight vector w is given by np.dot(w, joint_feature(x, y)).
 
         Parameters
         ----------
@@ -162,7 +162,7 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         Returns
         -------
-        p : ndarray, shape (size_psi,)
+        p : ndarray, shape (size_joint_feature,)
             Feature vector associated with state (x, y).
 
         """
@@ -202,5 +202,5 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
         unaries_acc = np.dot(unary_marginals.T, features)
 
-        psi_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
-        return psi_vector
+        joint_feature_vector = np.hstack([unaries_acc.ravel(), pw.ravel()])
+        return joint_feature_vector

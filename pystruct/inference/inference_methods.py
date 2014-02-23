@@ -199,38 +199,24 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     nFactors = int(n_nodes+edges.shape[0])
     gm.reserveFactors(nFactors)
-    gm.reserveFunctions(nFactors,'explicit')
-    #gm.reserveFactorsVariableIndices(n_nodes*n_states + int(edges.shape[0])*n_states**2 )
+    gm.reserveFunctions(nFactors, 'explicit')
 
-    # all unaries as one numpy array 
+    # all unaries as one numpy array
     # (opengm's value_type == float64 but all types are accepted)
-    unaries = np.require(unary_potentials,dtype=opengm.value_type)*-1.0
+    unaries = np.require(unary_potentials, dtype=opengm.value_type)*-1.0
     # add all unart functions at once
     fidUnaries = gm.addFunctions(unaries)
-    visUnaries = np.arange(n_nodes,dtype=opengm.label_type)
+    visUnaries = np.arange(n_nodes, dtype=opengm.label_type)
     # add all unary factors at once
-    gm.addFactors(fidUnaries,visUnaries)
+    gm.addFactors(fidUnaries, visUnaries)
 
-    # add all pariwise functions at once 
+    # add all pariwise functions at once
     # - first axis of secondOrderFunctions iterates over the function)
 
-    secondOrderFunctions = np.require(pairwise_potentials,dtype=opengm.value_type)*-1.0
+    secondOrderFunctions = -np.require(pairwise_potentials,
+                                       dtype=opengm.value_type)
     fidSecondOrder = gm.addFunctions(secondOrderFunctions)
-    assert secondOrderFunctions.ndim == 3
-    assert secondOrderFunctions.shape[1] == n_states
-    assert secondOrderFunctions.shape[2] == n_states
-    assert edges.ndim==2
-    assert edges.shape[0]==secondOrderFunctions.shape[0]
-    assert edges.shape[1]==2
-    gm.addFactors(fidSecondOrder,edges.astype(np.uint64))
-
-
-    #for i, un in enumerate(unary_potentials):
-        #gm.addFactor(gm.addFunction(-un.astype(np.float32)), i)
-    #for pw, edge in zip(pairwise_potentials, edges):
-        #gm.addFactor(gm.addFunction(-pw.astype(np.float32)),
-                     #edge.astype(np.uint64))
-
+    gm.addFactors(fidSecondOrder, edges.astype(np.uint64))
 
     if alg == 'bp':
         inference = opengm.inference.BeliefPropagation(gm)
@@ -266,7 +252,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     # because otherwise we are sure to shoot ourself in the foot
     res = inference.arg().astype(np.int)
     if return_energy:
-        return res, gm.evaluate(res)  # inference.value() should also do the trick
+        return res, gm.evaluate(res)
     return res
 
 
