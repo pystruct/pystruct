@@ -13,7 +13,6 @@ The design tries to stay as close as possible to the interface and conventions
 of [scikit-learn](http://scikit-learn.org).
 
 Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
-I plan a stable release soon.
 
 The full documentation and installation instructions can be found at the website:
 http://pystruct.github.io
