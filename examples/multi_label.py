@@ -1,7 +1,7 @@
 """
-=========================
-Mult-label classification
-=========================
+==========================
+Multi-label classification
+==========================
 This example shows how to use structured support vector machines
 (or structured prediction in general) to do multi-label classification.
 
