@@ -32,6 +32,7 @@ The rest is experimental / for testing.
     learners.LatentSSVM
     learners.SubgradientLatentSSVM
     learners.PrimalDSStructuredSVM
+    learners.FrankWolfeSSVM
 
 .. _models:
 
