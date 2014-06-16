@@ -83,6 +83,7 @@ Conditional Random Fields
     models.EdgeFeatureGraphCRF
     models.LatentGraphCRF
     models.LatentNodeCRF
+    models.ChainCRF
     models.GridCRF
     models.DirectionalGridCRF
 
