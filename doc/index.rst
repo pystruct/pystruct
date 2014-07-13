@@ -25,6 +25,15 @@ stable with respect to API and will provide backward compatibility.
 You can contact the authors either via the `mailing list <https://groups.google.com/forum/#!forum/pystruct>`_
 or on `github <https://github.com/pystruct/pystruct>`_.
 
+Citing
+======
+If you find PyStruct helpful, please cite `our paper<http://jmlr.org/papers/volume15/mueller14a/mueller14a.pdf>`_:
+    
+    | Andreas C. Mueller, Sven Behnke
+    | PyStruct - Structured prediction in Python
+    | Journal of machine learning, 2014
+    | `bibtex here <http://jmlr.org/papers/v15/mueller14a.bib>`_
+
 Installation
 =============
 To install pystruct, you need cvxopt, cython and scikit-learn.
