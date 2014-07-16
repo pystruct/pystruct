@@ -27,7 +27,7 @@ or on `github <https://github.com/pystruct/pystruct>`_.
 
 Citing
 ======
-If you find PyStruct helpful, please cite `our paper<http://jmlr.org/papers/volume15/mueller14a/mueller14a.pdf>`_:
+If you find PyStruct helpful, please cite `our paper <http://jmlr.org/papers/volume15/mueller14a/mueller14a.pdf>`_:
     
     | Andreas C. Mueller, Sven Behnke
     | PyStruct - Structured prediction in Python
