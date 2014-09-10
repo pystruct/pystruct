@@ -290,7 +290,7 @@ class SubgradientSSVM(BaseSSVM):
         else:
             # mini batch learning
             if self.batch_size == -1:
-                slices = [slice(0, len(X)), None]
+                slices = [slice(0, len(X))]
             else:
                 n_batches = int(np.ceil(float(len(X)) / self.batch_size))
                 slices = gen_even_slices(n_samples, n_batches)
