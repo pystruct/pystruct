@@ -90,3 +90,9 @@ def test_multinomial_blocks_subgradient_batch():
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
+    
+    clf2 = SubgradientSSVM(model=crf, max_iter=100, batch_size=len(X))
+    clf2.fit(X, Y)
+    Y_pred2 = clf2.predict(X)
+    assert_array_equal(Y, Y_pred2)
+    
