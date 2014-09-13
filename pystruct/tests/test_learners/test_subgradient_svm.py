@@ -79,3 +79,20 @@ def test_subgradient_svm_as_crf_pickling():
 
     assert_less(.97, svm.score(X_test, y_test))
     assert_less(.97, logger.load().score(X_test, y_test))
+
+
+def test_multinomial_blocks_subgradient_batch():
+    #testing cutting plane ssvm on easy multinomial dataset
+    X, Y = generate_blocks_multinomial(n_samples=10, noise=0.6, seed=1)
+    n_labels = len(np.unique(Y))
+    crf = GridCRF(n_states=n_labels, inference_method=inference_method)
+    clf = SubgradientSSVM(model=crf, max_iter=100, batch_size=-1)
+    clf.fit(X, Y)
+    Y_pred = clf.predict(X)
+    assert_array_equal(Y, Y_pred)
+    
+    clf2 = SubgradientSSVM(model=crf, max_iter=100, batch_size=len(X))
+    clf2.fit(X, Y)
+    Y_pred2 = clf2.predict(X)
+    assert_array_equal(Y, Y_pred2)
+    
