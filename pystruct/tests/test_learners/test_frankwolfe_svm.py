@@ -5,11 +5,12 @@ from numpy.testing import assert_array_equal
 from nose.tools import assert_less
 
 from sklearn.datasets import load_iris
+from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF
 from pystruct.datasets import generate_blocks_multinomial
 from pystruct.learners import FrankWolfeSSVM
-from pystruct.utils import SaveLogger, train_test_split
+from pystruct.utils import SaveLogger
 
 
 def test_multinomial_blocks_frankwolfe():

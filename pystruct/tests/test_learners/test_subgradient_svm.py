@@ -5,13 +5,14 @@ from numpy.testing import assert_array_equal
 from nose.tools import assert_less
 
 from sklearn.datasets import load_iris
+from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF
 from pystruct.learners import SubgradientSSVM
 from pystruct.inference import get_installed
 from pystruct.datasets import (generate_blocks_multinomial,
                                generate_checker_multinomial, generate_blocks)
-from pystruct.utils import SaveLogger, train_test_split
+from pystruct.utils import SaveLogger
 
 
 inference_method = get_installed(["qpbo", "ad3", "lp"])[0]

@@ -2,10 +2,11 @@ import numpy as np
 from tempfile import mkstemp
 
 from sklearn.datasets import load_iris
+from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM
-from pystruct.utils import SaveLogger, train_test_split
+from pystruct.utils import SaveLogger
 from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
                                generate_checker, generate_checker_multinomial)
 from pystruct.models import GridCRF, DirectionalGridCRF

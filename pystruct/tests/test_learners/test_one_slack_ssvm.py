@@ -4,12 +4,13 @@ from tempfile import mkstemp
 from nose.tools import assert_true, assert_equal, assert_less, assert_greater
 
 from sklearn.datasets import load_digits, load_iris
+from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF, BinaryClf
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import (generate_blocks_multinomial, generate_blocks,
                                generate_checker)
-from pystruct.utils import make_grid_edges, SaveLogger, train_test_split
+from pystruct.utils import make_grid_edges, SaveLogger
 from pystruct.inference import get_installed
 
 # we always try to get the fastest installed inference method
