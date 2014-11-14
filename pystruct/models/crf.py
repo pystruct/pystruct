@@ -41,7 +41,7 @@ class CRF(StructuredModel):
         self._set_class_weight()
 
     def __repr__(self):
-        return ("%s(n_states: %d, inference_method: %s)"
+        return ("%s(n_states: %s, inference_method: %s)"
                 % (type(self).__name__, self.n_states,
                    self.inference_method))
 
