@@ -7,7 +7,7 @@ from .common import _validate_params, compute_energy
 
 def get_installed(method_filter=None):
     if method_filter is None:
-        method_filter = ['ad3', 'qpbo', 'dai', 'ogm', 'lp']
+        method_filter = ["max-product", 'ad3', 'qpbo', 'dai', 'ogm', 'lp']
 
     installed = []
     unary = np.zeros((1, 1))
@@ -91,12 +91,12 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
     elif inference_method == "unary":
         return inference_unaries(unary_potentials, pairwise_potentials, edges,
                                  **kwargs)
-    elif inference_method == "mp":
+    elif inference_method == "max-product":
         return inference_max_product(unary_potentials, pairwise_potentials,
                                      edges, **kwargs)
     else:
-        raise ValueError("inference_method must be 'lp', 'ad3', 'qpbo', 'ogm'"
-                         " or 'dai', got %s" % inference_method)
+        raise ValueError("inference_method must be 'max-product', 'lp', 'ad3',"
+                         " 'qpbo', 'ogm' or 'dai', got %s" % inference_method)
 
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
@@ -326,9 +326,6 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
     unaries = unary_potentials.reshape(-1, n_states)
     res = lp_general_graph(-unaries, edges, -pairwise_potentials)
     unary_marginals, pairwise_marginals, energy = res
-    #n_fractional = np.sum(unary_marginals.max(axis=-1) < .99)
-    #if n_fractional:
-        #print("fractional solutions found: %d" % n_fractional)
     if relaxed:
         unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
