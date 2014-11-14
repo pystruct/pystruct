@@ -90,7 +90,7 @@ class LatentNodeCRF(GraphCRF):
 
             - 'qpbo' for QPBO + alpha expansion.
             - 'dai' for LibDAI bindings (which has another parameter).
-            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
 
     class_weight : None, or array-like
@@ -356,7 +356,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
 
             - 'qpbo' for QPBO + alpha expansion.
             - 'dai' for LibDAI bindings (which has another parameter).
-            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
 
     class_weight : None, or array-like

@@ -85,7 +85,7 @@ class LatentGraphCRF(GraphCRF):
 
             - 'qpbo' for QPBO + alpha expansion.
             - 'dai' for LibDAI bindings (which has another parameter).
-            - 'lp' for Linear Programming relaxation using GLPK.
+            - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
 
     """

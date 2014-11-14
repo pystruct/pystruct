@@ -84,7 +84,7 @@ These perform inference: they run your model on data
 in order to make predictions.
 
 There are some options to use different solvers for inference. A linear
-programming solver using GLPK is included. I have Python interfaces for several
+programming solver using cvxopt is included. I have Python interfaces for several
 other methods on github, including LibDAI, QPBO, AD3.
 
 This is where the heavy lifting is done and in some sense these backends are

@@ -73,7 +73,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         Possible choices currently are:
             * 'qpbo' for QPBO alpha-expansion (fast but approximate).
             * 'dai' for libDAI wrappers (default to junction tree).
-            * 'lp' for build-in lp relaxation via GLPK (slow).
+            * 'lp' for build-in lp relaxation via cvxopt (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
             * 'ogm' for OpenGM wrappers.
             * 'unary' for using unary potentials only.
@@ -337,7 +337,7 @@ def inference_dai(unary_potentials, pairwise_potentials, edges,
 
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
                  return_energy=False, **kwargs):
-    """Inference with build-in LP solver using GLPK backend.
+    """Inference with build-in LP solver using cvxopt backend.
 
     Parameters
     ----------
