@@ -17,7 +17,7 @@ export CXX=g++
 sudo add-apt-repository ppa:cython-dev/master-ppa -y
 sudo apt-get update -qq
 
-if [[ "OPENGM" == "true" ]]; then
+if [[ "$OPENGM" == "true" ]]; then
     sudo apt-get install libhdf5-serial-dev libboost1.49-dev libboost-python1.49-dev
     sudo add-apt-repository ppa:ukplc-team/testing -y
     git clone https://github.com/opengm/opengm.git
