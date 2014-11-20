@@ -1,22 +1,24 @@
 language: python
-python:
-    - "2.7"
 virtualenv:
-    system_site_packages: true
-before_install:
-    - sudo add-apt-repository ppa:ukplc-team/testing -y
-    - sudo add-apt-repository ppa:cython-dev/master-ppa -y
-    - sudo apt-get update -qq
-    - sudo apt-get install python-scipy python-cvxopt python-sklearn libhdf5-serial-dev libboost1.49-dev libboost-python1.49-dev cython
-    - git clone https://github.com/opengm/opengm.git
-    - cd opengm
-    - cmake . -DWITH_BOOST=TRUE -DWITH_HDF5=TRUE -DBUILD_PYTHON_WRAPPER=TRUE -DBUILD_EXAMPLES=FALSE -DBUILD_TESTING=FALSE
-    - make -j6 --quiet
-    - sudo make install
-    - cd ..
-    - sudo rm -rf /dev/shm
-    - sudo ln -s /run/shm /dev/shm
-install:
-    - pip install --use-mirrors -r requirements.txt
-    - python setup.py build_ext --inplace
-script: make test
+  system_site_packages: true
+env:
+  matrix:
+    - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
+    # ubuntu without opengm
+    - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
+    # This environment tests the oldest supported anaconda env
+    - DISTRIB="conda" PYTHON_VERSION="2.7"
+      NUMPY_VERSION="1.6.2" SCIPY_VERSION="0.11.0"
+    # This environment tests the newest supported anaconda env
+    - DISTRIB="conda" PYTHON_VERSION="2.7"
+      NUMPY_VERSION="1.8.1" SCIPY_VERSION="0.14.0"
+    # python3 only on ubuntu because of cvxopt
+    - DISTRIB="ubuntu" PYTHON_VERSION="3.4" OPENGM="false"
+install: source continuous_integration/install.sh
+script: bash continuous_integration/test_script.sh
+after_success:
+    # Ignore coveralls failures as the coveralls server is not very reliable
+    # but we don't want travis to report a failure in the github UI just
+    # because the coverage report failed to be published.
+    - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
+cache: apt
