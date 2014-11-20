@@ -57,7 +57,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
-    sudo apt-get install -qq python-scipy python-nose python-pip python-sklearn python-cvxopt cython
+    sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
@@ -65,7 +65,7 @@ if [[ "$COVERAGE" == "true" ]]; then
 fi
 
 # install our favorite inference packages 
-pip install pyqpbo ad3
+pip install pyqpbo ad3 scikit-learn
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
