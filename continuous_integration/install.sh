@@ -42,7 +42,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
+    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
         numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
     source activate testenv
 
