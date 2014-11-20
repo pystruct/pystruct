@@ -1,5 +1,5 @@
 numpy
-scipy
+scipy>=0.11
 cvxopt
 matplotlib
 Cython>=0.19.1
