@@ -108,7 +108,7 @@ def test_max_product_binary_blocks():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    crf = GridCRF(inference_method='mp')
+    crf = GridCRF(inference_method='max-product')
     crf.initialize(X, Y)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
@@ -123,7 +123,7 @@ def test_max_product_multinomial_crf():
                  .4,           # pairwise
                  -.3, .3,
                  -.5, -.1, .3])
-    crf = GridCRF(inference_method='mp')
+    crf = GridCRF(inference_method='max-product')
     crf.initialize(X, Y)
     y_hat = crf.inference(x, w)
     assert_array_equal(y, y_hat)
