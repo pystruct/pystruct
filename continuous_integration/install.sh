@@ -13,6 +13,8 @@ set -e
 export CC=gcc
 export CXX=g++
 
+# add cython repository
+sudo add-apt-repository ppa:cython-dev/master-ppa -y
 sudo apt-get update -qq
 
 if [[ "OPENGM" == "true" ]]; then
@@ -54,6 +56,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
+    # except for cython :-/
     sudo apt-get install -qq python-scipy python-nose python-pip python-sklearn python-cvxopt cython
 fi
 
