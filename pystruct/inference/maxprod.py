@@ -3,6 +3,7 @@ from scipy import sparse
 from scipy.sparse import csgraph
 
 from .common import _validate_params
+from ..utils.graph_functions import is_forest
 from ._viterbi import viterbi
 
 
@@ -18,29 +19,6 @@ def is_chain(edges, n_vertices):
     """Check if edges specify a chain and are in order."""
     return (np.all(edges[:, 0] == np.arange(0, n_vertices - 1))
             and np.all(edges[:, 1] == np.arange(1, n_vertices)))
-
-
-def is_tree(edges, n_vertices=None):
-    """Check if edges specify a tree.
-
-    Parameters
-    ----------
-    edges : nd-array of int
-        Edges of a graph. Shape (n_edges, 2).
-    n_vertices : int or None
-        Number of vertices in the graph. If None, it is inferred from the
-        edges.
-    """
-    if n_vertices is None:
-        n_vertices = np.max(edges) + 1
-    if len(edges) > n_vertices - 1:
-        return False
-    graph = edges_to_graph(edges, n_vertices)
-    n_components, component_indicators = \
-        csgraph.connected_components(graph, directed=False)
-    if len(edges) > n_vertices - n_components:
-        return False
-    return True
 
 
 def inference_max_product(unary_potentials, pairwise_potentials, edges,
@@ -77,7 +55,7 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges,
         y = viterbi(unary_potentials.astype(np.float).copy(),
                     # sad second copy b/c numpy 1.6
                     np.array(pairwise_potentials, dtype=np.float))
-    elif is_tree(edges=edges, n_vertices=len(unary_potentials)):
+    elif is_forest(edges=edges, n_vertices=len(unary_potentials)):
         y = tree_max_product(unary_potentials, pairwise_potentials, edges)
     else:
         y = iterative_max_product(unary_potentials, pairwise_potentials, edges,
