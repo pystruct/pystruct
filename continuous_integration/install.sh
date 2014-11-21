@@ -18,8 +18,9 @@ sudo add-apt-repository ppa:cython-dev/master-ppa -y
 sudo apt-get update -qq
 
 if [[ "$OPENGM" == "true" ]]; then
-    sudo apt-get install libhdf5-serial-dev libboost1.49-dev libboost-python1.49-dev
     sudo add-apt-repository ppa:ukplc-team/testing -y
+    sudo apt-get update -qq
+    sudo apt-get install libhdf5-serial-dev libboost1.49-dev libboost-python1.49-dev
     git clone https://github.com/opengm/opengm.git
     cd opengm
     cmake . -DWITH_BOOST=TRUE -DWITH_HDF5=TRUE -DBUILD_PYTHON_WRAPPER=TRUE -DBUILD_EXAMPLES=FALSE -DBUILD_TESTING=FALSE
