@@ -24,8 +24,9 @@ if [[ "$OPENGM" == "true" ]]; then
     git clone https://github.com/opengm/opengm.git
     cd opengm
     cmake . -DWITH_BOOST=TRUE -DWITH_HDF5=TRUE -DBUILD_PYTHON_WRAPPER=TRUE -DBUILD_EXAMPLES=FALSE -DBUILD_TESTING=FALSE
-    make -j6 --quiet
+    make -j2 --quiet
     sudo make install
+    cd ..
 fi
 
 if [[ "$DISTRIB" == "conda" ]]; then
