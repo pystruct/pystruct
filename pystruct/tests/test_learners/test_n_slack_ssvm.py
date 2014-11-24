@@ -44,8 +44,8 @@ def test_multinomial_blocks_cutting_plane():
     X, Y = generate_blocks_multinomial(n_samples=40, noise=0.5, seed=0)
     n_labels = len(np.unique(Y))
     crf = GridCRF(n_states=n_labels, inference_method=inference_method)
-    clf = NSlackSSVM(model=crf, max_iter=100, C=100, verbose=0,
-                     check_constraints=False, batch_size=1)
+    clf = NSlackSSVM(model=crf, max_iter=100, C=100, check_constraints=False,
+                     batch_size=1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -58,8 +58,8 @@ def test_multinomial_blocks_directional():
     n_labels = len(np.unique(Y))
     crf = DirectionalGridCRF(n_states=n_labels,
                              inference_method=inference_method)
-    clf = NSlackSSVM(model=crf, max_iter=100, C=100, verbose=0,
-                     check_constraints=True, batch_size=1)
+    clf = NSlackSSVM(model=crf, max_iter=100, C=100, check_constraints=True,
+                     batch_size=1)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -93,7 +93,6 @@ def test_switch_to_ad3():
     # as it might use the relaxation, that is pretty much guraranteed
     assert_greater(ssvm_with_switch.objective_curve_[-1],
                    ssvm.objective_curve_[-1])
-    print(ssvm_with_switch.objective_curve_[-1], ssvm.objective_curve_[-1])
 
     # test that convergence also results in switch
     ssvm_with_switch = NSlackSSVM(crf, max_iter=10000, switch_to=('ad3'),

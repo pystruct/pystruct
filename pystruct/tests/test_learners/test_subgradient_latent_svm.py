@@ -30,7 +30,6 @@ def test_with_crosses():
                                         #show_loss_every=0, momentum=0.0,
                                         #decay_exponent=1, decay_t0=10)
             #clf.fit(X, Y)
-            #print(clf.predict_latent(X))
             #Y_pred = clf.predict(X)
             #assert_array_equal(np.array(Y_pred), Y)
 

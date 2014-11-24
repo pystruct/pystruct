@@ -158,7 +158,8 @@ class StructuredPerceptron(BaseSSVM):
                                                   str(self.w)))
                     print("effective learning rate: %f" % effective_lr)
                 if self.loss_curve_[-1] == 0:
-                    print("Loss zero. Stopping.")
+                    if self.verbose:
+                        print("Loss zero. Stopping.")
                     break
 
         except KeyboardInterrupt:

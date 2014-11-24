@@ -262,7 +262,8 @@ class NSlackSSVM(BaseSSVM):
             Whether to initialize the model for the data.
             Leave this true except if you really know what you are doing.
         """
-        print("Training n-slack dual structural SVM")
+        if self.verbose:
+            print("Training n-slack dual structural SVM")
         cvxopt.solvers.options['show_progress'] = self.verbose > 3
         if initialize:
             self.model.initialize(X, Y)
@@ -353,19 +354,22 @@ class NSlackSSVM(BaseSSVM):
                           (new_constraints, objective, primal_objective))
 
                 if new_constraints == 0:
-                    print("no additional constraints")
+                    if self.verbose:
+                        print("no additional constraints")
                     stopping_criterion = True
 
                 if (iteration > 1 and self.objective_curve_[-1]
                         - self.objective_curve_[-2] < self.tol):
-                    print("objective converged.")
+                    if self.verbose:
+                        print("objective converged.")
                     stopping_criterion = True
 
                 if stopping_criterion:
                     if (self.switch_to is not None and
                             self.model.inference_method != self.switch_to):
-                        print("Switching to %s inference" %
-                              str(self.switch_to))
+                        if self.verbose:
+                            print("Switching to %s inference" %
+                                  str(self.switch_to))
                         self.model.inference_method_ = \
                             self.model.inference_method
                         self.model.inference_method = self.switch_to
