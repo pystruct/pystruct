@@ -1,6 +1,7 @@
 from setuptools import setup
 from setuptools.extension import Extension
 from Cython.Distutils import build_ext
+import numpy as np
 
 import os
 
@@ -23,7 +24,9 @@ setup(name="pystruct",
       license="BSD 2-clause",
       use_2to3=True,
       cmdclass={'build_ext': build_ext},
-      ext_modules=[Extension("pystruct.models.utils", ["src/utils.pyx"])],
+      ext_modules=[Extension("pystruct.models.utils", ["src/utils.pyx"]),
+                   Extension("pystruct.inference._viterbi",
+                   ["pystruct/inference/viterbi.pyx"])],
       classifiers=['Intended Audience :: Science/Research',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved',
@@ -39,4 +42,5 @@ setup(name="pystruct",
                    'Programming Language :: Python :: 3',
                    'Programming Language :: Python :: 3.3',
                    ],
+      include_dirs=[np.get_include()]
       )

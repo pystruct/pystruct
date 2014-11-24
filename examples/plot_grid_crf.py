@@ -21,8 +21,8 @@ from pystruct.utils import expand_sym
 
 X, Y = generate_crosses_explicit(n_samples=50, noise=10)
 crf = GridCRF(neighborhood=4)
-clf = ssvm.OneSlackSSVM(model=crf, C=100, n_jobs=-1, inference_cache=100,
-                        tol=.1)
+clf = ssvm.OneSlackSSVM(model=crf, C=100, inference_cache=100,
+                        tol=.1, verbose=10)
 clf.fit(X, Y)
 Y_pred = np.array(clf.predict(X))
 

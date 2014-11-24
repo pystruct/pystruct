@@ -51,6 +51,8 @@ class ChainCRF(GraphCRF):
     """
     def __init__(self, n_states=None, n_features=None, inference_method=None,
                  class_weight=None, directed=True):
+        if inference_method is None:
+            inference_method = "max-product"
         GraphCRF.__init__(self, n_states=n_states, n_features=n_features,
                           inference_method=inference_method,
                           class_weight=class_weight, directed=directed)

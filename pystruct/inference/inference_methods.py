@@ -44,7 +44,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'lp' for build-in lp relaxation via cvxopt (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
             * 'ogm' for OpenGM wrappers.
-            * 'mp' for max-product message passing.
+            * 'max-product' for max-product message passing.
             * 'unary' for using unary potentials only.
 
         It is also possible to pass a tuple (string, dict) where the dict

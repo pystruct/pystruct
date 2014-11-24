@@ -26,11 +26,7 @@ from scipy import sparse
 from sklearn.metrics import hamming_loss
 from sklearn.datasets import fetch_mldata
 from sklearn.metrics import mutual_info_score
-try:
-    from sklearn.utils import minimum_spanning_tree
-except ImportError:
-    raise ImportError("Please install a recent version of scikit-learn or"
-                      "scipy to build minimum spanning trees.")
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelClf
@@ -51,7 +47,7 @@ def chow_liu_tree(y_):
 
 
 dataset = "scene"
-#dataset = "yeast"
+# dataset = "yeast"
 
 if dataset == "yeast":
     yeast = fetch_mldata("yeast")
@@ -74,7 +70,7 @@ tree = chow_liu_tree(y_train)
 
 full_model = MultiLabelClf(edges=full, inference_method='qpbo')
 independent_model = MultiLabelClf(inference_method='unary')
-tree_model = MultiLabelClf(edges=tree)
+tree_model = MultiLabelClf(edges=tree, inference_method="max-product")
 
 full_ssvm = OneSlackSSVM(full_model, inference_cache=50, C=.1, tol=0.01)
 

@@ -12,7 +12,7 @@ class CRF(StructuredModel):
         self.n_states = n_states
         if inference_method is None:
             # get first in list that is installed
-            inference_method = get_installed(['ad3', 'lp'])[0]
+            inference_method = get_installed(['ad3', 'max-product', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
         self.n_features = n_features

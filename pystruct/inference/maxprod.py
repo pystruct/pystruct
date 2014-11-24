@@ -3,6 +3,7 @@ from scipy import sparse
 from scipy.sparse import csgraph
 
 from .common import _validate_params
+from ._viterbi import viterbi
 
 
 def edges_to_graph(edges, n_vertices=None):
@@ -73,7 +74,9 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges,
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
     if is_chain(edges=edges, n_vertices=len(unary_potentials)):
-        y = chain_max_product(unary_potentials, pairwise_potentials)
+        y = viterbi(unary_potentials.astype(np.float).copy(),
+                    # sad second copy b/c numpy 1.6
+                    np.array(pairwise_potentials, dtype=np.float))
     elif is_tree(edges=edges, n_vertices=len(unary_potentials)):
         y = tree_max_product(unary_potentials, pairwise_potentials, edges)
     else:
@@ -168,24 +171,3 @@ def iterative_max_product(unary_potentials, pairwise_potentials, edges,
         if diff < tol:
             break
     return np.argmax(all_incoming + unary_potentials, axis=1)
-
-
-def chain_max_product(unary_potentials, pairwise_potentials):
-    n_vertices, n_states = unary_potentials.shape
-    forward_messages = np.zeros((n_vertices, n_states))
-    backward_messages = np.zeros((n_vertices, n_states))
-    # forward:
-    for i in range(n_vertices - 1):
-        incoming = (forward_messages[i] + unary_potentials[i] +
-                    pairwise_potentials[i].T)
-        incoming = incoming.max(axis=1)
-        incoming -= incoming.max()
-        forward_messages[i + 1] = incoming
-    for i in range(1, n_vertices)[::-1]:
-        incoming = (backward_messages[i] + unary_potentials[i] +
-                    pairwise_potentials[i - 1])
-        incoming = incoming.max(axis=1)
-        incoming -= incoming.max()
-        backward_messages[i - 1] = incoming
-    return np.argmax(forward_messages + backward_messages + unary_potentials,
-                     axis=1)
