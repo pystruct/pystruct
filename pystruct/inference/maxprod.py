@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import sparse
-from scipy.sparse import csgraph
 
 from .common import _validate_params
 from ..utils.graph_functions import is_forest
@@ -124,55 +123,6 @@ def tree_max_product(unary_potentials, pairwise_potentials, edges):
             messages_forward[node] += message
 
     return np.argmax(unary_potentials + messages_forward + messages_backward, axis=1)
-
-
-def tree_max_product_old(unary_potentials, pairwise_potentials, edges):
-    n_vertices, n_states = unary_potentials.shape
-    edge_hashes = edges[:, 0] + n_vertices * edges[:, 1]
-    graph = edges_to_graph(edges, n_vertices)
-    nodes, predecessors = csgraph.breadth_first_order(graph, 0, directed=False)
-    predecessors = predecessors[nodes]
-    # we store the message from pred to node in down_messages[node]
-    down_messages = np.zeros((n_vertices, n_states))
-    edge_potentials = []
-
-    # up-pass
-    # we store in up_messages the sum of all messages going into node
-    up_messages = np.zeros((n_vertices, n_states))
-    all_messages = dict()
-    for node, pred in zip(nodes, predecessors)[::-1]:
-        if pred < 0:
-            edge_potentials.append([])
-            continue
-        # we need to get the pairwise potentials corresponding to
-        # the edge between predecessor and node
-        edge_number = np.where(edge_hashes == node + pred * n_vertices)[0]
-        if len(edge_number):
-            pairwise = pairwise_potentials[edge_number[0]]
-        else:
-            edge_number = np.where(edge_hashes == n_vertices * node + pred)[0]
-            pairwise = pairwise_potentials[edge_number[0]].T
-        edge_potentials.append(pairwise)
-        # node already got all up-going messages
-        # take max, normalize, send up to parent
-        going_up = up_messages[node] + unary_potentials[node] + pairwise.T
-        going_up = going_up.max(axis=1)
-        going_up -= going_up.max()
-        up_messages[pred] += going_up
-        all_messages[(node, pred)] = going_up
-
-    # down-pass
-    for node, pred, pairwise in zip(nodes, predecessors,
-                                    edge_potentials[::-1]):
-        if pred < 0:
-            continue
-        incoming = down_messages[pred] + pairwise + unary_potentials[pred]
-        # add upgoing messages not coming from node
-        incoming += up_messages[pred] - all_messages[(node, pred)]
-        down_messages[node] = incoming.max(axis=1)
-        down_messages[node] -= down_messages[node].max()
-
-    return np.argmax(up_messages + down_messages + unary_potentials, axis=1)
 
 
 def iterative_max_product(unary_potentials, pairwise_potentials, edges,

@@ -1,5 +1,7 @@
 import numpy as np
 from nose.tools import assert_true, assert_false
+from nose import SkipTest
+
 from numpy.testing import assert_array_equal
 from scipy import sparse
 
@@ -44,10 +46,14 @@ def test_is_forest():
     edges = np.c_[graph.nonzero()]
     assert_false(is_forest(edges))
 
-    tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
-    tree_edges = np.c_[tree.nonzero()]
-    assert_true(is_forest(tree_edges, 10))
-    assert_true(is_forest(tree_edges))
+    try:
+        from scipy.sparse.csgraph import minimum_spanning_tree
+        tree = minimum_spanning_tree(sparse.csr_matrix(graph))
+        tree_edges = np.c_[tree.nonzero()]
+        assert_true(is_forest(tree_edges, 10))
+        assert_true(is_forest(tree_edges))
+    except ImportError:
+        pass
 
 
 def test_tree_max_product_chain():
@@ -66,11 +72,16 @@ def test_tree_max_product_chain():
 
 
 def test_tree_max_product_tree():
+    try:
+        from scipy.sparse.csgraph import minimum_spanning_tree
+    except:
+        raise SkipTest("Not testing trees, scipy version >= 0.11 required")
+
     rnd = np.random.RandomState(0)
     for i in xrange(100):
         # generate random tree using mst
         graph = rnd.uniform(size=(10, 10))
-        tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
+        tree = minimum_spanning_tree(sparse.csr_matrix(graph))
         tree_edges = np.c_[tree.nonzero()]
 
         unary_potentials = rnd.normal(size=(10, 3))
@@ -96,11 +107,15 @@ def test_iterative_max_product_chain():
 
 
 def test_iterative_max_product_tree():
+    try:
+        from scipy.sparse.csgraph import minimum_spanning_tree
+    except:
+        raise SkipTest("Not testing trees, scipy version >= 0.11 required")
     rnd = np.random.RandomState(0)
     for i in xrange(100):
         # generate random tree using mst
         graph = rnd.uniform(size=(10, 10))
-        tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
+        tree = minimum_spanning_tree(sparse.csr_matrix(graph))
         tree_edges = np.c_[tree.nonzero()]
 
         unary_potentials = rnd.normal(size=(10, 3))
