@@ -189,7 +189,7 @@ def test_edge_feature_latent_node_crf_no_latent():
 
     # Test inference with different weights in different directions
 
-    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1, size_x=10)
+    X, Y = generate_blocks_multinomial(noise=2, n_samples=1, seed=1, size_x=8)
     x, y = X[0], Y[0]
     n_states = x.shape[-1]
 
@@ -236,7 +236,7 @@ def test_edge_feature_latent_node_crf_no_latent():
         assert_array_almost_equal(res[1], y_pred[1], 4)
         assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
 
-    for inference_method in get_installed(["lp", "ad3", "qpbo"]):
+    for inference_method in get_installed(["qpbo", "ad3", "lp"])[:2]:
         # again, this time discrete predictions only
         crf = EdgeFeatureLatentNodeCRF(n_labels=3,
                                        inference_method=inference_method,
