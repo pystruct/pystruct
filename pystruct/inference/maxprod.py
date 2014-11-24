@@ -65,6 +65,69 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges,
 
 def tree_max_product(unary_potentials, pairwise_potentials, edges):
     n_vertices, n_states = unary_potentials.shape
+    parents = -np.ones(n_vertices, dtype=np.int)
+    visited = np.zeros(n_vertices, dtype=np.bool)
+    neighbors = [[] for i in range(n_vertices)]
+    pairwise_weights = [[] for i in range(n_vertices)]
+    for pw, edge in zip(pairwise_potentials, edges):
+        neighbors[edge[0]].append(edge[1])
+        pairwise_weights[edge[0]].append(pw)
+        neighbors[edge[1]].append(edge[0])
+        pairwise_weights[edge[1]].append(pw.T)
+
+    messages_forward = np.zeros((n_vertices, n_states))
+    messages_backward = np.zeros((n_vertices, n_states))
+    pw_forward = np.zeros((n_vertices, n_states, n_states))
+    # build a breadth first search of the tree
+    traversal = []
+    lonely = 0
+    while lonely < n_vertices:
+        for i in range(lonely, n_vertices):
+            if not visited[i]:
+                queue = [i]
+                lonely = i + 1
+                visited[i] = True
+                break
+            lonely = n_vertices
+
+        while queue:
+            node = queue.pop(0)
+            traversal.append(node)
+            for pw, neighbor in zip(pairwise_weights[node], neighbors[node]):
+                if not visited[neighbor]:
+                    parents[neighbor] = node
+                    queue.append(neighbor)
+                    visited[neighbor] = True
+                    pw_forward[neighbor] = pw
+
+                elif not parents[node] == neighbor:
+                    raise ValueError("Graph not a tree")
+    # messages from leaves to root
+    for node in traversal[::-1]:
+        parent = parents[node]
+        if parent != -1:
+            message = np.max(messages_backward[node] + unary_potentials[node] +
+                             pw_forward[node], axis=1)
+            message -= message.max()
+            messages_backward[parent] += message
+    # messages from root back to leaves
+    for node in traversal:
+        parent = parents[node]
+        if parent != -1:
+            message = messages_forward[parent] + unary_potentials[parent] + pw_forward[node].T
+            # leaves to root messages from other children
+            message += messages_backward[parent] - np.max(messages_backward[node]
+                                                          + unary_potentials[node]
+                                                          + pw_forward[node], axis=1)
+            message = message.max(axis=1)
+            message -= message.max()
+            messages_forward[node] += message
+
+    return np.argmax(unary_potentials + messages_forward + messages_backward, axis=1)
+
+
+def tree_max_product_old(unary_potentials, pairwise_potentials, edges):
+    n_vertices, n_states = unary_potentials.shape
     edge_hashes = edges[:, 0] + n_vertices * edges[:, 1]
     graph = edges_to_graph(edges, n_vertices)
     nodes, predecessors = csgraph.breadth_first_order(graph, 0, directed=False)

@@ -3,7 +3,7 @@ from nose.tools import assert_true, assert_false
 from numpy.testing import assert_array_equal
 from scipy import sparse
 
-from pystruct.inference.maxprod import (is_tree, inference_max_product,
+from pystruct.inference.maxprod import (is_forest, inference_max_product,
                                         iterative_max_product, is_chain)
 from pystruct.inference import inference_ad3
 from pystruct.datasets import generate_blocks, generate_blocks_multinomial
@@ -21,33 +21,33 @@ def test_is_chain():
     assert_false(is_chain(chain[::-1], len(chain) + 1))
 
 
-def test_is_tree():
+def test_is_forest():
     # generate chain
     chain = np.c_[np.arange(1, 10), np.arange(9)]
-    assert_true(is_tree(chain, len(chain) + 1))
-    assert_true(is_tree(chain))
+    assert_true(is_forest(chain, len(chain) + 1))
+    assert_true(is_forest(chain))
     # generate circle
     circle = np.vstack([chain, [9, 0]])
-    assert_false(is_tree(circle))
-    assert_false(is_tree(circle, len(chain) + 1))
+    assert_false(is_forest(circle))
+    assert_false(is_forest(circle, len(chain) + 1))
 
     # union of two disjoint chains
     two_chains = np.vstack([chain, chain + 10])
-    assert_true(is_tree(two_chains, 20))
+    assert_true(is_forest(two_chains, 20))
 
     # union of chain and circle
     disco_graph = np.vstack([chain, circle + 10])
-    assert_false(is_tree(disco_graph))
+    assert_false(is_forest(disco_graph))
 
     # generate random fully connected graph
     graph = np.random.uniform(size=(10, 10))
     edges = np.c_[graph.nonzero()]
-    assert_false(is_tree(edges))
+    assert_false(is_forest(edges))
 
     tree = sparse.csgraph.minimum_spanning_tree(sparse.csr_matrix(graph))
     tree_edges = np.c_[tree.nonzero()]
-    assert_true(is_tree(tree_edges, 10))
-    assert_true(is_tree(tree_edges))
+    assert_true(is_forest(tree_edges, 10))
+    assert_true(is_forest(tree_edges))
 
 
 def test_tree_max_product_chain():
