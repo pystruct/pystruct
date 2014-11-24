@@ -16,7 +16,7 @@ from pystruct.utils import SaveLogger
 def test_multinomial_blocks_frankwolfe():
     X, Y = generate_blocks_multinomial(n_samples=10, noise=0.5, seed=0)
     crf = GridCRF(inference_method='qpbo')
-    clf = FrankWolfeSSVM(model=crf, C=1, max_iter=50, verbose=3)
+    clf = FrankWolfeSSVM(model=crf, C=1, max_iter=50)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
@@ -25,7 +25,7 @@ def test_multinomial_blocks_frankwolfe():
 def test_multinomial_blocks_frankwolfe_batch():
     X, Y = generate_blocks_multinomial(n_samples=10, noise=0.3, seed=0)
     crf = GridCRF(inference_method='qpbo')
-    clf = FrankWolfeSSVM(model=crf, C=1, max_iter=500, verbose=3, batch_mode=True)
+    clf = FrankWolfeSSVM(model=crf, C=1, max_iter=500, batch_mode=True)
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)

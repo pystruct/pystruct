@@ -145,10 +145,7 @@ def test_binary_grid_unaries():
             assert_array_equal(inf_unaries, np.argmax(x, axis=2),
                                "Wrong unary inference for %s"
                                % inference_method)
-            try:
-                assert(np.mean(inf_unaries == y) > 0.5)
-            except:
-                print(ds)
+            assert(np.mean(inf_unaries == y) > 0.5)
 
             # check that the right thing happens on noise-free data
             X, Y = ds(n_samples=1, noise=0)
@@ -163,7 +160,7 @@ def test_multinomial_grid_unaries():
     # on multinomial datasets
     for ds in multinomial:
         X, Y = ds(n_samples=1, size_x=9)
-        x, y = X[0], Y[0]
+        x = X[0]
         n_labels = len(np.unique(Y))
         crf = GridCRF(n_states=n_labels)
         crf.initialize(X, Y)

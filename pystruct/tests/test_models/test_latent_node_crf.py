@@ -37,12 +37,12 @@ def test_initialize():
 def test_inference_trivial():
     # size 6 chain graph
     # first three and last three have a latent variable
-    features = np.array([-1,  1, -1, 1, -1,  1])
+    features = np.array([-1, 1, -1, 1, -1, 1])
     unary_parameters = np.array([-1, 1])
     pairwise_parameters = np.array([+0,
-                                    +0,  0,
-                                    +3,  0, 0,
-                                    +0,  3, 0, 0])
+                                    +0, 0,
+                                    +3, 0, 0,
+                                    +0, 3, 0, 0])
     w = np.hstack([unary_parameters, pairwise_parameters])
     crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2)
     # edges for latent states. Latent states named 6, 7
@@ -88,19 +88,16 @@ def test_inference_trivial():
                                                     return_energy=True)
     assert_almost_equal(-energy_lp, np.dot(w, crf.joint_feature(x, h_hat)) +
                         crf.loss(h_hat, y))
-    #print(h_hat)
-    #print(h)
-    #print(crf.loss(h_hat, h))
 
 
 def test_inference_chain():
     # same with pairwise edges:
-    features = np.array([-1,  1, -1, 1, -1,  1])
+    features = np.array([-1, 1, -1, 1, -1, 1])
     unary_parameters = np.array([-1, 1])
     pairwise_parameters = np.array([+1,
-                                    +0,  1,
-                                    +3,  0, 0,
-                                    +0,  3, 0, 0])
+                                    +0, 1,
+                                    +3, 0, 0,
+                                    +0, 3, 0, 0])
     w = np.hstack([unary_parameters, pairwise_parameters])
     crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2)
     edges = np.vstack([np.arange(5), np.arange(1, 6)]).T
@@ -133,12 +130,12 @@ def test_inference_trivial_features():
     # size 6 chain graph
     # first three and last three have a latent variable
     # last two features are for latent variables
-    features = np.array([-1,  1, -1, 1, -1,  1, 0, 0])
+    features = np.array([-1, 1, -1, 1, -1, 1, 0, 0])
     unary_parameters = np.array([-1, 1, 0, 0])
     pairwise_parameters = np.array([+0,
-                                    +0,  0,
-                                    +3,  0, 0,
-                                    +0,  3, 0, 0])
+                                    +0, 0,
+                                    +3, 0, 0,
+                                    +0, 3, 0, 0])
     w = np.hstack([unary_parameters, pairwise_parameters])
     crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2,
                         latent_node_features=True)
