@@ -35,7 +35,6 @@ def test_chain():
                 if chain is backward and alg[0] == 'ogm':
                     # ogm needs sorted indices
                     continue
-                print(alg)
                 y = inference_dispatch(unary_potentials, pairwise_potentials,
                                        chain, alg)
                 assert_array_equal(y, y_lp)

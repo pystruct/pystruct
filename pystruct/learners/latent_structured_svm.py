@@ -85,7 +85,8 @@ class LatentSSVM(BaseSSVM):
         H = H_init
 
         for iteration in xrange(self.latent_iter):
-            print("LATENT SVM ITERATION %d" % iteration)
+            if self.verbose:
+                print("LATENT SVM ITERATION %d" % iteration)
             # find latent variables for ground truth:
             if iteration == 0:
                 pass
@@ -93,10 +94,12 @@ class LatentSSVM(BaseSSVM):
                 H_new = [self.model.latent(x, y, w) for x, y in zip(X, Y)]
                 changes = [np.any(h_new != h) for h_new, h in zip(H_new, H)]
                 if not np.any(changes):
-                    print("no changes in latent variables of ground truth."
-                          " stopping.")
+                    if self.verbose > 0:
+                        print("no changes in latent variables of ground truth."
+                              " stopping.")
                     break
-                print("changes in H: %d" % np.sum(changes))
+                if self.verbose:
+                    print("changes in H: %d" % np.sum(changes))
 
                 # update constraints:
                 if isinstance(self.base_ssvm, NSlackSSVM):
@@ -182,3 +185,11 @@ class LatentSSVM(BaseSSVM):
     @n_jobs.setter
     def n_jobs(self, n_jobs_):
         self.base_ssvm.n_jobs = n_jobs_
+
+    @property
+    def verbose(self):
+        return self.base_ssvm.verbose
+
+    @verbose.setter
+    def verbose(self, verbose_):
+        self.base_ssvm.verbose = verbose_

@@ -1,3 +1,5 @@
+import sys
+import os
 import numpy as np
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true
@@ -118,7 +120,19 @@ def test_switch_to_ad3():
                              C=10. ** 3)
     clf = LatentSSVM(base_ssvm)
 
+    # evil hackery to get rid of ad3 output
+    try:
+        devnull = open('/dev/null', 'w')
+        oldstdout_fno = os.dup(sys.stdout.fileno())
+        os.dup2(devnull.fileno(), 1)
+        replaced_stdout = True
+    except:
+        replaced_stdout = False
+
     clf.fit(X, Y, H_init=H_init)
+
+    if replaced_stdout:
+        os.dup2(oldstdout_fno, 1)
     assert_equal(clf.model.inference_method[0], 'ad3')
 
     Y_pred = clf.predict(X)

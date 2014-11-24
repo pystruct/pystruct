@@ -181,18 +181,6 @@ class OneSlackSSVM(BaseSSVM):
 
         # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
-        #if hasattr(self, 'old_solution'):
-            #s = self.old_solution['s']
-            ## put s slightly inside the cone..
-            #s = cvxopt.matrix(np.vstack([s, [[1e-10]]]))
-            #z = self.old_solution['z']
-            #z = cvxopt.matrix(np.vstack([z, [[1e-10]]]))
-            #initvals = {'x': self.old_solution['x'], 'y':
-                        #self.old_solution['y'], 'z': z,
-                        #'s': s}
-        #else:
-            #initvals = {}
-        #solution = cvxopt.solvers.qp(P, q, G, h, A, b, initvals=initvals)
         try:
             solution = cvxopt.solvers.qp(P, q, G, h, A, b)
         except ValueError:
@@ -274,7 +262,8 @@ class OneSlackSSVM(BaseSSVM):
                 # significantly larger, don't add constraint.
                 # if smaller, complain about approximate inference.
                 if violation - violation_tmp < -1e-5:
-                    print("bad inference: %f" % (violation_tmp - violation))
+                    if self.verbose:
+                        print("bad inference: %f" % (violation_tmp - violation))
                     if break_on_bad:
                         raise ValueError("Bad inference: new violation is"
                                          " weaker than previous constraint.")

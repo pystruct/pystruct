@@ -176,7 +176,8 @@ class SubgradientSSVM(BaseSSVM):
         """
         if initialize:
             self.model.initialize(X, Y)
-        print("Training primal subgradient structural SVM")
+        if self.verbose:
+            print("Training primal subgradient structural SVM")
         self.grad_old = np.zeros(self.model.size_joint_feature)
         self.w = getattr(self, "w", np.zeros(self.model.size_joint_feature))
         w = self.w.copy()
@@ -203,7 +204,8 @@ class SubgradientSSVM(BaseSSVM):
                 objective = objective * self.C + np.sum(w ** 2) / 2.
 
                 if positive_slacks == 0:
-                    print("No additional constraints")
+                    if self.verbose:
+                        print("No additional constraints")
                     if self.break_on_no_constraints:
                         break
                 if self.verbose > 0:
@@ -300,7 +302,7 @@ class SubgradientSSVM(BaseSSVM):
                 Y_hat = self.model.batch_loss_augmented_inference(
                     X_b, Y_b, w, relaxed=True)
                 delta_joint_feature = (self.model.batch_joint_feature(X_b, Y_b)
-                             - self.model.batch_joint_feature(X_b, Y_hat))
+                                       - self.model.batch_joint_feature(X_b, Y_hat))
                 loss = np.sum(self.model.batch_loss(Y_b, Y_hat))
 
                 violation = np.maximum(0, loss - np.dot(w, delta_joint_feature))
