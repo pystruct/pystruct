@@ -67,7 +67,11 @@ if [[ "$COVERAGE" == "true" ]]; then
 fi
 
 # install our favorite inference packages 
-pip install pyqpbo ad3 scikit-learn
+if [[ "$INFERENCE" != "false" ]]; then
+    pip install pyqpbo ad3 
+fi
+
+pip install scikit-learn
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
