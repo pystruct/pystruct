@@ -13,7 +13,7 @@ def lp_general_graph(unaries, edges, edge_weights):
         raise ValueError("Number of edge weights different from number of"
                          "edges")
 
-    n_nodes, n_states = unaries.shape
+    n_nodes, n_states = map(int, unaries.shape)
     n_edges = len(edges)
 
     # variables: n_nodes * n_states for nodes,

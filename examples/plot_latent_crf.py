@@ -25,15 +25,15 @@ from pystruct.datasets import generate_crosses
 
 X, Y = generate_crosses(n_samples=20, noise=5, n_crosses=1, total_size=8)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.5,
-                                                    allow_nd=True)
+                                                    force_arrays=False)
 
 crf = LatentGridCRF(n_states_per_label=[1, 2])
 base_ssvm = OneSlackSSVM(model=crf, C=10., n_jobs=-1, inference_cache=20,
                          tol=.1)
 clf = LatentSSVM(base_ssvm=base_ssvm)
 clf.fit(X_train, Y_train)
-print("loss training set: %f" % clf.score(X_train, Y_train))
-print("loss test set: %f" % clf.score(X_test, Y_test))
+print("Score training set: %f" % clf.score(X_train, Y_train))
+print("Score test set: %f" % clf.score(X_test, Y_test))
 
 Y_pred = clf.predict(X_test)
 
