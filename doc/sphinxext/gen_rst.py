@@ -1,5 +1,5 @@
 """
-Example generation for pystruct. Stolen from scikit-learn.
+Example generation for pystruct, stolen from scikit-learn
 
 Generate the rst files for the examples by iterating over the python
 example files.
@@ -7,31 +7,66 @@ example files.
 Files that generate images should start with 'plot'
 
 """
+from __future__ import division, print_function
 from time import time
+import ast
 import os
+import re
 import shutil
 import traceback
 import glob
 import sys
-from StringIO import StringIO
-import cPickle
-import re
-import urllib2
 import gzip
 import posixpath
+import subprocess
+import warnings
+
+
+# Try Python 2 first, otherwise load from Python 3
+try:
+    from StringIO import StringIO
+    import cPickle as pickle
+    import urllib2 as urllib
+    from urllib2 import HTTPError, URLError
+except ImportError:
+    from io import StringIO
+    import pickle
+    import urllib.request
+    import urllib.error
+    import urllib.parse
+    from urllib.error import HTTPError, URLError
+
 
 try:
-    from PIL import Image
-except:
-    import Image
+    # Python 2 built-in
+    execfile
+except NameError:
+    def execfile(filename, global_vars=None, local_vars=None):
+        with open(filename) as f:
+            code = compile(f.read(), filename, 'exec')
+            exec(code, global_vars, local_vars)
 
-import matplotlib
-matplotlib.use('Agg')
+try:
+    basestring
+except NameError:
+    basestring = str
 
 import token
 import tokenize
 import numpy as np
 
+try:
+    # make sure that the Agg backend is set before importing any
+    # matplotlib
+    import matplotlib
+    matplotlib.use('Agg')
+except ImportError:
+    # this script can be imported by nosetest to find tests to run: we should not
+    # impose the matplotlib requirement in that case.
+    pass
+
+
+from sklearn.externals import joblib
 
 ###############################################################################
 # A tee object to redict streams to multiple outputs
@@ -54,11 +89,16 @@ class Tee(object):
 # Documentation link resolver objects
 
 
-def get_data(url):
+def _get_data(url):
     """Helper function to get data over http or from a local file"""
     if url.startswith('http://'):
-        resp = urllib2.urlopen(url)
-        encoding = resp.headers.dict.get('content-encoding', 'plain')
+        # Try Python 2, use Python 3 on exception
+        try:
+            resp = urllib.urlopen(url)
+            encoding = resp.headers.dict.get('content-encoding', 'plain')
+        except AttributeError:
+            resp = urllib.request.urlopen(url)
+            encoding = resp.headers.get('content-encoding', 'plain')
         data = resp.read()
         if encoding == 'plain':
             pass
@@ -73,6 +113,9 @@ def get_data(url):
         fid.close()
 
     return data
+
+mem = joblib.Memory(cachedir='_build')
+get_data = mem.cache(_get_data)
 
 
 def parse_sphinx_searchindex(searchindex):
@@ -146,6 +189,10 @@ def parse_sphinx_searchindex(searchindex):
 
         return dict_out
 
+    # Make sure searchindex uses UTF-8 encoding
+    if hasattr(searchindex, 'decode'):
+        searchindex = searchindex.decode('UTF-8')
+
     # parse objects
     query = 'objects:'
     pos = searchindex.find(query)
@@ -203,7 +250,7 @@ class SphinxDocLinkResolver(object):
         if os.name.lower() == 'nt' and not doc_url.startswith('http://'):
             if not relative:
                 raise ValueError('You have to use relative=True for the local'
-                                 'package on a Windows system.')
+                                 ' package on a Windows system.')
             self._is_windows = True
         else:
             self._is_windows = False
@@ -222,7 +269,7 @@ class SphinxDocLinkResolver(object):
         if full_name in self._searchindex['objects']:
             value = self._searchindex['objects'][full_name]
             if isinstance(value, dict):
-                value = value[value.keys()[0]]
+                value = value[next(iter(value.keys()))]
             fname_idx = value[0]
         elif cobj['module_short'] in self._searchindex['objects']:
             value = self._searchindex['objects'][cobj['module_short']]
@@ -238,6 +285,9 @@ class SphinxDocLinkResolver(object):
             else:
                 link = posixpath.join(self.doc_url, fname)
 
+            if hasattr(link, 'decode'):
+                link = link.decode('utf-8', 'replace')
+
             if link in self._page_cache:
                 html = self._page_cache[link]
             else:
@@ -250,9 +300,16 @@ class SphinxDocLinkResolver(object):
                 for mod in self.extra_modules_test:
                     comb_names.append(mod + '.' + cobj['name'])
             url = False
+            if hasattr(html, 'decode'):
+                # Decode bytes under Python 3
+                html = html.decode('utf-8', 'replace')
+
             for comb_name in comb_names:
-                if html.find(comb_name) >= 0:
-                    url = link + '#' + comb_name
+                if hasattr(comb_name, 'decode'):
+                    # Decode bytes under Python 3
+                    comb_name = comb_name.decode('utf-8', 'replace')
+                if comb_name in html:
+                    url = link + u'#' + comb_name
             link = url
         else:
             link = False
@@ -332,6 +389,7 @@ plot_rst_template = """
     :lines: %(end_row)s-
 
 **Total running time of the example:** %(time_elapsed) .2f seconds
+(%(time_m) .0f minutes %(time_s) .2f seconds)
     """
 
 # The following strings are used when we have several pictures: we use
@@ -498,12 +556,9 @@ def generate_dir_rst(dir, fhindex, example_dir, root_dir, plot_gallery):
         target_dir = root_dir
         src_dir = example_dir
     if not os.path.exists(os.path.join(src_dir, 'README.txt')):
-        print 80 * '_'
-        print ('Example directory %s does not have a README.txt file'
-                        % src_dir)
-        print 'Skipping this directory'
-        print 80 * '_'
-        return
+        raise ValueError('Example directory %s does not have a README.txt' %
+                         src_dir)
+
     fhindex.write("""
 
 
