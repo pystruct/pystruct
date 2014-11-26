@@ -21,16 +21,16 @@ class GraphCRF(CRF):
 
     Labels, Y, are given as an iterable of n_examples. Each label, y, in Y
     is given by a numpy array of shape (n_nodes,).
-    
+
     There are n_states * n_features parameters for unary
     potentials. For edge potential parameters, there are n_state *
     n_states permutations, i.e.
-    
+
             state_1 state_2 state 3
     state_1       1       2       3
     state_2       4       5       6
     state_3       7       8       9
-        
+
     The fitted parameters of this model will be returned as an array
     with the first n_states * n_features elements representing the
     unary potentials parameters, followed by the edge potential
@@ -39,19 +39,19 @@ class GraphCRF(CRF):
     Say we have two state, A and B, and two features 1 and 2. The unary
     potential parameters will be returned as [A1, A2, B1, B2].
 
-    If ``directed=True`` the edge potential parameters will return 
+    If ``directed=True`` the edge potential parameters will return
     n_states * n_states parameters. The rows are senders and the
     columns are recievers, i.e. the edge potential state_2 -> state_1
     is [2,1]; 4 in the above matrix.
-    
-    The above edge potential parameters example would be returned as 
+
+    The above edge potential parameters example would be returned as
     [1, 2, 3, 4, 5, 6, 7, 8, 9] (see numpy.ravel).
 
-    If edges are undirected, the edge potential parameter matrix is 
+    If edges are undirected, the edge potential parameter matrix is
     assumed to be symmetric and only the lower triangle is returned, i.e.
     [1, 4, 5, 7, 8, 9].
 
-    
+
     Parameters
     ----------
     n_states : int, default=2
@@ -64,10 +64,12 @@ class GraphCRF(CRF):
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
 
         If None, ad3 is used if installed, otherwise lp.
 
@@ -93,10 +95,11 @@ class GraphCRF(CRF):
         if self.n_features is not None and self.n_states is not None:
             if self.directed:
                 self.size_joint_feature = (self.n_states * self.n_features +
-                                 self.n_states ** 2)
+                                           self.n_states ** 2)
             else:
-                self.size_joint_feature = (self.n_states * self.n_features
-                                 + self.n_states * (self.n_states + 1) / 2)
+                self.size_joint_feature = (
+                    self.n_states * self.n_features
+                    + self.n_states * (self.n_states + 1) / 2)
 
     def _get_edges(self, x):
         return x[1]
@@ -145,7 +148,7 @@ class GraphCRF(CRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self._get_features(x), self._get_edges(x)
+        features = self._get_features(x)
         unary_params = w[:self.n_states * self.n_features].reshape(
             self.n_states, self.n_features)
 

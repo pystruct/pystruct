@@ -38,10 +38,10 @@ class EdgeFeatureGraphCRF(GraphCRF):
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'max-product' for max-product belief propagation.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
@@ -72,10 +72,10 @@ class EdgeFeatureGraphCRF(GraphCRF):
                           class_weight=class_weight)
 
     def _set_size_joint_feature(self):
-        if not None in [self.n_states, self.n_features, self.n_edge_features]:
-            self.size_joint_feature = (self.n_states * self.n_features
-                             + self.n_edge_features
-                             * self.n_states ** 2)
+        if None not in [self.n_states, self.n_features, self.n_edge_features]:
+            self.size_joint_feature = (self.n_states * self.n_features +
+                                       self.n_edge_features
+                                       * self.n_states ** 2)
 
         if self.n_edge_features is not None:
             if np.any(np.hstack([self.symmetric_edge_features,

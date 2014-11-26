@@ -83,11 +83,12 @@ class LatentGraphCRF(GraphCRF):
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
-
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
     """
     def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
                  inference_method=None):

@@ -88,10 +88,13 @@ class LatentNodeCRF(GraphCRF):
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
@@ -184,7 +187,7 @@ class LatentNodeCRF(GraphCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self._get_features(x), self._get_edges(x)
+        features = self._get_features(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 
@@ -482,7 +485,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
         """
         self._check_size_w(w)
         self._check_size_x(x)
-        features, edges = self._get_features(x), self._get_edges(x)
+        features = self._get_features(x)
         unary_params = w[:self.n_input_states * self.n_features].reshape(
             self.n_input_states, self.n_features)
 

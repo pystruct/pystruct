@@ -31,14 +31,9 @@ class ChainCRF(GraphCRF):
 
     inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.
-        Possible values are:
-
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
-            - 'lp' for Linear Programming relaxation using cvxopt.
-            - 'ad3' for AD3 dual decomposition.
-
-        If None, ad3 is used if installed, otherwise lp.
+        Defaults to "max-product" for max-product belief propagation.
+        As chains can be solved exactly and efficiently, other settings
+        are not recommended.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length

@@ -24,10 +24,12 @@ class GridCRF(GraphCRF):
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
 
     neighborhood : int, default=4
         Neighborhood defining connection for each variable in the grid.
@@ -100,10 +102,12 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         Function to call do do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
-            - 'dai' for LibDAI bindings (which has another parameter).
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
 
     neighborhood : int, default=4
         Neighborhood defining connection for each variable in the grid.
