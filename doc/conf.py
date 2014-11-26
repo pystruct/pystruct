@@ -264,6 +264,7 @@ html_theme_options = {
     # be in the form [(name, page), ..]
     'navbar_links': [
         ('Start', 'index'),
+        ('Installation', 'installation'),
         ('Introduction', 'intro'),
         ('Examples', 'auto_examples/index'),
         ('References', 'references'),

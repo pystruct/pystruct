@@ -16,10 +16,17 @@ to make use of structured prediction algorithms.
 The design tries to stay as close as possible to the interface and conventions
 of [scikit-learn](http://scikit-learn.org).
 
-Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
+You can install pystruct using
+
+> pip install pystruct
+
+Some of the functionality (namely OneSlackSSVM and NSlackSSVM) requires that cvxopt is installed.
+See the [installation instructions](http://pystruct.github.io/intro.html) for more details.
 
 The full documentation and installation instructions can be found at the website:
 http://pystruct.github.io
 
 You can contact the authors either via the [mailing list](https://groups.google.com/forum/#!forum/pystruct)
 or on [github](https://github.com/pystruct/pystruct).
+
+Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
