@@ -2,6 +2,7 @@
 ===========================================
 Learning directed interactions on a 2d grid
 ===========================================
+
 Simple pairwise model with arbitrary interactions on a 4-connected grid.
 There are different pairwise potentials for the four directions.
 All the examples are basically the same, three vertical stripes.

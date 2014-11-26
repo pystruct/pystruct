@@ -2,6 +2,7 @@
 =================================
 Latent Variable Hierarchical CRF
 =================================
+
 Solving a 2d grid toy problem by introducing an additional layer of latent
 variables.
 """

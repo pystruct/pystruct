@@ -2,6 +2,8 @@
 =================================================
 Comparing inference times on a simple Potts model
 =================================================
+
+Simple exmaple comparing inference times on a Potts model.
 """
 
 import numpy as np
