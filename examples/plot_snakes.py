@@ -40,12 +40,11 @@ from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import load_snakes
 from pystruct.utils import make_grid_edges, edge_list_to_features
 from pystruct.models import EdgeFeatureGraphCRF
-from pystruct.inference import get_installed
 
 
 def one_hot_colors(x):
     x = x / 255
-    flat = np.dot(x.reshape(-1, 3),  2 ** np.arange(3))
+    flat = np.dot(x.reshape(-1, 3), 2 ** np.arange(3))
     one_hot = label_binarize(flat, classes=[1, 2, 3, 4, 6])
     return one_hot.reshape(x.shape[0], x.shape[1], 5)
 
@@ -93,7 +92,7 @@ def prepare_data(X):
     return X_directions, X_edge_features
 
 
-print("Please be patient. Will take 5-20 minutes.")
+print("Please be patient. Learning will take 5-20 minutes.")
 snakes = load_snakes()
 X_train, Y_train = snakes['X_train'], snakes['Y_train']
 
@@ -102,10 +101,7 @@ Y_train_flat = [y_.ravel() for y_ in Y_train]
 
 X_train_directions, X_train_edge_features = prepare_data(X_train)
 
-if 'ogm' in get_installed():
-    inference = ('ogm', {'alg': 'fm'})
-else:
-    inference = 'qpbo'
+inference = 'qpbo'
 # first, train on X with directions only:
 crf = EdgeFeatureGraphCRF(inference_method=inference)
 ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, max_iter=100,

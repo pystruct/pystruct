@@ -24,7 +24,7 @@ edges = make_grid_edges(x)
 unaries = x.reshape(-1, n_states)
 
 fig, ax = plt.subplots(1, 6)
-for a, inference_method in zip(ax, ['adb', ('ad3', {'branch_and_bound': True}),
+for a, inference_method in zip(ax, ['ad3', ('ad3', {'branch_and_bound': True}),
                                     'qpbo', 'max-product', 'lp']):
     start = time()
     y = inference_dispatch(unaries, pairwise, edges,
