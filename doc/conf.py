@@ -263,10 +263,20 @@ html_theme_options = {
     # A list of tuples containting pages to link to.  The value should
     # be in the form [(name, page), ..]
     'navbar_links': [
+        ('Start', 'index'),
         ('Introduction', 'intro'),
         ('Examples', 'auto_examples/index'),
         ('References', 'references'),
     ],
+
+    # Render the next and previous page links in navbar. (Default: true)
+    'navbar_sidebarrel': False,
+
+    # Render the current pages TOC in the navbar. (Default: true)
+    'navbar_pagenav': False,
+
+    # Tab name for the current pages TOC. (Default: "Page")
+    'navbar_pagenav_name': "Page",
 
     # Global TOC depth for "site" navbar tab. (Default: 1)
     # Switching to -1 shows all levels.
@@ -279,7 +289,7 @@ html_theme_options = {
     # will break.
     #
     # Values: "true" (default) or "false"
-    'globaltoc_includehidden': "true",
+    'globaltoc_includehidden': "false",
 
     # HTML navbar class (Default: "navbar") to attach to <div> element.
     # For black navbar, do "navbar navbar-inverse"
@@ -297,7 +307,9 @@ html_theme_options = {
     #
     # Options are nothing with "" (default) or the name of a valid theme
     # such as "amelia" or "cosmo".
-    #
-    # Note that this is served off CDN, so won't be available offline.
-    #'bootswatch_theme': "united",
+    'bootswatch_theme': "cerulean",
+
+    # Choose Bootstrap version.
+    # Values: "3" (default) or "2" (in quotes)
+    'bootstrap_version': "3",
 }
