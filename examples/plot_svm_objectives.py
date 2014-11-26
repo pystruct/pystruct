@@ -28,7 +28,7 @@ one_slack_svm = OneSlackSSVM(crf, check_constraints=False,
                              max_iter=100, tol=0.001, inference_cache=50)
 subgradient_svm = SubgradientSSVM(crf, learning_rate=0.001, max_iter=20,
                                   decay_exponent=0, momentum=0)
-bcfw_svm = FrankWolfeSSVM(crf, max_iter=50, verbose=2, check_dual_every=4)
+bcfw_svm = FrankWolfeSSVM(crf, max_iter=50, check_dual_every=4)
 
 #n-slack cutting plane ssvm
 n_slack_svm.fit(X, Y)

@@ -55,7 +55,7 @@ svm.fit(np.vstack(X_train), np.hstack(y_train))
 
 # Train linear chain CRF
 model = ChainCRF()
-ssvm = OneSlackSSVM(model=model, C=.1, inference_cache=50, tol=0.1, verbose=3)
+ssvm = OneSlackSSVM(model=model, C=.1, inference_cache=50, tol=0.1)
 ssvm.fit(X_train, y_train)
 
 print("Test score with chain CRF: %f" % ssvm.score(X_test, y_test))
