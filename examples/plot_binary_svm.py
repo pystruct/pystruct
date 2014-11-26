@@ -10,7 +10,7 @@ for the price of higher runtime, we can also try to make the others faster.
 We don't really have a chance to beat LibSVM but that's ok ;)
 
 """
-print __doc__
+print(__doc__)
 
 from time import time
 import numpy as np
