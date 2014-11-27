@@ -1,6 +1,5 @@
-from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Build import cythonize
+from setuptools import setup
+from setuptools.extension import Extension
 import numpy as np
 
 import os
@@ -23,10 +22,9 @@ setup(name="pystruct",
       url="http://pystruct.github.io",
       license="BSD 2-clause",
       use_2to3=True,
-      ext_modules=cythonize([Extension("pystruct.models.utils",
-                                       ["src/utils.pyx"]),
-                             Extension("pystruct.inference._viterbi",
-                                       ["pystruct/inference/_viterbi.pyx"])]),
+      ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"]),
+                   Extension("pystruct.inference._viterbi",
+                             ["pystruct/inference/_viterbi.c"])],
       classifiers=['Intended Audience :: Science/Research',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved',
