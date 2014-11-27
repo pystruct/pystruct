@@ -2,7 +2,6 @@
 *.swp
 *.pyc
 *.so
-*.c
 cover
 doc/_build
 doc/generated
