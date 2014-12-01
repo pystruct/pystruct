@@ -3,7 +3,6 @@ from scipy import sparse
 
 from .common import _validate_params
 from ..utils.graph_functions import is_forest
-from ._viterbi import viterbi
 
 
 def edges_to_graph(edges, n_vertices=None):
@@ -48,6 +47,7 @@ def inference_max_product(unary_potentials, pairwise_potentials, edges,
     tol : float (default=1e-5)
         Stopping tollerance for loopy message passing.
     """
+    from ._viterbi import viterbi
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
     if is_chain(edges=edges, n_vertices=len(unary_potentials)):
