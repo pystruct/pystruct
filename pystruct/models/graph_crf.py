@@ -24,12 +24,12 @@ class GraphCRF(CRF):
 
     There are n_states * n_features parameters for unary
     potentials. For edge potential parameters, there are n_state *
-    n_states permutations, i.e.
+    n_states permutations, i.e. ::
 
-            state_1 state_2 state 3
-    state_1       1       2       3
-    state_2       4       5       6
-    state_3       7       8       9
+                state_1 state_2 state 3
+        state_1       1       2       3
+        state_2       4       5       6
+        state_3       7       8       9
 
     The fitted parameters of this model will be returned as an array
     with the first n_states * n_features elements representing the
