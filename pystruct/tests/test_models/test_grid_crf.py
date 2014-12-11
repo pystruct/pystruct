@@ -91,7 +91,7 @@ def test_binary_blocks_crf():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    for inference_method in get_installed(['dai', 'qpbo', 'lp', 'ad3', 'ogm']):
+    for inference_method in get_installed(['qpbo', 'ad3', 'ogm', 'max-product', 'lp']):
         crf = GridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
         y_hat = crf.inference(x, w)

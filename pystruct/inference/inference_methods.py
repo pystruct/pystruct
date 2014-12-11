@@ -2,12 +2,12 @@ import numpy as np
 
 from .linear_programming import lp_general_graph
 from .maxprod import inference_max_product
-from .common import _validate_params, compute_energy
+from .common import _validate_params
 
 
 def get_installed(method_filter=None):
     if method_filter is None:
-        method_filter = ["max-product", 'ad3', 'qpbo', 'dai', 'ogm', 'lp']
+        method_filter = ["max-product", 'ad3', 'qpbo', 'ogm', 'lp']
 
     installed = []
     unary = np.zeros((1, 1))
@@ -24,23 +24,28 @@ def get_installed(method_filter=None):
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, return_energy=False, **kwargs):
-    """Wrapper function to dispatch between inference method by string.
+    """Computes the maximizing assignment of a pairwise discrete energy function.
+
+    Wrapper function to dispatch between inference method by string.
 
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
 
     inference_method : string
         Possible choices currently are:
             * 'qpbo' for QPBO alpha-expansion (fast but approximate).
-            * 'dai' for libDAI wrappers (default to junction tree).
             * 'lp' for build-in lp relaxation via cvxopt (slow).
             * 'ad3' for AD^3 subgradient based dual solution of LP.
             * 'ogm' for OpenGM wrappers.
@@ -48,7 +53,8 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
             * 'unary' for using unary potentials only.
 
         It is also possible to pass a tuple (string, dict) where the dict
-        contains additional keyword arguments.
+        contains additional keyword arguments, like
+        ``('ad3', {'branch_and_bound': True})``.
 
     relaxed : bool (default=False)
         Whether to return a relaxed solution (when appropriate)
@@ -76,9 +82,6 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
-    elif inference_method == "dai":
-        return inference_dai(unary_potentials, pairwise_potentials, edges,
-                             return_energy=return_energy, **kwargs)
     elif inference_method == "lp":
         return inference_lp(unary_potentials, pairwise_potentials, edges,
                             return_energy=return_energy, **kwargs)
@@ -96,7 +99,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                      edges, **kwargs)
     else:
         raise ValueError("inference_method must be 'max-product', 'lp', 'ad3',"
-                         " 'qpbo', 'ogm' or 'dai', got %s" % inference_method)
+                         " 'qpbo' or 'ogm', got %s" % inference_method)
 
 
 def inference_ogm(unary_potentials, pairwise_potentials, edges,
@@ -106,14 +109,18 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
 
     alg : string
         Possible choices currently are:
@@ -217,14 +224,18 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges, **kwargs):
 
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
 
     Returns
     -------
@@ -246,63 +257,30 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges, **kwargs):
     return y.reshape(shape_org)
 
 
-def inference_dai(unary_potentials, pairwise_potentials, edges,
-                  return_energy=False, alg='jt', **kwargs):
-    """Inference with LibDAI backend.
-
-    Parameters
-    ----------
-    unary_potentials : nd-array
-        Unary potentials of energy function.
-
-    pairwise_potentials : nd-array
-        Pairwise potentials of energy function.
-
-    edges : nd-array
-        Edges of energy function.
-
-    alg : string, (default='jt')
-        Inference algorithm to use.
-        Defaults to Junction Tree. THIS WILL BLOW UP for loopy graphs.
-
-    Returns
-    -------
-    labels : nd-array
-        Approximate (usually) MAP variable assignment.
-    """
-    from daimrf import mrf
-    shape_org = unary_potentials.shape[:-1]
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-
-    n_states = unary_potentials.shape[-1]
-    log_unaries = unary_potentials.reshape(-1, n_states)
-    max_entry = max(np.max(log_unaries), 1)
-    unaries = np.exp(log_unaries / max_entry)
-
-    y = mrf(unaries, edges.astype(np.int64),
-            np.exp(pairwise_potentials / max_entry), alg=alg)
-    y = y.reshape(shape_org)
-    if return_energy:
-        return y, compute_energy(unary_potentials, pairwise_potentials, edges,
-                                 y)
-    return y
-
-
 def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
                  return_energy=False, **kwargs):
     """Inference with build-in LP solver using cvxopt backend.
 
+    This solver is very slow and only meant as a fallback or very small models.
+    The main advantage is that it will always give the exact result to the linear
+    programming relaxation, and it will return pairwise marginals if no integral
+    solution is found.
+    In most cases, the AD3 solver is preferrable.
+
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
 
     relaxed : bool (default=False)
         Whether to return the relaxed solution (``True``) or round to the next
@@ -343,14 +321,18 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
 
     relaxed : bool (default=False)
         Whether to return the relaxed solution (``True``) or round to the next
@@ -404,14 +386,16 @@ def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
 
     Parameters
     ----------
-    unary_potentials : nd-array
+    unary_potentials : nd-array, shape (n_nodes, n_nodes)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
+        These will be ignored.
 
-    edges : nd-array
-        Edges of energy function.
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices.
+        These will be ignored.
 
     verbose : int (default=0)
         Degree of verbosity for solver.
