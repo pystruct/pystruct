@@ -15,7 +15,7 @@ from pystruct.inference import get_installed
 def test_binary_blocks_cutting_plane():
     #testing cutting plane ssvm on easy binary dataset
     # generate graphs explicitly for each example
-    for inference_method in get_installed(["lp", "qpbo", "ad3", 'ogm']):
+    for inference_method in get_installed(["qpbo", "ad3", 'ogm', "max-product", "lp"]):
         X, Y = generate_blocks(n_samples=3)
         crf = GraphCRF(inference_method=inference_method)
         clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,

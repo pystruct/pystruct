@@ -52,7 +52,7 @@ def test_initialize():
 def test_graph_crf_inference():
     # create two samples with different graphs
     # two states only, pairwise smoothing
-    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'ogm']):
+    for inference_method in get_installed(['qpbo', 'ad3', 'ogm', 'max-product', 'lp']):
         crf = GraphCRF(n_states=2, n_features=2,
                        inference_method=inference_method)
         assert_array_equal(crf.inference((x_1, g_1), w), y_1)
@@ -63,7 +63,7 @@ def test_directed_graph_crf_inference():
     # create two samples with different graphs
     # two states only, pairwise smoothing
     # same as above, only with full symmetric matrix
-    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'ogm']):
+    for inference_method in get_installed(['qpbo', 'ad3', 'ogm', 'max-product', 'lp']):
         crf = GraphCRF(n_states=2, n_features=2,
                        inference_method=inference_method, directed=True)
         assert_array_equal(crf.inference((x_1, g_1), w_sym), y_1)
