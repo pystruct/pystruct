@@ -13,7 +13,7 @@ def test_chain():
                                 ('ogm', {'alg': 'dyn'}),
                                 ('ogm', {'alg': 'dd'}),
                                 ('ogm', {'alg': 'trw'}),
-                                ('dai', {'alg': 'jt'})])
+                                'max-product'])
     n_states = 3
     n_nodes = 10
 
