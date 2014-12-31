@@ -2,7 +2,11 @@ from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from sklearn.externals.joblib.pool import MemmapingPool
+try:
+    from sklearn.externals.joblib.pool import MemmapingPool as Pool
+except ImportError:
+    from multiprocessing import Pool
+
 from sklearn.utils import gen_even_slices, shuffle
 
 from .ssvm import BaseSSVM
@@ -127,7 +131,7 @@ class SubgradientSSVM(BaseSSVM):
         else:
             self._n_jobs = self.n_jobs
         if self.n_jobs != 1:
-            self.pool = MemmapingPool(processes=self._n_jobs, verbose=self.verbose)
+            self.pool = Pool(processes=self._n_jobs, verbose=self.verbose)
 
         self.averaging = averaging
         self.break_on_no_constraints = break_on_no_constraints
