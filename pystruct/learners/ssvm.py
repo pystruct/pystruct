@@ -1,9 +1,14 @@
 
 import numpy as np
-from sklearn.externals.joblib import Parallel, delayed
+from sklearn.externals.joblib import Parallel, delayed, cpu_count
+from multiprocessing import Pool
 from sklearn.base import BaseEstimator
 
 from ..utils import inference, objective_primal
+
+
+def inference_map(args):
+    return inference(* args)
 
 
 class BaseSSVM(BaseEstimator):
@@ -17,6 +22,13 @@ class BaseSSVM(BaseEstimator):
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
         self.logger = logger
+
+        if self.n_jobs == -1:
+            self._n_jobs = cpu_count()
+        else:
+            self._n_jobs = self.n_jobs
+        if self.n_jobs != 1:
+            self.pool = Pool(processes=self._n_jobs)
 
     def predict(self, X):
         """Predict output on examples in X.
@@ -34,8 +46,9 @@ class BaseSSVM(BaseEstimator):
         """
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:
-            prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(inference)(self.model, x, self.w) for x in X)
+            #prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+            #    delayed(inference)(self.model, x, self.w) for x in X)
+            prediction = self.pool.map(inference_map,((self.model, x, self.w) for x in X))
             return prediction
         else:
             if hasattr(self.model, 'batch_inference'):

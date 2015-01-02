@@ -145,13 +145,6 @@ class OneSlackSSVM(BaseSSVM):
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        if self.n_jobs == -1:
-            self._n_jobs = cpu_count()
-        else:
-            self._n_jobs = self.n_jobs
-        if self.n_jobs != 1:
-            self.pool = Pool(processes=self._n_jobs)
-
         self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad

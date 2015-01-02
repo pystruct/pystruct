@@ -13,6 +13,10 @@ from .subgradient_ssvm import SubgradientSSVM
 from ..utils import find_constraint_latent
 
 
+def find_constraint_latent_map(args):
+    return find_constraint_latent(* args)
+
+
 class SubgradientLatentSSVM(SubgradientSSVM):
     """Latent Variable Structured SVM solver using subgradient descent.
 
@@ -271,11 +275,16 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _objective(self, X, Y):
-        constraints = Parallel(
-            n_jobs=self.n_jobs,
-            verbose=self.verbose - 1)(delayed(find_constraint_latent)(
-                self.model, x, y, self.w)
-                for x, y in zip(X, Y))
+        #constraints = Parallel(
+        #    n_jobs=self.n_jobs,
+        #    verbose=self.verbose - 1)(delayed(find_constraint_latent)(
+        #        self.model, x, y, self.w)
+        #        for x, y in zip(X, Y))
+        constraints = self.pool.map(find_constraint_latent_map,
+                ((self.model, x, y, self.w)
+                for x, y in zip(X, Y)))
+        slacks = zip(*constraints)[2]
+        slacks = np.maximum(slacks, 0)
         slacks = zip(*constraints)[2]
         slacks = np.maximum(slacks, 0)
 
