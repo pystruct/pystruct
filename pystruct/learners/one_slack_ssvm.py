@@ -12,6 +12,8 @@ import cvxopt
 import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed
+#from sklearn.externals.joblib.pool import MemmapingPool
+from sklearn.externals.joblib.pool import Pool
 
 from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
@@ -138,6 +140,9 @@ class OneSlackSSVM(BaseSSVM):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
+
+        if self.n_jobs != 1:
+            self.pool = Pool(processes=self.n_jobs, verbose=self.verbose)
 
         self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
@@ -339,10 +344,12 @@ class OneSlackSSVM(BaseSSVM):
         if self.n_jobs != 1:
             # do inference in parallel
             verbose = max(0, self.verbose - 3)
-            Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(loss_augmented_inference)(
-                    self.model, x, y, self.w, relaxed=True)
-                for x, y in zip(X, Y))
+            #Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+            #    delayed(loss_augmented_inference)(
+            #        self.model, x, y, self.w, relaxed=True)
+            #    for x, y in zip(X, Y))
+            Y_hat = self.pool.map(loss_augmented_inference,
+                    ((self.model, x, y, self.w) for x, y in zip(X, Y)))
         else:
             Y_hat = self.model.batch_loss_augmented_inference(
                 X, Y, self.w, relaxed=True)
