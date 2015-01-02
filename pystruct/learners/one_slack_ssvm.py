@@ -142,7 +142,7 @@ class OneSlackSSVM(BaseSSVM):
                           logger=logger)
 
         if self.n_jobs != 1:
-            self.pool = Pool(processes=self.n_jobs, verbose=self.verbose)
+            self.pool = Pool(processes=self.n_jobs)
 
         self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
