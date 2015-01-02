@@ -13,7 +13,7 @@ import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
 #from sklearn.externals.joblib.pool import MemmapingPool
-from sklearn.externals.joblib.pool import Pool
+from multiprocessing import Pool
 
 from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
