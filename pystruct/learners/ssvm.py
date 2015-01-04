@@ -48,9 +48,12 @@ class BaseSSVM(BaseEstimator):
         """
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:
-            #prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-            #    delayed(inference)(self.model, x, self.w) for x in X)
-            prediction = self.pool.map(inference_map,((self.model, x, self.w) for x in X))
+            if self.pool == None:
+                prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                    delayed(inference)(self.model, x, self.w) for x in X)
+            else:
+                prediction = self.pool.map(inference_map,
+                        ((self.model, x, self.w) for x in X))
             return prediction
         else:
             if hasattr(self.model, 'batch_inference'):

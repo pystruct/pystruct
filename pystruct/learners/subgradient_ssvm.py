@@ -258,22 +258,19 @@ class SubgradientSSVM(BaseSSVM):
                              "be None")
         # generate batches of size n_jobs
         # to speed up inference
-        #if self.n_jobs == -1:
-        #    n_jobs = cpu_count()
-        #else:
-        #    n_jobs = self.n_jobs
-
         n_batches = int(np.ceil(float(len(X)) / self._n_jobs))
         slices = gen_even_slices(n_samples, n_batches)
         for batch in slices:
             X_b = X[batch]
             Y_b = Y[batch]
-            #candidate_constraints = Parallel(
-            #    n_jobs=self.n_jobs,
-            #    verbose=verbose)(delayed(find_constraint)(
-            #        self.model, x, y, w)
-            #        for x, y in zip(X_b, Y_b))
-            candidate_constraints = self.pool.map(find_constraint_map,
+            if any([self.n_jobs == 1, self.pool == None]):
+                candidate_constraints = Parallel(
+                    n_jobs=self.n_jobs,
+                    verbose=verbose)(delayed(find_constraint)(
+                        self.model, x, y, w)
+                        for x, y in zip(X_b, Y_b))
+            else:
+                candidate_constraints = self.pool.map(find_constraint_map,
                     ((self.model, x, y, w)
                     for x, y in zip(X_b, Y_b)))
             djoint_feature = np.zeros(self.model.size_joint_feature)

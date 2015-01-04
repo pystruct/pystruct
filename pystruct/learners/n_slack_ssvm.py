@@ -13,8 +13,6 @@ import cvxopt
 import cvxopt.solvers
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-#from sklearn.externals.joblib.pool import MemmapingPool
-from multiprocessing import Pool
 from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
@@ -313,12 +311,13 @@ class NSlackSSVM(BaseSSVM):
                     X_b = X[batch]
                     Y_b = Y[batch]
                     indices_b = indices[batch]
-                    #candidate_constraints = Parallel(
-                    #    n_jobs=self.n_jobs, verbose=verbose)(
-                    #        delayed(find_constraint)(self.model, x, y, self.w)
-                    #        for x, y in zip(X_b, Y_b))
-
-                    candidate_constraints = self.pool.map(find_constraint_map,
+                    if any([self.n_jobs == 1, self.pool == None]):
+                        candidate_constraints = Parallel(
+                            n_jobs=self.n_jobs, verbose=verbose)(
+                            delayed(find_constraint)(self.model, x, y, self.w)
+                            for x, y in zip(X_b, Y_b))
+                    else:
+                        candidate_constraints = self.pool.map(find_constraint_map,
                             ((self.model, x, y, self.w) for x, y in zip(X_b, Y_b)))
 
                     # for each batch, gather new constraints
