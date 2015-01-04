@@ -29,6 +29,8 @@ class BaseSSVM(BaseEstimator):
             self._n_jobs = self.n_jobs
         if self.n_jobs != 1:
             self.pool = Pool(processes=self._n_jobs)
+        else:
+            self.pool = None
 
     def predict(self, X):
         """Predict output on examples in X.
@@ -99,4 +101,5 @@ class BaseSSVM(BaseEstimator):
         else:
             variant = 'n_slack'
         return objective_primal(self.model, self.w, X, Y, self.C,
-                                variant=variant, n_jobs=self.n_jobs)
+                                variant=variant, n_jobs=self.n_jobs,
+                                pool=self.pool)

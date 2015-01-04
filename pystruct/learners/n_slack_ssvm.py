@@ -20,8 +20,10 @@ from sklearn.utils import gen_even_slices
 from .ssvm import BaseSSVM
 from ..utils import unwrap_pairwise, find_constraint
 
+
 def find_constraint_map(args):
     return find_constraint(* args)
+
 
 class NSlackSSVM(BaseSSVM):
     """Structured SVM solver for the n-slack QP with l1 slack penalty.
