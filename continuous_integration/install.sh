@@ -12,6 +12,7 @@ set -e
 # lookup for g++44 unexpectedly.
 export CC=gcc
 export CXX=g++
+export PIP=pip
 
 # add cython repository
 sudo add-apt-repository ppa:cython-dev/master-ppa -y
@@ -59,15 +60,20 @@ if [[ "$DISTRIB" == "conda" ]]; then
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
-    sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
+    if [[ "$PYTHON_VERSION" == "3.4" ]]; then
+        sudo apt-get install -qq python3-scipy python3-nose python3-pip python3-cvxopt cython3
+        export PIP=pip3
+    else
+        sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
+    fi
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
-    pip install coverage coveralls
+    $PIP install coverage coveralls
 fi
 
 # install our favorite inference packages 
-pip install pyqpbo ad3 scikit-learn
+$PIP install pyqpbo ad3 scikit-learn
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
