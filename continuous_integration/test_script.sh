@@ -8,20 +8,26 @@
 
 set -e
 
-echo $PYTHON_VERSION
+if [[ "$PYTHON_VERSION" == "3.4" ]]; then
+    PYTHON = python3
+    NOSETESTS = nosetests3
+else
+    PYTHON = python
+    NOSETESTS = nosetests
+fi
 
-python --version
-python -c "import numpy; print('numpy %s' % numpy.__version__)"
-python -c "import scipy; print('scipy %s' % scipy.__version__)"
-python -c "from pystruct.inference import get_installed; print('pystruct inference algorithms: %s' % get_installed())"
+$PYTHON --version
+$PYTHON -c "import numpy; print('numpy %s' % numpy.__version__)"
+$PYTHON -c "import scipy; print('scipy %s' % scipy.__version__)"
+$PYTHON -c "from pystruct.inference import get_installed; print('pystruct inference algorithms: %s' % get_installed())"
 
 
 # Do not use "make test" or "make test-coverage" as they enable verbose mode
 # which renders travis output too slow to display in a browser.
 if [[ "$COVERAGE" == "true" ]]; then
-    nosetests -s --with-coverage pystruct
+    $NOSETESTS -s --with-coverage pystruct
 else
-    nosetests -s pystruct
+    $NOSETESTS -s pystruct
 fi
 
 #make test-doc test-sphinxext
