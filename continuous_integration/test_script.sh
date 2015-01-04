@@ -9,11 +9,11 @@
 set -e
 
 if [[ "$PYTHON_VERSION" == "3.4" ]]; then
-    PYTHON = python3
-    NOSETESTS = nosetests3
+    export PYTHON=python3
+    export NOSETESTS=nosetests3
 else
-    PYTHON = python
-    NOSETESTS = nosetests
+    export PYTHON=python
+    export NOSETESTS=nosetests
 fi
 
 $PYTHON --version
