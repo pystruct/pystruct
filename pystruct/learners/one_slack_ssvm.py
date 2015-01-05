@@ -340,7 +340,10 @@ class OneSlackSSVM(BaseSSVM):
         return Y_hat, djoint_feature, loss_mean
 
     def _find_new_constraint(self, X, Y, joint_feature_gt, constraints, check=True):
-        if any([self.n_jobs == 1, self.pool == None]):
+        if self.n_jobs == 1:
+            Y_hat = self.model.batch_loss_augmented_inference(
+                    X, Y, self.w, relaxed=True)
+        elif self.pool == None:
             verbose = max(0, self.verbose - 3)
             Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
                 delayed(loss_augmented_inference)(
