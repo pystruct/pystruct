@@ -45,8 +45,18 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
-        numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    
+    if [[ "$PYTHON_VERSION" == "3.4" ]]; then
+        sudo apt-get install build-essential python-dev python-setuptools \
+             python-numpy python-scipy libatlas-dev libatlas3gf-base
+        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
+            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    else
+        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    fi
+
+
     source activate testenv
 
     if [[ "$INSTALL_MKL" == "true" ]]; then
