@@ -45,7 +45,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
         numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
     source activate testenv
 
@@ -73,7 +73,7 @@ if [[ "$COVERAGE" == "true" ]]; then
 fi
 
 # install our favorite inference packages 
-$PIP install pyqpbo ad3 scikit-learn
+$PIP install pyqpbo ad3 scikit-learn cvxopt
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
