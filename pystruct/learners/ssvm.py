@@ -1,20 +1,20 @@
 
 import numpy as np
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from multiprocessing import Pool
+try:
+    from sklearn.externals.joblib.pool import MemmapedPool, Pool 
+except:
+    from multiprocessing import Pool
 from sklearn.base import BaseEstimator
 
 from ..utils import inference, objective_primal
 
 
-def inference_map(args):
-    return inference(* args)
-
-
 class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
     def __init__(self, model, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0, logger=None):
+                 n_jobs=1, show_loss_every=0, logger=None,
+                 use_memmaping_pool=False):
         self.model = model
         self.max_iter = max_iter
         self.C = C
@@ -23,12 +23,13 @@ class BaseSSVM(BaseEstimator):
         self.n_jobs = n_jobs
         self.logger = logger
 
+    def _check_pool():
         if self.n_jobs == -1:
+            self.pool = Pool(processes=cpu_count())
             self._n_jobs = cpu_count()
         else:
             self._n_jobs = self.n_jobs
         if self.n_jobs != 1:
-            self.pool = Pool(processes=self._n_jobs)
         else:
             self.pool = None
 
