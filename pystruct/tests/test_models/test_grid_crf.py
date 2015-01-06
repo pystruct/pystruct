@@ -91,7 +91,7 @@ def test_binary_blocks_crf():
                   0, 1,
                   0,     # pairwise
                   -4, 0])
-    for inference_method in get_installed(['dai', 'qpbo', 'lp', 'ad3', 'ogm']):
+    for inference_method in get_installed(['qpbo', 'lp', 'ad3', 'ogm']):
         crf = GridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
         y_hat = crf.inference(x, w)
@@ -133,7 +133,6 @@ def test_binary_grid_unaries():
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         for inference_method in get_installed():
-            # dai is to expensive
             crf = GridCRF(inference_method=inference_method)
             crf.initialize(X, Y)
             w_unaries_only = np.zeros(7)

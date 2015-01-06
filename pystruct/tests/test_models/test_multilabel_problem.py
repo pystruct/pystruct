@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from nose.tools import assert_almost_equal, assert_equal, assert_raises
 
 from pystruct.models import MultiLabelClf
-from pystruct.inference.inference_methods import compute_energy
+from pystruct.inference import compute_energy
 
 
 def test_initialization():
@@ -33,7 +33,7 @@ def test_multilabel_independent():
     n_features = 5
     n_labels = 4
     model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
-                            edges=edges)
+                          edges=edges)
     rnd = np.random.RandomState(0)
 
     x = rnd.normal(size=5)
@@ -62,7 +62,7 @@ def test_multilabel_fully():
     n_labels = 4
     edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
     model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
-                            edges=edges)
+                          edges=edges)
     rnd = np.random.RandomState(0)
 
     x = rnd.normal(size=n_features)

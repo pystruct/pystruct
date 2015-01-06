@@ -1,3 +1,11 @@
+0.3
+===
+- Removed libdai bindings that were very experimental.
+
+0.2.3
+=====
+- Added max-prod inference, including loopy bp, tree bp and a special case for chains.
+
 0.2
 ===
 - Added BCFW.
