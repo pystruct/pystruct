@@ -2,16 +2,10 @@ from time import time
 import numpy as np
 
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from multiprocessing import Pool
-
 from sklearn.utils import gen_even_slices, shuffle
 
 from .ssvm import BaseSSVM
 from ..utils import find_constraint
-
-
-def find_constraint_map(args):
-    return find_constraint(* args)
 
 
 class SubgradientSSVM(BaseSSVM):
@@ -122,7 +116,6 @@ class SubgradientSSVM(BaseSSVM):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
-
         self.averaging = averaging
         self.break_on_no_constraints = break_on_no_constraints
         self.momentum = momentum
@@ -258,21 +251,21 @@ class SubgradientSSVM(BaseSSVM):
                              "be None")
         # generate batches of size n_jobs
         # to speed up inference
-        n_batches = int(np.ceil(float(len(X)) / self._n_jobs))
+        if self.n_jobs == -1:
+            n_jobs = cpu_count()
+        else:
+            n_jobs = self.n_jobs
+
+        n_batches = int(np.ceil(float(len(X)) / n_jobs))
         slices = gen_even_slices(n_samples, n_batches)
         for batch in slices:
             X_b = X[batch]
             Y_b = Y[batch]
-            if any([self.n_jobs == 1, self.pool == None]):
-                candidate_constraints = Parallel(
-                    n_jobs=self.n_jobs,
-                    verbose=verbose)(delayed(find_constraint)(
-                        self.model, x, y, w)
-                        for x, y in zip(X_b, Y_b))
-            else:
-                candidate_constraints = self.pool.map(find_constraint_map,
-                    ((self.model, x, y, w)
-                    for x, y in zip(X_b, Y_b)))
+            candidate_constraints = Parallel(
+                n_jobs=self.n_jobs,
+                verbose=verbose)(delayed(find_constraint)(
+                    self.model, x, y, w)
+                    for x, y in zip(X_b, Y_b))
             djoint_feature = np.zeros(self.model.size_joint_feature)
             for x, y, constraint in zip(X_b, Y_b,
                                         candidate_constraints):

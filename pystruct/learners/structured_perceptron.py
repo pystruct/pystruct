@@ -8,10 +8,6 @@ def inference(model, x, w):
     return model.inference(x, w)
 
 
-def inference_map(args):
-    return inference(* args)
-
-
 class StructuredPerceptron(BaseSSVM):
     """Structured Perceptron training.
 
@@ -129,14 +125,9 @@ class StructuredPerceptron(BaseSSVM):
                 if self.verbose:
                     print("iteration %d" % iteration)
                 if self.batch:
-                    if any([self.n_jobs == 1, self.pool == None]):
-                        Y_hat = (Parallel(n_jobs=self.n_jobs)(
-                            delayed(inference)(self.model, x, self.w) 
-                            for x, y in zip(X, Y)))
-                    else:
-                        Y_hat = self.pool.map(inference_map, 
-                            ((self.model, x, self.w) for x, y in
-                            zip(X, Y)))
+                    Y_hat = (Parallel(n_jobs=self.n_jobs)(
+                        delayed(inference)(self.model, x, self.w) for x, y in
+                        zip(X, Y)))
                     for x, y, y_hat in zip(X, Y, Y_hat):
                         current_loss = self.model.loss(y, y_hat)
                         losses += current_loss

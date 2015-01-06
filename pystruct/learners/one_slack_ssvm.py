@@ -11,14 +11,10 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
+from sklearn.externals.joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
-
-
-def loss_augmented_inference_map(args):
-    return loss_augmented_inference(* args)
 
 
 class NoConstraint(Exception):
@@ -340,18 +336,16 @@ class OneSlackSSVM(BaseSSVM):
         return Y_hat, djoint_feature, loss_mean
 
     def _find_new_constraint(self, X, Y, joint_feature_gt, constraints, check=True):
-        if self.n_jobs == 1:
-            Y_hat = self.model.batch_loss_augmented_inference(
-                    X, Y, self.w, relaxed=True)
-        elif self.pool == None:
+        if self.n_jobs != 1:
+            # do inference in parallel
             verbose = max(0, self.verbose - 3)
             Y_hat = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
                 delayed(loss_augmented_inference)(
                     self.model, x, y, self.w, relaxed=True)
                 for x, y in zip(X, Y))
         else:
-            Y_hat = self.pool.map(loss_augmented_inference_map,
-                    ((self.model, x, y, self.w) for x, y in zip(X, Y)))
+            Y_hat = self.model.batch_loss_augmented_inference(
+                X, Y, self.w, relaxed=True)
         # compute the mean over joint_features and losses
 
         if getattr(self.model, 'rescale_C', False):

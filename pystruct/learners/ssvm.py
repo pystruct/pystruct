@@ -1,10 +1,6 @@
 
 import numpy as np
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
-try:
-    from sklearn.externals.joblib.pool import MemmapedPool, Pool 
-except:
-    from multiprocessing import Pool
+from sklearn.externals.joblib import Parallel, delayed
 from sklearn.base import BaseEstimator
 
 from ..utils import inference, objective_primal
@@ -13,8 +9,7 @@ from ..utils import inference, objective_primal
 class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
     def __init__(self, model, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0, logger=None,
-                 use_memmaping_pool=False):
+                 n_jobs=1, show_loss_every=0, logger=None):
         self.model = model
         self.max_iter = max_iter
         self.C = C
@@ -22,16 +17,6 @@ class BaseSSVM(BaseEstimator):
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
         self.logger = logger
-
-    def _check_pool():
-        if self.n_jobs == -1:
-            self.pool = Pool(processes=cpu_count())
-            self._n_jobs = cpu_count()
-        else:
-            self._n_jobs = self.n_jobs
-        if self.n_jobs != 1:
-        else:
-            self.pool = None
 
     def predict(self, X):
         """Predict output on examples in X.
@@ -49,12 +34,8 @@ class BaseSSVM(BaseEstimator):
         """
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:
-            if self.pool == None:
-                prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                    delayed(inference)(self.model, x, self.w) for x in X)
-            else:
-                prediction = self.pool.map(inference_map,
-                        ((self.model, x, self.w) for x in X))
+            prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                delayed(inference)(self.model, x, self.w) for x in X)
             return prediction
         else:
             if hasattr(self.model, 'batch_inference'):
@@ -105,5 +86,4 @@ class BaseSSVM(BaseEstimator):
         else:
             variant = 'n_slack'
         return objective_primal(self.model, self.w, X, Y, self.C,
-                                variant=variant, n_jobs=self.n_jobs,
-                                pool=self.pool)
+                                variant=variant, n_jobs=self.n_jobs)

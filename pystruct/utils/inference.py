@@ -83,10 +83,6 @@ def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
     return y_hat, delta_joint_feature, slack, loss
 
 
-def find_constraint_map(args):
-    return find_constraint(* args)
-
-
 def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
@@ -113,16 +109,12 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
 
 
 # easy debugging
-def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1, pool=None):
+def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
     objective = 0
-    if any([pool == None, n_jobs == 1]):
-        constraints = Parallel(
-            n_jobs=n_jobs)(delayed(find_constraint)(
-                model, x, y, w)
-                for x, y in zip(X, Y))
-    else:
-        constraints = pool.map(find_constraint_map,
-                ((model, x, y, w) for x, y in zip(X, Y)))
+    constraints = Parallel(
+        n_jobs=n_jobs)(delayed(find_constraint)(
+            model, x, y, w)
+            for x, y in zip(X, Y))
     slacks = zip(*constraints)[2]
 
     if variant == 'n_slack':
