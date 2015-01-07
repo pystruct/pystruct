@@ -6,15 +6,10 @@
 from time import time
 import numpy as np
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices
 
 from .subgradient_ssvm import SubgradientSSVM
-from ..utils import find_constraint_latent
-
-
-def find_constraint_latent_map(args):
-    return find_constraint_latent(* args)
+from ..utils import find_constraint_latent, find_constraint_latent_map
 
 
 class SubgradientLatentSSVM(SubgradientSSVM):
@@ -176,22 +171,21 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                 else:
                     #generate batches of size n_jobs
                     #to speed up inference
-                    n_batches = int(np.ceil(float(len(X)) / self._n_jobs))
+                    if self.n_jobs == -1:
+                        n_jobs = cpu_count()
+                    else:
+                        n_jobs = self.j_jobs
+
+                    n_batches = int(np.ceil(float(len(X)) / n_jobs))
                     slices = gen_even_slices(n_samples, n_batches)
                     for batch in slices:
                         X_b = X[batch]
                         Y_b = Y[batch]
                         verbose = self.verbose - 1
-                        if any([self.n_jobs == 1, self.pool == None]):
-                            candidate_constraints = Parallel(
-                                n_jobs=self.n_jobs,
-                                verbose=verbose)(delayed(find_constraint_latent)(
-                                    self.model, x, y, w)
-                                    for x, y in zip(X_b, Y_b))
-                        else:
-                            constraints = self.pool.map(find_constraint_latent_map,
-                                                        ((self.model, x, y, self.w)
-                                                        for x, y in zip(X, Y)))
+                        candidate_constraints = self.pool.map(
+                                find_constraint_latent_map,
+                                ((self.model, x, y, w)
+                                for x, y in zip(X_b, Y_b)))
                         djoint_feature = np.zeros(self.model.size_joint_feature)
                         for x, y, constraint in zip(X_b, Y_b,
                                                     candidate_constraints):
@@ -275,18 +269,8 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _objective(self, X, Y):
-        if any([self.n_jobs == 1, self.pool == None]):
-            constraints = Parallel(
-                n_jobs=self.n_jobs,
-                verbose=self.verbose - 1)(delayed(find_constraint_latent)(
-                    self.model, x, y, self.w)
-                    for x, y in zip(X, Y))
-        else:
-            constraints = self.pool.map(find_constraint_latent_map,
-                    ((self.model, x, y, self.w)
-                    for x, y in zip(X, Y)))
-        slacks = zip(*constraints)[2]
-        slacks = np.maximum(slacks, 0)
+        constraints = self.pool.map(find_constraint_latent_map,
+                ((self.model, x, y, self.w) for x, y in zip(X, Y)))
         slacks = zip(*constraints)[2]
         slacks = np.maximum(slacks, 0)
 

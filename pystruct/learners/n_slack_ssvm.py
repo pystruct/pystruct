@@ -12,15 +12,11 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
-from ..utils import unwrap_pairwise, find_constraint
-
-
-def find_constraint_map(args):
-    return find_constraint(* args)
+from ..utils import (unwrap_pairwise, find_constraint,
+        find_constraint_map)
 
 
 class NSlackSSVM(BaseSSVM):
@@ -311,13 +307,7 @@ class NSlackSSVM(BaseSSVM):
                     X_b = X[batch]
                     Y_b = Y[batch]
                     indices_b = indices[batch]
-                    if any([self.n_jobs == 1, self.pool == None]):
-                        candidate_constraints = Parallel(
-                            n_jobs=self.n_jobs, verbose=verbose)(
-                            delayed(find_constraint)(self.model, x, y, self.w)
-                            for x, y in zip(X_b, Y_b))
-                    else:
-                        candidate_constraints = self.pool.map(find_constraint_map,
+                    candidate_constraints = self.pool.map(find_constraint_map,
                             ((self.model, x, y, self.w) for x, y in zip(X_b, Y_b)))
 
                     # for each batch, gather new constraints

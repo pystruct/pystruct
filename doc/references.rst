@@ -104,7 +104,6 @@ Inference
 
    inference.inference_dispatch
    inference.inference_qpbo
-   inference.inference_dai
    inference.inference_lp
    inference.inference_ad3
    inference.inference_ogm

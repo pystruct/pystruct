@@ -1,17 +1,10 @@
 from time import time
 import numpy as np
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
-from multiprocessing import Pool
-
 from sklearn.utils import gen_even_slices, shuffle
 
 from .ssvm import BaseSSVM
-from ..utils import find_constraint
-
-
-def find_constraint_map(args):
-    return find_constraint(* args)
+from ..utils import find_constraint, find_constraint_map
 
 
 class SubgradientSSVM(BaseSSVM):
@@ -122,7 +115,6 @@ class SubgradientSSVM(BaseSSVM):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
-
         self.averaging = averaging
         self.break_on_no_constraints = break_on_no_constraints
         self.momentum = momentum
@@ -263,16 +255,8 @@ class SubgradientSSVM(BaseSSVM):
         for batch in slices:
             X_b = X[batch]
             Y_b = Y[batch]
-            if any([self.n_jobs == 1, self.pool == None]):
-                candidate_constraints = Parallel(
-                    n_jobs=self.n_jobs,
-                    verbose=verbose)(delayed(find_constraint)(
-                        self.model, x, y, w)
-                        for x, y in zip(X_b, Y_b))
-            else:
-                candidate_constraints = self.pool.map(find_constraint_map,
-                    ((self.model, x, y, w)
-                    for x, y in zip(X_b, Y_b)))
+            candidate_constraints = self.pool.map(find_constraint_map,
+                ((self.model, x, y, w) for x, y in zip(X_b, Y_b)))
             djoint_feature = np.zeros(self.model.size_joint_feature)
             for x, y, constraint in zip(X_b, Y_b,
                                         candidate_constraints):
