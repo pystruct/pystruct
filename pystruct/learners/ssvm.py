@@ -6,7 +6,7 @@ try:
     from sklearn.externals.joblib.pool import (MemmapingPool, Pool) 
 except ImportError:
     from multiprocessing import Pool
-    MemmapingPool = Pool
+    MemmapingPool = False 
     warnings.warn("your scikit-learn version does not include "
                   "MemmapingPool, all parallelization using "
                   "multiprocessing.Pool")
@@ -42,7 +42,7 @@ class BaseSSVM(BaseEstimator):
             self._n_jobs = self.n_jobs
         if self.n_jobs == 1:
             self.pool = ThreadPool()
-        elif self.use_memmapping_pool:
+        elif all([self.use_memmapping_pool, MemmapingPool]):
             self.pool = MemmapingPool(processes=self._n_jobs, 
                     temp_folder=self.memmapping_temp_folder)
         else:
