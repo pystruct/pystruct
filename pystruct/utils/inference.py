@@ -127,10 +127,11 @@ def loss_augmented_inference_map(args):
 
 
 # easy debugging
-def objective_primal(model, w, X, Y, C, variant='n_slack', pool=ThreadPool()):
+def objective_primal(model, w, X, Y, C, variant='n_slack', pool=ThreadPool(),
+        timeout=sys.maxint):
     objective = 0
     constraints = pool.map_async(find_constraint_map,
-            ((model, x, y, w) for x, y in zip(X, Y))).get(sys.maxint)
+            ((model, x, y, w) for x, y in zip(X, Y))).get(timeout)
     slacks = zip(*constraints)[2]
 
     if variant == 'n_slack':
