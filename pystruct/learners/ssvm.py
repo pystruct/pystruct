@@ -19,8 +19,9 @@ from ..utils import inference, inference_map, objective_primal
 class BaseSSVM(BaseEstimator):
     """ABC that implements common functionality."""
     def __init__(self, model, max_iter=100, C=1.0, verbose=0,
-                 n_jobs=1, show_loss_every=0, logger=None,
-                 use_memmapping_pool=1, memmaping_temp_folder=None):
+                 n_jobs=1, show_loss_every=0, logger=None, 
+                 use_threads=False, use_memmapping_pool=1, 
+                 memmaping_temp_folder=None):
         self.model = model
         self.max_iter = max_iter
         self.C = C
@@ -28,6 +29,7 @@ class BaseSSVM(BaseEstimator):
         self.show_loss_every = show_loss_every
         self.n_jobs = n_jobs
         self.logger = logger
+        self.use_threads = use_threads
         self.use_memmapping_pool = use_memmapping_pool
         self.memmapping_temp_folder = memmaping_temp_folder 
         ## spawn pool in init, every instance should have pool attribute
@@ -40,8 +42,8 @@ class BaseSSVM(BaseEstimator):
             self._n_jobs = cpu_count()
         else:
             self._n_jobs = self.n_jobs
-        if self.n_jobs == 1:
-            self.pool = ThreadPool()
+        if any([self.n_jobs == 1, self.use_threads]):
+            self.pool = ThreadPool(processes=self._n_jobs)
         elif all([self.use_memmapping_pool, MemmapingPool]):
             self.pool = MemmapingPool(processes=self._n_jobs, 
                     temp_folder=self.memmapping_temp_folder)
