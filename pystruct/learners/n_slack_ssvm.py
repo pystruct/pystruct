@@ -130,7 +130,7 @@ class NSlackSSVM(BaseSSVM):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger, use_threads=use_threads, 
-                          use_memmapping_pool=use_memmaping_pool,
+                          use_memmapping_pool=use_memmapping_pool,
                           memmapping_temp_folder=memmapping_temp_folder)
 
         self.negativity_constraint = negativity_constraint
