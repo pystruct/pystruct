@@ -67,9 +67,12 @@ class StructuredPerceptron(BaseSSVM):
     """
     def __init__(self, model, max_iter=100, verbose=0, batch=False,
                  decay_exponent=0, decay_t0=10, average=False, n_jobs=1,
-                 logger=None):
+                 logger=None, use_threads=False, use_memmapping_pool=1,
+                 memmapping_temp_folder=None):
         BaseSSVM.__init__(self, model, max_iter=max_iter, verbose=verbose,
-                          n_jobs=n_jobs, logger=logger)
+                          n_jobs=n_jobs, logger=logger, use_threads=use_threads, 
+                          use_memmapping_pool=use_memmapping_pool,
+                          memmapping_temp_folder=memmapping_temp_folder)
         self.batch = batch
         self.decay_exponent = decay_exponent
         self.decay_t0 = decay_t0

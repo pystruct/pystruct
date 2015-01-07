@@ -21,7 +21,7 @@ class BaseSSVM(BaseEstimator):
     def __init__(self, model, max_iter=100, C=1.0, verbose=0,
                  n_jobs=1, show_loss_every=0, logger=None, 
                  use_threads=False, use_memmapping_pool=1, 
-                 memmaping_temp_folder=None):
+                 memmapping_temp_folder=None):
         self.model = model
         self.max_iter = max_iter
         self.C = C
@@ -31,7 +31,7 @@ class BaseSSVM(BaseEstimator):
         self.logger = logger
         self.use_threads = use_threads
         self.use_memmapping_pool = use_memmapping_pool
-        self.memmapping_temp_folder = memmaping_temp_folder 
+        self.memmapping_temp_folder = memmapping_temp_folder 
         ## spawn pool in init, every instance should have pool attribute
         self._spawn_pool()
         

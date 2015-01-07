@@ -106,7 +106,9 @@ class FrankWolfeSSVM(BaseSSVM):
     def __init__(self, model, max_iter=1000, C=1.0, verbose=0, n_jobs=1,
                  show_loss_every=0, logger=None, batch_mode=False,
                  line_search=True, check_dual_every=10, tol=.001,
-                 do_averaging=True, sample_method='perm', random_state=None):
+                 do_averaging=True, sample_method='perm', random_state=None,
+                 use_threads=False, use_memmapping_pool=1,
+                 memmapping_temp_folder=None):
 
         if n_jobs != 1:
             warnings.warn("FrankWolfeSSVM does not support multiprocessing"
@@ -117,7 +119,9 @@ class FrankWolfeSSVM(BaseSSVM):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
-                          logger=logger)
+                          logger=logger, use_threads=use_threads, 
+                          use_memmapping_pool=use_memmapping_pool,
+                          memmapping_temp_folder=memmapping_temp_folder)
         self.tol = tol
         self.batch_mode = batch_mode
         self.line_search = line_search

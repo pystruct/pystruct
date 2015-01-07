@@ -131,11 +131,15 @@ class OneSlackSSVM(BaseSSVM):
                  break_on_bad=False, show_loss_every=0, tol=1e-3,
                  inference_cache=0, inactive_threshold=1e-5,
                  inactive_window=50, logger=None, cache_tol='auto',
-                 switch_to=None):
+                 switch_to=None, 
+                 use_threads=False, use_memmapping_pool=1,
+                 memmapping_temp_folder=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
-                          logger=logger)
+                          logger=logger, use_threads=use_threads, 
+                          use_memmapping_pool=use_memmapping_pool,
+                          memmapping_temp_folder=memmapping_temp_folder)
 
         self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints

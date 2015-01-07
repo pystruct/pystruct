@@ -111,10 +111,14 @@ class SubgradientSSVM(BaseSSVM):
                  learning_rate='auto', n_jobs=1,
                  show_loss_every=0, decay_exponent=1,
                  break_on_no_constraints=True, logger=None, batch_size=None,
-                 decay_t0=10, averaging=None, shuffle=False):
+                 decay_t0=10, averaging=None, shuffle=False,
+                 use_threads=False, use_memmapping_pool=1,
+                 memmapping_temp_folder=None):
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
-                          logger=logger)
+                          logger=logger, use_threads=use_threads,
+                          use_memmapping_pool=use_memmapping_pool, 
+                          memmapping_temp_folder=memmapping_temp_folder)
         self.averaging = averaging
         self.break_on_no_constraints = break_on_no_constraints
         self.momentum = momentum
