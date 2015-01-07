@@ -1,6 +1,6 @@
 import itertools
-from sklearn.externals.joblib import Parallel, delayed
 
+from multiprocessing.dummy import Pool as ThreadPool
 import numpy as np
 
 
@@ -108,13 +108,28 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
     return model.loss_augmented_inference(x, y, w, relaxed=relaxed)
 
 
+## starmap wrappers for calls to pool
+def find_constraint_map(args):
+    return find_constraint(* args)
+
+
+def find_constraint_latent_map(args):
+    return find_constraint_latent(* args)
+
+
+def inference_map(args):
+    return inference(* args)
+
+
+def loss_augmented_inference_map(args):
+    return loss_augmented_inference(* args)
+
+
 # easy debugging
-def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
+def objective_primal(model, w, X, Y, C, variant='n_slack', pool=ThreadPool()):
     objective = 0
-    constraints = Parallel(
-        n_jobs=n_jobs)(delayed(find_constraint)(
-            model, x, y, w)
-            for x, y in zip(X, Y))
+    constraints = pool.map(find_constraint_map,
+            ((model, x, y, w) for x, y in zip(X, Y)))
     slacks = zip(*constraints)[2]
 
     if variant == 'n_slack':
@@ -157,3 +172,4 @@ def exhaustive_inference(model, x, w):
             best_energy = energy
             best_y = y_hat
     return best_y
+
