@@ -340,7 +340,7 @@ class OneSlackSSVM(BaseSSVM):
     def _find_new_constraint(self, X, Y, joint_feature_gt, constraints, check=True):
         if self.n_jobs != 1:
             # do inference in parallel
-            Y_hat = self.pool.map(loss_augmented_inference_map,
+            Y_hat = self.parallel(loss_augmented_inference_map,
                     ((self.model, x, y, self.w) for x, y in zip(X, Y)))
         else:
             Y_hat = self.model.batch_loss_augmented_inference(

@@ -44,11 +44,8 @@ class ParallelMixin(object):
 
     
     def parallel(self, func, args_iterable, timeout=sys.maxint):
-        try:
-            results = self.pool.map_async(func, args_iterable).get(timeout)
-        except AttributeError:
+        if self.pool is None:
             self._spawn_pool()
-            results = self.pool.map_async(func, args_iterable).get(timeout)
-        return results
+        return self.pool.map_async(func, args_iterable).get(timeout)
 
 

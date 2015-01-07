@@ -182,7 +182,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         X_b = X[batch]
                         Y_b = Y[batch]
                         verbose = self.verbose - 1
-                        candidate_constraints = self.pool.map(
+                        candidate_constraints = self.parallel(
                                 find_constraint_latent_map,
                                 ((self.model, x, y, w)
                                 for x, y in zip(X_b, Y_b)))
@@ -269,7 +269,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _objective(self, X, Y):
-        constraints = self.pool.map(find_constraint_latent_map,
+        constraints = self.parallel(find_constraint_latent_map,
                 ((self.model, x, y, self.w) for x, y in zip(X, Y)))
         slacks = zip(*constraints)[2]
         slacks = np.maximum(slacks, 0)

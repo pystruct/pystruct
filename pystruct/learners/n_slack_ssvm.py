@@ -311,7 +311,7 @@ class NSlackSSVM(BaseSSVM):
                     X_b = X[batch]
                     Y_b = Y[batch]
                     indices_b = indices[batch]
-                    candidate_constraints = self.pool.map(find_constraint_map,
+                    candidate_constraints = self.parallel(find_constraint_map,
                             ((self.model, x, y, self.w) for x, y in zip(X_b, Y_b)))
 
                     # for each batch, gather new constraints

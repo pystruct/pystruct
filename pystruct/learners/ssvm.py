@@ -2,10 +2,10 @@
 import numpy as np
 from sklearn.base import BaseEstimator
 
-from ..utils import inference, inference_map, objective_primal
+from ..utils import inference, inference_map, objective_primal, ParallelMixin
 
 
-class BaseSSVM(BaseEstimator):
+class BaseSSVM(BaseEstimator, ParallelMixin):
     """ABC that implements common functionality."""
     def __init__(self, model, max_iter=100, C=1.0, verbose=0,
                  n_jobs=1, show_loss_every=0, logger=None, 
@@ -21,9 +21,7 @@ class BaseSSVM(BaseEstimator):
         self.use_threads = use_threads
         self.use_memmapping_pool = use_memmapping_pool
         self.memmapping_temp_folder = memmapping_temp_folder 
-        ## spawn pool in init, every instance should have pool attribute
-        self._spawn_pool()
-        
+        self.pool = None
 
 
     def predict(self, X):
@@ -43,7 +41,7 @@ class BaseSSVM(BaseEstimator):
         if hasattr(self.model, 'batch_inference'):
             return self.model.batch_inference(X, self.w)
         else:
-            prediction = self.pool.map(inference_map,
+            prediction = self.parallel(inference_map,
                     ((self.model, x, self.w) for x in X))
             return prediction
 
@@ -90,5 +88,8 @@ class BaseSSVM(BaseEstimator):
             variant = 'one_slack'
         else:
             variant = 'n_slack'
+        if self.pool is None:
+            self._spawn_pool()
         return objective_primal(self.model, self.w, X, Y, self.C,
-                                variant=variant, pool=self.pool)
+                            variant=variant, pool=self.pool)
+

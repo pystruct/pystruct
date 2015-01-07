@@ -124,7 +124,7 @@ class StructuredPerceptron(BaseSSVM):
                 if self.verbose:
                     print("iteration %d" % iteration)
                 if self.batch:
-                    Y_hat = self.pool.map(inference_map,
+                    Y_hat = self.parallel(inference_map,
                             ((self.model, x, self.w) for x, y in zip(X, Y)))
                     for x, y, y_hat in zip(X, Y, Y_hat):
                         current_loss = self.model.loss(y, y_hat)
