@@ -90,6 +90,7 @@ class BaseSSVM(BaseEstimator, ParallelMixin):
             variant = 'n_slack'
         if self.pool is None:
             self._spawn_pool()
-        return objective_primal(self.model, self.w, X, Y, self.C,
-                            variant=variant, pool=self.pool)
+        return objective_primal(self.model, 
+                self.w, X, Y, self.C, 
+                variant=variant, parallel=self.parallel)
 
