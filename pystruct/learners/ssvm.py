@@ -41,6 +41,8 @@ class BaseSSVM(BaseEstimator, ParallelMixin):
         if hasattr(self.model, 'batch_inference'):
             return self.model.batch_inference(X, self.w)
         else:
+            if self.pool is None:
+                self._spawn_pool()
             prediction = self.parallel(inference_map,
                     ((self.model, x, self.w) for x in X))
             return prediction

@@ -254,6 +254,8 @@ class SubgradientSSVM(BaseSSVM):
                              "be None")
         # generate batches of size n_jobs
         # to speed up inference
+        if self.pool is None:
+            self._spawn_pool()
         n_batches = int(np.ceil(float(len(X)) / self._n_jobs))
         slices = gen_even_slices(n_samples, n_batches)
         for batch in slices:
