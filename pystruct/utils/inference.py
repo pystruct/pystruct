@@ -3,6 +3,8 @@ import sys
 
 import numpy as np
 
+from .parallel import handle_exceptions
+
 
 def unwrap_pairwise(y):
     """given a y that may contain pairwise marginals, yield plain y."""
@@ -109,18 +111,22 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
 
 
 ## starmap wrappers for calls to pool
+@handle_exceptions
 def find_constraint_map(args):
     return find_constraint(* args)
 
 
+@handle_exceptions
 def find_constraint_latent_map(args):
     return find_constraint_latent(* args)
 
 
+@handle_exceptions
 def inference_map(args):
     return inference(* args)
 
 
+@handle_exceptions
 def loss_augmented_inference_map(args):
     return loss_augmented_inference(* args)
 
