@@ -45,8 +45,7 @@ class ParallelMixin(object):
         else:
             self._n_jobs = self.n_jobs
         if any([self.n_jobs == 1, self.use_threads]):
-            self.pool = ThreadPool(processes=self._n_jobs, 
-                    initializer=init_worker)
+            self.pool = ThreadPool(processes=self._n_jobs)
         elif all([self.use_memmapping_pool, MemmapingPool]):
             self.pool = MemmapingPool(processes=self._n_jobs, 
                     initializer=init_worker,
