@@ -47,8 +47,9 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # provided versions
     
     if [[ "$PYTHON_VERSION" == "3.4" ]]; then
+        apt-cache search liblapack
         sudo apt-get install build-essential python-dev python-setuptools \
-             python-numpy python-scipy libatlas-dev libatlas3gf-base
+             python-numpy python-scipy libatlas-dev libatlas3gf-base liblapack-dev liblapack3gf
         conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
             numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
     else
@@ -70,12 +71,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
-    if [[ "$PYTHON_VERSION" == "3.4" ]]; then
-        sudo apt-get install -qq python3-scipy python3-nose python3-pip python3-cvxopt cython3
-        export PIP=pip3
-    else
-        sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
-    fi
+    sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
