@@ -337,7 +337,6 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
     Input x is tuple (features, edges, edge_features, n_hidden)
     First features.shape[0] nodes are observed, then n_hidden unobserved nodes.
 
-    Currently unobserved nodes don't have features.
 
     Parameters
     ----------
