@@ -45,8 +45,8 @@ class MultiLabelClf(CRF):
         if self.n_features is not None and self.n_states is not None:
             if self.edges is None:
                 self.edges = np.zeros(shape=(0, 2), dtype=np.int)
-            self.size_joint_feature = (self.n_features * self.n_labels
-                             + 4 * self.edges.shape[0])
+            self.size_joint_feature = (self.n_features * self.n_labels + 4 *
+                                       self.edges.shape[0])
 
     def initialize(self, X, Y):
         n_features = X.shape[1]
