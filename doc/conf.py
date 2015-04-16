@@ -266,8 +266,9 @@ html_theme_options = {
         ('Start', 'index'),
         ('Installation', 'installation'),
         ('Introduction', 'intro'),
+        ('User Guide', 'user_guide'),
         ('Examples', 'auto_examples/index'),
-        ('References', 'references'),
+        ('API', 'references'),
     ],
 
     # Render the next and previous page links in navbar. (Default: true)
