@@ -53,6 +53,12 @@ A good place to understand these definitions is :ref:`multi_class_svm`.
     n_classes).  Starting labels at 1 or using other labels might lead to
     errors and / or incorrect results.
 
+.. note::
+
+    None of the model include a bias (intercept) by default.
+    Therefore it is usually a good idea to add a constant feature to all
+    feature vectors, both for unary and pairwise features.
+
 .. _multi_class_svm:
 
 Multi-class SVM
@@ -91,7 +97,7 @@ well with few samples and requires little tuning::
   >>> from pystruct.models import MultiClassClf
   >>> clf = NSlackSSVM(MultiClassClf())
 
-The final model the same interface as a scikit-learn estimator::
+The learner has the same interface as a scikit-learn estimator::
 
   >>> clf.fit(X_train, y_train)
   >>> clf.predict(X_test)
@@ -140,21 +146,36 @@ but it would prevent us from predicting combinations that don't appear in the tr
 Even if a combination did appear in the training set, the numer of samples in each class would be very small.
 A compromise between modeling all correlations and modelling no correlations is modeling only pairwise correlations,
 which is the approach implemented in :class:`MultiLabelClf`.
-It creates a graph over ``n_classes`` binary nodes, together with edges between each pair of classes.
-Each binary node has represents one class, and therefor will get its own column
-in the weight-vector, similar to the crammer-singer multi-class classification.
-
-In addition, there is a pairwise weight betweent each pair of labels.
-This leads to a feature function of this form:
-
-If our graph has only 6 nodes, we can actually enumerate all states.
-Unfortunately, in general, inference in a fully connected binary graph is in
-gerneral NP-hard, so we might need to rely on approximate inference, like loopy believe propagation or AD3.
-#FIXME do enumeration! benchmark!!
 
 The input to this model is similar to the :ref:`multi_class_svm`, with the training data ``X_train`` simple
 a numpy array of shape ``(n_samples, n_features)`` and the training labels a binary indicator matrix
-of shape ``(n_samples, n_classes)``. 
+of shape ``(n_samples, n_classes)``::
+
+  >>> from pystruct.datasets import load_scene
+  >>> scene = load_scene()
+  >>> X_train, X_test = scene['X_train'], scene['X_test']
+  >>> y_train, y_test = scene['y_train'], scene['y_test']
+  >>> X_train.shape
+  >>> y_train.shape
+
+We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiClassClf` model::
+
+  >>> from pystruct.learners import NSlackSSVM
+  >>> from pystruct.models import MultiClassClf
+  >>> clf = NSlackSSVM(MultiClassClf())
+
+Training looks as before, only that ``y_train`` is now a matrix::
+
+  >>> clf.fit(X_train, y_train)
+  >>> clf.predict(X_test)
+  >>> clf.score(X_test, y_test)
+
+With only 64 possible label-combinations, we can actually enumerate all states.
+Unfortunately, in general, inference in a fully connected binary graph is in
+gerneral NP-hard, so we might need to rely on approximate inference, like loopy
+believe propagation or AD3.
+
+..#FIXME do enumeration! benchmark!!
 
 An alternative to using approximate inference for larger numbers of labels is to not create a fully connected graph,
 but restrict ourself to pairwise interactions on a tree over the labels. In the above example of outdoor scenes,
@@ -164,14 +185,29 @@ can easily be found using the Chow-Liu tree, which is simply the maximum weight 
 edge-weights are given by the mutual information between labels on the training set.
 You can use the Chow-Liu tree method simply by specifying ``edges="chow_liu"``.
 This allows us to use efficient and exact max-product message passing for
-inference.
+inference::
 
-#FIXME sample
+  >>> clf = NSlackSSVM(MultiClassClf(edges="chow_liu"))
 
-#FIXME reference joachims
+Training looks as before, only that ``y_train`` is now a matrix::
+
+  >>> clf.fit(X_train, y_train)
+  >>> clf.predict(X_test)
+  >>> clf.score(X_test, y_test)
+
+This model for multi-label classification with full connectivity is taken from the paper
+T. Finley, T. Joachims, Training Structural SVMs when Exact Inference is Intractable.
+
 
 Details on the implementation
 ---------------------------------
+The model creates a graph over ``n_classes`` binary nodes, together with edges
+between each pair of classes.  Each binary node has represents one class, and
+therefor will get its own column in the weight-vector, similar to the
+crammer-singer multi-class classification.
+
+In addition, there is a pairwise weight between each pair of labels.
+This leads to a feature function of this form:
 
 The implementation of the inference for this model creates a graph with unary
 potentials (given by the inner product of features and weights), and pairwise
@@ -214,17 +250,40 @@ an edge. The length of the chain varies with the number of letters in the
 word. As in all CRF-like models, the nodes all have the same meaning and share
 parameters.
 
-The training data is a list of samples, where each sample is a numpy array of
-shape ``(n_nodes, n_features)``, where n_nodes is the length of the input sequence,
-that is the length of the word in our case.
+The letters dataset comes with prespecified folds, we take one fold to be the training
+set, and the rest to be the test set, as in :ref:`Max-Margin Markov Networks
+<http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>_`::
+
+    >>> from pystruct.datasets import load_letters
+    >>> letters = load_letters()
+    >>> X, y, folds = letters['data'], letters['labels'], letters['folds']
+    >>> X, y = np.array(X), np.array(y)
+    >>> X_train, X_test = X[folds == 1], X[folds != 1]
+    >>> y_train, y_test = y[folds == 1], y[folds != 1]
+
+The training data is a array of samples, where each sample is a numpy array of
+shape ``(n_nodes, n_features)``. Here n_nodes is the length of the input sequence,
+that is the length of the word in our case. That means the input array actually has
+dtype object. We can not store the features in a simple array, as the input sequences
+can have different length::
+
+    >>> X_train[0].shape
+    >>> y_train[0].shape
+    >>> X_train[1].shape
+    >>> y_train[1].shape
+    
 Edges don't need to be specified, as the input features are assumed to be in
-the order of the nodes in the chain. The default inference method is
-max-product message passing on the chain (aka viterbi), which is always exact
-and efficient.
+the order of the nodes in the chain.
 
+The default inference method is max-product message passing on the chain (aka
+viterbi), which is always exact and efficient::
 
-# FIXME code
-
+    >>> from pystruct.models import ChainCRF
+    >>> from pystruct.learners import OneSlackSSVM
+    >>> model = ChainCRF()
+    >>> ssvm = OneSlackSSVM(model=model, C=.1, tol=0.1)
+    >>> ssvm.fit(X_train, y_train)
+    >>> ssvm.score(X_test, y_test)
 
 Details on the implementation
 ---------------------------------
@@ -232,9 +291,7 @@ Details on the implementation
 The unary potentials in each node are given as the inner product of the features
 at this node (the input image) with the weights (which are shared over all nodes):
 
-
 The pairwise potentials are identical over the whole chain and given simply by the weights:
-
 
 In principle it is possible to also use feature in the pairwise potentials.
 This is not implemented in the ChainCRF, but can be done using
