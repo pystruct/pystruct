@@ -12,6 +12,13 @@ def load_letters():
     Each example consists of a word, segmented into letters.
     The first letter of each word is ommited from the data,
     as it was a capital letter (in contrast to all other letters).
+
+
+    References
+    ----------
+    http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf
+    http://groups.csail.mit.edu/sls/archives/root/publications/1995/Kassel%20Thesis.pdf
+    http://www.seas.upenn.edu/~taskar/ocr/
     """
     module_path = dirname(__file__)
     data_file = open(join(module_path, 'letters.pickle'), 'rb')

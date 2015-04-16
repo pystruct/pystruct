@@ -10,6 +10,8 @@ random fields (M3N) or structural support vector machines.
 If you are new to structured learning,
 have a look at :ref:`intro`.
 
+An overview of the different models can be found in :ref:`user_guide`.
+
 The goal of PyStruct is to provide a well-documented tool for researchers as well as non-experts
 to make use of structured prediction algorithms.
 The design tries to stay as close as possible to the interface and conventions
@@ -90,3 +92,4 @@ solver (which should be a faster undergenerating solver, such as QPBO).
     references.rst
     intro.rst
     installation.rst
+    user_guide.rst
