@@ -39,6 +39,15 @@ def load_scene():
     """Load the scene multi-label dataset.
 
     This is a benchmark multilabel dataset.
+    n_classes = 6
+    n_fetures = 294
+    n_samples_test = 1196
+    n_samples_train = 1211
+
+    References
+    ----------
+    Matthew R. Boutell, Jiebo Luo, Xipeng Shen, and Christopher M. Brown.
+    Learning multi-label scene classification.
     """
     module_path = dirname(__file__)
     return _safe_unpickle(join(module_path, 'scene.pickle'))
