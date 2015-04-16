@@ -28,7 +28,7 @@ will be made using
 
 .. math::
 
-    y^* = \arg \max_{y} w^T \text{joint_feature}(x, y)
+    y^* = \arg \max_{y} w^T \text{joint\_feature}(x, y)
 
 That means the number of parameters in the model is the same as the
 dimensionality of ``joint_feature``.
@@ -43,9 +43,9 @@ labeling ``y_true`` and a prediction ``y_pred``, and finally
 
 .. math::
 
-    y^* = \arg \max_{y} w^T \text{joint_feature}(x, y) + \text{loss}(y_\text{true}, y)
+    y^* = \arg \max_{y} w^T \text{joint\_feature}(x, y) + \text{loss}(y_\text{true}, y)
 
-A good place to understand these definitions is :ref:`multi_class_svm`_
+A good place to understand these definitions is :ref:`multi_class_svm`.
 
 .. note::
 
@@ -57,7 +57,7 @@ A good place to understand these definitions is :ref:`multi_class_svm`_
 
 Multi-class SVM
 ===============
-A precursor for structured SVMs was the mult-class SVM by `Crammer and Singer
+A precursor for structured SVMs was the multi-class SVM by `Crammer and Singer
 <http://jmlr.csail.mit.edu/papers/volume2/crammer01a/crammer01a.pdf>`_.
 While in practice it is often faster to use an One-vs-Rest approach and an
 optimize binary SVM, this is a good hello-world example for structured
@@ -99,17 +99,27 @@ The final model the same interface as a scikit-learn estimator::
 
 Details on the implementation
 ---------------------------------
-The implementation of all models consists of a joint-feature function, inference and loss-augmented inference.
-For this simple model, the joint feature function is 
-For this simple model, and inference is just the argmax over the three responses (one for each class):
+For this simple model, the ``joint_feature(x, y)`` is a vector of size ``n_features * n_classes``,
+which corresponds to one copy of the input features for each possibly class.
+For any given pair ``(x, y)`` the features in ``x`` will be put at the position corresponding
+to the class in ``y``.
+Correspondingly, the weights that are learned are one vector of length ``n_features`` for each class:
+``w = np.hstack([w_class_0, ..., w_class_1])``.
+
+For this simple model, and inference is just the argmax over the inner product with each of these ``w_class_i``::
+
+  >>> y_pred = np.argmax(np.dot(w.reshape(n_classes, n_features), x)) # doctest: +SKIP
 
 To perform max-margin learning, we also need the loss-augmented inference. PyStruct has an optimized version,
-but a pure python version would look like this:
-
+but a pure python version would look like this::
+   
+   >>> scores = np.dot(w.reshape(n_classes, n_features), x) # doctest: +SKIP
+   >>> scores[np.arange(n_classes) != y] += 1               # doctest: +SKIP
+   >>> y_pred = np.argmax(scores)                           # doctest: +SKIP
 
 Essentialy the response (score / energy) of wrong label is down weighted by 1, the loss of doing an incorrect prediction.
-We could also implement a custom loss function, that assigns custom losses for predicting, say ... as ...
 
+.. _multi_label_svm:
 
 Multi-label SVM
 ===============
@@ -142,7 +152,7 @@ Unfortunately, in general, inference in a fully connected binary graph is in
 gerneral NP-hard, so we might need to rely on approximate inference, like loopy believe propagation or AD3.
 #FIXME do enumeration! benchmark!!
 
-The input to this model is similar to the :class:`MultiClassClf`, with the training data ``X_train`` simple
+The input to this model is similar to the :ref:`multi_class_svm`, with the training data ``X_train`` simple
 a numpy array of shape ``(n_samples, n_features)`` and the training labels a binary indicator matrix
 of shape ``(n_samples, n_classes)``. 
 
@@ -158,12 +168,15 @@ inference.
 
 #FIXME sample
 
+#FIXME reference joachims
+
+Details on the implementation
+---------------------------------
+
 The implementation of the inference for this model creates a graph with unary
 potentials (given by the inner product of features and weights), and pairwise
 potentials given by the pairwise weight. This graph is then passed to the
 general graph-inference, which runs the selected algorithm.
-
-#FIXME reference joachims
 
 
 Conditional-Random-Field-like graph models
@@ -177,11 +190,12 @@ and the model adapts via features.
 This is in contrast to the :class:`MultiLabelClf`, which builds a binary graph
 were nodes mean different things (each node represents a different class), so they do not share weights.
 
-#FIXME alert!
-I call these models Conditional Random Fields (CRFs), but this a slight abuse of notation,
-as PyStruct actually implements perceptron and max-margin learning, not maximum likelihood learning.
-So these models might better be called Maximum Margin Random Fields. However, in the computer vision
-community, it seems most pairwise models are called CRFs, independent of the method of training.
+.. note::
+
+    I call these models Conditional Random Fields (CRFs), but this a slight abuse of notation,
+    as PyStruct actually implements perceptron and max-margin learning, not maximum likelihood learning.
+    So these models might better be called Maximum Margin Random Fields. However, in the computer vision
+    community, it seems most pairwise models are called CRFs, independent of the method of training.
 
 ChainCRF
 ----------
@@ -212,6 +226,9 @@ and efficient.
 # FIXME code
 
 
+Details on the implementation
+---------------------------------
+
 The unary potentials in each node are given as the inner product of the features
 at this node (the input image) with the weights (which are shared over all nodes):
 
@@ -223,14 +240,16 @@ In principle it is possible to also use feature in the pairwise potentials.
 This is not implemented in the ChainCRF, but can be done using
 :class:`EdgeFeatureGraphCRF`.
 
-FIXME alert
-While pystruct is able to work with chain CRFs, it is not explicitly built with these in mind,
-and there are libraries that optimize much more for this special case, such as seqlearn and CRF++.
+.. note::
+
+    While pystruct is able to work with chain CRFs, it is not explicitly built with these in mind,
+    and there are libraries that optimize much more for this special case, such as seqlearn and CRF++.
 
 
 GraphCRF
 ---------
 This model is a generalization of the ChainCRF to arbitray graphs.
+
 To the basic model is the same as the ChainCRF model, with unary potentials given
 as a shared linear function of the features, and pairwise potentials the same
 for all nodes.
@@ -238,6 +257,7 @@ for all nodes.
 
 EdgeFeatureGraphCRF
 -------------------
+
 This model is the most general of the CRF models, and contains all others as a special case.
 This model assumes again that the parameters of the potentials are shared over all nodes
 and over all edges, but the pairwise potentials are now also computed as a linear function of the features.
