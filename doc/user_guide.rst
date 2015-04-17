@@ -2,7 +2,7 @@
 
 .. currentmodule:: pystruct.models
 
-#FIXME make clear what is learned!!
+..#FIXME make clear what is learned!!
 
 Preliminaries
 =============

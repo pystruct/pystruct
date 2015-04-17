@@ -25,14 +25,14 @@ class EdgeFeatureGraphCRF(GraphCRF):
 
     Parameters
     ----------
-    n_states : int, default=2
-        Number of states for all variables.
+    n_states : int, default=None
+        Number of states for all variables. Inferred from data if not provided.
 
     n_features : int, default=None
-        Number of features per node. None means n_states.
+        Number of features per node. Inferred from data if not provided.
 
-    n_edge_features : int, default=1
-        Number of features per edge.
+    n_edge_features : int, default=None
+        Number of features per edge. Inferred from data if not provided.
 
     inference_method : string, default="ad3"
         Function to call do do inference and loss-augmented inference.
