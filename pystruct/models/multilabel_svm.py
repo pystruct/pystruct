@@ -19,10 +19,10 @@ class MultiLabelClf(CRF):
     Parameters
     ----------
     n_labels : int (default=None)
-        Number of labels.
+        Number of labels. Inferred from data if not provided.
 
     n_features : int (default=None)
-        Number of input features.
+        Number of input features. Inferred from data if not provided.
 
     edges : array-like, string or None
         Either None, which yields independent models, 'tree',

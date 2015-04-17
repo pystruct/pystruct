@@ -7,8 +7,9 @@ from ..utils import expand_sym, compress_sym
 class GraphCRF(CRF):
     """Pairwise CRF on a general graph.
 
-    Pairwise potentials are symmetric and the same for all edges.
-    This leads to n_classes parameters for unary potentials.
+    Pairwise potentials the same for all edges, are symmetric by default
+    (``directed=False``).  This leads to n_classes parameters for unary
+    potentials.
 
     If ``directed=True``, there are ``n_classes * n_classes`` parameters
     for pairwise potentials, if ``directed=False``, there are only
@@ -54,11 +55,11 @@ class GraphCRF(CRF):
 
     Parameters
     ----------
-    n_states : int, default=2
-        Number of states for all variables.
+    n_states : int, default=None
+        Number of states for all variables. Inferred from data if not provided.
 
     n_features : int, default=None
-        Number of features per node. None means n_states.
+        Number of features per node. Inferred from data if not provided.
 
     inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.
