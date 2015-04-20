@@ -192,7 +192,7 @@ class SubgradientSSVM(BaseSSVM):
             self.timestamps_ = (np.array(self.timestamps_) - time()).tolist()
         try:
             # catch ctrl+c to stop training
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 if self.shuffle:
                     X, Y = shuffle(X, Y)
                 if self.n_jobs == 1:

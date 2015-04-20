@@ -160,7 +160,7 @@ def test_blocks_crf_directional():
 
 def test_latent_consistency_zero_pw_graph():
     crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2)
-    for i in xrange(10):
+    for i in range(10):
         w = np.zeros(18)
         w[:8] = np.random.normal(size=8)
         y = np.random.randint(2, size=(5))
@@ -171,7 +171,7 @@ def test_latent_consistency_zero_pw_graph():
 
 def test_latent_consistency_graph():
     crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2)
-    for i in xrange(10):
+    for i in range(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(4))
         x = np.random.normal(size=(4, 2))
@@ -183,7 +183,7 @@ def test_latent_consistency_graph():
 def test_loss_augmented_inference_energy_graph():
     crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2,
                          inference_method='lp')
-    for i in xrange(10):
+    for i in range(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(3))
         x = np.random.normal(size=(3, 2))
@@ -197,7 +197,7 @@ def test_loss_augmented_inference_energy_graph():
 
 def test_latent_consistency_zero_pw_grid():
     crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
-    for i in xrange(10):
+    for i in range(10):
         w = np.zeros(18)
         w[:8] = np.random.normal(size=8)
         y = np.random.randint(2, size=(5, 5))
@@ -208,7 +208,7 @@ def test_latent_consistency_zero_pw_grid():
 
 def test_latent_consistency_grid():
     crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
-    for i in xrange(10):
+    for i in range(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(4, 4))
         x = np.random.normal(size=(4, 4, 2))
@@ -218,7 +218,7 @@ def test_latent_consistency_grid():
 
 def test_loss_augmented_inference_exhaustive_grid():
     crf = LatentGridCRF(n_labels=2, n_features=2, n_states_per_label=2)
-    for i in xrange(10):
+    for i in range(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(2, 2))
         x = np.random.normal(size=(2, 2, 2))

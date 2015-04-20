@@ -13,9 +13,9 @@ ctypedef fused some_int:
 
 def crammer_singer_joint_feature(double[:,:] X, some_int[:] Y, double[:, :] out):
     cdef int y, i
-    for i in xrange(X.shape[0]):
+    for i in range(X.shape[0]):
         y = Y[i]
-        for j in xrange(X.shape[1]):
+        for j in range(X.shape[1]):
             out[y, j] += X[i, j]
 
 def loss_augment_unaries(double[:,:] unary_potentials, some_int[:] y, double[:] class_weight):

@@ -71,8 +71,8 @@ latent_svm = LatentSSVM(ssvm)
 edges = []
 node_indices = np.arange(4 * 4).reshape(4, 4)
 for i, (x, y) in enumerate(itertools.product([0, 2], repeat=2)):
-    for j in xrange(x, x + 2):
-        for k in xrange(y, y + 2):
+    for j in range(x, x + 2):
+        for k in range(y, y + 2):
             edges.append([i + 4 * 4, node_indices[j, k]])
 
 G = [np.vstack([make_grid_edges(x), edges]) for x in X]

@@ -81,7 +81,7 @@ for ind, axes_row in zip(selected, axes):
         a.text(5, 14, abc[y_chain], color="#FF5555", size=25)
         a.set_xticks(())
         a.set_yticks(())
-    for ii in xrange(i + 1, max_word_len):
+    for ii in range(i + 1, max_word_len):
         axes_row[ii].set_visible(False)
 
 plt.matshow(ssvm.w[26 * 8 * 16:].reshape(26, 26))

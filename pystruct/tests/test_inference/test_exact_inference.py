@@ -17,7 +17,7 @@ def test_chain():
     n_states = 3
     n_nodes = 10
 
-    for i in xrange(10):
+    for i in range(10):
         forward = np.c_[np.arange(n_nodes - 1), np.arange(1, n_nodes)]
         backward = np.c_[np.arange(1, n_nodes), np.arange(n_nodes - 1)]
         unary_potentials = rnd.normal(size=(n_nodes, n_states))

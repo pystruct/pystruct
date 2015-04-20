@@ -272,8 +272,8 @@ class NSlackSSVM(BaseSSVM):
         stopping_criterion = False
         if constraints is None:
             # fresh start
-            constraints = [[] for i in xrange(n_samples)]
-            self.last_active = [[] for i in xrange(n_samples)]
+            constraints = [[] for i in range(n_samples)]
+            self.last_active = [[] for i in range(n_samples)]
             self.objective_curve_ = []
             self.primal_objective_curve_ = []
             self.timestamps_ = [time()]
@@ -283,7 +283,7 @@ class NSlackSSVM(BaseSSVM):
         try:
             # catch ctrl+c to stop training
             # we have to update at least once after going through the dataset
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 # main loop
                 self.timestamps_.append(time() - self.timestamps_[0])
                 if self.verbose > 0:

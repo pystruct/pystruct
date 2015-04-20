@@ -181,7 +181,7 @@ def test_binary_crf_exhaustive():
     # tests qpbo inference against brute force
     # on random data / weights
     np.random.seed(0)
-    for i in xrange(10):
+    for i in range(10):
         x = np.random.uniform(-1, 1, size=(3, 2))
         x = np.dstack([-x, np.zeros_like(x)]).copy()
         crf = GridCRF(n_features=2, n_states=2)
@@ -199,7 +199,7 @@ def test_binary_crf_exhaustive_loss_augmented():
     for inference_method in get_installed(['qpbo', 'lp']):
         crf = GridCRF(n_states=2, n_features=2,
                       inference_method=inference_method)
-        for i in xrange(10):
+        for i in range(10):
             # generate data and weights
             y = np.random.randint(2, size=(3, 2))
             x = np.random.uniform(-1, 1, size=(3, 2))

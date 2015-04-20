@@ -30,8 +30,8 @@ def lp_general_graph(unaries, edges, edge_weights):
     data, I, J = [], [], []
 
     # summation constraints
-    for i in xrange(n_nodes):
-        for j in xrange(n_states):
+    for i in range(n_nodes):
+        for j in range(n_states):
             data.append(1)
             I.append(i)
             J.append(i * n_states + j)
@@ -39,7 +39,7 @@ def lp_general_graph(unaries, edges, edge_weights):
     # we row_idx tracks constraints = rows in constraint matrix
     row_idx = n_nodes
     # edge marginalization constraint
-    for i in xrange(2 * n_edges * n_states):
+    for i in range(2 * n_edges * n_states):
         edge = i // (2 * n_states)
         state = (i % n_states)
         vertex_in_edge = i % (2 * n_states) // n_states
@@ -55,14 +55,14 @@ def lp_general_graph(unaries, edges, edge_weights):
         edge_var_index = edges_offset + edge * n_states ** 2
         if vertex_in_edge == 0:
             # first vertex in edge
-            for j in xrange(n_states):
+            for j in range(n_states):
                 data.append(1)
                 I.append(row_idx)
                 J.append(edge_var_index + state * n_states + j)
                 #[row_idx, edge_var_index + state * n_states + j] = 1
         else:
             # second vertex in edge
-            for j in xrange(n_states):
+            for j in range(n_states):
                 data.append(1)
                 I.append(row_idx)
                 J.append(edge_var_index + j * n_states + state)

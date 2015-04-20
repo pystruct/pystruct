@@ -149,7 +149,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 self.timestamps_.append(time() - self.timestamps_[0])
                 positive_slacks = 0
                 objective = 0.

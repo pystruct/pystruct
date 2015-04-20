@@ -57,8 +57,8 @@ def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
     find slack and djoint_feature for this constraing.
 
     As for finding the most violated constraint, it is enough to compute
-    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
-    using compute_differences=False
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip
+    computing joint_feature(x, y) using compute_differences=False
     """
 
     if y_hat is None:
@@ -87,8 +87,8 @@ def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
     As for finding the most violated constraint, it is enough to compute
-    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
-    using compute_differences=False
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip
+    computing joint_feature(x, y) using compute_differences=False
     """
     h = model.latent(x, y, w)
     h_hat = model.loss_augmented_inference(x, h, w, relaxed=relaxed)
@@ -115,7 +115,7 @@ def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
         n_jobs=n_jobs)(delayed(find_constraint)(
             model, x, y, w)
             for x, y in zip(X, Y))
-    slacks = zip(*constraints)[2]
+    slacks = list(zip(*constraints))[2]
 
     if variant == 'n_slack':
         slacks = np.maximum(slacks, 0)

@@ -101,7 +101,7 @@ def test_graph_crf_energy_lp_integral():
 
 def test_graph_crf_energy_lp_relaxed():
     crf = GraphCRF(n_states=2, n_features=2)
-    for i in xrange(10):
+    for i in range(10):
         w_ = np.random.uniform(size=w.shape)
         inf_res, energy_lp = crf.inference((x_1, g_1), w_, relaxed=True,
                                            return_energy=True)

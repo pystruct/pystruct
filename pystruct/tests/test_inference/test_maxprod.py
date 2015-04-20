@@ -60,7 +60,7 @@ def test_tree_max_product_chain():
     rnd = np.random.RandomState(0)
     forward = np.c_[np.arange(9), np.arange(1, 10)]
     backward = np.c_[np.arange(1, 10), np.arange(9)]
-    for i in xrange(10):
+    for i in range(10):
         unary_potentials = rnd.normal(size=(10, 3))
         pairwise_potentials = rnd.normal(size=(9, 3, 3))
         for chain in [forward, backward]:
@@ -78,7 +78,7 @@ def test_tree_max_product_tree():
         raise SkipTest("Not testing trees, scipy version >= 0.11 required")
 
     rnd = np.random.RandomState(0)
-    for i in xrange(100):
+    for i in range(100):
         # generate random tree using mst
         graph = rnd.uniform(size=(10, 10))
         tree = minimum_spanning_tree(sparse.csr_matrix(graph))
@@ -96,7 +96,7 @@ def test_tree_max_product_tree():
 def test_iterative_max_product_chain():
     rnd = np.random.RandomState(0)
     chain = np.c_[np.arange(9), np.arange(1, 10)]
-    for i in xrange(10):
+    for i in range(10):
         unary_potentials = rnd.normal(size=(10, 3))
         pairwise_potentials = rnd.normal(size=(9, 3, 3))
         result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
@@ -112,7 +112,7 @@ def test_iterative_max_product_tree():
     except:
         raise SkipTest("Not testing trees, scipy version >= 0.11 required")
     rnd = np.random.RandomState(0)
-    for i in xrange(100):
+    for i in range(100):
         # generate random tree using mst
         graph = rnd.uniform(size=(10, 10))
         tree = minimum_spanning_tree(sparse.csr_matrix(graph))

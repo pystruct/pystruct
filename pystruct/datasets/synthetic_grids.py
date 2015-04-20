@@ -47,13 +47,13 @@ def make_simple_2x2(seed=0, n_flips=4, n_samples=20):
     np.random.seed(seed)
     X = []
     Y = []
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         y = np.zeros((4, 4), dtype=np.int)
         j, k = 2 * np.random.randint(2, size=2)
         y[j: j + 2, k: k + 2] = 1
         Y.append(y)
         x = y.copy()
-        for flip in xrange(n_flips):
+        for flip in range(n_flips):
             a, b = np.random.randint(4, size=2)
             x[a, b] = np.random.randint(2)
         x[x == 0] = -1
@@ -64,9 +64,9 @@ def make_simple_2x2(seed=0, n_flips=4, n_samples=20):
 def generate_easy(n_samples=5, noise=5, box_size=3, total_size=8, seed=0):
     np.random.seed(seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -10, -10
-        for j in xrange(2):
+        for j in range(2):
             #while True:
                 #t, l = np.random.randint(1, size - 3, size=2)
                 #if (t, l) in [(4, 4)]:
@@ -94,9 +94,9 @@ def generate_bars(n_samples=5, noise=5, bars_size=3, total_size=8,
                   random_seed=0, separate_labels=True):
     np.random.seed(random_seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -10, -10
-        for j in xrange(2):
+        for j in range(2):
             #while True:
                 #t, l = np.random.randint(1, size - 3, size=2)
                 #if (t, l) in [(4, 4)]:
@@ -129,7 +129,7 @@ def generate_square_with_hole(n_samples=5, noise=5, total_size=8):
     box_size = 3
     np.random.seed(0)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -10, -10
         t, l = np.random.randint(1, total_size - box_size, size=2)
         Y[i, t:t + box_size, l:l + box_size] = 1
@@ -149,9 +149,9 @@ def generate_crosses(n_samples=5, noise=30, total_size=10, n_crosses=2,
                      seed=0):
     np.random.seed(seed)
     Y = np.zeros((n_samples, total_size, total_size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -3, -3
-        for j in xrange(n_crosses):
+        for j in range(n_crosses):
             while True:
                 t, l = np.random.randint(1, total_size - 3, size=2)
                 if np.abs(t - t_old) > 2 or np.abs(l - l_old) > 2:
@@ -176,9 +176,9 @@ def generate_xs(n_samples=5, noise=30):
     np.random.seed(0)
     size = 8
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -3, -3
-        for j in xrange(1):
+        for j in range(1):
             while True:
                 t, l = np.random.randint(1, size - 3, size=2)
                 if np.abs(t - t_old) > 2 and np.abs(l - l_old):
@@ -248,9 +248,9 @@ def generate_easy_explicit(n_samples=5, noise=5):
     size = 9
     np.random.seed(0)
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -4, -4
-        for j in xrange(1):
+        for j in range(1):
             #while True:
                 #t, l = np.random.randint(1, size - 3, size=2)
                 #if (t, l) in [(4, 4)]:
@@ -282,9 +282,9 @@ def generate_easy_explicit(n_samples=5, noise=5):
 def generate_crosses_explicit(n_samples=5, noise=30, size=9, n_crosses=2):
     np.random.seed(0)
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         t_old, l_old = -3, -3
-        for j in xrange(n_crosses):
+        for j in range(n_crosses):
             while True:
                 t, l = np.random.randint(1, size - 1, size=2)
                 if np.abs(t - t_old) > 2 or np.abs(l - l_old) > 2:
@@ -314,8 +314,8 @@ def generate_crosses_latent(n_samples=5, noise=30):
     np.random.seed(0)
     size = 8
     Y = np.zeros((n_samples, size, size), dtype=np.int)
-    for i in xrange(n_samples):
-        for j in xrange(2):
+    for i in range(n_samples):
+        for j in range(2):
             t, l = np.random.randint(size - 2, size=2)
             Y[i, t + 1, l:l + 3] = 2
             Y[i, t:t + 3, l + 1] = 2

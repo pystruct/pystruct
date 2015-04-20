@@ -73,7 +73,7 @@ plt.figure(figsize=(3, 5))
 plt.suptitle("Example digits from each of\nthe ten latent classes.")
 n_latent_classes = 10
 n_examples = 7
-for latent_class in xrange(n_latent_classes):
+for latent_class in range(n_latent_classes):
     examples = X_test[h_pred == latent_class][:n_examples]
     for k, example in enumerate(examples):
         plt.subplot(n_latent_classes, n_examples,
