@@ -12,6 +12,7 @@ set -e
 # lookup for g++44 unexpectedly.
 export CC=gcc
 export CXX=g++
+export PIP=pip
 
 # add cython repository
 sudo add-apt-repository ppa:cython-dev/master-ppa -y
@@ -44,8 +45,19 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
     # Configure the conda environment and put it in the path using the
     # provided versions
-    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
-        numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    
+    if [[ "$PYTHON_VERSION" == "3.4" ]]; then
+        apt-cache search liblapack
+        sudo apt-get install build-essential python-dev python-setuptools \
+             python-numpy python-scipy libatlas-dev libatlas3gf-base liblapack-dev liblapack3gf
+        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
+            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    else
+        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
+    fi
+
+
     source activate testenv
 
     if [[ "$INSTALL_MKL" == "true" ]]; then
@@ -63,11 +75,11 @@ elif [[ "$DISTRIB" == "ubuntu" ]]; then
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
-    pip install coverage coveralls
+    $PIP install coverage coveralls
 fi
 
 # install our favorite inference packages 
-pip install pyqpbo ad3 scikit-learn
+$PIP install pyqpbo ad3 scikit-learn cvxopt
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.

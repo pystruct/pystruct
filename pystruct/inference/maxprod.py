@@ -131,7 +131,7 @@ def iterative_max_product(unary_potentials, pairwise_potentials, edges,
     n_vertices, n_states = unary_potentials.shape
     messages = np.zeros((n_edges, 2, n_states))
     all_incoming = np.zeros((n_vertices, n_states))
-    for i in xrange(max_iter):
+    for i in range(max_iter):
         diff = 0
         for e, (edge, pairwise) in enumerate(zip(edges, pairwise_potentials)):
             # update message from edge[0] to edge[1]

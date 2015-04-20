@@ -4,16 +4,17 @@ virtualenv:
 env:
   matrix:
     - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
-    # ubuntu without opengm
+    ## ubuntu without opengm
     - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
-    # This environment tests the oldest supported anaconda env
+    ## This environment tests the oldest supported anaconda env
     - DISTRIB="conda" PYTHON_VERSION="2.7"
       NUMPY_VERSION="1.6.2" SCIPY_VERSION="0.11.0"
-    # This environment tests the newest supported anaconda env
+    ## This environment tests the newest supported anaconda env
     - DISTRIB="conda" PYTHON_VERSION="2.7"
       NUMPY_VERSION="1.8.1" SCIPY_VERSION="0.14.0"
     # python3 only on ubuntu because of cvxopt
-    - DISTRIB="ubuntu" PYTHON_VERSION="3.4" OPENGM="false"
+    - DISTRIB="conda" PYTHON_VERSION="3.4" OPENGM="false"
+      NUMPY_VERSION="1.8.1" SCIPY_VERSION="0.14.0"
 install: source continuous_integration/install.sh
 script: bash continuous_integration/test_script.sh
 after_success:

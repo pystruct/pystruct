@@ -20,14 +20,17 @@ This example does not contain the proper evaluation on pixel level, as that
 would need the Pascal VOC 2010 dataset.
 """
 import numpy as np
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from pystruct import learners
 import pystruct.models as crfs
 from pystruct.utils import SaveLogger
 
 
-data_train = cPickle.load(open("data_train_dict.pickle"))
+data_train = pickle.load(open("data_train_dict.pickle"))
 C = 0.01
 
 n_states = 21
@@ -50,7 +53,7 @@ ssvm = learners.NSlackSSVM(
     inactive_threshold=1e-3, inactive_window=10, batch_size=100)
 ssvm.fit(data_train['X'], data_train['Y'])
 
-data_val = cPickle.load(open("data_val_dict.pickle"))
+data_val = pickle.load(open("data_val_dict.pickle"))
 y_pred = ssvm.predict(data_val['X'])
 
 # we throw away void superpixels and flatten everything

@@ -196,7 +196,7 @@ def test_energy_discrete():
         crf = EdgeFeatureGraphCRF(n_states=3,
                                   inference_method=inference_method,
                                   n_edge_features=2, n_features=3)
-        for i in xrange(10):
+        for i in range(10):
             x = np.random.normal(size=(7, 8, 3))
             edge_list = make_grid_edges(x, 4, return_lists=True)
             edges = np.vstack(edge_list)

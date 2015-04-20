@@ -235,7 +235,7 @@ class MultiClassClf(StructuredModel):
             if Y_true is None:
                 raise ValueError("rescale_C is true, but no y_true was passed"
                                  " to joint_feature.")
-            for l in xrange(self.n_states):
+            for l in range(self.n_states):
                 mask = Y == l
                 class_weight = self.class_weight[Y_true[mask]][:, np.newaxis]
                 result[l, :] = np.sum(X[mask, :] * class_weight, axis=0)

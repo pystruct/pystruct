@@ -82,11 +82,13 @@ class MultiLabelClf(CRF):
 
     def joint_feature(self, x, y):
         if isinstance(y, tuple):
+            # continuous pairwise marginals
             y_cont, pairwise_marginals = y
             y_signs = 2 * y_cont[:, 1] - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
             unary_marginals *= y_signs[:, np.newaxis]
         else:
+            # discrete y
             y_signs = 2 * y - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
             unary_marginals *= y_signs[:, np.newaxis]
