@@ -22,7 +22,7 @@ def test_multinomial_blocks_directional_simple():
     G = [make_grid_edges(x, return_lists=True) for x in X_]
     edge_features = [edge_list_to_features(edge_list) for edge_list in G]
     edges = [np.vstack(g) for g in G]
-    X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
+    X = list(zip([x.reshape(-1, 3) for x in X_], edges, edge_features))
     Y = [y.ravel() for y in Y_]
 
     crf = EdgeFeatureGraphCRF(n_states=3, n_edge_features=2)
@@ -39,7 +39,7 @@ def test_multinomial_blocks_directional_anti_symmetric():
     G = [make_grid_edges(x, return_lists=True) for x in X_]
     edge_features = [edge_list_to_features(edge_list) for edge_list in G]
     edges = [np.vstack(g) for g in G]
-    X = zip([x.reshape(-1, 3) for x in X_], edges, edge_features)
+    X = list(zip([x.reshape(-1, 3) for x in X_], edges, edge_features))
     Y = [y.ravel() for y in Y_]
 
     crf = EdgeFeatureGraphCRF(symmetric_edge_features=[0],

@@ -161,8 +161,9 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         h = self.model.latent(x, y, w)
                         h_hat = self.model.loss_augmented_inference(
                             x, h, w, relaxed=True)
-                        delta_joint_feature = (self.model.joint_feature(x, h)
-                                     - self.model.joint_feature(x, h_hat))
+                        delta_joint_feature = (
+                            self.model.joint_feature(x, h)
+                            - self.model.joint_feature(x, h_hat))
                         slack = (-np.dot(delta_joint_feature, w)
                                  + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)
@@ -276,7 +277,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
             verbose=self.verbose - 1)(delayed(find_constraint_latent)(
                 self.model, x, y, self.w)
                 for x, y in zip(X, Y))
-        slacks = zip(*constraints)[2]
+        slacks = list(zip(*constraints))[2]
         slacks = np.maximum(slacks, 0)
 
         objective = np.sum(slacks) * self.C + np.sum(self.w ** 2) / 2.

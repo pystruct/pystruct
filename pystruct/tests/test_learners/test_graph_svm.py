@@ -34,7 +34,7 @@ def test_binary_blocks_cutting_plane():
         X_ = [x.reshape(-1, n_states) for x in X_]
         Y = [y.ravel() for y in [y1, y2, y3]]
 
-        X = zip(X_, G)
+        X = list(zip(X_, G))
 
         clf.fit(X, Y)
         Y_pred = clf.predict(X)

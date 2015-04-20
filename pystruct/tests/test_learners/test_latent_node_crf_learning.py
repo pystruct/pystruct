@@ -43,7 +43,7 @@ def test_binary_blocks_cutting_plane_latent_node():
     X_ = [x.reshape(-1, n_states) for x in X_]
     Y = [y.ravel() for y in [y1, y2, y3]]
 
-    X = zip(X_, G)
+    X = list(zip(X_, G))
 
     clf.fit(X, Y)
     Y_pred = clf.predict(X)
@@ -55,7 +55,7 @@ def test_binary_blocks_cutting_plane_latent_node():
                                        check_constraints=True,
                                        break_on_bad=False, n_jobs=1),
                             latent_iter=3)
-    X_latent = zip(X_, G, np.zeros(len(X_)))
+    X_latent = list(zip(X_, G, np.zeros(len(X_))))
     latent_svm.fit(X_latent, Y, H_init=Y)
     Y_pred = latent_svm.predict(X_latent)
     for y, y_pred in zip(Y, Y_pred):
@@ -91,7 +91,7 @@ def test_latent_node_boxes_standard_latent():
         X_flat = [x.reshape(-1, 1) for x in X]
         Y_flat = [y.ravel() for y in Y]
 
-        X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
+        X_ = list(zip(X_flat, G, [2 * 2 for x in X_flat]))
         latent_svm.fit(X_[:20], Y_flat[:20])
 
         assert_array_equal(latent_svm.predict(X_[:20]), Y_flat[:20])
@@ -117,7 +117,7 @@ def test_latent_node_boxes_latent_subgradient():
     X_flat = [x.reshape(-1, 1) for x in X]
     Y_flat = [y.ravel() for y in Y]
 
-    X_ = zip(X_flat, G, [4 * 4 for x in X_flat])
+    X_ = list(zip(X_flat, G, [4 * 4 for x in X_flat]))
     latent_svm.fit(X_, Y_flat)
 
     assert_equal(latent_svm.score(X_, Y_flat), 1)
@@ -153,7 +153,7 @@ def test_latent_node_boxes_standard_latent_features():
                   for x, y in zip(X_flat, Y)]
         Y_flat = [y.ravel() for y in Y]
 
-        X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
+        X_ = list(zip(X_flat, G, [2 * 2 for x in X_flat]))
         latent_svm.fit(X_[:10], Y_flat[:10])
 
         assert_array_equal(latent_svm.predict(X_[:10]), Y_flat[:10])
