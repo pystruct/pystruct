@@ -123,7 +123,7 @@ print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
 # now, use more informative edge features:
 crf = EdgeFeatureGraphCRF(inference_method=inference)
 ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
-                    n_jobs=1)
+                    n_jobs=-1)
 ssvm.fit(X_train_edge_features, Y_train_flat)
 Y_pred2 = ssvm.predict(X_test_edge_features)
 print("Results using also input features for edges")
