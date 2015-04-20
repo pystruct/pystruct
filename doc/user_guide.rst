@@ -1,11 +1,13 @@
-.. _user_guide:
 
 .. currentmodule:: pystruct.models
 
 ..#FIXME make clear what is learned!!
 
-Preliminaries
+.. _user_guide:
+
+User Guide
 =============
+
 This page explains how to use the most common of the implemented models.
 Each model corresponds to a differents structured prediction task, or possibly
 a different parametrization of the model. As such, the training data ``X`` and
@@ -253,8 +255,8 @@ word. As in all CRF-like models, the nodes all have the same meaning and share
 parameters.
 
 The letters dataset comes with prespecified folds, we take one fold to be the training
-set, and the rest to be the test set, as in :ref:`Max-Margin Markov Networks
-<http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>_`::
+set, and the rest to be the test set, as in `Max-Margin Markov Networks
+<http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>`_::
 
     >>> from pystruct.datasets import load_letters
     >>> letters = load_letters()
@@ -309,7 +311,7 @@ This is not implemented in the ChainCRF, but can be done using
 
 GraphCRF
 ---------
-The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf`_ to arbitray graphs.
+The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf` to arbitray graphs.
 While in the chain model, the direction of the edge is usually important, for many
 graphs, the direction of the edge has no semantic meaning. Therefore, by default, the pairwise
 interaction matrix of the :class:`GraphCRF` is forced to be symmetric.
@@ -367,7 +369,7 @@ Each training sample for :class:`EdgeFeatureGraphCRF` is a tuple
 ``(node_features, edges, edge_features)``, where ``node_features`` is a numpy
 array of node-features (of shape ``(n_nodes, n_node_features)``), ``edges`` is
 a array of edges between nodes, of shape ``(n_edges, 2)`` as in
-:ref:`graph_crf`_, and ``edge_features`` is a feature for each edge, given as a
+:ref:`graph_crf`, and ``edge_features`` is a feature for each edge, given as a
 numpy array of shape ``(n_edges, n_edge_features)``.
 
 The edge features allow the pairwise interactions to be modulated by the context.
@@ -377,7 +379,7 @@ If two neighboring nodes correspond to regions of simlar color, they are more li
 the same label. For the vertical direction, a node above a node representing "sky" is
 more likely to also represent "sky" than "water".
 
-A great example of the importance of edge features is :ref:`plot_snakes`_.
+A great example of the importance of edge features is :ref:`example_plot_snakes.py`.
 
 
 Latent Variable Models
@@ -392,8 +394,8 @@ and require fitting using either :class:`LatentSSVM`, or :class:`LatentSubgradie
 fitting any of the other SSVM models (such as :class:`OneSlackSSVM`). Each
 iteration of this alternation is as expensive as building a fully observed
 model, and good initialization can be very important.
-This method was published in :ref:`Learning Structural SVMs with Latent
-Variables <http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_
+This method was published in `Learning Structural SVMs with Latent
+Variables <http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_.
 
 The :class:`LatentSubgradientSSVM` approach tries to reestimate the latent
 variables for each batch, and corresponds to a subgradient descent on the non-convex
