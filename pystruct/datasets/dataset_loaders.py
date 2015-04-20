@@ -1,4 +1,5 @@
 from os.path import dirname, join
+import sys
 
 try:
     import cPickle as pickle
@@ -6,6 +7,16 @@ except ImportError:
     import pickle
 
 import numpy as np
+
+
+def _safe_unpickle(file_name):
+    with open(file_name, "rb") as data_file:
+        if sys.version_info >= (3, 0):
+            # python3 unpickling of python2 unicode
+            data = pickle.load(data_file, encoding="latin1")
+        else:
+            data = pickle.load(data_file)
+    return data
 
 
 def load_letters():
@@ -17,8 +28,7 @@ def load_letters():
     as it was a capital letter (in contrast to all other letters).
     """
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'letters.pickle'), 'rb')
-    data = pickle.load(data_file)
+    data = _safe_unpickle(join(module_path, 'letters.pickle'))
     # we add an easy to use image representation:
     data['images'] = [np.hstack([l.reshape(16, 8) for l in word])
                       for word in data['data']]
@@ -31,8 +41,7 @@ def load_scene():
     This is a benchmark multilabel dataset.
     """
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'scene.pickle'), 'rb')
-    return pickle.load(data_file)
+    return _safe_unpickle(join(module_path, 'scene.pickle'))
 
 
 def load_snakes():
@@ -48,5 +57,4 @@ def load_snakes():
     """
 
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'snakes.pickle'), 'rb')
-    return pickle.load(data_file)
+    return _safe_unpickle(join(module_path, 'snakes.pickle'))
