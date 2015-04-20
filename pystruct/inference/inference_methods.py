@@ -72,7 +72,8 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
         inference_method = inference_method[0]
         # append additional_kwargs, but take care not to modify the dicts we
         # got
-        kwargs = dict(kwargs.items() + additional_kwargs.items())
+        kwargs = kwargs.copy()
+        kwargs.update(additional_kwargs)
     if inference_method == "qpbo":
         return inference_qpbo(unary_potentials, pairwise_potentials, edges,
                               **kwargs)
