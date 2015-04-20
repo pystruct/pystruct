@@ -81,11 +81,12 @@ Lets say we want to classify the classical iris dataset. There are three classes
   >>> iris.data.shape, iris.target.shape
   ((150, 4), (150,))
   >>> np.unique(iris.target)
-  [0, 1, 2]
+  array([0, 1, 2])
 
 We split the data into training and test set::
 
-  >>> X_train, X_test, y_train, y_test = cross_validation.train_test_split(
+  >>> from sklearn.cross_validation import train_test_split
+  >>> X_train, X_test, y_train, y_test = train_test_split(
   ...     iris.data, iris.target, test_size=0.4, random_state=0)
 
 The Crammer-Singer model implemented in :class:`MultiClassClf`.
@@ -103,8 +104,19 @@ well with few samples and requires little tuning::
 The learner has the same interface as a scikit-learn estimator::
 
   >>> clf.fit(X_train, y_train)
+  NSlackSSVM(C=1.0, batch_size=100, break_on_bad=False, check_constraints=True,
+        inactive_threshold=1e-05, inactive_window=50, logger=None,
+        max_iter=100, model=MultiClassClf(n_features=4, n_classes=3),
+        n_jobs=1, negativity_constraint=None, show_loss_every=0,
+        switch_to=None, tol=0.001, verbose=0)
+
   >>> clf.predict(X_test)
-  >>> clf.score(X_test, y_test)
+  array([2, 1, 0, 2, 0, 2, 0, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 0, 0, 2, 1, 0,
+         0, 2, 0, 0, 1, 1, 0, 2, 2, 0, 2, 2, 1, 0, 2, 1, 1, 2, 0, 2, 0, 0, 1,
+         2, 2, 2, 2, 1, 2, 1, 1, 2, 2, 2, 2, 1, 2])
+
+  >>> clf.score(X_test, y_test) #doctest: +ELLIPSIS
+  0.96...
 
 Details on the implementation
 ---------------------------------
@@ -159,12 +171,14 @@ of shape ``(n_samples, n_classes)``::
   >>> X_train, X_test = scene['X_train'], scene['X_test']
   >>> y_train, y_test = scene['y_train'], scene['y_test']
   >>> X_train.shape
+  (1211, 294)
   >>> y_train.shape
+  (1211, 6)
 
 We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiLabelClf` model::
 
   >>> from pystruct.learners import NSlackSSVM
-  >>> from pystruct.models import MultiClassClf
+  >>> from pystruct.models import MultiLabelClf
   >>> clf = NSlackSSVM(MultiLabelClf())
 
 Training looks as before, only that ``y_train`` is now a matrix::
@@ -190,7 +204,7 @@ You can use the Chow-Liu tree method simply by specifying ``edges="chow_liu"``.
 This allows us to use efficient and exact max-product message passing for
 inference::
 
-  >>> clf = NSlackSSVM(MultiClassClf(edges="chow_liu"))
+  >>> clf = NSlackSSVM(MultiLabelClf(edges="chow_liu"))
 
 Training looks as before, only that ``y_train`` is now a matrix::
 
@@ -220,14 +234,16 @@ general graph-inference, which runs the selected algorithm.
 
 Conditional-Random-Field-like graph models
 ==========================================
-The following models are all pairwise models over nodes, that is they model a labeling of a graph,
-using features at the nodes, and relation between neighboring nodes.
-The main assumption in these models in PyStruct is that nodes are homogeneous, that is they all
-have the same meaning. That means that each node has the same number of classes, and these classes
-mean the same thing. In practice that means that weights are shared across all nodes and edges,
-and the model adapts via features.
+The following models are all pairwise models over nodes, that is they model a
+labeling of a graph, using features at the nodes, and relation between
+neighboring nodes.  The main assumption in these models in PyStruct is that
+nodes are homogeneous, that is they all have the same meaning. That means that
+each node has the same number of classes, and these classes mean the same
+thing. In practice that means that weights are shared across all nodes and
+edges, and the model adapts via features.
 This is in contrast to the :class:`MultiLabelClf`, which builds a binary graph
-were nodes mean different things (each node represents a different class), so they do not share weights.
+were nodes mean different things (each node represents a different class), so
+they do not share weights.
 
 .. note::
 
@@ -245,19 +261,20 @@ outputs. These occur naturaly in sequence labeling tasks, such as
 Part-of-Speech tagging or named entity recognition in natural language
 processing, or segmentation and phoneme recognition in speech processing.
 
-As an example dataset, we will use the toy OCR dataset letters.
-In this dataset, each sample is a handwritten word, segmented into letters.
-This dataset has a slight oddity, in that the first letter of every word was removed, as it
-was capitalized, and therefore different from all the other letters.
+As an example dataset, we will use the toy OCR dataset letters.  In this
+dataset, each sample is a handwritten word, segmented into letters.  This
+dataset has a slight oddity, in that the first letter of every word was
+removed, as it was capitalized, and therefore different from all the other
+letters.
 
 Each letter is a node in our chain, and neighboring letters are connected with
 an edge. The length of the chain varies with the number of letters in the
 word. As in all CRF-like models, the nodes all have the same meaning and share
 parameters.
 
-The letters dataset comes with prespecified folds, we take one fold to be the training
-set, and the rest to be the test set, as in `Max-Margin Markov Networks
-<http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>`_::
+The letters dataset comes with prespecified folds, we take one fold to be the
+training set, and the rest to be the test set, as in `Max-Margin Markov
+Networks <http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>`_::
 
     >>> from pystruct.datasets import load_letters
     >>> letters = load_letters()
@@ -267,15 +284,19 @@ set, and the rest to be the test set, as in `Max-Margin Markov Networks
     >>> y_train, y_test = y[folds == 1], y[folds != 1]
 
 The training data is a array of samples, where each sample is a numpy array of
-shape ``(n_nodes, n_features)``. Here n_nodes is the length of the input sequence,
-that is the length of the word in our case. That means the input array actually has
-dtype object. We can not store the features in a simple array, as the input sequences
-can have different length::
+shape ``(n_nodes, n_features)``. Here n_nodes is the length of the input
+sequence, that is the length of the word in our case. That means the input
+array actually has dtype object. We can not store the features in a simple
+array, as the input sequences can have different length::
 
     >>> X_train[0].shape
+    (9, 128)
     >>> y_train[0].shape
-    >>> X_train[1].shape
-    >>> y_train[1].shape
+    (9,)
+    >>> X_train[10].shape
+    (7, 128)
+    >>> y_train[10].shape
+    (7,)
     
 Edges don't need to be specified, as the input features are assumed to be in
 the order of the nodes in the chain.
@@ -297,7 +318,8 @@ The unary potentials in each node are given as the inner product of the features
 at this node (the input image) with the weights (which are shared over all nodes):
 
 
-The pairwise potentials are identical over the whole chain and given simply by the weights:
+The pairwise potentials are identical over the whole chain and given simply by
+the weights:
 
 In principle it is possible to also use feature in the pairwise potentials.
 This is not implemented in the ChainCRF, but can be done using
@@ -315,15 +337,17 @@ This is not implemented in the ChainCRF, but can be done using
 
 GraphCRF
 ---------
-The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf` to arbitray graphs.
-While in the chain model, the direction of the edge is usually important, for many
-graphs, the direction of the edge has no semantic meaning. Therefore, by default, the pairwise
-interaction matrix of the :class:`GraphCRF` is forced to be symmetric.
+The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf` to
+arbitray graphs.  While in the chain model, the direction of the edge is
+usually important, for many graphs, the direction of the edge has no semantic
+meaning. Therefore, by default, the pairwise interaction matrix of the
+:class:`GraphCRF` is forced to be symmetric.
 
-Each training sample for the :class:`GraphCRF` is a tuple ``(features, edges)``,
-where ``features`` is a numpy array of node-features (of shape ``(n_nodes, n_features)``),
-and ``edges`` is a array of edges between nodes, of shape ``(n_edges, 2)``.
-Each row of the edge array are the indices of the two nodes connected by the edge, starting from zero.
+Each training sample for the :class:`GraphCRF` is a tuple ``(features,
+edges)``, where ``features`` is a numpy array of node-features (of shape
+``(n_nodes, n_features)``), and ``edges`` is a array of edges between nodes, of
+shape ``(n_edges, 2)``.  Each row of the edge array are the indices of the two
+nodes connected by the edge, starting from zero.
 
 To reproduce the ``ChainCRF`` model above with ``GraphCRF``, we can simply
 generate the indices of a chain::
@@ -337,9 +361,12 @@ For a single word made out of FIXME characters::
 
     >>> features_0 = features_train[0]
     >>> features_0.shape
+    (9, 128)
     >>> n_nodes = features_0.shape[0]
     >>> edges_0 = np.vstack([np.arange(n_nodes - 1), np.arange(1, n_nodes)])
     >>> edges_0
+    array([[0, 1, 2, 3, 4, 5, 6, 7],
+           [1, 2, 3, 4, 5, 6, 7, 8]])
     >>> x = (features_0, edges_0)
 
 For the whole training dataset::
@@ -347,6 +374,15 @@ For the whole training dataset::
     >>> f_t = features_train
     >>> X_train = [(features_i, np.vstack([np.arange(f_t.shape[0] - 1), np.arange(1, f_t.shape[0])]))
     ...            for features_i in f_t]
+    >>> X_train[0] # doctest: +NORMALIZE_WHITESPACE
+    (array([[0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       ..., 
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 1, ..., 0, 1, 1]], dtype=uint8), array([[  0,   1,   2, ..., 700, 701, 702],
+       [  1,   2,   3, ..., 701, 702, 703]]))
 
 Now we can fit a (directed) :class:`GraphCRF` on this data::
     
@@ -378,39 +414,66 @@ a array of edges between nodes, of shape ``(n_edges, 2)`` as in
 :ref:`graph_crf`, and ``edge_features`` is a feature for each edge, given as a
 numpy array of shape ``(n_edges, n_edge_features)``.
 
-The edge features allow the pairwise interactions to be modulated by the context.
-Two features important for image segmentation, for example, are color differences
-between the (super)pixels at given nodes, and whether one is above the other.
-If two neighboring nodes correspond to regions of simlar color, they are more likely to have
-the same label. For the vertical direction, a node above a node representing "sky" is
-more likely to also represent "sky" than "water".
+The edge features allow the pairwise interactions to be modulated by the
+context.  Two features important for image segmentation, for example, are color
+differences between the (super)pixels at given nodes, and whether one is above
+the other.  If two neighboring nodes correspond to regions of simlar color,
+they are more likely to have the same label. For the vertical direction, a node
+above a node representing "sky" is more likely to also represent "sky" than
+"water".
 
-A great example of the importance of edge features is :ref:`example_plot_snakes.py`.
+A great example of the importance of edge features is
+:ref:`example_plot_snakes.py`.
 
 
 Latent Variable Models
 ==========================
-Latent variable models are models that involve interactions with variables
-that are not observed during training. These are often modelling a "hidden cause"
-of the data, which might make it easier to learn about the actual observations.
+Latent variable models are models that involve interactions with variables that
+are not observed during training. These are often modelling a "hidden cause" of
+the data, which might make it easier to learn about the actual observations.
 
-Latent variable models are usually much harder to fit than fully observed models,
-and require fitting using either :class:`LatentSSVM`, or :class:`LatentSubgradientSSVM`.
-:class:`LatentSSVM`  alternates between inferring the unobserved variables with
-fitting any of the other SSVM models (such as :class:`OneSlackSSVM`). Each
-iteration of this alternation is as expensive as building a fully observed
-model, and good initialization can be very important.
-This method was published in `Learning Structural SVMs with Latent
-Variables <http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_.
+Latent variable models are usually much harder to fit than fully observed
+models, and require fitting using either :class:`LatentSSVM`, or
+:class:`LatentSubgradientSSVM`.  :class:`LatentSSVM`  alternates between
+inferring the unobserved variables with fitting any of the other SSVM models
+(such as :class:`OneSlackSSVM`). Each iteration of this alternation is as
+expensive as building a fully observed model, and good initialization can be
+very important.  This method was published in `Learning Structural SVMs with
+Latent Variables
+<http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_.
 
 The :class:`LatentSubgradientSSVM` approach tries to reestimate the latent
-variables for each batch, and corresponds to a subgradient descent on the non-convex
-objective involving the maximization over hidden variables.
-I am unaware of any literature on this approach.
+variables for each batch, and corresponds to a subgradient descent on the
+non-convex objective involving the maximization over hidden variables.  I am
+unaware of any literature on this approach.
 
 
 LatentGraphCRF aka Hidden Dynamics CRF
 ----------------------------------------
+:class:`LatentGraphCRF` implements the "Hidden Dynamics CRF" approach.
+Here, each output state is split into several hidden sub-states, which allows for
+more complex interactions.
+
+This can be seen as a structured variant of the latent SVM approach as follows:
+If there is a single node in the graph (that is doing multi-class
+classification), we introduce latent subclasses for each of the target classes.
+We can then learn a separate classifier for each of the subclasses, which might
+be easier.  An example is given in :ref:`example_plot_latent_svm_as_crf.py`,
+where images of odd numbers are classified against images of even numbers. It
+is much easier to learn a linear classifier that separates one digit from the
+other digits, than trying to learn a linear separation between even and odd
+digits.
+
+For more complex graphs, not only the unary potentials benefit, but also the
+pairwise potentials, which are now between substates.
+The original paper motivates this extension by action recognition.
+A complex action like a juming jack is made up of several distinct sub-actions,
+and there is a distinct order in which the sub-actions are performed.
+The latent dynamic CRF can learn this order.
+
+..EXAMPLE
+
+See :ref:`example_plot_latent_crf` for an example on a 2d grid.
 
 How to Write Your Own Model
 ============================

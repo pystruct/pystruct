@@ -3,13 +3,13 @@
 Latent Dynamics CRF
 ===================
 
-Solving a 2d grid problem by introducing latent variable interactions.
-The input data is the same as in plot_grid_crf, a cross pattern.
-But now, the center is not given an extra state. That makes the problem
-much harder to solve for a pairwise model.
-We can still solve it by introducing latent dynamics. In essence we allow
-an additional state with different interactions, that maps to the same
-state (the cross) in the ground truth.
+Solving a 2d grid problem by introducing latent variable interactions.  The
+input data is the same as in plot_grid_crf, a cross pattern.  But now, the
+center is not given an extra state. That makes the problem much harder to solve
+for a pairwise model.
+We can still solve it by introducing latent dynamics. In essence we allow an
+additional state with different interactions, that maps to the same state (the
+cross) in the ground truth.
 
 """
 import numpy as np
