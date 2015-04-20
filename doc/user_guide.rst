@@ -233,6 +233,8 @@ were nodes mean different things (each node represents a different class), so th
     So these models might better be called Maximum Margin Random Fields. However, in the computer vision
     community, it seems most pairwise models are called CRFs, independent of the method of training.
 
+.. _chain_crf:
+
 ChainCRF
 ----------
 One of the most common use-cases for structured prediction is chain-structured
@@ -291,6 +293,7 @@ Details on the implementation
 The unary potentials in each node are given as the inner product of the features
 at this node (the input image) with the weights (which are shared over all nodes):
 
+
 The pairwise potentials are identical over the whole chain and given simply by the weights:
 
 In principle it is possible to also use feature in the pairwise potentials.
@@ -302,12 +305,52 @@ This is not implemented in the ChainCRF, but can be done using
     While pystruct is able to work with chain CRFs, it is not explicitly built with these in mind,
     and there are libraries that optimize much more for this special case, such as seqlearn and CRF++.
 
+.. _graph_crf:
 
 GraphCRF
 ---------
-This model is a generalization of the ChainCRF to arbitray graphs.
+The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf`_ to arbitray graphs.
+While in the chain model, the direction of the edge is usually important, for many
+graphs, the direction of the edge has no semantic meaning. Therefore, by default, the pairwise
+interaction matrix of the :class:`GraphCRF` is forced to be symmetric.
 
-To the basic model is the same as the ChainCRF model, with unary potentials given
+Each training sample for the :class:`GraphCRF` is a tuple ``(features, edges)``,
+where ``features`` is a numpy array of node-features (of shape ``(n_nodes, n_features)``),
+and ``edges`` is a array of edges between nodes, of shape ``(n_edges, 2)``.
+Each row of the edge array are the indices of the two nodes connected by the edge, starting from zero.
+
+To reproduce the ``ChainCRF`` model above with ``GraphCRF``, we can simply
+generate the indices of a chain::
+
+    >>> features, y, folds = letters['data'], letters['labels'], letters['folds']
+    >>> features, y = np.array(features), np.array(y)
+    >>> features_train, features_test = features[folds == 1], features[folds != 1]
+    >>> y_train, y_test = y[folds == 1], y[folds != 1]
+
+For a single word made out of FIXME characters::
+
+    >>> features_0 = features_train[0]
+    >>> features_0.shape
+    >>> n_nodes = features_0.shape[0]
+    >>> edges_0 = np.vstack([np.arange(n_nodes - 1), np.arange(1, n_nodes)])
+    >>> edges_0
+    >>> x = (features_0, edges_0)
+
+For the whole training dataset::
+
+    >>> f_t = features_train
+    >>> X_train = [(features_i, np.vstack([np.arange(f_t.shape[0] - 1), np.arange(1, f_t.shape[0])]))
+    ...            for features_i in f_t]
+
+Now we can fit a (directed) :class:`GraphCRF` on this data::
+
+    >>> ssvm = NSlackSSVM(GraphCRF(directed=True))
+    >>> ssvm.fit(X_train, y_train)
+
+
+Details on the implementation
+---------------------------------
+The potentials are the same as in the ChainCRF model, with unary potentials given
 as a shared linear function of the features, and pairwise potentials the same
 for all nodes.
 
@@ -315,15 +358,51 @@ for all nodes.
 EdgeFeatureGraphCRF
 -------------------
 
-This model is the most general of the CRF models, and contains all others as a special case.
-This model assumes again that the parameters of the potentials are shared over all nodes
-and over all edges, but the pairwise potentials are now also computed as a linear function of the features.
+This model is the most general of the CRF models, and contains all other CRF
+models as a special case.  This model assumes again that the parameters of the
+potentials are shared over all nodes and over all edges, but the pairwise
+potentials are now also computed as a linear function of the features.
 
+Each training sample for :class:`EdgeFeatureGraphCRF` is a tuple
+``(node_features, edges, edge_features)``, where ``node_features`` is a numpy
+array of node-features (of shape ``(n_nodes, n_node_features)``), ``edges`` is
+a array of edges between nodes, of shape ``(n_edges, 2)`` as in
+:ref:`graph_crf`_, and ``edge_features`` is a feature for each edge, given as a
+numpy array of shape ``(n_edges, n_edge_features)``.
+
+The edge features allow the pairwise interactions to be modulated by the context.
+Two features important for image segmentation, for example, are color differences
+between the (super)pixels at given nodes, and whether one is above the other.
+If two neighboring nodes correspond to regions of simlar color, they are more likely to have
+the same label. For the vertical direction, a node above a node representing "sky" is
+more likely to also represent "sky" than "water".
+
+A great example of the importance of edge features is :ref:`plot_snakes`_.
 
 
 Latent Variable Models
 ==========================
-TODO
+Latent variable models are models that involve interactions with variables
+that are not observed during training. These are often modelling a "hidden cause"
+of the data, which might make it easier to learn about the actual observations.
+
+Latent variable models are usually much harder to fit than fully observed models,
+and require fitting using either :class:`LatentSSVM`, or :class:`LatentSubgradientSSVM`.
+:class:`LatentSSVM`  alternates between inferring the unobserved variables with
+fitting any of the other SSVM models (such as :class:`OneSlackSSVM`). Each
+iteration of this alternation is as expensive as building a fully observed
+model, and good initialization can be very important.
+This method was published in :ref:`Learning Structural SVMs with Latent
+Variables <http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_
+
+The :class:`LatentSubgradientSSVM` approach tries to reestimate the latent
+variables for each batch, and corresponds to a subgradient descent on the non-convex
+objective involving the maximization over hidden variables.
+I am unaware of any literature on this approach.
+
+
+LatentGraphCRF aka Hidden Dynamics CRF
+----------------------------------------
 
 How to Write Your Own Model
 ============================

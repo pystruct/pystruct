@@ -29,6 +29,9 @@ class LatentSSVM(BaseSSVM):
     If the base_ssvm is a 1-slack SSVM, the inference cache will
     be reused. Both methods drastically speed up learning.
 
+    If base_ssvm is an 1-slack SSVM, this corresponds to the approach of
+    Yu and Joachims, Learning Structural SVMs with Latent Variables.
+
     Parameters
     ----------
     base_ssvm : object
