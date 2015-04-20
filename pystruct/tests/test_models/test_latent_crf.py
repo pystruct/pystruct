@@ -33,7 +33,7 @@ def test_k_means_initialization():
                     n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
-    assert_array_equal(Y, H / 3)
+    assert_array_equal(Y, H // 3)
 
     # for dataset with more than two states
     X, Y = generate_blocks_multinomial(n_samples=10)
@@ -53,7 +53,7 @@ def test_k_means_initialization():
                     n_labels=n_labels)
     H = np.vstack(H)
     assert_array_equal(np.unique(H), np.arange(6))
-    assert_array_equal(Y, H / 2)
+    assert_array_equal(Y, H // 2)
 
 
 def test_k_means_initialization_grid_crf():
@@ -87,30 +87,30 @@ def test_k_means_initialization_directional_grid_crf():
 
 def test_blocks_crf_unaries():
     X, Y = generate_blocks(n_samples=1)
-    x, y = X[0], Y[0]
+    x, _ = X[0], Y[0]
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     pairwise_weights = np.array([0,
-                                 0,  0,
-                                 0,  0,  0,
-                                 0,  0,  0, 0])
+                                 0, 0,
+                                 0, 0, 0,
+                                 0, 0, 0, 0])
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
     h_hat = crf.inference(x, w)
-    assert_array_equal(h_hat / 2, np.argmax(x, axis=-1))
+    assert_array_equal(h_hat // 2, np.argmax(x, axis=-1))
 
 
 def test_blocks_crf():
     X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     pairwise_weights = np.array([0,
-                                 0,   0,
-                                -4, -4,  0,
-                                -4, -4,  0, 0])
+                                 0,  0,
+                                -4, -4, 0,
+                                -4, -4, 0, 0])
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     crf = LatentGridCRF(n_states_per_label=2, n_labels=2, n_features=2)
     h_hat = crf.inference(x, w)
-    assert_array_equal(y, h_hat / 2)
+    assert_array_equal(y, h_hat // 2)
 
     h = crf.latent(x, y, w)
     assert_equal(crf.loss(h, h_hat), 0)
@@ -122,9 +122,9 @@ def test_blocks_crf_directional():
     X, Y = generate_blocks(n_samples=1)
     x, y = X[0], Y[0]
     pairwise_weights = np.array([0,
-                                 0,   0,
-                                -4, -4,  0,
-                                -4, -4,  0, 0])
+                                 0,  0,
+                                -4, -4, 0,
+                                -4, -4, 0, 0])
     unary_weights = np.repeat(np.eye(2), 2, axis=0)
     w = np.hstack([unary_weights.ravel(), pairwise_weights])
     pw_directional = np.array([0,   0, -4, -4,
@@ -166,7 +166,7 @@ def test_latent_consistency_zero_pw_graph():
         y = np.random.randint(2, size=(5))
         x = np.random.normal(size=(5, 2))
         h = crf.latent((x, np.zeros((0, 2), dtype=np.int)), y, w)
-        assert_array_equal(h / 2, y)
+        assert_array_equal(h // 2, y)
 
 
 def test_latent_consistency_graph():
@@ -177,7 +177,7 @@ def test_latent_consistency_graph():
         x = np.random.normal(size=(4, 2))
         e = np.array([[0, 1], [1, 2], [2, 0]], dtype=np.int)
         h = crf.latent((x, e), y, w)
-        assert_array_equal(h / 2, y)
+        assert_array_equal(h // 2, y)
 
 
 def test_loss_augmented_inference_energy_graph():
@@ -203,7 +203,7 @@ def test_latent_consistency_zero_pw_grid():
         y = np.random.randint(2, size=(5, 5))
         x = np.random.normal(size=(5, 5, 2))
         h = crf.latent(x, y, w)
-        assert_array_equal(h / 2, y)
+        assert_array_equal(h // 2, y)
 
 
 def test_latent_consistency_grid():
@@ -213,7 +213,7 @@ def test_latent_consistency_grid():
         y = np.random.randint(2, size=(4, 4))
         x = np.random.normal(size=(4, 4, 2))
         h = crf.latent(x, y, w)
-        assert_array_equal(h / 2, y)
+        assert_array_equal(h // 2, y)
 
 
 def test_loss_augmented_inference_exhaustive_grid():
