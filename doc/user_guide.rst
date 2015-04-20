@@ -305,7 +305,7 @@ This is not implemented in the ChainCRF, but can be done using
 .. note::
 
     While pystruct is able to work with chain CRFs, it is not explicitly built with these in mind,
-    and there are libraries that optimize much more for this special case, such as seqlearn and CRF++.
+    and there are libraries that optimize much more for this special case, such as `seqlearn <https://github.com/larsmans/seqlearn>`_ and `CRF++ <http://taku910.github.io/crfpp/>`_.
 
 .. _graph_crf:
 
