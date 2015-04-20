@@ -22,4 +22,4 @@ else
     nosetests -s pystruct
 fi
 
-#make test-doc test-sphinxext
+make test-doc
