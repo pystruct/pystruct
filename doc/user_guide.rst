@@ -74,7 +74,8 @@ to more structured models, the labels set Y is just the number of classes, so
 inference can be performed by just enumerating Y.
 
 Lets say we want to classify the classical iris dataset. There are three classes and four features::
-
+  
+  >>> import numpy as np
   >>> from sklearn.datasets import load_iris
   >>> iris = load_iris()
   >>> iris.data.shape, iris.target.shape
@@ -160,11 +161,11 @@ of shape ``(n_samples, n_classes)``::
   >>> X_train.shape
   >>> y_train.shape
 
-We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiClassClf` model::
+We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiLabelClf` model::
 
   >>> from pystruct.learners import NSlackSSVM
   >>> from pystruct.models import MultiClassClf
-  >>> clf = NSlackSSVM(MultiClassClf())
+  >>> clf = NSlackSSVM(MultiLabelClf())
 
 Training looks as before, only that ``y_train`` is now a matrix::
 
@@ -304,8 +305,11 @@ This is not implemented in the ChainCRF, but can be done using
 
 .. note::
 
-    While pystruct is able to work with chain CRFs, it is not explicitly built with these in mind,
-    and there are libraries that optimize much more for this special case, such as `seqlearn <https://github.com/larsmans/seqlearn>`_ and `CRF++ <http://taku910.github.io/crfpp/>`_.
+    While pystruct is able to work with chain CRFs, it is not explicitly built
+    with these in mind, and there are libraries that optimize much more for
+    this special case, such as `seqlearn
+    <https://github.com/larsmans/seqlearn>`_ and `CRF++
+    <http://taku910.github.io/crfpp/>`_.
 
 .. _graph_crf:
 
@@ -345,7 +349,9 @@ For the whole training dataset::
     ...            for features_i in f_t]
 
 Now we can fit a (directed) :class:`GraphCRF` on this data::
-
+    
+    >>> from pystruct.models import GraphCRF
+    >>> from pystruct.learners import NSlackSSVM
     >>> ssvm = NSlackSSVM(GraphCRF(directed=True))
     >>> ssvm.fit(X_train, y_train)
 
