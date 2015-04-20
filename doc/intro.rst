@@ -17,9 +17,6 @@ more or less arbitrary. This means the goal is not to predict a label or a
 number, but a possibly much more complicated object like a sequence or a
 graph.
 
-What does that mean?
---------------------
-
 In structured prediction, we often deal with finite, but large output spaces Y.
 This situation could be dealt with using classification with a very large
 number of classes. The idea behind structured prediction is that we can do
@@ -72,17 +69,17 @@ How do we specify f? How do we compute y*?
 As I said above, the output set Y is usually a finite but very large set (all
 graphs, all sentences in the English language, all images of a given
 resolution). Finding the argmax in the above equation by exhaustive search is
-therefore out of the question. So we need to restrict ourselves to f such that
+therefore out of the question. We need to restrict ourselves to f such that
 we can do the maximization over y efficiently. The most popular tool for
 building such f is using energy functions or conditional random fields (CRFs).
 
 There are basically three challenges in doing structured learning and prediction:
 
-* Choosing a parametric form of f
-* solving :math:`\arg\max_y f(x, y)`
-* learning parameters for f to minimize a loss.
+* Choosing a parametric form of f.
+* Solving :math:`\arg\max_y f(x, y)`.
+* Learning parameters for f to minimize a loss.
 
-PyStruct takes :math:`f` to be a linear function of some parameters and a joint feature function of :math:`x` and :math:`y`:
+PyStruct takes :math:`f` to be a linear function of some parameters ``w`` and a joint feature function of ``x`` and ``y``:
 
 
 .. math::
@@ -104,7 +101,7 @@ assume a pairwise decomposition of the energy f over entries of ``y``, that is
 
 .. math::
     
-    f(x, y) = w^t  \text{joint\_feature}(x, y) = \sum_{i \in V} w_i \text{joint\_feature}_i(x, y_i) + \sum_{(i, j) \in E} w_{i, j}\text{joint\_feature}_{i, j}(x, y_i, y_j)
+    f(x, y) = w^T\ \text{joint\_feature}(x, y) = \sum_{i \in V} w_i^T\ \text{joint\_feature}_i(x, y_i) + \sum_{(i, j) \in E} w_{i, j}^T\ \text{joint\_feature}_{i, j}(x, y_i, y_j)
 
 Here V are a set of nodes corresponding to the entries of ``y``, and E are a set of edges between the nodes.
 The particular form of :math:`\text{joint\_feature}_i` and :math:`\text{joint\_feature}_{i, j}` depends on the model used. See the :ref:`user_guide` for details on the models.
