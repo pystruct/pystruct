@@ -1,0 +1,26 @@
+
+Examples using ``sklearn.svm.SVC``
+----------------------------------
+
+
+
+.. raw:: html
+
+
+    <div class="thumbnailContainer">
+        <div class="docstringWrapper">
+
+
+.. figure:: ../../auto_examples/./images/thumb/plot_binary_svm.png
+   :target: ./../../auto_examples/./plot_binary_svm.html
+
+   :ref:`example_plot_binary_svm.py`
+
+
+.. raw:: html
+
+
+    <p>There are many parameters to tune and we can make 1-slack as good as the rest for the price of ...
+    </p></div>
+    </div>
+

@@ -32,11 +32,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.svm import LinearSVC
-#from sklearn.metrics import confusion_matrix
 
 from pystruct.datasets import load_letters
 from pystruct.models import ChainCRF
-from pystruct.learners import OneSlackSSVM
+from pystruct.learners import FrankWolfeSSVM
 
 abc = "abcdefghijklmnopqrstuvwxyz"
 
@@ -55,7 +54,7 @@ svm.fit(np.vstack(X_train), np.hstack(y_train))
 
 # Train linear chain CRF
 model = ChainCRF()
-ssvm = OneSlackSSVM(model=model, C=.1, inference_cache=50, tol=0.1)
+ssvm = FrankWolfeSSVM(model=model, C=.1, max_iter=11)
 ssvm.fit(X_train, y_train)
 
 print("Test score with chain CRF: %f" % ssvm.score(X_test, y_test))
