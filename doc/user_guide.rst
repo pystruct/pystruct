@@ -183,9 +183,9 @@ We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiLab
 
 Training looks as before, only that ``y_train`` is now a matrix::
 
-  >>> clf.fit(X_train, y_train)
-  >>> clf.predict(X_test)
-  >>> clf.score(X_test, y_test)
+  >>> # clf.fit(X_train, y_train)
+  >>> # clf.predict(X_test)
+  >>> # clf.score(X_test, y_test)
 
 With only 64 possible label-combinations, we can actually enumerate all states.
 Unfortunately, in general, inference in a fully connected binary graph is in
@@ -208,9 +208,9 @@ inference::
 
 Training looks as before, only that ``y_train`` is now a matrix::
 
-  >>> clf.fit(X_train, y_train)
-  >>> clf.predict(X_test)
-  >>> clf.score(X_test, y_test)
+  >>> # clf.fit(X_train, y_train)
+  >>> # clf.predict(X_test)
+  >>> # clf.score(X_test, y_test)
 
 This model for multi-label classification with full connectivity is taken from the paper
 T. Finley, T. Joachims, Training Structural SVMs when Exact Inference is Intractable.
@@ -282,6 +282,10 @@ Networks <http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf>`_::
     >>> X, y = np.array(X), np.array(y)
     >>> X_train, X_test = X[folds == 1], X[folds != 1]
     >>> y_train, y_test = y[folds == 1], y[folds != 1]
+    >>> len(X_train)
+    704
+    >>> len(X_test)
+    6173
 
 The training data is a array of samples, where each sample is a numpy array of
 shape ``(n_nodes, n_features)``. Here n_nodes is the length of the input
@@ -302,14 +306,22 @@ Edges don't need to be specified, as the input features are assumed to be in
 the order of the nodes in the chain.
 
 The default inference method is max-product message passing on the chain (aka
-viterbi), which is always exact and efficient::
+viterbi), which is always exact and efficientl. We use the
+:class:`FrankWolfeSSVM`, which is a very efficient learner when inference is
+fast::
 
     >>> from pystruct.models import ChainCRF
-    >>> from pystruct.learners import OneSlackSSVM
+    >>> from pystruct.learners import FrankWolfeSSVM
     >>> model = ChainCRF()
-    >>> ssvm = OneSlackSSVM(model=model, C=.1, tol=0.1)
-    >>> ssvm.fit(X_train, y_train)
-    >>> ssvm.score(X_test, y_test)
+    >>> ssvm = FrankWolfeSSVM(model=model, C=.1, max_iter=10)
+    >>> ssvm.fit(X_train, y_train) # doctest: +NORMALIZE_WHITESPACE
+    FrankWolfeSSVM(C=0.1, batch_mode=False, check_dual_every=10,
+                do_averaging=True, line_search=True, logger=None, max_iter=10,
+                model=ChainCRF(n_states: 26, inference_method: max-product),
+                n_jobs=1, random_state=None, sample_method='perm',
+                show_loss_every=0, tol=0.001, verbose=0)
+    >>> ssvm.score(X_test, y_test) # doctest: +ELLIPSIS
+    0.78...
 
 Details on the implementation
 ---------------------------------
@@ -387,9 +399,16 @@ For the whole training dataset::
 Now we can fit a (directed) :class:`GraphCRF` on this data::
     
     >>> from pystruct.models import GraphCRF
-    >>> from pystruct.learners import NSlackSSVM
-    >>> ssvm = NSlackSSVM(GraphCRF(directed=True))
-    >>> ssvm.fit(X_train, y_train)
+    >>> from pystruct.learners import FrankWolfeSSVM
+    >>> model = GraphCRF(directed=True, inference_method="max-product")
+    >>> ssvm = FrankWolfeSSVM(model=model, C=.1, max_iter=10)
+    >>> ssvm.fit(X_train, y_train) # doctest: +NORMALIZE_WHITESPACE
+    FrankWolfeSSVM(C=0.1, batch_mode=False, check_dual_every=10,
+                do_averaging=True, line_search=True, logger=None, max_iter=10,
+                model=GraphCRF(n_states: 26, inference_method: max-product),
+                n_jobs=1, random_state=None, sample_method='perm',
+                show_loss_every=0, tol=0.001, verbose=0)
+
 
 
 Details on the implementation
@@ -481,7 +500,13 @@ TODO
 
 Tips on Choosing a Learner
 ==========================
-TODO
+There is an extensive benchmarking in my thesis, chapter XXX.
+
+
+SubgradientSSVM : Good for many datapoints, fast inference. Usually worse than FrankWolfeSSVM, but takes less memory. Good for obtaining reasonable solutions fast.
+NSlackSSVM : Good for very few datapoints (hundreds), slow inferece. Good for obtaining high precision solutions.
+OneSlackSSVM : Good for mid-size data sets (thousands), slow inference. Good for obtaining high precision solutions.
+FrankWolfeSSVM : Good for fast inference, large datasets. Good for obtaining reasonable solutions fast.
 
 Tips on Choosing an Inference Algorithm
 =======================================
