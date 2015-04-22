@@ -112,7 +112,7 @@ class StructuredPerceptron(BaseSSVM):
         self.loss_curve_ = []
         max_losses = np.sum([self.model.max_loss(y) for y in Y])
         try:
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 if self.average == -1:
                     # By resetting at every iteration we effectively get
                     # averaging over the last one.

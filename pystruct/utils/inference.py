@@ -59,8 +59,8 @@ def find_constraint(model, x, y, w, y_hat=None, relaxed=True,
     find slack and djoint_feature for this constraing.
 
     As for finding the most violated constraint, it is enough to compute
-    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
-    using compute_differences=False
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip
+    computing joint_feature(x, y) using compute_differences=False
     """
 
     if y_hat is None:
@@ -89,8 +89,8 @@ def find_constraint_latent(model, x, y, w, relaxed=True):
     """Find most violated constraint.
 
     As for finding the most violated constraint, it is enough to compute
-    joint_feature(x, y_hat), not djoint_feature, we can optionally skip computing joint_feature(x, y)
-    using compute_differences=False
+    joint_feature(x, y_hat), not djoint_feature, we can optionally skip
+    computing joint_feature(x, y) using compute_differences=False
     """
     h = model.latent(x, y, w)
     h_hat = model.loss_augmented_inference(x, h, w, relaxed=relaxed)

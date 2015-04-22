@@ -26,8 +26,9 @@ class ChainCRF(GraphCRF):
 
     Parameters
     ----------
-    n_states : int, default=2
+    n_states : int, default=None
         Number of states for all variables.
+        Inferred from data if not provided.
 
     inference_method : string or None, default=None
         Function to call do do inference and loss-augmented inference.

@@ -4,7 +4,6 @@ This module provides a callable for easy evaluation of stored models.
 """
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from pystruct.utils import SaveLogger
@@ -40,6 +39,7 @@ def plot_learning(ssvm, time=True):
     So if you warm-started a model, please don't count on proper alignment
     of time, cache hits and objective.
     """
+    import matplotlib.pyplot as plt
     print(ssvm)
     if hasattr(ssvm, 'base_ssvm'):
         ssvm = ssvm.base_ssvm

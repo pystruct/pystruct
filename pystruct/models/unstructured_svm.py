@@ -22,6 +22,7 @@ class BinaryClf(StructuredModel):
     ----------
     n_features : int or None, default=None
         Number of features of inputs x.
+        If None, it is inferred from data.
     """
     def __init__(self, n_features=None):
         self.size_joint_feature = n_features
@@ -147,9 +148,11 @@ class MultiClassClf(StructuredModel):
     ----------
     n_features : int
         Number of features of inputs x.
+        If None, it is inferred from data.
 
-    n_classes : int, default=2
+    n_classes : int, default=None
         Number of classes in dataset.
+        If None, it is inferred from data.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
@@ -171,7 +174,7 @@ class MultiClassClf(StructuredModel):
         self._set_class_weight()
 
     def _set_size_joint_feature(self):
-        if not None in [self.n_states, self.n_features]:
+        if None not in [self.n_states, self.n_features]:
             self.size_joint_feature = self.n_states * self.n_features
 
     def initialize(self, X, Y):
@@ -235,7 +238,7 @@ class MultiClassClf(StructuredModel):
             if Y_true is None:
                 raise ValueError("rescale_C is true, but no y_true was passed"
                                  " to joint_feature.")
-            for l in xrange(self.n_states):
+            for l in range(self.n_states):
                 mask = Y == l
                 class_weight = self.class_weight[Y_true[mask]][:, np.newaxis]
                 result[l, :] = np.sum(X[mask, :] * class_weight, axis=0)

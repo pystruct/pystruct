@@ -17,9 +17,6 @@ more or less arbitrary. This means the goal is not to predict a label or a
 number, but a possibly much more complicated object like a sequence or a
 graph.
 
-What does that mean?
---------------------
-
 In structured prediction, we often deal with finite, but large output spaces Y.
 This situation could be dealt with using classification with a very large
 number of classes. The idea behind structured prediction is that we can do
@@ -41,7 +38,7 @@ each word individually. This seems somehow better, since we could learn to get
 most of the word in a sentence right. On the other hand, we lose all context.
 So for example the expression "car door" is way more likely than "car boar",
 while predicted individually these could be easily confused.
-For a similar example, see :ref:`plot_letters.py`.
+For a similar example, see :ref:`example_plot_letters.py`.
 
 Structured prediction tries to overcome these problems by considering the
 output (here the sentence) as a whole and using a loss function that is
@@ -72,22 +69,46 @@ How do we specify f? How do we compute y*?
 As I said above, the output set Y is usually a finite but very large set (all
 graphs, all sentences in the English language, all images of a given
 resolution). Finding the argmax in the above equation by exhaustive search is
-therefore out of the question. So we need to restrict ourselves to f such that
+therefore out of the question. We need to restrict ourselves to f such that
 we can do the maximization over y efficiently. The most popular tool for
-building such f is using energy functions or conditional random fields (CRFs)
-[which are basically the same for finding y*].
+building such f is using energy functions or conditional random fields (CRFs).
 
 There are basically three challenges in doing structured learning and prediction:
 
-* Choosing a parametric form of f
-* solving :math:`\arg\max_y f(x, y)`
-* learning parameters for f to minimize a loss.
+* Choosing a parametric form of f.
+* Solving :math:`\arg\max_y f(x, y)`.
+* Learning parameters for f to minimize a loss.
 
-PyStruct takes :math:`f` to be a linear function of some parameters and a feature function :math:`Psi`.
-Then the parametric form is given by the :ref:`models`.
+PyStruct takes :math:`f` to be a linear function of some parameters ``w`` and a joint feature function of ``x`` and ``y``:
+
+
+.. math::
+
+    f(x, y) = w^T \text{joint\_feature}(x, y)
+
+So that the prediction is given by
+
+.. math::
+
+    y^* = \arg \max_{y \in Y} w^T \text{joint\_feature}(x, y)
+
+
+Here :math:`w` are parameters that are learned from data, and ``joint_feature`` is
+defined by the user-specified structure of the model.
+The definition of ``joint_feature`` is given by the :ref:`models`.
+PyStruct assumes that ``y`` is a discrete vector, and most models in PyStruct
+assume a pairwise decomposition of the energy f over entries of ``y``, that is
+
+.. math::
+    
+    f(x, y) = w^T\ \text{joint\_feature}(x, y) = \sum_{i \in V} w_i^T\ \text{joint\_feature}_i(x, y_i) + \sum_{(i, j) \in E} w_{i, j}^T\ \text{joint\_feature}_{i, j}(x, y_i, y_j)
+
+Here V are a set of nodes corresponding to the entries of ``y``, and E are a set of edges between the nodes.
+The particular form of :math:`\text{joint\_feature}_i` and :math:`\text{joint\_feature}_{i, j}` depends on the model used. See the :ref:`user_guide` for details on the models.
+
 The second problem, computation of the argmax, is done via third party inference solvers.
 The interfaces to these are explained at :ref:`inference`.
-The last part, the learning is actually the core part of PyStruct.
+The last part, the learning of :math:`w` is actually the core part of PyStruct.
 There are several different algorithms implemented, which you can find under :ref:`learning`.
 
 There have been many publications and book on this topics. For a nice introduction (in the context of computer vision), I recommend 

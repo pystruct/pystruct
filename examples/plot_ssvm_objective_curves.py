@@ -1,7 +1,7 @@
 """
-====================
-SVM objective values
-====================
+==================================
+SSVM Convergence Curves
+==================================
 Showing the relation between cutting plane and primal objectives,
 as well as the different algorithms.
 We use exact inference here, so the plots are easier to interpret.
@@ -20,7 +20,7 @@ from pystruct.datasets import generate_crosses_explicit
 
 X, Y = generate_crosses_explicit(n_samples=50, noise=10, size=6, n_crosses=1)
 n_labels = len(np.unique(Y))
-crf = GridCRF(n_states=n_labels, inference_method="lp")
+crf = GridCRF(n_states=n_labels, inference_method=("ad3", {'branch_and_bound': True}))
 
 n_slack_svm = NSlackSSVM(crf, check_constraints=False,
                          max_iter=50, batch_size=1, tol=0.001)
@@ -63,7 +63,7 @@ plt.plot(bcfw_svm.timestamps_[1:], bcfw_svm.objective_curve_,
          label="Block-Coordinate Frank-Wolfe Dual")
 plt.plot(bcfw_svm.timestamps_[1:], bcfw_svm.primal_objective_curve_,
          label="Block-Coordinate Frank-Wolfe Primal")
-plt.legend()
+plt.legend(loc="best")
 plt.yscale('log')
 plt.xlabel("training time")
 plt.show()

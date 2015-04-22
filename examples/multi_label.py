@@ -37,8 +37,8 @@ def chow_liu_tree(y_):
     # compute mutual information using sklearn
     n_labels = y_.shape[1]
     mi = np.zeros((n_labels, n_labels))
-    for i in xrange(n_labels):
-        for j in xrange(n_labels):
+    for i in range(n_labels):
+        for j in range(n_labels):
             mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
     mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
     edges = np.vstack(mst.nonzero()).T

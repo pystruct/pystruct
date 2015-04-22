@@ -104,7 +104,7 @@ class LatentGraphCRF(GraphCRF):
         if isinstance(self.n_states_per_label, numbers.Integral):
             # same for all labels
             n_states_per_label = np.array([
-                self.n_states_per_label for i in xrange(self.n_labels)])
+                self.n_states_per_label for i in range(self.n_labels)])
         else:
             n_states_per_label = np.array(self.n_states_per_label)
             if len(n_states_per_label) != self.n_labels:
@@ -117,7 +117,7 @@ class LatentGraphCRF(GraphCRF):
         # compute mapping from latent states to labels
         ranges = np.cumsum(n_states_per_label)
         states_map = np.zeros(self.n_states, dtype=np.int)
-        for l in xrange(1, self.n_labels):
+        for l in range(1, self.n_labels):
             states_map[ranges[l - 1]: ranges[l]] = l
         self._states_map = states_map
         GraphCRF._set_size_joint_feature(self)
@@ -193,7 +193,7 @@ class LatentGraphCRF(GraphCRF):
         # continuous version of the loss
         # y_hat is the result of linear programming
         y_hat_org = np.zeros((y_hat.shape[0], self.n_labels))
-        for s in xrange(self.n_states):
+        for s in range(self.n_states):
             y_hat_org[:, self._states_map[s]] += y_hat[:, s]
         y_org = self.label_from_latent(y)
         return GraphCRF.continuous_loss(self, y_org, y_hat_org)

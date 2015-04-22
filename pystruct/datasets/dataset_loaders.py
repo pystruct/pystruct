@@ -1,8 +1,22 @@
-import cPickle
-from os.path import dirname
-from os.path import join
+from os.path import dirname, join
+import sys
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import numpy as np
+
+
+def _safe_unpickle(file_name):
+    with open(file_name, "rb") as data_file:
+        if sys.version_info >= (3, 0):
+            # python3 unpickling of python2 unicode
+            data = pickle.load(data_file, encoding="latin1")
+        else:
+            data = pickle.load(data_file)
+    return data
 
 
 def load_letters():
@@ -12,10 +26,16 @@ def load_letters():
     Each example consists of a word, segmented into letters.
     The first letter of each word is ommited from the data,
     as it was a capital letter (in contrast to all other letters).
+
+
+    References
+    ----------
+    http://papers.nips.cc/paper/2397-max-margin-markov-networks.pdf
+    http://groups.csail.mit.edu/sls/archives/root/publications/1995/Kassel%20Thesis.pdf
+    http://www.seas.upenn.edu/~taskar/ocr/
     """
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'letters.pickle'), 'rb')
-    data = cPickle.load(data_file)
+    data = _safe_unpickle(join(module_path, 'letters.pickle'))
     # we add an easy to use image representation:
     data['images'] = [np.hstack([l.reshape(16, 8) for l in word])
                       for word in data['data']]
@@ -26,10 +46,18 @@ def load_scene():
     """Load the scene multi-label dataset.
 
     This is a benchmark multilabel dataset.
+    n_classes = 6
+    n_fetures = 294
+    n_samples_test = 1196
+    n_samples_train = 1211
+
+    References
+    ----------
+    Matthew R. Boutell, Jiebo Luo, Xipeng Shen, and Christopher M. Brown.
+    Learning multi-label scene classification.
     """
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'scene.pickle'), 'rb')
-    return cPickle.load(data_file)
+    return _safe_unpickle(join(module_path, 'scene.pickle'))
 
 
 def load_snakes():
@@ -45,5 +73,4 @@ def load_snakes():
     """
 
     module_path = dirname(__file__)
-    data_file = open(join(module_path, 'snakes.pickle'), 'rb')
-    return cPickle.load(data_file)
+    return _safe_unpickle(join(module_path, 'snakes.pickle'))

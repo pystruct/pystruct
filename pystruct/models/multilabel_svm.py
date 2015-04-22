@@ -19,10 +19,10 @@ class MultiLabelClf(CRF):
     Parameters
     ----------
     n_labels : int (default=None)
-        Number of labels.
+        Number of labels. Inferred from data if not provided.
 
     n_features : int (default=None)
-        Number of input features.
+        Number of input features. Inferred from data if not provided.
 
     edges : array-like, string or None
         Either None, which yields independent models, 'tree',
@@ -45,8 +45,8 @@ class MultiLabelClf(CRF):
         if self.n_features is not None and self.n_states is not None:
             if self.edges is None:
                 self.edges = np.zeros(shape=(0, 2), dtype=np.int)
-            self.size_joint_feature = (self.n_features * self.n_labels
-                             + 4 * self.edges.shape[0])
+            self.size_joint_feature = (self.n_features * self.n_labels + 4 *
+                                       self.edges.shape[0])
 
     def initialize(self, X, Y):
         n_features = X.shape[1]
@@ -82,11 +82,13 @@ class MultiLabelClf(CRF):
 
     def joint_feature(self, x, y):
         if isinstance(y, tuple):
+            # continuous pairwise marginals
             y_cont, pairwise_marginals = y
             y_signs = 2 * y_cont[:, 1] - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
             unary_marginals *= y_signs[:, np.newaxis]
         else:
+            # discrete y
             y_signs = 2 * y - 1
             unary_marginals = np.repeat(x[np.newaxis, :], len(y_signs), axis=0)
             unary_marginals *= y_signs[:, np.newaxis]

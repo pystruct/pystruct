@@ -158,7 +158,7 @@ class FrankWolfeSSVM(BaseSSVM):
         n_samples = float(len(X))
         joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)
 
-        for iteration in xrange(self.max_iter):
+        for iteration in range(self.max_iter):
             Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                               relaxed=True)
             djoint_feature = joint_feature_gt - self.model.batch_joint_feature(X, Y_hat)
@@ -210,7 +210,7 @@ class FrankWolfeSSVM(BaseSSVM):
         k = 0
 
         rng = check_random_state(self.random_state)
-        for iteration in xrange(self.max_iter):
+        for iteration in range(self.max_iter):
             if self.verbose > 0:
                 print("Iteration %d" % iteration)
 

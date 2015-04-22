@@ -26,7 +26,7 @@ def test_crammer_singer_model():
     assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)))
 
     # test inference result:
-    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in xrange(3)]
+    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in range(3)]
     assert_equal(np.argmax(energies), y)
 
     # test loss_augmented inference energy
@@ -62,7 +62,7 @@ def test_crammer_singer_model_class_weight():
     assert_almost_equal(energy, np.dot(w, pbl.joint_feature(x, y)))
 
     # test inference_result:
-    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in xrange(3)]
+    energies = [np.dot(w, pbl.joint_feature(x, y_hat)) for y_hat in range(3)]
     assert_equal(np.argmax(energies), y)
 
     # test loss_augmented inference energy

@@ -148,7 +148,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         n_samples = len(X)
         try:
             # catch ctrl+c to stop training
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 self.timestamps_.append(time() - self.timestamps_[0])
                 positive_slacks = 0
                 objective = 0.
@@ -160,8 +160,9 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         h = self.model.latent(x, y, w)
                         h_hat = self.model.loss_augmented_inference(
                             x, h, w, relaxed=True)
-                        delta_joint_feature = (self.model.joint_feature(x, h)
-                                     - self.model.joint_feature(x, h_hat))
+                        delta_joint_feature = (
+                            self.model.joint_feature(x, h)
+                            - self.model.joint_feature(x, h_hat))
                         slack = (-np.dot(delta_joint_feature, w)
                                  + self.model.loss(h, h_hat))
                         objective += np.maximum(slack, 0)

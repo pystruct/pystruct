@@ -430,7 +430,7 @@ class OneSlackSSVM(BaseSSVM):
         try:
             # catch ctrl+c to stop training
 
-            for iteration in xrange(self.max_iter):
+            for iteration in range(self.max_iter):
                 # main loop
                 cached_constraint = False
                 if self.verbose > 0:
