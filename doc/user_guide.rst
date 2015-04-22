@@ -1,8 +1,6 @@
 
 .. currentmodule:: pystruct.models
 
-..#FIXME make clear what is learned!!
-
 .. _user_guide:
 
 User Guide
@@ -192,8 +190,6 @@ Unfortunately, in general, inference in a fully connected binary graph is in
 gerneral NP-hard, so we might need to rely on approximate inference, like loopy
 believe propagation or AD3.
 
-..#FIXME do enumeration! benchmark!!
-
 An alternative to using approximate inference for larger numbers of labels is to not create a fully connected graph,
 but restrict ourself to pairwise interactions on a tree over the labels. In the above example of outdoor scenes,
 some labels might be informative about others, maybe a beach picture is likely to be of a sunset, while
@@ -369,7 +365,7 @@ generate the indices of a chain::
     >>> features_train, features_test = features[folds == 1], features[folds != 1]
     >>> y_train, y_test = y[folds == 1], y[folds != 1]
 
-For a single word made out of FIXME characters::
+For a single word made out of 9 characters::
 
     >>> features_0 = features_train[0]
     >>> features_0.shape
@@ -490,8 +486,6 @@ A complex action like a juming jack is made up of several distinct sub-actions,
 and there is a distinct order in which the sub-actions are performed.
 The latent dynamic CRF can learn this order.
 
-..EXAMPLE
-
 See :ref:`example_plot_latent_crf` for an example on a 2d grid.
 
 How to Write Your Own Model
@@ -500,7 +494,7 @@ TODO
 
 Tips on Choosing a Learner
 ==========================
-There is an extensive benchmarking in my thesis, chapter XXX.
+There is an extensive benchmarking in my thesis, TODO.
 
 
 SubgradientSSVM : Good for many datapoints, fast inference. Usually worse than FrankWolfeSSVM, but takes less memory. Good for obtaining reasonable solutions fast.
