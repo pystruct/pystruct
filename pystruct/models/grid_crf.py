@@ -17,8 +17,9 @@ class GridCRF(GraphCRF):
 
     Parameters
     ----------
-    n_states : int, default=2
+    n_states : int, or None, default=None
         Number of states for all variables.
+        Inferred from the data if None.
 
     inference_method : string, default="ad3"
         Function to call do do inference and loss-augmented inference.
@@ -100,6 +101,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
     ----------
     n_states : int, default=None
         Number of states for all variables.
+        Inferred from the data if None.
 
     inference_method : string, default=None
         Function to call do do inference and loss-augmented inference.

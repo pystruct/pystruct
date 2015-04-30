@@ -5,6 +5,40 @@ from .latent_graph_crf import LatentGraphCRF
 
 class LatentGridCRF(GridCRF, LatentGraphCRF):
     """Latent variable CRF with 2d grid graph.
+
+    This is also called "hidden dynamics CRF".
+    For each output variable there is an additional variable which
+    can encode additional states and interactions.
+
+    The input is the same as for GridCRF.
+
+    Parameters
+    ----------
+    n_labels : int or None, default=None
+        Number of states of output variables.
+        Inferred from the data if None.
+
+    n_featues : int or None (default=None).
+        Number of input features per input variable.
+        ``None`` means it is inferred from data.
+
+    n_states_per_label : int or list (default=2)
+        Number of latent states associated with each observable state.
+        Can be either an integer, which means the same number
+        of hidden states will be used for all observable states, or a list
+        of integers of length ``n_labels``.
+
+    inference_method : string, default="ad3"
+        Function to call to do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+            - 'lp' for Linear Programming relaxation using cvxopt.
+            - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
+
     """
     def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
                  inference_method=None, neighborhood=4):
@@ -44,13 +78,47 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
 class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
     """Latent variable CRF with directional 2d grid graph.
 
-    Multiple inheritance weirdness....
-    All features / potentials are the same as in the DirectionalGridCRF,
-    so use these.
+    This is also called "hidden dynamics CRF".
+    For each output variable there is an additional variable which
+    can encode additional states and interactions.
 
-    Things that have to do with y or h need to call the
-    LatentGridCRF function - that simply works because the feature are right.
+    The input is the same as for GridCRF, directional behavior as
+    in DirectionalGridCRF.
+
+    Parameters
+    ----------
+    n_labels : int or None, default=None
+        Number of states of output variables.
+        Inferred from the data if None.
+
+    n_featues : int or None (default=None).
+        Number of input features per input variable.
+        Inferred from the data if None.
+
+    n_states_per_label : int or list (default=2)
+        Number of latent states associated with each observable state.
+        Can be either an integer, which means the same number
+        of hidden states will be used for all observable states, or a list
+        of integers of length ``n_labels``.
+
+    inference_method : string, default="ad3"
+        Function to call to do inference and loss-augmented inference.
+        Possible values are:
+
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+            - 'lp' for Linear Programming relaxation using cvxopt.
+            - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
+
     """
+    #Multiple inheritance weirdness....
+    #All features / potentials are the same as in the DirectionalGridCRF,
+    #so use these.
+
+    #Things that have to do with y or h need to call the
+    #LatentGridCRF function - that simply works because the feature are right.
     def __init__(self, n_labels=None, n_features=None, n_states_per_label=2,
                  inference_method=None, neighborhood=4):
         self.neighborhood = neighborhood

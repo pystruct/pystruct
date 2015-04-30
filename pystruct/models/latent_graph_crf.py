@@ -67,12 +67,13 @@ class LatentGraphCRF(GraphCRF):
 
     Parameters
     ----------
-    n_labels : int
+    n_labels : int or None, default=None
         Number of states of output variables.
+        Inferred from the data if None.
 
     n_featues : int or None (default=None).
         Number of input features per input variable.
-        ``None`` means it is equal to ``n_labels``.
+        ``None`` means it is inferred from data.
 
     n_states_per_label : int or list (default=2)
         Number of latent states associated with each observable state.
