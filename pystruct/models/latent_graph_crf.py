@@ -124,7 +124,7 @@ class LatentGraphCRF(GraphCRF):
         GraphCRF._set_size_joint_feature(self)
 
     def initialize(self, X, Y):
-        n_features = X[0][0].shape[1]
+        n_features = self._get_features(X[0]).shape[-1]
         if self.n_features is None:
             self.n_features = n_features
         elif self.n_features != n_features:

@@ -1,8 +1,6 @@
-import numpy as np
 
 from . import GridCRF, DirectionalGridCRF
-from .latent_graph_crf import kmeans_init, LatentGraphCRF
-from ..utils import make_grid_edges
+from .latent_graph_crf import LatentGraphCRF
 
 
 class LatentGridCRF(GridCRF, LatentGraphCRF):
@@ -23,14 +21,8 @@ class LatentGridCRF(GridCRF, LatentGraphCRF):
         LatentGraphCRF.initialize(self, X, Y)
 
     def init_latent(self, X, Y):
-        # treat all edges the same
-        edges = [[make_grid_edges(x, neighborhood=self.neighborhood,
-                                  return_lists=False)] for x in X]
-        H = kmeans_init(X.reshape(X.shape[0], -1, self.n_features),
-                        Y.reshape(Y.shape[0], -1), edges,
-                        n_labels=self.n_labels,
-                        n_states_per_label=self.n_states_per_label)
-        return np.array(H).reshape(Y.shape)
+        H = LatentGraphCRF.init_latent(self, X, Y)
+        return [h.reshape(y.shape) for h, y in zip(H, Y)]
 
     def loss_augmented_inference(self, x, h, w, relaxed=False,
                                  return_energy=False):
@@ -74,16 +66,6 @@ class LatentDirectionalGridCRF(DirectionalGridCRF, LatentGridCRF):
 
     def initialize(self, X, Y):
         LatentGridCRF.initialize(self, X, Y)
-
-    def init_latent(self, X, Y):
-        edges = [make_grid_edges(x, neighborhood=self.neighborhood,
-                                 return_lists=True) for x in X]
-        H = kmeans_init(X.reshape(X.shape[0], -1, self.n_features),
-                        Y.reshape(Y.shape[0], -1), edges,
-                        n_labels=self.n_labels,
-                        n_states_per_label=self.n_states_per_label,
-                        symmetric=False)
-        return np.array(H).reshape(Y.shape)
 
     def loss_augmented_inference(self, x, h, w, relaxed=False):
         h = LatentGridCRF.loss_augmented_inference(self, x, h, w,
