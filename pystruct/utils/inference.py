@@ -136,7 +136,7 @@ def objective_primal(model, w, X, Y, C, variant='n_slack', parallel=map):
     objective = 0
     constraints = parallel(find_constraint_map,
             ((model, x, y, w) for x, y in zip(X, Y)))
-    slacks = zip(*constraints)[2]
+    slacks = list(zip(*constraints))[2]
 
     if variant == 'n_slack':
         slacks = np.maximum(slacks, 0)
