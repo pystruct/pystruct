@@ -52,8 +52,9 @@ def kmeans_init(X, Y, all_edges, n_labels, n_states_per_label,
         km.fit(f)
         for feats_sample, y, h in zip(all_feats, Y, H):
             indicator_sample = y.ravel() == label
-            pred = km.predict(feats_sample[indicator_sample]).astype(np.int)
-            h.ravel()[indicator_sample] = pred + label_indices[label]
+            if np.any(indicator_sample):
+                pred = km.predict(feats_sample[indicator_sample]).astype(np.int)
+                h.ravel()[indicator_sample] = pred + label_indices[label]
     return H
 
 

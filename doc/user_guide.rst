@@ -1,5 +1,5 @@
 
-.. currentmodule:: pystruct.models
+.. currentmodule:: pystruct
 
 .. _user_guide:
 
@@ -87,7 +87,7 @@ We split the data into training and test set::
   >>> X_train, X_test, y_train, y_test = train_test_split(
   ...     iris.data, iris.target, test_size=0.4, random_state=0)
 
-The Crammer-Singer model implemented in :class:`MultiClassClf`.
+The Crammer-Singer model is implemented in :class:`models.MultiClassClf`.
 As this is a simple multi-class classification task, we can pass in training data 
 as numpy arrays of shape ``(n_samples, n_features)`` and training labels as
 numpy array of shape (n_samples,) with classes from 0 to 2.
@@ -159,7 +159,7 @@ We could try to model all possible combinations, which would result in a 2 ** 6
 but it would prevent us from predicting combinations that don't appear in the training set.
 Even if a combination did appear in the training set, the numer of samples in each class would be very small.
 A compromise between modeling all correlations and modelling no correlations is modeling only pairwise correlations,
-which is the approach implemented in :class:`MultiLabelClf`.
+which is the approach implemented in :class:`models.MultiLabelClf`.
 
 The input to this model is similar to the :ref:`multi_class_svm`, with the training data ``X_train`` simple
 a numpy array of shape ``(n_samples, n_features)`` and the training labels a binary indicator matrix
@@ -174,7 +174,7 @@ of shape ``(n_samples, n_classes)``::
   >>> y_train.shape
   (1211, 6)
 
-We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`MultiLabelClf` model::
+We use the :class:`learners.NSlackSSVM` learner, passing it the :class:`models.MultiLabelClf` model::
 
   >>> from pystruct.learners import NSlackSSVM
   >>> from pystruct.models import MultiLabelClf
@@ -238,7 +238,7 @@ nodes are homogeneous, that is they all have the same meaning. That means that
 each node has the same number of classes, and these classes mean the same
 thing. In practice that means that weights are shared across all nodes and
 edges, and the model adapts via features.
-This is in contrast to the :class:`MultiLabelClf`, which builds a binary graph
+This is in contrast to the :class:`models.MultiLabelClf`, which builds a binary graph
 were nodes mean different things (each node represents a different class), so
 they do not share weights.
 
@@ -254,9 +254,10 @@ they do not share weights.
 ChainCRF
 ----------
 One of the most common use-cases for structured prediction is chain-structured
-outputs. These occur naturaly in sequence labeling tasks, such as
-Part-of-Speech tagging or named entity recognition in natural language
-processing, or segmentation and phoneme recognition in speech processing.
+outputs, implemented in :class:`models.ChainCRF`. These occur naturaly in
+sequence labeling tasks, such as Part-of-Speech tagging or named entity
+recognition in natural language processing, or segmentation and phoneme
+recognition in speech processing.
 
 As an example dataset, we will use the toy OCR dataset letters.  In this
 dataset, each sample is a handwritten word, segmented into letters.  This
@@ -266,8 +267,8 @@ letters.
 
 Each letter is a node in our chain, and neighboring letters are connected with
 an edge. The length of the chain varies with the number of letters in the
-word. As in all CRF-like models, the nodes all have the same meaning and share
-parameters.
+word. As in all CRF-like models, the nodes in :class:`models.ChainCRF` all have
+the same meaning and share parameters.
 
 The letters dataset comes with prespecified folds, we take one fold to be the
 training set, and the rest to be the test set, as in `Max-Margin Markov
@@ -304,8 +305,8 @@ the order of the nodes in the chain.
 
 The default inference method is max-product message passing on the chain (aka
 viterbi), which is always exact and efficientl. We use the
-:class:`FrankWolfeSSVM`, which is a very efficient learner when inference is
-fast::
+:class:`learners.FrankWolfeSSVM`, which is a very efficient learner when
+inference is fast::
 
     >>> from pystruct.models import ChainCRF
     >>> from pystruct.learners import FrankWolfeSSVM
@@ -333,8 +334,8 @@ The pairwise potentials are identical over the whole chain and given simply by
 the weights:
 
 In principle it is possible to also use feature in the pairwise potentials.
-This is not implemented in the ChainCRF, but can be done using
-:class:`EdgeFeatureGraphCRF`.
+This is not implemented in the :class:`models.ChainCRF`, but can be done using
+:ref:`edge_feature_graph_crf`.
 
 .. note::
 
@@ -348,19 +349,19 @@ This is not implemented in the ChainCRF, but can be done using
 
 GraphCRF
 ---------
-The :class:`GraphCRF` model is a generalization of the :ref:`chain_crf` to
+The :class:`models.GraphCRF` model is a generalization of the :ref:`chain_crf` to
 arbitray graphs.  While in the chain model, the direction of the edge is
 usually important, for many graphs, the direction of the edge has no semantic
 meaning. Therefore, by default, the pairwise interaction matrix of the
-:class:`GraphCRF` is forced to be symmetric.
+:class:`models.GraphCRF` is forced to be symmetric.
 
-Each training sample for the :class:`GraphCRF` is a tuple ``(features,
+Each training sample for the :class:`models.GraphCRF` is a tuple ``(features,
 edges)``, where ``features`` is a numpy array of node-features (of shape
 ``(n_nodes, n_features)``), and ``edges`` is a array of edges between nodes, of
 shape ``(n_edges, 2)``.  Each row of the edge array are the indices of the two
 nodes connected by the edge, starting from zero.
 
-To reproduce the ``ChainCRF`` model above with ``GraphCRF``, we can simply
+To reproduce the :class:`models.ChainCRF` model above with :class:`models.GraphCRF`, we can simply
 generate the indices of a chain::
 
     >>> features, y, folds = letters['data'], letters['labels'], letters['folds']
@@ -395,7 +396,7 @@ For the whole training dataset::
        [0, 0, 1, ..., 0, 1, 1]], dtype=uint8), array([[  0,   1,   2, ..., 700, 701, 702],
        [  1,   2,   3, ..., 701, 702, 703]]))
 
-Now we can fit a (directed) :class:`GraphCRF` on this data::
+Now we can fit a (directed) :class:`models.GraphCRF` on this data::
     
     >>> from pystruct.models import GraphCRF
     >>> from pystruct.learners import FrankWolfeSSVM
@@ -419,6 +420,8 @@ as a shared linear function of the features, and pairwise potentials the same
 for all nodes.
 
 
+.. _edge_feature_graph_crf:
+
 EdgeFeatureGraphCRF
 -------------------
 
@@ -427,7 +430,7 @@ models as a special case.  This model assumes again that the parameters of the
 potentials are shared over all nodes and over all edges, but the pairwise
 potentials are now also computed as a linear function of the features.
 
-Each training sample for :class:`EdgeFeatureGraphCRF` is a tuple
+Each training sample for :class:`models.EdgeFeatureGraphCRF` is a tuple
 ``(node_features, edges, edge_features)``, where ``node_features`` is a numpy
 array of node-features (of shape ``(n_nodes, n_node_features)``), ``edges`` is
 a array of edges between nodes, of shape ``(n_edges, 2)`` as in
@@ -453,16 +456,16 @@ are not observed during training. These are often modelling a "hidden cause" of
 the data, which might make it easier to learn about the actual observations.
 
 Latent variable models are usually much harder to fit than fully observed
-models, and require fitting using either :class:`LatentSSVM`, or
-:class:`LatentSubgradientSSVM`.  :class:`LatentSSVM`  alternates between
+models, and require fitting using either :class:`learners.LatentSSVM`, or
+:class:`learners.LatentSubgradientSSVM`.  :class:`learners.LatentSSVM`  alternates between
 inferring the unobserved variables with fitting any of the other SSVM models
-(such as :class:`OneSlackSSVM`). Each iteration of this alternation is as
+(such as :class:`learners.OneSlackSSVM`). Each iteration of this alternation is as
 expensive as building a fully observed model, and good initialization can be
 very important.  This method was published in `Learning Structural SVMs with
 Latent Variables
 <http://www.cs.cornell.edu/~cnyu/papers/icml09_latentssvm.pdf>`_.
 
-The :class:`LatentSubgradientSSVM` approach tries to reestimate the latent
+The :class:`learners.LatentSubgradientSSVM` approach tries to reestimate the latent
 variables for each batch, and corresponds to a subgradient descent on the
 non-convex objective involving the maximization over hidden variables.  I am
 unaware of any literature on this approach.
@@ -470,7 +473,7 @@ unaware of any literature on this approach.
 
 LatentGraphCRF aka Hidden Dynamics CRF
 ----------------------------------------
-:class:`LatentGraphCRF` implements the "Hidden Dynamics CRF" approach.
+:class:`models.LatentGraphCRF` implements the "Hidden Dynamics CRF" approach.
 Here, each output state is split into several hidden sub-states, which allows for
 more complex interactions.
 
@@ -491,7 +494,7 @@ A complex action like a juming jack is made up of several distinct sub-actions,
 and there is a distinct order in which the sub-actions are performed.
 The latent dynamic CRF can learn this order.
 
-See :ref:`example_plot_latent_crf` for an example on a 2d grid.
+See :ref:`example_plot_latent_crf.py` for an example on a 2d grid.
 
 How to Write Your Own Model
 ============================

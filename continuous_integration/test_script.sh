@@ -17,9 +17,9 @@ python -c "from pystruct.inference import get_installed; print('pystruct inferen
 # Do not use "make test" or "make test-coverage" as they enable verbose mode
 # which renders travis output too slow to display in a browser.
 if [[ "$COVERAGE" == "true" ]]; then
-    nosetests -s --with-coverage pystruct
+    nosetests -sv --with-coverage pystruct
 else
-    nosetests -s pystruct
+    nosetests -sv pystruct
 fi
 
 make test-doc
