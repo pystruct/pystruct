@@ -106,9 +106,8 @@ The learner has the same interface as a scikit-learn estimator::
         inactive_threshold=1e-05, inactive_window=50, logger=None,
         max_iter=100, memmapping_temp_folder=None,
         model=MultiClassClf(n_features=4, n_classes=3), n_jobs=1,
-        negativity_constraint=None, show_loss_every=0, switch_to=None, 
+        negativity_constraint=None, show_loss_every=0, switch_to=None,
         tol=0.001, use_memmapping_pool=1, use_threads=False, verbose=0)
-
   >>> clf.predict(X_test)
   array([2, 1, 0, 2, 0, 2, 0, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 0, 0, 2, 1, 0,
          0, 2, 0, 0, 1, 1, 0, 2, 2, 0, 2, 2, 1, 0, 2, 1, 1, 2, 0, 2, 0, 0, 1,
@@ -314,12 +313,12 @@ inference is fast::
     >>> ssvm = FrankWolfeSSVM(model=model, C=.1, max_iter=10)
     >>> ssvm.fit(X_train, y_train) # doctest: +NORMALIZE_WHITESPACE
     FrankWolfeSSVM(C=0.1, batch_mode=False, check_dual_every=10,
-                do_averaging=True, line_search=True, logger=None, max_iter=10,
-                memmapping_temp_folder=None,
-                model=ChainCRF(n_states: 26, inference_method: max-product),
-                n_jobs=1, random_state=None, sample_method='perm',
-                show_loss_every=0, tol=0.001, use_memmapping_pool=1,
-                use_threads=False, verbose=0)
+            do_averaging=True, line_search=True, logger=None, max_iter=10,
+            memmapping_temp_folder=None,
+            model=ChainCRF(n_states: 26, inference_method: max-product),
+            n_jobs=1, random_state=None, sample_method='perm',
+            show_loss_every=0, tol=0.001, use_memmapping_pool=1,
+            use_threads=False, verbose=0)
     >>> ssvm.score(X_test, y_test) # doctest: +ELLIPSIS
     0.78...
 
@@ -404,12 +403,12 @@ Now we can fit a (directed) :class:`models.GraphCRF` on this data::
     >>> ssvm = FrankWolfeSSVM(model=model, C=.1, max_iter=10)
     >>> ssvm.fit(X_train, y_train) # doctest: +NORMALIZE_WHITESPACE
     FrankWolfeSSVM(C=0.1, batch_mode=False, check_dual_every=10,
-                do_averaging=True, line_search=True, logger=None, max_iter=10,
-                memmapping_temp_folder=None,
-                model=GraphCRF(n_states: 26, inference_method: max-product),
-                n_jobs=1, random_state=None, sample_method='perm',
-                show_loss_every=0, tol=0.001, memmapping_temp_folder=None,
-                use_threads=False, verbose=0)
+            do_averaging=True, line_search=True, logger=None, max_iter=10,
+            memmapping_temp_folder=None,
+            model=GraphCRF(n_states: 26, inference_method: max-product),
+            n_jobs=1, random_state=None, sample_method='perm',
+            show_loss_every=0, tol=0.001, use_memmapping_pool=1,
+            use_threads=False, verbose=0)
 
 
 
