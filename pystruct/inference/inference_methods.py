@@ -30,7 +30,7 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
