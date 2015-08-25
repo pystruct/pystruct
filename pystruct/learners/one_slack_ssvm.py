@@ -127,10 +127,10 @@ class OneSlackSSVM(BaseSSVM):
     [1] Thorsten Joachims, and Thomas Finley and Chun-Nam John Yu:
         Cutting-plane training of structural SVMs, JMLR 2009
 
-    [2] Andreas Müller: Methods for Learning Structured Prediction in
+    [2] Andreas Mueller: Methods for Learning Structured Prediction in
         Semantic Segmentation of Natural Images, PhD Thesis.  2014
 
-    [3] Andreas Müller and Sven Behnke: Learning a Loopy Model For Semantic
+    [3] Andreas Mueller and Sven Behnke: Learning a Loopy Model For Semantic
         Segmentation Exactly, VISAPP 2014
 
     """
