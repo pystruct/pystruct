@@ -80,10 +80,11 @@ class OneSlackSSVM(BaseSSVM):
         exhausted. Using inference_cache > 0 is only advisable if computation
         time is dominated by inference.
 
-    cache_tol : float, default=None
+    cache_tol : float, None or 'auto' default='auto'
         Tolerance when to reject a constraint from cache (and do inference).
         If None, ``tol`` will be used. Higher values might lead to faster
-        learning.
+        learning. 'auto' uses a heuristic to determine the cache tolerance
+        based on the duality gap, as described in [3].
 
     inactive_threshold : float, default=1e-5
         Threshold for dual variable of a constraint to be considered inactive.
@@ -123,8 +124,14 @@ class OneSlackSSVM(BaseSSVM):
 
     References
     ----------
-    * Joachims, Thorsten and Finley, Thomas and Yu, Chun-Nam John:
+    [1] Thorsten Joachims, and Thomas Finley and Chun-Nam John Yu:
         Cutting-plane training of structural SVMs, JMLR 2009
+
+    [2] Andreas Müller: Methods for Learning Structured Prediction in
+        Semantic Segmentation of Natural Images, PhD Thesis.  2014
+
+    [3] Andreas Müller and Sven Behnke: Learning a Loopy Model For Semantic
+        Segmentation Exactly, VISAPP 2014
 
     """
 
