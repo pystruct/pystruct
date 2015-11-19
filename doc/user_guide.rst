@@ -381,7 +381,7 @@ For a single word made out of 9 characters::
 For the whole training dataset::
 
     >>> f_t = features_train
-    >>> X_train = [(features_i, np.vstack([np.arange(f_t.shape[0] - 1), np.arange(1, f_t.shape[0])]))
+    >>> X_train = [(features_i, np.vstack([np.arange(features_i.shape[0] - 1), np.arange(1, features_i.shape[0])]))
     ...            for features_i in f_t]
     >>> X_train[0] # doctest: +NORMALIZE_WHITESPACE
     (array([[0, 0, 0, ..., 0, 0, 0],
@@ -390,8 +390,8 @@ For the whole training dataset::
        ..., 
        [0, 0, 0, ..., 0, 0, 0],
        [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 1, ..., 0, 1, 1]], dtype=uint8), array([[  0,   1,   2, ..., 700, 701, 702],
-       [  1,   2,   3, ..., 701, 702, 703]]))
+       [0, 0, 1, ..., 0, 1, 1]], dtype=uint8), array([[0, 1, 2, 3, 4, 5, 6, 7],
+       [1, 2, 3, 4, 5, 6, 7, 8]]))
 
 Now we can fit a (directed) :class:`models.GraphCRF` on this data::
     
