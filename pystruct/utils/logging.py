@@ -50,7 +50,7 @@ class SaveLogger(object):
                 file_name = file_name % iteration
             if self.verbose > 0:
                 print("saving %s to file %s" % (learner, file_name))
-                self.save(learner, file_name)
+            self.save(learner, file_name)
 
     def save(self, learner, file_name):
         """Save the model to location specified in file_name."""
