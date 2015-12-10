@@ -84,6 +84,7 @@ for ind, axes_row in zip(selected, axes):
         axes_row[ii].set_visible(False)
 
 plt.matshow(ssvm.w[26 * 8 * 16:].reshape(26, 26))
+plt.colorbar()
 plt.title("Transition parameters of the chain CRF.")
 plt.xticks(np.arange(25), abc)
 plt.yticks(np.arange(25), abc)
