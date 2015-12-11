@@ -6,11 +6,10 @@
 from time import time
 import numpy as np
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices
 
 from .subgradient_ssvm import SubgradientSSVM
-from ..utils import find_constraint_latent
+from ..utils import find_constraint_latent, find_constraint_latent_map
 
 
 class SubgradientLatentSSVM(SubgradientSSVM):
@@ -184,11 +183,10 @@ class SubgradientLatentSSVM(SubgradientSSVM):
                         X_b = X[batch]
                         Y_b = Y[batch]
                         verbose = self.verbose - 1
-                        candidate_constraints = Parallel(
-                            n_jobs=self.n_jobs,
-                            verbose=verbose)(delayed(find_constraint_latent)(
-                                self.model, x, y, w)
-                                for x, y in zip(X_b, Y_b))
+                        candidate_constraints = self.parallel(
+                                find_constraint_latent_map,
+                                ((self.model, x, y, w)
+                                for x, y in zip(X_b, Y_b)))
                         djoint_feature = np.zeros(self.model.size_joint_feature)
                         for x, y, constraint in zip(X_b, Y_b,
                                                     candidate_constraints):
@@ -272,12 +270,9 @@ class SubgradientLatentSSVM(SubgradientSSVM):
         return 1. - np.sum(losses) / float(np.sum(max_losses))
 
     def _objective(self, X, Y):
-        constraints = Parallel(
-            n_jobs=self.n_jobs,
-            verbose=self.verbose - 1)(delayed(find_constraint_latent)(
-                self.model, x, y, self.w)
-                for x, y in zip(X, Y))
-        slacks = list(zip(*constraints))[2]
+        constraints = self.parallel(find_constraint_latent_map,
+                ((self.model, x, y, self.w) for x, y in zip(X, Y)))
+        slacks = zip(*constraints)[2]
         slacks = np.maximum(slacks, 0)
 
         objective = np.sum(slacks) * self.C + np.sum(self.w ** 2) / 2.

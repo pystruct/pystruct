@@ -1,7 +1,9 @@
 import itertools
-from sklearn.externals.joblib import Parallel, delayed
+import sys
 
 import numpy as np
+
+from .parallel import handle_exceptions
 
 
 def unwrap_pairwise(y):
@@ -108,13 +110,32 @@ def loss_augmented_inference(model, x, y, w, relaxed=True):
     return model.loss_augmented_inference(x, y, w, relaxed=relaxed)
 
 
+## starmap wrappers for calls to pool
+@handle_exceptions
+def find_constraint_map(args):
+    return find_constraint(* args)
+
+
+@handle_exceptions
+def find_constraint_latent_map(args):
+    return find_constraint_latent(* args)
+
+
+@handle_exceptions
+def inference_map(args):
+    return inference(* args)
+
+
+@handle_exceptions
+def loss_augmented_inference_map(args):
+    return loss_augmented_inference(* args)
+
+
 # easy debugging
-def objective_primal(model, w, X, Y, C, variant='n_slack', n_jobs=1):
+def objective_primal(model, w, X, Y, C, variant='n_slack', parallel=map):
     objective = 0
-    constraints = Parallel(
-        n_jobs=n_jobs)(delayed(find_constraint)(
-            model, x, y, w)
-            for x, y in zip(X, Y))
+    constraints = parallel(find_constraint_map,
+            ((model, x, y, w) for x, y in zip(X, Y)))
     slacks = list(zip(*constraints))[2]
 
     if variant == 'n_slack':
@@ -157,3 +178,4 @@ def exhaustive_inference(model, x, w):
             best_energy = energy
             best_y = y_hat
     return best_y
+

@@ -12,11 +12,11 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-from sklearn.externals.joblib import Parallel, delayed
 from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
-from ..utils import unwrap_pairwise, find_constraint
+from ..utils import (unwrap_pairwise, find_constraint,
+        find_constraint_map)
 
 
 class NSlackSSVM(BaseSSVM):
@@ -123,11 +123,15 @@ class NSlackSSVM(BaseSSVM):
                  verbose=0, negativity_constraint=None, n_jobs=1,
                  break_on_bad=False, show_loss_every=0, batch_size=100,
                  tol=1e-3, inactive_threshold=1e-5,
-                 inactive_window=50, logger=None, switch_to=None):
+                 inactive_window=50, logger=None, switch_to=None,
+                 use_threads=False, use_memmapping_pool=1,
+                 memmapping_temp_folder=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
-                          logger=logger)
+                          logger=logger, use_threads=use_threads, 
+                          use_memmapping_pool=use_memmapping_pool,
+                          memmapping_temp_folder=memmapping_temp_folder)
 
         self.negativity_constraint = negativity_constraint
         self.check_constraints = check_constraints
@@ -307,10 +311,8 @@ class NSlackSSVM(BaseSSVM):
                     X_b = X[batch]
                     Y_b = Y[batch]
                     indices_b = indices[batch]
-                    candidate_constraints = Parallel(
-                        n_jobs=self.n_jobs, verbose=verbose)(
-                            delayed(find_constraint)(self.model, x, y, self.w)
-                            for x, y in zip(X_b, Y_b))
+                    candidate_constraints = self.parallel(find_constraint_map,
+                            ((self.model, x, y, self.w) for x, y in zip(X_b, Y_b)))
 
                     # for each batch, gather new constraints
                     for i, x, y, constraint in zip(indices_b, X_b, Y_b,
