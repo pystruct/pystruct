@@ -11,7 +11,7 @@ class MultiLabelClf(CRF):
     binary indicator per class.
 
     This class supports different models via the "edges" parameter.
-    Giving no eges yields independent classifiers for each class. Giving
+    Giving no edges yields independent classifiers for each class. Giving
     "full" yields a fully connected graph over the labels, while "tree"
     yields the best tree-shaped graph (using the Chow-Liu algorithm).
     It is also possible to specify a custom connectivity structure.
