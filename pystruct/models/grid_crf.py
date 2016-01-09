@@ -17,8 +17,9 @@ class GridCRF(GraphCRF):
 
     Parameters
     ----------
-    n_states : int, default=2
+    n_states : int, or None, default=None
         Number of states for all variables.
+        Inferred from the data if None.
 
     inference_method : string, default="ad3"
         Function to call do do inference and loss-augmented inference.
@@ -45,7 +46,10 @@ class GridCRF(GraphCRF):
         return make_grid_edges(x, neighborhood=self.neighborhood)
 
     def _get_features(self, x):
-        return x.reshape(-1, self.n_features)
+        features = x.reshape(-1, x.shape[2])
+        if self.n_features is not None and features.shape[1] != self.n_features:
+            raise ValueError("Something went wrong")
+        return features
 
     def _reshape_y(self, y, shape_x, return_energy):
         if return_energy:
@@ -97,6 +101,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
     ----------
     n_states : int, default=None
         Number of states for all variables.
+        Inferred from the data if None.
 
     inference_method : string, default=None
         Function to call do do inference and loss-augmented inference.
@@ -123,8 +128,9 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
 
     def _set_size_joint_feature(self):
         if self.n_features is not None and self.n_states is not None:
-            self.size_joint_feature = (self.n_states * self.n_features
-                             + self.n_edge_features * self.n_states ** 2)
+            self.size_joint_feature = (
+                self.n_states * self.n_features + self.n_edge_features *
+                self.n_states ** 2)
 
     def _check_size_x(self, x):
         GridCRF._check_size_x(self, x)

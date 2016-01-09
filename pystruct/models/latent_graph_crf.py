@@ -67,12 +67,13 @@ class LatentGraphCRF(GraphCRF):
 
     Parameters
     ----------
-    n_labels : int
+    n_labels : int or None, default=None
         Number of states of output variables.
+        Inferred from the data if None.
 
     n_featues : int or None (default=None).
         Number of input features per input variable.
-        ``None`` means it is equal to ``n_labels``.
+        ``None`` means it is inferred from data.
 
     n_states_per_label : int or list (default=2)
         Number of latent states associated with each observable state.
@@ -124,7 +125,7 @@ class LatentGraphCRF(GraphCRF):
         GraphCRF._set_size_joint_feature(self)
 
     def initialize(self, X, Y):
-        n_features = X[0][0].shape[1]
+        n_features = self._get_features(X[0]).shape[-1]
         if self.n_features is None:
             self.n_features = n_features
         elif self.n_features != n_features:
