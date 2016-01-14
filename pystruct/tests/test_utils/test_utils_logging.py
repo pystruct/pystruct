@@ -12,7 +12,8 @@ from pystruct.inference import get_installed
 from nose.tools import assert_less, assert_almost_equal
 
 # we always try to get the fastest installed inference method
-inference_method = get_installed(["qpbo", "ad3", "lp"])[0]
+inference_method = get_installed(["qpbo", "ad3", "max-product", "lp"])[0]
+
 
 def test_logging():
     iris = load_iris()
@@ -24,7 +25,7 @@ def test_logging():
     X_train, X_test, y_train, y_test = train_test_split(X_, Y, random_state=1)
     _, file_name = mkstemp()
 
-    pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
+    pbl = GraphCRF(n_features=4, n_states=3, inference_method=inference_method)
     logger = SaveLogger(file_name)
     svm = NSlackSSVM(pbl, C=100, n_jobs=1, logger=logger)
     svm.fit(X_train, y_train)

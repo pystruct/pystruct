@@ -136,10 +136,9 @@ def test_blocks_crf_directional():
                                -4, -4,  0,  0,
                                -4, -4,  0,  0])
     w_directional = np.hstack([unary_weights.ravel(), pw_directional])
-    crf = LatentGridCRF(n_states_per_label=2, inference_method='lp')
+    crf = LatentGridCRF(n_states_per_label=2)
     crf.initialize(X, Y)
-    directional_crf = LatentDirectionalGridCRF(n_states_per_label=2,
-                                               inference_method='lp')
+    directional_crf = LatentDirectionalGridCRF(n_states_per_label=2)
     directional_crf.initialize(X, Y)
     h_hat = crf.inference(x, w)
     h_hat_d = directional_crf.inference(x, w_directional)
@@ -181,8 +180,7 @@ def test_latent_consistency_graph():
 
 
 def test_loss_augmented_inference_energy_graph():
-    crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2,
-                         inference_method='lp')
+    crf = LatentGraphCRF(n_labels=2, n_features=2, n_states_per_label=2)
     for i in range(10):
         w = np.random.normal(size=18)
         y = np.random.randint(2, size=(3))

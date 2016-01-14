@@ -66,7 +66,8 @@ class GraphCRF(CRF):
         Possible values are:
 
             - 'max-product' for max-product belief propagation.
-                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+                Recommended for chains an trees. Loopy belief propagation in
+                case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
             - 'qpbo' for QPBO + alpha expansion.

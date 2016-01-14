@@ -1,4 +1,23 @@
+sudo: false
 language: python
+addons:
+  apt:
+    sources:
+    - boost-latest
+    packages:
+    - python-scipy
+    - python-nose
+    - python-pip
+    - cython
+    - cmake
+    - time
+    - libatlas-dev
+    - libatlas3gf-base
+    - liblapack-dev
+    - liblapack3gf
+    - libhdf5-serial-dev
+    - libboost1.55-dev
+    - libboost-python1.55-dev
 virtualenv:
   system_site_packages: true
 env:
@@ -11,10 +30,10 @@ env:
       NUMPY_VERSION="1.6.2" SCIPY_VERSION="0.11.0"
     ## This environment tests the newest supported anaconda env
     - DISTRIB="conda" PYTHON_VERSION="2.7"
-      NUMPY_VERSION="1.8.1" SCIPY_VERSION="0.14.0"
+      NUMPY_VERSION="1.10.1" SCIPY_VERSION="0.16.0"
     # python3 only on ubuntu because of cvxopt
     - DISTRIB="conda" PYTHON_VERSION="3.4" OPENGM="false"
-      NUMPY_VERSION="1.8.1" SCIPY_VERSION="0.14.0"
+      NUMPY_VERSION="1.10.1" SCIPY_VERSION="0.16.0"
 install: source continuous_integration/install.sh
 script: bash continuous_integration/test_script.sh
 after_success:

@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.learners import NSlackSSVM
@@ -51,5 +51,5 @@ def test_multinomial_blocks_directional_anti_symmetric():
     pairwise_params = clf.w[-9 * 2:].reshape(2, 3, 3)
     sym = pairwise_params[0]
     antisym = pairwise_params[1]
-    assert_array_equal(sym, sym.T)
-    assert_array_equal(antisym, -antisym.T)
+    assert_array_almost_equal(sym, sym.T)
+    assert_array_almost_equal(antisym, -antisym.T)

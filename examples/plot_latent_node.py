@@ -54,10 +54,10 @@ svm = NSlackSSVM(model=crf, max_iter=200, C=1, n_jobs=1)
 
 G = [make_grid_edges(x) for x in X]
 
-asdf = zip(X_flat, G)
-svm.fit(asdf, Y_flat)
-plot_boxes(svm.predict(asdf), title="Non-latent SSVM predictions")
-print("Training score binary grid CRF: %f" % svm.score(asdf, Y_flat))
+X_grid_edges = list(zip(X_flat, G))
+svm.fit(X_grid_edges, Y_flat)
+plot_boxes(svm.predict(X_grid_edges), title="Non-latent SSVM predictions")
+print("Training score binary grid CRF: %f" % svm.score(X_grid_edges, Y_flat))
 
 # using one latent variable for each 2x2 rectangle
 latent_crf = LatentNodeCRF(n_labels=2, n_features=1, n_hidden_states=2,
@@ -83,7 +83,7 @@ H_init = [np.hstack([y.ravel(), np.random.randint(2, 4, size=2 * 2)])
 plot_boxes(H_init, title="Top: Random initial hidden states. Bottom: Ground"
            "truth labeling.")
 
-X_ = zip(X_flat, G, [2 * 2 for x in X_flat])
+X_ = list(zip(X_flat, G, [2 * 2 for x in X_flat]))
 
 latent_svm.fit(X_, Y_flat, H_init)
 

@@ -88,9 +88,9 @@ class LatentNodeCRF(GraphCRF):
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
-
             - 'max-product' for max-product belief propagation.
-                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+                Recommended for chains an trees. Loopy belief propagation in
+                case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
             - 'qpbo' for QPBO + alpha expansion.
@@ -352,13 +352,17 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
     n_features : int, default=None
         Number of features per node. None means n_states.
 
-    inference_method : string, default="lp"
+    inference_method : string, default="None"
         Function to call to do inference and loss-augmented inference.
         Possible values are:
 
-            - 'qpbo' for QPBO + alpha expansion.
+            - 'max-product' for max-product belief propagation.
+                Recommended for chains an trees. Loopy belief propagation in
+                case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
+            - 'qpbo' for QPBO + alpha expansion.
+            - 'ogm' for OpenGM inference algorithms.
 
     class_weight : None, or array-like
         Class weights. If an array-like is passed, it must have length
@@ -377,7 +381,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
 
     """
     def __init__(self, n_labels=2, n_features=None, n_edge_features=1,
-                 n_hidden_states=2, inference_method='lp', class_weight=None,
+                 n_hidden_states=2, inference_method=None, class_weight=None,
                  latent_node_features=False, symmetric_edge_features=None,
                  antisymmetric_edge_features=None):
 
@@ -596,12 +600,12 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
             n_nodes = y.size
             gx = np.ogrid[:n_nodes]
 
-            #make one hot encoding
+            # make one hot encoding
             unary_marginals = np.zeros((n_nodes, self.n_states), dtype=np.int)
             gx = np.ogrid[:n_nodes]
             unary_marginals[gx, y] = 1
 
-            ## pairwise
+            # pairwise
             pw = [np.outer(unary_marginals[edge[0]].T,
                            unary_marginals[edge[1]]).ravel()
                   for edge in edges]
