@@ -17,7 +17,7 @@ to make use of structured prediction algorithms.
 The design tries to stay as close as possible to the interface and conventions
 of `scikit-learn <http://scikit-learn.org/dev>`_.
 
-The current version is PyStruct 0.2.4 which you can install via pip:
+The current version is PyStruct 0.2.5 which you can install via pip:
 
     pip install pystruct
 

@@ -8,7 +8,7 @@ if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
 setup(name="pystruct",
-      version="0.2.4",
+      version="0.2.5",
       install_requires=["ad3"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
