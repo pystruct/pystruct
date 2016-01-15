@@ -11,7 +11,7 @@ class GridCRF(GraphCRF):
     This leads to n_classes parameters for unary potentials and
     n_classes * (n_classes + 1) / 2 parameters for edge potentials.
 
-    Unary evidence ``x`` is given as array of shape (width, height, n_states),
+    Unary evidence ``x`` is given as array of shape (width, height, n_features),
     labels ``y`` are given as array of shape (width, height). Grid sizes do not
     need to be constant over the dataset.
 
@@ -25,7 +25,8 @@ class GridCRF(GraphCRF):
         Possible values are:
 
             - 'max-product' for max-product belief propagation.
-                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+                Recommended for chains an trees. Loopy belief propagation in
+                case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
             - 'qpbo' for QPBO + alpha expansion.
@@ -89,7 +90,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
     (horizontal and vertical) or 4 for a 8 connected neighborhood (additionally
     two diagonals).
 
-    Unary evidence ``x`` is given as array of shape (width, height, n_states),
+    Unary evidence ``x`` is given as array of shape (width, height, n_features),
     labels ``y`` are given as array of shape (width, height). Grid sizes do not
     need to be constant over the dataset.
 
@@ -103,7 +104,8 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
         Possible values are:
 
             - 'max-product' for max-product belief propagation.
-                Recommended for chains an trees. Loopy belief propagatin in case of a general graph.
+                Recommended for chains an trees. Loopy belief propagation in
+                case of a general graph.
             - 'lp' for Linear Programming relaxation using cvxopt.
             - 'ad3' for AD3 dual decomposition.
             - 'qpbo' for QPBO + alpha expansion.
@@ -123,8 +125,9 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
 
     def _set_size_joint_feature(self):
         if self.n_features is not None and self.n_states is not None:
-            self.size_joint_feature = (self.n_states * self.n_features
-                             + self.n_edge_features * self.n_states ** 2)
+            self.size_joint_feature = (
+                self.n_states * self.n_features
+                + self.n_edge_features * self.n_states ** 2)
 
     def _check_size_x(self, x):
         GridCRF._check_size_x(self, x)
@@ -145,7 +148,7 @@ class DirectionalGridCRF(GridCRF, EdgeFeatureGraphCRF):
 
         Parameters
         ----------
-        x : ndarray, shape (width, height, n_states)
+        x : ndarray, shape (width, height, n_features)
             Unary evidence / input.
 
         y : ndarray or tuple

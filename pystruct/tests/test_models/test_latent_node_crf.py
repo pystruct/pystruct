@@ -130,7 +130,7 @@ def test_inference_trivial_features():
     # size 6 chain graph
     # first three and last three have a latent variable
     # last two features are for latent variables
-    features = np.array([-1, 1, -1, 1, -1, 1, 0, 0])
+    features = np.array([-1, 1, -1, 1, -1, 1, 0, 0], dtype=np.float)
     unary_parameters = np.array([-1, 1, 0, 0])
     pairwise_parameters = np.array([+0,
                                     +0, 0,

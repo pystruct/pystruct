@@ -109,11 +109,12 @@ def test_binary_blocks_one_slack_graph():
 
 
 def test_one_slack_constraint_caching():
-    #testing cutting plane ssvm on easy multinomial dataset
+    # testing cutting plane ssvm on easy multinomial dataset
     X, Y = generate_blocks_multinomial(n_samples=10, noise=0.5, seed=0,
                                        size_x=9)
     n_labels = len(np.unique(Y))
-    crf = GridCRF(n_states=n_labels, inference_method='lp')
+    exact_inference = get_installed([('ad3', {'branch_and_bound': True}), "lp"])[0]
+    crf = GridCRF(n_states=n_labels, inference_method=exact_inference)
     clf = OneSlackSSVM(model=crf, max_iter=150, C=1,
                        check_constraints=True, break_on_bad=True,
                        inference_cache=50, inactive_window=0)
@@ -121,13 +122,18 @@ def test_one_slack_constraint_caching():
     Y_pred = clf.predict(X)
     assert_array_equal(Y, Y_pred)
     assert_equal(len(clf.inference_cache_), len(X))
-    # there should be 11 constraints, which are less than the 94 iterations
+    # there should be 13 constraints, which are less than the 94 iterations
     # that are done
-    assert_equal(len(clf.inference_cache_[0]), 18)
     # check that we didn't change the behavior of how we construct the cache
     constraints_per_sample = [len(cache) for cache in clf.inference_cache_]
-    assert_equal(np.max(constraints_per_sample), 18)
-    assert_equal(np.min(constraints_per_sample), 18)
+    if exact_inference == "lp":
+        assert_equal(len(clf.inference_cache_[0]), 18)
+        assert_equal(np.max(constraints_per_sample), 18)
+        assert_equal(np.min(constraints_per_sample), 18)
+    else:
+        assert_equal(len(clf.inference_cache_[0]), 13)
+        assert_equal(np.max(constraints_per_sample), 20)
+        assert_equal(np.min(constraints_per_sample), 11)
 
 
 def test_one_slack_attractive_potentials():

@@ -30,7 +30,7 @@ def test_n_slack_svm_as_crf_pickling():
     X_train, X_test, y_train, y_test = train_test_split(X_, Y, random_state=1)
     _, file_name = mkstemp()
 
-    pbl = GraphCRF(n_features=4, n_states=3, inference_method='lp')
+    pbl = GraphCRF(n_features=4, n_states=3, inference_method=inference_method)
     logger = SaveLogger(file_name)
     svm = NSlackSSVM(pbl, C=100, n_jobs=1, logger=logger)
     svm.fit(X_train, y_train)

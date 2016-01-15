@@ -304,8 +304,6 @@ def generate_crosses_explicit(n_samples=5, noise=30, size=9, n_crosses=2):
     ix, iy, iz = np.ogrid[:X.shape[0], :X.shape[1], :X.shape[2]]
     X[ix, iy, iz, Y_flips] = 1
     X[ix, iy, iz, 2 * Y_flips] = 1
-    #Y = (Y != 0).astype(np.int)
-    #X = X[:, :, :, :2]
     return X, Y
 
 

@@ -15,18 +15,15 @@ export CXX=g++
 export PIP=pip
 
 # add cython repository
-sudo add-apt-repository ppa:cython-dev/master-ppa -y
-sudo apt-get update -qq
+#sudo add-apt-repository ppa:cython-dev/master-ppa -y
+#sudo apt-get update -qq
 
 if [[ "$OPENGM" == "true" ]]; then
-    sudo add-apt-repository ppa:ukplc-team/testing -y
-    sudo apt-get update -qq
-    sudo apt-get install libhdf5-serial-dev libboost1.49-dev libboost-python1.49-dev
     git clone https://github.com/opengm/opengm.git
     cd opengm
-    cmake . -DWITH_BOOST=TRUE -DWITH_HDF5=TRUE -DBUILD_PYTHON_WRAPPER=TRUE -DBUILD_EXAMPLES=FALSE -DBUILD_TESTING=FALSE
+    cmake . -DCMAKE_INSTALL_PREFIX=/home/travis/.local -DWITH_BOOST=TRUE -DWITH_HDF5=TRUE -DBUILD_PYTHON_WRAPPER=TRUE -DBUILD_EXAMPLES=FALSE -DBUILD_TESTING=FALSE
     make -j2 --quiet
-    sudo make install
+    make install
     cd ..
 fi
 
@@ -46,17 +43,8 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # Configure the conda environment and put it in the path using the
     # provided versions
     
-    if [[ "$PYTHON_VERSION" == "3.4" ]]; then
-        apt-cache search liblapack
-        sudo apt-get install build-essential python-dev python-setuptools \
-             python-numpy python-scipy libatlas-dev libatlas3gf-base liblapack-dev liblapack3gf
-        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn\
-            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
-    else
-        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
-            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
-    fi
-
+    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+        numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
 
     source activate testenv
 
@@ -71,7 +59,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
-    sudo apt-get install -qq python-scipy python-nose python-pip python-cvxopt cython
+    $PIP install --user cvxopt
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
@@ -79,7 +67,7 @@ if [[ "$COVERAGE" == "true" ]]; then
 fi
 
 # install our favorite inference packages 
-$PIP install pyqpbo ad3 scikit-learn cvxopt
+$PIP install pyqpbo ad3 scikit-learn
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
