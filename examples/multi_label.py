@@ -25,25 +25,10 @@ from scipy import sparse
 
 from sklearn.metrics import hamming_loss
 from sklearn.datasets import fetch_mldata
-from sklearn.metrics import mutual_info_score
-from scipy.sparse.csgraph import minimum_spanning_tree
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.models import MultiLabelClf
 from pystruct.datasets import load_scene
-
-
-def chow_liu_tree(y_):
-    # compute mutual information using sklearn
-    n_labels = y_.shape[1]
-    mi = np.zeros((n_labels, n_labels))
-    for i in range(n_labels):
-        for j in range(n_labels):
-            mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
-    mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
-    edges = np.vstack(mst.nonzero()).T
-    edges.sort(axis=1)
-    return edges
 
 
 dataset = "scene"
@@ -64,13 +49,9 @@ else:
     X_train, X_test = scene['X_train'], scene['X_test']
     y_train, y_test = scene['y_train'], scene['y_test']
 
-n_labels = y_train.shape[1]
-full = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
-tree = chow_liu_tree(y_train)
-
-full_model = MultiLabelClf(edges=full, inference_method='qpbo')
+full_model = MultiLabelClf(edges="full", inference_method='qpbo')
 independent_model = MultiLabelClf(inference_method='unary')
-tree_model = MultiLabelClf(edges=tree, inference_method="max-product")
+tree_model = MultiLabelClf(edges="tree", inference_method="max-product")
 
 full_ssvm = OneSlackSSVM(full_model, inference_cache=50, C=.1, tol=0.01)
 

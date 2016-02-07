@@ -90,3 +90,56 @@ def test_multilabel_fully():
     y_continuous[np.arange(n_labels), y] = 1
     assert_array_almost_equal(
         joint_feature, model.joint_feature(x, (y_continuous, pairwise_marginals)))
+
+
+def test_multilabel_fully_text_option():
+    # test inference and energy with fully connected model
+    # edge structure specified using text argument edges="full"
+    n_features = 5
+    n_labels = 4
+    edges = np.vstack([x for x in itertools.combinations(range(n_labels), 2)])
+    model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
+                          edges="full")
+    rnd = np.random.RandomState(0)
+
+    x = rnd.normal(size=n_features)
+    w = rnd.normal(size=n_features * n_labels + 4 * len(edges))
+    y = model.inference(x, w)
+
+    # test joint_feature / energy
+    joint_feature = model.joint_feature(x, y)
+    energy = compute_energy(model._get_unary_potentials(x, w),
+                            model._get_pairwise_potentials(x, w), edges, y)
+    assert_almost_equal(energy, np.dot(joint_feature, w))
+
+    # for continuous y
+    #y_cont = model.inference(x, w, relaxed=True)
+    y_continuous = np.zeros((n_labels, 2))
+    pairwise_marginals = []
+    for edge in edges:
+        # indicator of one of four possible states of the edge
+        pw = np.zeros((2, 2))
+        pw[y[edge[0]], y[edge[1]]] = 1
+        pairwise_marginals.append(pw)
+
+    pairwise_marginals = np.vstack(pairwise_marginals)
+
+    y_continuous[np.arange(n_labels), y] = 1
+    assert_array_almost_equal(
+        joint_feature, model.joint_feature(x, (y_continuous, pairwise_marginals)))
+
+def test_multilabel_tree_text_option():
+    # test edges="tree" results in the correct edge structure
+    n_features = 5
+    n_labels = 3
+    n_examples = 4
+    model = MultiLabelClf(n_labels=n_labels, n_features=n_features,
+                          edges="tree")
+
+    rnd = np.random.RandomState(0)
+    X = rnd.normal(size=(n_examples, n_features))
+    Y = np.array([[1, 0, 1], [0, 1, 1], [1, 0, 0], [1, 1, 1]])
+    edges_expected = np.array([[0, 1], [1, 2]])
+
+    model.initialize(X, Y)
+    assert_array_equal(model.edges, edges_expected)
