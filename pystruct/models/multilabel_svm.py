@@ -44,31 +44,23 @@ class MultiLabelClf(CRF):
 
     def _set_size_joint_feature(self):
         # try to set the size of joint_feature if possible
-        self._set_edge_structure()
         if isinstance(self.edges, np.ndarray) and self.n_features is not None \
                 and self.n_states is not None:
             self.size_joint_feature = (self.n_features * self.n_labels + 4 *
                                        self.edges.shape[0])
 
-    def _set_edge_structure(self):
-        # build an edge structure if edges is not already a custom structure
-        # only builds structures which do not require ground truth labels
-        if isinstance(self.edges, str):
-            if self.edges == 'full':
-                self.edges = np.vstack([x for x in
-                    itertools.combinations(range(self.n_labels), 2)])
-        # independent model
-        if self.edges is None:
-            self.edges = np.zeros(shape=(0, 2), dtype=np.int)
-
     def _set_edge_structure_from_labels(self, Y):
         # build an edge structure from the ground truth lables
-        self._set_edge_structure()
         if isinstance(self.edges, str):
             if self.edges == 'tree':
                 self.edges = chow_liu_tree(Y)
+            elif self.edges == 'full':
+                self.edges = np.vstack([x for x in
+                    itertools.combinations(range(self.n_labels), 2)])
             else:
                 raise ValueError("Unknown edge structure: %s" % self.edges)
+        if self.edges is None:
+            self.edges = np.zeros(shape=(0, 2), dtype=np.int)
 
     def initialize(self, X, Y):
         n_features = X.shape[1]

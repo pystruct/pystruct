@@ -104,6 +104,8 @@ def test_multilabel_fully_text_option():
 
     x = rnd.normal(size=n_features)
     w = rnd.normal(size=n_features * n_labels + 4 * len(edges))
+    y_dummy = np.zeros((1, n_labels))
+    model.initialize(x[np.newaxis], y_dummy)
     y = model.inference(x, w)
 
     # test joint_feature / energy
