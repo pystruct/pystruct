@@ -18,6 +18,7 @@ addons:
     - libhdf5-serial-dev
     - libboost1.55-dev
     - libboost-python1.55-dev
+    - gfortran
 virtualenv:
   system_site_packages: true
 env:
