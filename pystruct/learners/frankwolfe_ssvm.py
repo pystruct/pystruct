@@ -25,7 +25,7 @@ class FrankWolfeSSVM(BaseSSVM):
     References
     ----------
     * Lacoste-Julien, Jaggi, Schmidt, Pletscher:
-        Block-Coordinage Frank-Wolfe Optimization for Structural SVMs,xi
+        Block-Coordinate Frank-Wolfe Optimization for Structural SVMs,xi
         JMLR 2013
 
     With batch_mode=False, this implements the online (block-coordinate)
@@ -128,7 +128,8 @@ class FrankWolfeSSVM(BaseSSVM):
 
     def _calc_dual_gap(self, X, Y):
         n_samples = len(X)
-        joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)  # FIXME don't calculate this again
+        # FIXME don't calculate this again
+        joint_feature_gt = self.model.batch_joint_feature(X, Y, Y)
         Y_hat = self.model.batch_loss_augmented_inference(X, Y, self.w,
                                                           relaxed=True)
         djoint_feature = joint_feature_gt - self.model.batch_joint_feature(X, Y_hat)
@@ -228,7 +229,8 @@ class FrankWolfeSSVM(BaseSSVM):
                 if self.line_search:
                     eps = 1e-15
                     w_diff = w_mat[i] - ws
-                    gamma = (w_diff.T.dot(w) - (self.C * n_samples)*(l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
+                    gamma = (w_diff.T.dot(w)
+                             - (self.C * n_samples) * (l_mat[i] - ls)) / (np.sum(w_diff ** 2) + eps)
                     gamma = max(0.0, min(1.0, gamma))
                 else:
                     gamma = 2.0 * n_samples / (k + 2.0 * n_samples)
