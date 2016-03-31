@@ -110,7 +110,7 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
@@ -225,7 +225,7 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges, **kwargs):
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
@@ -264,7 +264,7 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
@@ -316,7 +316,7 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
@@ -381,7 +381,7 @@ def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
 
     Parameters
     ----------
-    unary_potentials : nd-array, shape (n_nodes, n_nodes)
+    unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
     pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
