@@ -60,6 +60,7 @@ elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
     $PIP install --user cvxopt
+    $PIP install --user scipy==$SCIPY_VERSION
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then

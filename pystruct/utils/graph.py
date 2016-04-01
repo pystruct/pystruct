@@ -1,4 +1,7 @@
 import numpy as np
+from scipy import sparse
+from sklearn.metrics import mutual_info_score
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 
 def make_grid_edges(x, neighborhood=4, return_lists=False):
@@ -25,3 +28,16 @@ def edge_list_to_features(edge_list):
     edge_features[:len(edge_list[0]), 0] = 1
     edge_features[len(edge_list[0]):, 1] = 1
     return edge_features
+
+
+def chow_liu_tree(y_):
+    # compute mutual information using sklearn
+    n_labels = y_.shape[1]
+    mi = np.zeros((n_labels, n_labels))
+    for i in range(n_labels):
+        for j in range(n_labels):
+            mi[i, j] = mutual_info_score(y_[:, i], y_[:, j])
+    mst = minimum_spanning_tree(sparse.csr_matrix(-mi))
+    edges = np.vstack(mst.nonzero()).T
+    edges.sort(axis=1)
+    return edges
