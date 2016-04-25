@@ -7,6 +7,8 @@ import os
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
+include_dirs = [np.get_include()]
+
 setup(name="pystruct",
       version="0.2.5",
       install_requires=["ad3"],
@@ -22,9 +24,11 @@ setup(name="pystruct",
       url="http://pystruct.github.io",
       license="BSD 2-clause",
       use_2to3=True,
-      ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"]),
+      ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"],
+                             include_dirs=include_dirs),
                    Extension("pystruct.inference._viterbi",
-                             ["pystruct/inference/_viterbi.c"])],
+                             ["pystruct/inference/_viterbi.c"],
+                             include_dirs=include_dirs)],
       classifiers=['Intended Audience :: Science/Research',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved',
@@ -40,5 +44,4 @@ setup(name="pystruct",
                    'Programming Language :: Python :: 3',
                    'Programming Language :: Python :: 3.3',
                    ],
-      include_dirs=[np.get_include()]
       )
