@@ -43,14 +43,9 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # Configure the conda environment and put it in the path using the
     # provided versions
     
-    if [[ "$NUMPY_VERSION" == "1.6.2" ]]; then
-        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
-            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION libgfortran
-    else
-        conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+        numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
 
-            numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
-    fi
 
     source activate testenv
 
@@ -64,6 +59,9 @@ if [[ "$COVERAGE" == "true" ]]; then
     $PIP install coverage coveralls
 fi
 
+python --version
+python -c "import numpy; print('numpy %s' % numpy.__version__)"
+python -c "import scipy; print('scipy %s' % scipy.__version__)"
 # install our favorite inference packages 
 $PIP install pyqpbo ad3 scikit-learn
 
