@@ -46,15 +46,8 @@ if [[ "$DISTRIB" == "conda" ]]; then
     conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
         numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
 
-    source activate testenv
 
-    if [[ "$INSTALL_MKL" == "true" ]]; then
-        # Make sure that MKL is used
-        conda install --yes mkl
-    else
-        # Make sure that MKL is not used
-        conda remove --yes --features mkl || echo "MKL not installed"
-    fi
+    source activate testenv
 
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
@@ -66,6 +59,9 @@ if [[ "$COVERAGE" == "true" ]]; then
     $PIP install coverage coveralls
 fi
 
+python --version
+python -c "import numpy; print('numpy %s' % numpy.__version__)"
+python -c "import scipy; print('scipy %s' % scipy.__version__)"
 # install our favorite inference packages 
 $PIP install pyqpbo ad3 scikit-learn
 
