@@ -49,10 +49,12 @@ class OneSlackSSVM(BaseSSVM):
     verbose : int
         Verbosity.
 
-    negativity_constraint : list of ints
-        Indices of parmeters that are constraint to be negative.
-        This is useful for learning submodular CRFs (inference is formulated
-        as maximization in SSVMs, flipping some signs).
+    positivity_constraint, negativity_constraint : list of ints, default=[]
+        Indices of learned weights that are constraint to be positive or negative.
+
+    hard_constraints : list of (float, float) tuples, default=[]
+        Additional hard constraints (a_i, b_i) on the learned weights 
+        of the shape <a_i, w> >= b_i
 
     break_on_bad : bool default=False
         Whether to break (start debug mode) when inference was approximate.
@@ -136,17 +138,19 @@ class OneSlackSSVM(BaseSSVM):
     """
 
     def __init__(self, model, max_iter=10000, C=1.0, check_constraints=False,
-                 verbose=0, negativity_constraint=None, n_jobs=1,
-                 break_on_bad=False, show_loss_every=0, tol=1e-3,
-                 inference_cache=0, inactive_threshold=1e-5,
-                 inactive_window=50, logger=None, cache_tol='auto',
-                 switch_to=None):
+                 verbose=0, negativity_constraint=None, positivity_constraint=None,
+                 hard_constraints=None, n_jobs=1, break_on_bad=False, 
+                 show_loss_every=0, tol=1e-3, inference_cache=0,
+                 inactive_threshold=1e-5, inactive_window=50,
+                 logger=None, cache_tol='auto', switch_to=None):
 
         BaseSSVM.__init__(self, model, max_iter, C, verbose=verbose,
                           n_jobs=n_jobs, show_loss_every=show_loss_every,
                           logger=logger)
 
-        self.negativity_constraint = negativity_constraint
+        self.negativity_constraint = negativity_constraint if negativity_constraint is not None else []
+        self.positivity_constraint = positivity_constraint if positivity_constraint is not None else []
+        self.hard_constraints = hard_constraints if hard_constraints is not None else []
         self.check_constraints = check_constraints
         self.break_on_bad = break_on_bad
         self.tol = tol
@@ -155,11 +159,31 @@ class OneSlackSSVM(BaseSSVM):
         self.inactive_threshold = inactive_threshold
         self.inactive_window = inactive_window
         self.switch_to = switch_to
+    
+    def _get_hard_constraints(self):
+        # return combined positivity/negativity/hard constraints
+        cstr = self.hard_constraints[:]
+        d = self.model.size_joint_feature
+        eye = np.identity(d)
+        for i in self.positivity_constraint:
+            cstr.append((eye[i], 0.))
+        for i in self.negativity_constraint:
+            cstr.append((-eye[i], 0.))
+        return cstr
 
     def _solve_1_slack_qp(self, constraints, n_samples):
         C = np.float(self.C) * n_samples  # this is how libsvm/svmstruct do it
         joint_features = [c[0] for c in constraints]
+        n_soft_constraints = len(joint_features)
+
+        hard_constraints = self._get_hard_constraints()
+        joint_features.extend(c[0] for c in hard_constraints)
+
+        n_hard_constraints = len(hard_constraints)
+        n_constraints = len(joint_features)
+
         losses = [c[1] for c in constraints]
+        losses.extend(c[1] for c in hard_constraints)
 
         joint_feature_matrix = np.vstack(joint_features)
         n_constraints = len(joint_features)
@@ -168,22 +192,17 @@ class OneSlackSSVM(BaseSSVM):
         q = cvxopt.matrix(-np.array(losses, dtype=np.float))
         # constraints: all alpha must be >zero
         idy = np.identity(n_constraints)
-        tmp1 = np.zeros(n_constraints)
-        # positivity constraints:
-        if self.negativity_constraint is None:
-            #empty constraints
-            zero_constr = np.zeros(0)
-            joint_features_constr = np.zeros((0, n_constraints))
-        else:
-            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
-            zero_constr = np.zeros(len(self.negativity_constraint))
+        
+        G = cvxopt.sparse(cvxopt.matrix(-idy))
+        h = cvxopt.matrix(np.zeros(n_constraints))
 
-        # put together
-        G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, joint_features_constr))))
-        h = cvxopt.matrix(np.hstack((tmp1, zero_constr)))
-
-        # equality constraint: sum of all alpha must be = C
-        A = cvxopt.matrix(np.ones((1, n_constraints)))
+        # equality constraint: sum of all alpha corresponding to soft constraints must be = C
+        A = cvxopt.matrix(
+            np.hstack([
+                    np.ones((1, n_soft_constraints)), 
+                    np.zeros((1, n_hard_constraints))
+                     ])
+                         )
         b = cvxopt.matrix([C])
 
         # solve QP model
@@ -203,7 +222,7 @@ class OneSlackSSVM(BaseSSVM):
         # Lagrange multipliers
         a = np.ravel(solution['x'])
         self.old_solution = solution
-        self.prune_constraints(constraints, a)
+        self.prune_constraints(constraints, a[0:n_soft_constraints])
 
         # Support vectors have non zero lagrange multipliers
         sv = a > self.inactive_threshold * C
