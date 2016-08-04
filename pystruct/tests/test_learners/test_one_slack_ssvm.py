@@ -143,11 +143,14 @@ def test_one_slack_attractive_potentials():
     submodular_clf = OneSlackSSVM(model=crf, max_iter=200, C=1,
                                   check_constraints=True,
                                   negativity_constraint=[5],
+                                  positivity_constraint=[4, 6],
                                   inference_cache=50)
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_array_equal(Y, Y_pred)
-    assert_true(submodular_clf.w[5] < 0)
+    assert_true(submodular_clf.w[5] <= 0)
+    assert_true(submodular_clf.w[4] >= 0)
+    assert_true(submodular_clf.w[6] >= 0)
 
 
 def test_one_slack_repellent_potentials():
@@ -164,7 +167,8 @@ def test_one_slack_repellent_potentials():
 
     submodular_clf = OneSlackSSVM(model=crf, max_iter=10, C=.01,
                                   check_constraints=True,
-                                  negativity_constraint=[4, 5, 6])
+                                  negativity_constraint=[5],
+                                  positivity_constraint=[4, 6])
     submodular_clf.fit(X, Y)
     Y_pred = submodular_clf.predict(X)
     assert_less(submodular_clf.score(X, Y), .99)
