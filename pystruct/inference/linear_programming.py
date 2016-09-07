@@ -2,7 +2,6 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-
 def lp_general_graph(unaries, edges, edge_weights):
     if unaries.shape[1] != edge_weights.shape[1]:
         raise ValueError("incompatible shapes of unaries"
@@ -88,7 +87,12 @@ def lp_general_graph(unaries, edges, edge_weights):
     # don't be verbose.
     show_progress_backup = cvxopt.solvers.options.get('show_progress', False)
     cvxopt.solvers.options['show_progress'] = False
-    result = cvxopt.solvers.lp(c, G, h, A, b)
+
+    # print("Standard LP solver")
+    # result = cvxopt.solvers.lp(c, G, h, A, b)
+
+    # print("Cone solver with KKT factorization")
+    result = _solve_lp_kkt(c, G, h, A, b)
     cvxopt.solvers.options['show_progress'] = show_progress_backup
 
     x = np.array(result['x'])
@@ -97,6 +101,54 @@ def lp_general_graph(unaries, edges, edge_weights):
     assert((np.abs(unary_variables.sum(axis=1) - 1) < 1e-4).all())
     assert((np.abs(pairwise_variables.sum(axis=1) - 1) < 1e-4).all())
     return unary_variables, pairwise_variables, result['primal objective']
+
+def _solve_lp_kkt(c, G, h, A, b):
+    n, m = G.size
+    p, q = A.size
+
+    dims = {'l':n, 'q':[], 's':[]}
+
+    def G_func(x, y, alpha=1.0, beta=0.0, trans='N'):
+        # note that  G = D, is a diagonal matrix with elements -1 (should always be true).
+        # So that G = G^{T}, and we do not need to perform the test in theory
+        if trans == 'N':
+            y[:] =  -alpha*x + beta*y
+        else:
+            y[:] =  -alpha*x + beta*y
+
+    def F(W):
+        '''
+        Solves the fully reduced system through a series of non-sparse linear
+        systems.  They consist of the following three equation (in sequence)
+        y = (A(W^{T}W)A^{T})^{-1} (A(W^{T}W) [bx - (W^{T}W)^{-1} bz] - by)
+        x = (W^{T}W)[bx - (W^{T}W)^{-1} bz - A^{T}y]
+        z = (-W^{T}W)^{-1} (bz - G x)
+        '''
+        # Denote d = (W^{T}W), di = (W^{T}W)^{-1}
+        d, di = W['d']**2, W['di']**2
+
+        # because we have to use A(W^{T}W) multiple times, we do our
+        # multiplication here and store
+        AW = A*cvxopt.spdiag(d)
+        LHS = AW*A.T
+
+        # "Factorizing cholmod LHS of A(W^{T}W)A^{T}
+        Fs = cvxopt.cholmod.symbolic(LHS)
+        cvxopt.cholmod.numeric(LHS, Fs)
+
+        def f(x, y, z):
+            # a pre-compute of rx = bx - (W^{T}W)^{-1} bz
+            rx = x - cvxopt.mul(di, z)
+            y[:] = AW*rx - y
+            cvxopt.cholmod.solve(Fs, y)
+
+            x[:] = cvxopt.mul(d, rx - A.T*y)
+            z[:] = cvxopt.mul(-W['di'], z + x)
+
+        return f
+
+    result = cvxopt.solvers.conelp(c, G_func, h, dims, A, b, kktsolver=F)
+    return(result)
 
 
 def solve_lp(unaries, edges, pairwise):
