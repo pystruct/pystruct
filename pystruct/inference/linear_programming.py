@@ -29,11 +29,15 @@ def lp_general_graph(unaries, edges, edge_weights):
     data, I, J = [], [], []
 
     # summation constraints
+    data += [1.0]*n_nodes*n_states
     for i in range(n_nodes):
-        for j in range(n_states):
-            data.append(1)
-            I.append(i)
-            J.append(i * n_states + j)
+        I += [i]*n_states
+        i_n = i * n_states
+        J += [i_n + j for j in range(n_states)]
+        # for j in range(n_states):
+            # data.append(1)
+            # I.append(i)
+            # J.append(i * n_states + j)
             #constraints[i, i * n_states + j] = 1
     # we row_idx tracks constraints = rows in constraint matrix
     row_idx = n_nodes
@@ -52,18 +56,20 @@ def lp_general_graph(unaries, edges, edge_weights):
         I.append(row_idx)
         J.append(int(vertex) * n_states + state)
         edge_var_index = edges_offset + edge * n_states ** 2
+        data += [1]*n_states
+        I += [row_idx]*n_states
         if vertex_in_edge == 0:
             # first vertex in edge
             for j in range(n_states):
-                data.append(1)
-                I.append(row_idx)
+                # data.append(1)
+                # I.append(row_idx)
                 J.append(edge_var_index + state * n_states + j)
                 #[row_idx, edge_var_index + state * n_states + j] = 1
         else:
             # second vertex in edge
             for j in range(n_states):
-                data.append(1)
-                I.append(row_idx)
+                # data.append(1)
+                # I.append(row_idx)
                 J.append(edge_var_index + j * n_states + state)
                 #[row_idx, edge_var_index + j * n_states + state] = 1
         row_idx += 1
@@ -71,12 +77,15 @@ def lp_general_graph(unaries, edges, edge_weights):
     coef = np.ravel(unaries)
     # pairwise:
     repeated_pairwise = edge_weights.ravel()
-    coef = np.hstack([coef, repeated_pairwise])
-    c = cvxopt.matrix(coef, tc='d')
+    c = cvxopt.matrix([coef, repeated_pairwise])
+    # coef = np.hstack([coef, repeated_pairwise])
+    # c = cvxopt.matrix(coef, tc='d')
     # for positivity inequalities
-    G = cvxopt.spdiag(cvxopt.matrix(-np.ones(n_variables)))
+    G = cvxopt.spdiag([-1.0]*n_variables)
+    #G = cvxopt.spdiag(cvxopt.matrix(-np.ones(n_variables)))
     #G = cvxopt.matrix(-np.eye(n_variables))
-    h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
+    h = cvxopt.matrix(0, (n_variables,1), 'd')
+    #h = cvxopt.matrix(np.zeros(n_variables))  # for positivity inequalities
     # unary and pairwise summation constratints
     A = cvxopt.spmatrix(data, I, J)
     assert(n_constraints == A.size[0])
@@ -103,6 +112,10 @@ def lp_general_graph(unaries, edges, edge_weights):
     return unary_variables, pairwise_variables, result['primal objective']
 
 def _solve_lp_kkt(c, G, h, A, b):
+    """
+    Solves the LP by tackling the KKT system directly.  Note that we do not actually
+    need G as an input argument but is left here for completeness
+    """
     n, m = G.size
     p, q = A.size
 
@@ -116,13 +129,13 @@ def _solve_lp_kkt(c, G, h, A, b):
         else:
             y[:] =  -alpha*x + beta*y
 
-    def F(W):
+    def KKT_func(W):
         '''
         Solves the fully reduced system through a series of non-sparse linear
         systems.  They consist of the following three equation (in sequence)
         y = (A(W^{T}W)A^{T})^{-1} (A(W^{T}W) [bx - (W^{T}W)^{-1} bz] - by)
         x = (W^{T}W)[bx - (W^{T}W)^{-1} bz - A^{T}y]
-        z = (-W^{T}W)^{-1} (bz - G x)
+        z = (-W^{T}W)^{-1} (bz - Gx)
         '''
         # Denote d = (W^{T}W), di = (W^{T}W)^{-1}
         d, di = W['d']**2, W['di']**2
@@ -147,7 +160,7 @@ def _solve_lp_kkt(c, G, h, A, b):
 
         return f
 
-    result = cvxopt.solvers.conelp(c, G_func, h, dims, A, b, kktsolver=F)
+    result = cvxopt.solvers.conelp(c, G_func, h, dims, A, b, kktsolver=KKT_func)
     return(result)
 
 
