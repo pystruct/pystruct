@@ -77,7 +77,7 @@ def lp_general_graph(unaries, edges, edge_weights):
     coef = np.ravel(unaries)
     # pairwise:
     repeated_pairwise = edge_weights.ravel()
-    c = cvxopt.matrix([coef, repeated_pairwise])
+    c = cvxopt.matrix(coef.tolist() + repeated_pairwise.tolist())
     # coef = np.hstack([coef, repeated_pairwise])
     # c = cvxopt.matrix(coef, tc='d')
     # for positivity inequalities
