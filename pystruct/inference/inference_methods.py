@@ -311,7 +311,8 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False):
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  constraints=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -345,6 +346,18 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         Whether to attempt to produce an integral solution using
         branch-and-bound.
 
+    constraints : list of logical constraints or None (default:=None)
+        A logical constraint is tuple like ( <operator>, <unaries>, <states>, <negated> )
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of each unary involved in this constraint
+        - states is a list of unary states (class), 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicating if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list 
+        
+    NOTE: this hard logic constraint mechanism relies on the binarisation method described by Martins et al. in their 2011 ICML paper.
+    It has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
+    The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
+    
     Returns
     -------
     labels : nd-array
@@ -356,7 +369,11 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         _validate_params(unary_potentials, pairwise_potentials, edges)
 
     unaries = unary_potentials.reshape(-1, n_states)
-    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+    if constraints:
+        res = ad3.general_constrained_graph(unaries, edges, pairwise_potentials, constraints, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+    else:
+        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:

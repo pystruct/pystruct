@@ -109,7 +109,7 @@ class CRF(StructuredModel):
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
 
-    def inference(self, x, w, relaxed=False, return_energy=False):
+    def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
         """Inference for x using parameters w.
 
         Finds (approximately)
@@ -137,6 +137,9 @@ class CRF(StructuredModel):
         return_energy : bool, default=False
             Whether to return the energy of the solution (x, y) that was found.
 
+        constraints : None or list, default=False
+            hard logic constraints, if any
+            
         Returns
         -------
         y_pred : ndarray or tuple
@@ -156,6 +159,11 @@ class CRF(StructuredModel):
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
 
-        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                                  self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy)
+        if constraints:
+            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                      self.inference_method, relaxed=relaxed,
+                                      return_energy=return_energy, constraints=constraints)
+        else:
+            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+                                      self.inference_method, relaxed=relaxed,
+                                      return_energy=return_energy)
