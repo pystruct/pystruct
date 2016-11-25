@@ -1,0 +1,477 @@
+AD3 (approximate MAP decoder with Alternating Direction Dual Decomposition)
+Copyright (C) 2012
+Andre Martins
+Priberam Labs, Lisbon, Portugal &
+Instituto de Telecomunicacoes, Instituto Superior Tecnico, Lisbon, Portugal
+All Rights Reserved.
+
+http://www.ark.cs.cmu.edu/AD3
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+This is a README for AD3 v2.0
+=================================
+
+AD3 (Alternating Directions Dual Decomposition) is an LP-MAP decoder for
+undirected constrained factor graphs. In other words, it is an approximate MAP
+decoder that retrieves the solution of an LP relaxation of the original problem.
+It applies the ADMM method which is described in refs. [1,3,4,5,6] below.
+
+The input is a factor graph, which may contain both soft factors, associated
+with log-potentials, and hard constraint factors, associated with a logic
+function. Factors can be dense, sparse, or combinatorial. Specialized factors
+can be implemented by the practicioner (see below for instructions and
+examples).
+
+The output is the LP-MAP assignment, with a posterior value for each variable.
+If all variables are integer, the relaxation is tight and the solution is the
+true MAP. Otherwise, some entries can be in the unit interval. External tools
+can be used to obtain a valid solution using rounding heuristics. Optionally,
+a flag can be set that applies a branch-and-bound procedure and retrieves the
+true MAP (but it can be slow if the relaxation has many fractional components).
+
+
+New features since AD3 v1.0:
+============================
+
+* AD3 v2.0 can handle dense, sparse, and combinatorial factors, with binary or 
+multi-valued variables. This comes in addition to the PAIR and logic factors 
+(XOR, OR, OR-with-output, and ATMOSTONE) already handled by AD3 v1.0. The 
+subproblems for these factors are addressed with the active set method described 
+in ref. [6] below.
+
+* AD3 v2.0 allows the practicioner to implement her own specialized factor, 
+which will be automatically handled by the AD3 algorithm. The practicioner only 
+needs to implement a method for computing the local MAP for that factor. We 
+include example files to illustrate how this can be done for sequential factors, 
+tree factors and head automaton factors (used in dependency parsing). 
+
+* AD3 v2.0 can now process input UAI files (see 
+http://www.cs.huji.ac.il/project/PASCAL/fileFormat.php), in addition to the FG 
+files already processed by AD3 v1.0. A standalone tool is included to decode the 
+factor graphs encoded in these files.
+
+* AD3 v2.0 can also be compiled as a library (libad3), whose methods can be 
+called from an external program. See below for usage examples.
+
+
+1. Requirements
+===============
+Running AD3 v2.0 requires a standard C++ compiler. The code is self-contained. 
+The only dependency is Eigen (http://eigen.tuxfamily.org/), which is included in 
+the release (current version is Eigen 3.1.1). It has been tested on Linux, but 
+it should run in other platforms with minor adaptations.
+
+
+2. Contents
+===========
+This tarball contains a folder called ad3_v2, which we will refer to as the 
+"root" folder. Underneath it, there are the following files and folders:
+
+ad3_multi.cpp
+    Source file for the standalone application.
+    
+ad3/
+    Folder containing the source and header files for AD3.
+
+data/
+    Folder containing some example input files.
+    
+examples/
+    Folder containing some example implementations that use libad3.
+
+Eigen/
+    Folder containing the Eigen header files (downloaded from 
+    http://eigen.tuxfamily.org/)
+
+Makefile
+    Makefile for generating all the executables and library files.
+
+LICENSE
+    Text of the GNU Lesser General Public License, Version 3.
+
+README
+    This file.
+
+
+
+3. Installation
+===============
+
+AD3 v2.0 can be downloaded from http://www.ark.cs.cmu.edu/AD3. 
+To compile the code, cd the root folder and type:
+
+> make
+
+This will create an executable file ad3_multi in the root folder, a static 
+library libad3 in the ad3 folder, and several executables in the example 
+folders. To test, type:
+
+> ./ad3_multi
+
+which should produce the following output:
+
+    Usage: ad3_multi --format=[ad3(*)|uai] --file_graphs=[IN] \
+    --file_posteriors=[OUT] --algorithm=[ad3(*)|psdd|mplp] \
+    (--max_iterations=[NUM] --eta=[NUM] --adapt_eta=[true(*)|false] \
+    --residual_threshold=[NUM] --convert_to_binary=[true|false(*)] \
+    --exact=[true|false(*)])
+
+Then, type:
+
+    > ./ad3_multi --format=uai --file_graphs=data/30markers.uai \
+    --file_posteriors=posteriors.out | tail -4
+
+It should print something like:
+
+    Solution value after 37 iterations (AD3) = -1005.47
+    Took 0.296 sec.
+    Solution is integer.
+    Elapsed time: 0.296 sec.
+
+and a file named "posteriors.out" should be created in the root folder.
+
+
+
+4. Input flags
+==============
+
+The following flags can be set:
+
+    Usage: ad3_multi --format=[ad3(*)|uai] --file_graphs=[IN] \
+    --file_posteriors=[OUT] --algorithm=[ad3(*)|psdd|mplp] \
+    (--max_iterations=[NUM] --eta=[NUM] --adapt_eta=[true(*)|false] \
+    --residual_threshold=[NUM] --convert_to_binary=[true|false(*)] \
+    --exact=[true|false(*)])
+
+--file_graphs=[IN]
+    Specifies the path to the input file, containing the structure of the factor graphs 
+    and their log-potentials. 
+
+--format=[ad3(*)|uai]
+    Specifies the format of the input file. Default is "ad3" which is described 
+    below. An alternative for factor graphs with dense factors, is the "uai" 
+    format, which is described at 
+    http://www.cs.huji.ac.il/project/PASCAL/fileFormat.php.
+   
+--file_posteriors=[OUT] 
+    Specifies the path to the output file, containing the LP-MAP or MAP solution. 
+    See below for an description of the format of this file.
+
+--algorithm=[ad3(*)|psdd|mplp]
+    Decoding algorithm. Default is AD3, other choices are the projected 
+    subgradient algorithm and generalized MPLP. 
+         
+--max_iterations=[NUM]
+    Maximum number of iterations, for any of the algorithms above. 
+    Default is 1000.
+
+--eta=[NUM] 
+    Value of the penalty constant in AD3, or the initial stepsize in the 
+    projected subgradient algorithm. In AD3, if adapt_eta is true, this is the 
+    initial penalty, otherwise every iteration will apply this amount of penalty. 
+    Default is 0.1.
+   
+--adapt_eta=[true(*)|false]
+    If true, adapt eta using the strategy described in ref. [2] below. 
+    Default is true.
+
+--residual_threshold=[NUM]
+    Threshold for the primal and dual residuals in AD3. The algorithm will be 
+    stopped if both residuals are below this threshold. 
+    Default is 1e-6.
+
+--exact=[true|false(*)]
+    If true, apply a branch-and-bound procedure for obtaining the exact MAP 
+    (note: this can be quite slow if the relaxation is "too fractional"). 
+    Default is false.
+   
+--convert_to_binary=[true|false(*)]
+    If true, convert a factor graph with multi-valued variables to one which 
+    only containts binary variables and hard constraints. This is an alternative
+    to the active set method, but it is usually much slower.
+    Default is false.
+
+
+
+5. AD3 format for the input files
+=================================
+
+NOTE: for factor graphs with dense factors and multi-valued variables, we 
+recommend using the (more standard) UAI file format instead. However, the AD3
+file format is recommended for factor graphs with hard constraint logic factors.
+They also allow specifying multiple factor graphs in a single file.
+
+IMPORTANT NOTE: AD3 files contain log-potentials, while UAI file contain 
+potentials.
+
+AD3 files are in ASCII format and contain the following information: 
+
+    [BLOCK DESCRIBING FACTOR GRAPH 1]
+
+    [BLOCK DESCRIBING FACTOR GRAPH 2]
+
+    ...
+
+    [BLOCK DESCRIBING FACTOR GRAPH K]
+
+That is, each block is a description of a single factor graph, and blocks are 
+separated by empty lines.
+
+Each block should be of the following format:
+
+    [NUMBER OF VARIABLES]
+    [NUMBER OF FACTORS]
+    Log-potential of variable 1
+    Log-potential of variable 2
+    ...
+    Log-potential of variable N
+    [LINE DESCRIBING FACTOR 1]
+    [LINE DESCRIBING FACTOR 2]
+    ...
+    [LINE DESCRIBING FACTOR M]
+
+The line describing each factor should have the following fields, separated by 
+whitespaces: 
+    [FACTOR TYPE] [FACTOR DEGREE] [INDEX OF VAR 1] ... [INDEX OF VAR L] ([FACTOR LOG-POTENTIAL])
+
+The meaning of these fields is the following:
+    [FACTOR TYPE] can be one of XOR, OR, OROUT, ATMOSTONE, or PAIR.
+    [FACTOR DEGREE] is the number of variables linked to the factor (always 2 
+        for PAIR factors).
+    [INDEX OF VAR i] contains one-based indices of the variables. For the logic 
+        factors (i.e., all the above except PAIR) a dash used as a prefix means 
+        that the variable is negated. 
+    [FACTOR POTENTIAL] is optional and should be included iff FACTOR TYPE is 
+        "PAIR", in which case it contains a score for the configuration where 
+        both input variables are TRUE (the other three configurations receive a 
+        score of zero).
+        
+Some examples:
+
+    "XOR 3 15 1417 -1419"
+        A XOR factor linked to three variables (15, 1417 and 1419) where the 
+        last variable is negated. This is actually equivalent to 
+        XOR-with-output. The feasible configurations are (TRUE, FALSE, TRUE), 
+        (FALSE, TRUE, TRUE) and (FALSE, FALSE, FALSE).
+        
+    "ATMOSTONE 3 15 1417 1419"
+        A ATMOSTONE factor linked to three variables (15, 1417 and 1419). The 
+        feasible configurations are (TRUE, FALSE, FALSE), (FALSE, TRUE, FALSE), 
+        (FALSE, FALSE, TRUE) and (FALSE, FALSE, FALSE).
+
+    "OR 2 1 2"
+        A OR factor linked to two variables (1 and 2). All configurations are 
+        feasible except (FALSE, FALSE).
+        
+    "OROUT 3 10 20 30"
+        A OR-with-output factor with two inputs (10 and 20) and one output (30). 
+        If either 10 or 20 are TRUE, 30 must be TRUE; otherwise 30 must be FALSE.
+
+    "OROUT 3 -10 -20 -30"
+        A OR-with-output factor with two negated inputs (10 and 20) and one 
+        negated output (30). This is actually equivalent to a AND-with-output. 
+        If both 10 or 20 are TRUE, 30 must be TRUE; otherwise 30 must be FALSE.
+        
+    "PAIR 2 25 26 0.048103"
+        A PAIR factor connecting variables 25 and 26. The potential function 
+        evaluates to 0.048103 if both variables are TRUE, and to 0 otherwise.
+
+Some examples of input files:
+
+1) Example of input file (example1.fg) for a constrained factor graph consisting 
+of three variables connected by a OR factor:
+
+     3
+     1
+     0.75
+     1.25
+     -0.5
+     OR 3 1 2 3
+
+In this case the probability distribution is 
+
+     P(y1,y2,y3) = 0,                                    if y1 = y2 = y3 = 0
+                   1/Z exp(0.75*y1 + 1.25*y2 - 0.5*y3),  otherwise.
+
+     
+2) Example of input file (example2.fg) that in addition have the two first 
+variables connected by a PAIR factor:
+
+     3
+     2
+     0.75
+     1.25
+     -0.5
+     OR 3 1 2 3
+     PAIR 2 1 2 -1.05
+
+In this case the probability distribution is 
+
+     P(y1,y2,y3) = 
+         0,                                                 if y1 = y2 = y3 = 0
+         1/Z exp(0.75*y1 + 1.25*y2 - 0.5*y3 - 1.05*y1*y2),  otherwise.
+
+3) Example of input file (coref.fg) for a toy coreference task with transitivity 
+constraints and some constraints requiring that each entity cluster has at least 
+a noun (all expressable as OR factors). Here the LP-MAP is fractional, but the 
+branch and bound procedure (flag --exact=true) is able to retrieve the true MAP.
+
+4) Example of input file (parsing_excerpt.fg) for dependency parsing in Slovene, 
+taken from ref. [4] below. This is for a single sentence, and the LP-MAP is 
+integer.
+
+5) Input file used in ref. [5] below, for FrameNet semantic parsing. Contains 
+several factor graphs, one per predicate in the dev-set, with various 
+constraints regarding the kind of roles and their spans associated with the 
+predicate frame. (Thanks to Dipanjan Das for generating this file.)
+
+
+
+6. Output file
+==============
+
+The output file contains one floating point number per line, and as many lines 
+as the number of binary variables (or states of multi-valued variables) plus the 
+number of factor log-potential values (e.g., a PAIR factor has one log-potential
+value, a DENSE factor with 5 variables and 3 states each has 3^5 log-potential
+values). The values in each line contain the LP-MAP value for each variable, 
+by order of index, followed by the LP-MAP values for each factor configuration, 
+by order of appearance.
+
+NOTE: Internally, multi-valued variables are treated as arrays of binary 
+variables, one per state. 
+
+
+
+7. Using the static library
+============================
+
+To use AD3 in your C++ project, either copy the source/header files in the
+ad3 folder, or link statically with libad3. You can look at the makefiles
+in the example folders. 
+
+As a simple example, the following code will create a fully connected Potts 
+model with 3 variables with 5 states each, and will run AD3 on it. Other 
+simple examples are in the example folders, including one for non-projective 
+dependency parsing with head automata, one for co-reference resolution, and 
+another for decoding Potts grids.
+
+#include "ad3/FactorGraph.h"
+
+int main(int argc, char **argv) {
+  // Create the factor graph.
+  AD3::FactorGraph factor_graph;
+
+  // Create 3 multi-valued variables with 5 states each.
+  std::vector<AD3::MultiVariable*> multi_variables(3);
+  for (int i = 0; i < 3; ++i) {
+    multi_variables[i] = factor_graph.CreateMultiVariable(5);
+
+    // Set uniform log-potentials.
+    for (int k = 0; k < 5; ++k) {
+      score = 0.0;
+      multi_variables[i]->SetLogPotential(k, score);
+    }
+  }
+
+  // Set the factor log-potentials.
+  vector<double> additional_log_potentials;
+  double alpha = 0.5; // The "smoothness" degree.
+  for (int k = 0; k < 5; ++k) {
+    for (int l = 0; l < 5; ++l) {
+      additional_log_potentials.push_back((k == l)? alpha : 0.0);
+    }
+  }
+  
+  // Create 3 factors connecting all the variables pairs.
+  vector<AD3::MultiVariable*> multi_variables_local(2);
+  multi_variables_local[0] = multi_variables[0];
+  multi_variables_local[1] = multi_variables[1];
+  factor_graph.CreateFactorDense(multi_variables_local,
+                                 additional_log_potentials);
+  multi_variables_local[0] = multi_variables[0];
+  multi_variables_local[1] = multi_variables[2];
+  factor_graph.CreateFactorDense(multi_variables_local,
+                                 additional_log_potentials);
+  multi_variables_local[0] = multi_variables[1];
+  multi_variables_local[1] = multi_variables[2];
+  factor_graph.CreateFactorDense(multi_variables_local,
+                                 additional_log_potentials);
+
+
+  vector<double> posteriors;
+  vector<double> additional_posteriors;
+  double value;
+
+  // Run AD3.
+  factor_graph.SetEtaAD3(0.1);
+  factor_graph.AdaptEtaAD3(true);
+  factor_graph.SetMaxIterationsAD3(1000);
+  factor_graph.SolveLPMAPWithAD3(&posteriors, &additional_posteriors, &value);
+  
+  return 0;
+}
+
+ 
+
+8. Contributing to AD3
+=======================
+
+To contribute to AD3, you can fork the following github repository:
+
+http://github.com/andre-martins/AD3.
+
+
+9. Further Reading
+==================
+
+If this code is used, please cite the paper [3] below. 
+
+[1] André F. T. Martins, Noah A. Smith, Eric P. Xing, Pedro M. Q. Aguiar, and Mário A. T. Figueiredo.
+"Augmented Dual Decomposition for MAP Inference."
+NIPS Workshop in Optimization for Machine Learning, Whistler, Canada, December 2010.
+
+[2] S. Boyd, N. Parikh, E. Chu, B. Peleato, and J. Eckstein.
+"Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers."
+Foundations and Trends in Machine Learning, Michael Jordan, Editor in Chief, 3(1):1–122, 2011. 
+
+[3] André F. T. Martins, Mário A. T. Figueiredo, Pedro M. Q. Aguiar, Noah A. Smith, and Eric P. Xing.
+"An Augmented Lagrangian Approach to Constrained MAP Inference."
+International Conference on Machine Learning (ICML'11), Bellevue, Washington, USA, June 2011.
+
+[4] André F. T. Martins, Noah A. Smith, Mário A. T. Figueiredo, Pedro M. Q. Aguiar.
+"Dual Decomposition With Many Overlapping Components."
+Empirical Methods in Natural Language Processing (EMNLP'11), Edinburgh, UK, July 2011.
+
+[5] Dipanjan Das, André F. T. Martins, and Noah A. Smith.
+"An Exact Dual Decomposition Algorithm for Shallow Semantic Parsing with Constraints"
+Proceedings of *SEM 2012.
+      
+[6] André F. T. Martins. 
+"The Geometry of Constrained Structured Prediction: Applications to Natural Language Syntax."
+PhD thesis, Carnegie Mellon University and Instituto Superior Tecnico, 2012. 
+
+
+8. Contact
+==========
+If you find any bugs or have questions, please email André Martins (afm@cs.cmu.edu).
+
+
+9. Version History
+==================
+1.0 - First public release (2012-06-01)
+2.0 - Second public release (2012-09-08)
+
