@@ -52,7 +52,7 @@ class StructuredModel(object):
     def batch_inference(self, X, w, relaxed=None, constraints=None):
         # default implementation of batch inference
         if constraints:
-            return [self.inference(x, w, relaxed=relaxed, constriants=c) for x,c in zip(X, constraints)]
+            return [self.inference(x, w, relaxed=relaxed, constraints=c) for x,c in zip(X, constraints)]
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 
