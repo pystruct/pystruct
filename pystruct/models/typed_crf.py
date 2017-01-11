@@ -80,7 +80,7 @@ class TypedCRF(StructuredModel):
 
     def _check_size_x(self, x):
         l_nodes = self._get_node_features(x)
-        
+
         #node_features are [  i_in_typ -> features ]
         l_features = self._get_node_features(x)
         if len(l_features) != self.n_types:
@@ -112,7 +112,7 @@ class TypedCRF(StructuredModel):
     
     def _check_size_y(self, x, y):
         
-        if not isinstance(y, list): 
+        if not isinstance(y, list):
             raise ValueError("Y must be a list of arrays")
         
         l_features = self._get_node_features(x)
@@ -138,6 +138,25 @@ class TypedCRF(StructuredModel):
             return [ np.empty((0,0)) if edges is None or len(edges)==0 else edges for edges in x[1]]
         else:
             return x[1]
+    def _index_all_edges(self, x):
+        """
+        return all edges as a single 2-column matrix, taking care of indices!!
+        """ 
+        n_edges_total    = sum(0 if e is None else e.shape[0] for e in x[1])
+        all_edges = np.zeros((n_edges_total, 2), dtype=np.int32)
+        
+        node_offset_by_typ = np.cumsum([0]+[0 if n is None else n.shape[0] for n in x[0]])
+        i_start = 0       
+        for edges, (typ1, typ2) in zip(x[1], self._iter_type_pairs()):
+            if edges is None: continue
+            n_edges = edges.shape[0]
+            i_stop = i_start + n_edges
+            all_edges[i_start:i_stop, 0] = edges[:,0] + node_offset_by_typ[typ1]
+            all_edges[i_start:i_stop, 1] = edges[:,1] + node_offset_by_typ[typ2]
+            i_start = i_stop
+        return all_edges
+            
+        
     def _get_edges_by_type(self, x, typ1, typ2):
         return x[1][typ1*self.n_types+typ2] 
 
@@ -146,7 +165,52 @@ class TypedCRF(StructuredModel):
             for typ2 in range(self.n_types):
                 yield (typ1, typ2)
         raise StopIteration
-    
+
+    def _get_unary_potentials(self, x, w):
+        """Computes unary potentials for x and w.
+
+        Parameters
+        ----------
+        x : tuple
+            Instance Representation.
+
+        w : ndarray, shape=(size_joint_feature,)
+            Weight vector for CRF instance.
+
+        Returns
+        -------
+        unary : ndarray, shape=(sum_over_types(n_states_of_type)
+            Unary weights.
+        """
+        self._check_size_w(w)
+        self._check_size_x(x)
+        l_node_features = self._get_node_features(x)
+        #code for single type CRF
+        #         unary_params = w[:self.n_states * self.n_features].reshape(
+        #             self.n_states, self.n_features)
+        #         return np.dot(features, unary_params.T)
+
+        #self.size_unaries == sum(  n_states * n_features for n_states, n_features in zip(self.l_n_states, self.l_n_features) )
+        w_unaries = w[:self.size_unaries]
+        a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
+                                   , self._n_states), dtype=w.dtype)
+        #we work type by type and assemble the unaries
+        #"irrelevant" unaries (i.e. for state not applicable to a type, will get a 0
+        i_w, i_nodes, i_states = 0, 0, 0
+        for features, n_states, n_features in zip(l_node_features, self.l_n_states, self.l_n_features):  
+            i_w2 = i_w + n_states*n_features        #number of weights for the type
+            i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
+            i_states2 = i_states + n_states         #number of state of that type
+            w_unaries_type = w_unaries[i_w:i_w2]    #range for weights for that type
+            #back to "usual" code!
+            unary_params = w_unaries_type.reshape(n_states, n_features)
+            #apart that we fill a sub-part of the unaries matrix 
+            a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, unary_params.T)
+            i_w, i_nodes, i_states = i_w2, i_nodes2, i_states2 
+
+        # nodes x features  .  features x states  -->  nodes x states
+        return a_nodes_states
+            
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
         """Loss-augmented Inference for x relative to y using parameters w.
@@ -197,10 +261,12 @@ class TypedCRF(StructuredModel):
         self._check_size_w(w)
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
-        edges = self._get_edges(x)
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        flat_edges = self._index_all_edges(x)
+        flat_y = np.hstack(y)
+        #loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        loss_augment_unaries(unary_potentials, flat_y, self.class_weight)
 
-        return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+        return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
 
@@ -252,13 +318,14 @@ class TypedCRF(StructuredModel):
         self.inference_calls += 1
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
-        edges = self._get_edges(x)
+        
+        flat_edges = self._index_all_edges(x)
 
         if constraints:
-            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+            return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
                                       return_energy=return_energy, constraints=constraints)
         else:
-            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
+            return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
                                       return_energy=return_energy)
