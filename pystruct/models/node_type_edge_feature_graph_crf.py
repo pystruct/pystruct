@@ -13,25 +13,6 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
     More complicated interactions are also possible, of course.
 
-    n_types is the number of node types
-    
-    n_nodes is the number of nodes
-    
-    Nodes are given as an array of shape (n_nodes, 2). 1st columns gives the node type, second gives the index in the type.
-    
-    Node features are given as a list of n_types arrays of shape (n_type_nodes, n_type_features):
-        - n_type_nodes is the number of nodes of that type
-        - n_type_features is the number of features for this type of node
-    
-    Edges are given as an array of shape (n_edges, 3). Columns are resp.: node index, node index, edge type_type index 
-    
-    Edge features are given as a list of n_types x n_types arrays of shape (n_type_type_edge, n_type_type_edge_features)
-        - n_type_type_edge is the number of edges of type type_type
-        - n_type_type_edge_features is the number of features for edge of type type_type
-        
-    An instance ``x`` is represented as a tuple ``(node, node_features, edges, edge_features)`` 
-
-    Labels ``y`` are given as array of shape (n_nodes)
 
     Parameters
     ----------
@@ -49,7 +30,29 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         Class weights. If a list of array-like is passed, the Ith one must have length equal to l_n_states[i]
         None means equal class weights (across node types)
 
+
+    X and Y
+    -------
+    Node features are given as a list of n_types arrays of shape (n_type_nodes, n_type_features):
+        - n_type_nodes is the number of nodes of that type
+        - n_type_features is the number of features for this type of node
+    
+    Edges are given as a list of n_types x n_types arrays of shape (n_type_edges, 2). 
+        Columns are resp.: node index (in corresponding node type), node index (in corresponding node type)
+    
+    Edge features are given as a list of n_types x n_types arrays of shape (n_type_type_edge, n_type_type_edge_features)
+        - n_type_type_edge is the number of edges of type type_type
+        - n_type_type_edge_features is the number of features for edge of type type_type
+        
+    An instance ``X`` is represented as a tuple ``([node_features, ..], [edges, ..], [edge_features, ..])`` 
+
+    Labels ``Y`` are given as a list of array of shape (n_type_nodes)
+
     """
+
+    #do we transpose the pairwise as done in original pystruct or not? (False for pytest...)
+    bPW_std = True
+
     def __init__(self
                  , n_types                  #how many node type?
                  , l_n_states               #how many labels   per node type?
@@ -82,7 +85,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                 #print "\t %d = %d x %d x %d"%(self.a_n_edge_features[typ1,typ2] * self.l_n_states[typ1] * self.l_n_states[typ2], self.a_n_edge_features[typ1,typ2] , self.l_n_states[typ1] , self.l_n_states[typ2])
             self.size_joint_feature = self.size_unaries + self.size_pairwise
         
-            print "size = ",  self.size_unaries, " + " , self.size_pairwise
+            #print "size = ",  self.size_unaries, " + " , self.size_pairwise
 
     def __repr__(self):
         return ("%s(n_states: %d, inference_method: %s, n_features: %d, "
@@ -153,23 +156,6 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         return np.dot(edge_features, pairwise).reshape(
             edge_features.shape[0], self.n_states, self.n_states)
 
-
-#     def block_ravel(self, a, lij):
-#         """
-#         Ravel the array block by block
-#         """
-#         li, lj  = zip(*lij)
-#         print "\t", `a`
-#         print "\t", li, lj
-#         print "\t", zip(li, li[1:]), zip(lj, lj[1:]) 
-#         
-#         print "\t", zip( zip(li, li[1:]), zip(lj, lj[1:]) )
-#         
-#         return np.hstack( [a[np.ix_(xrange(i0,i1), xrange(j0,j1))].ravel()
-#                                            for (i0, i1), (j0,j1)
-#                                            in zip( zip(li, li[1:]), zip(lj, lj[1:]) ) 
-#                                            ])
-
     def block_ravel(self, a, lij):
         """
         Ravel the array block by block
@@ -222,7 +208,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             #in the arnge column I is for state i of that type
             unary_marginals = np.zeros((n_nodes, self._n_states), dtype=np.int)
             i_start = 0
-            print self.l_n_states, self._l_type_startindex, y
+            #print self.l_n_states, self._l_type_startindex, y
             for node_features, typ_start_index,  y_typ in zip(l_node_features, self._l_type_startindex, y):
                 if node_features is None: continue
                 i_stop = i_start + node_features.shape[0]
@@ -232,7 +218,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                                 , typ_start_index + y_typ[:] 
                                 ] = 1
                 i_start = i_stop
-            print "--- unary_marginals \n", `unary_marginals`
+            #print "--- unary_marginals \n", `unary_marginals`
             
             ## pairwise
             #same thing, but the type of an edge is a pair of node types 
@@ -250,7 +236,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                    , edgetype_start_index + self.l_n_states[typ2] * y1[:] + y2[:]
                    ] = 1
                 i_start = i_stop
-            print "--- pw = \n", `pw`
+            #print "--- pw = \n", `pw`
             assert i_start == n_edges
             
         #UNARY
@@ -263,10 +249,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                               , _a_feature_slice] = node_features
             i_start = i_stop
         assert i_start == n_nodes
-        print "--- all_node_features =\n", `all_node_features`
+        #print "--- all_node_features =\n", `all_node_features`
         
         unaries_acc = np.dot(unary_marginals.T, all_node_features)   # node_states x sum_of_features matrix
-        print "--- unaries_acc =\n", `unaries_acc`
+        #print "--- unaries_acc =\n", `unaries_acc`
         
         #assign the edges feature to the right range of columns, depending on edge type
         all_edge_features = np.zeros( (n_edges, self._n_edge_features) )
@@ -281,15 +267,15 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                               , i_col_start:i_col_stop ] = edge_features
             i_col_start = i_col_stop
             i_start     = i_stop
-        print "--- all_edge_features =\n", `all_edge_features`
+        #print "--- all_edge_features =\n", `all_edge_features`
             
-        bTransp = False
-        if bTransp:
+        if self.bPW_std:
+            #as in edge_feature_graph_crf
             pairwise_acc = np.dot(all_edge_features.T, pw)      # sum_of_features x edge_states
         else:
             pairwise_acc = np.dot(pw.T, all_edge_features)      # sum_of_features x edge_states
-        print "--- pairwise_acc.shape = ", pairwise_acc.shape        
-        print "--- pairwise_acc =\n", `pairwise_acc`        
+        #print "--- pairwise_acc.shape = ", pairwise_acc.shape        
+        #print "--- pairwise_acc =\n", `pairwise_acc`        
 
 #         for i in self.symmetric_edge_features:
 #             pw_ = pw[i].reshape(self.n_states, self.n_states)
@@ -305,16 +291,16 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
         #we need to linearize it, while keeping only meaningful data
         unaries_acc_ravelled = self.block_ravel(unaries_acc, [(0,0)]+zip(np.cumsum(self.l_n_states), np.cumsum(self.l_n_features)))
-        print "--- unaries_acc_ravelled =\n", `unaries_acc_ravelled`
+        #print "--- unaries_acc_ravelled =\n", `unaries_acc_ravelled`
         assert len(unaries_acc_ravelled) == self.size_unaries
 
         L1 = np.cumsum(self.a_n_edge_features.ravel())
         L2 = np.cumsum([self.l_n_states[typ1] * self.l_n_states[typ2] for typ1, typ2 in self._iter_type_pairs() ])
-        if not bTransp:
+        if not self.bPW_std:
             aux=L1; L1=L2; L2=aux
         pairwise_acc_ravelled = self.block_ravel(pairwise_acc, [(0,0)]+zip(L1,L2))
 
-        print "--- pairwise_acc_ravelled =\n", `pairwise_acc_ravelled`
+        #print "--- pairwise_acc_ravelled =\n", `pairwise_acc_ravelled`
         assert len(pairwise_acc_ravelled) == self.size_pairwise
         
 #         print `unaries_acc_ravelled`

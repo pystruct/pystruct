@@ -6,6 +6,8 @@ from nose.tools import assert_raises
 
 from pystruct.models import NodeTypeEdgeFeatureGraphCRF
 
+NodeTypeEdgeFeatureGraphCRF.bPW_std = False
+
 from pystruct.inference.linear_programming import lp_general_graph
 from pystruct.inference import compute_energy, get_installed
 from pystruct.utils import make_grid_edges, edge_list_to_features
