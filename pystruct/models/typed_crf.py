@@ -149,7 +149,7 @@ class TypedCRF(StructuredModel):
         self._cached_all_edge, self._cached_all_edge_id = all_edges, id(x)
         
         return all_edges
-            
+        
     def _get_edges_by_type(self, x, typ1, typ2):
         return x[1][typ1*self.n_types+typ2] 
 

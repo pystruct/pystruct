@@ -95,9 +95,9 @@ def debug_joint_feature():
      
     x = [l_node_f, l_edges, l_edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [   np.array([1, 1]),
-            np.array([0, 2, 0])
-            ]
+    y = np.hstack([   np.array([0, 1]),
+                   np.array([0, 1, 2])
+            ])
     print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
@@ -109,10 +109,13 @@ def debug_joint_feature():
       [ 1. , 1., 1.  , 2.,  2., 2.    
        , 0.11 , 0.12 , 0.13 , 0.14 ,   0.21 ,  0.22 ,  0.23 ,  0.24   ,  0.31 ,  0.32 ,  0.33 ,  0.34 
        
-       , 0.  ,  0.111  ,  0.  ,  0.
-       , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  
-       , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  , 0.,0.  
-       , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  , 0.,0.,0.  
+       ,  0.   ,  0.111,  0.   ,  0.   ,  0.   ,  0.221,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.222,  0.   ,  0.   ,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
+        0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.  
        ]))
 
 
@@ -154,8 +157,8 @@ def test_joint_feature():
      
     x = [node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([1,2])
-         ]
+    y = np.array([1,2])
+    
 #     y = np.array([1,0])
     print y
     jf = g.joint_feature(x,y)
@@ -170,7 +173,7 @@ def test_joint_feature():
                        )
     
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([0,0]) ]
+    y = np.array([0,0])
     print y
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -184,7 +187,7 @@ def test_joint_feature():
                        )
 
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [np.array([0,1])]
+    y = np.array([0,1])
     node_f = [ np.array([[1.1,1.2,1.3], [2.1,2.2,2.3]]) ]
     edge_f = [ np.array([[3.1,3.2,3.3]]) ]
     x = [node_f, edges, edge_f]
@@ -204,7 +207,7 @@ def test_joint_feature():
 
     x = [node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([1,2]) ]
+    y = np.array([1,2])
     print y
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -217,7 +220,7 @@ def test_joint_feature():
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
                        )
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([0,0])]
+    y = np.array([0,0])
     print y
     print "joint_feature = \n", `g.joint_feature(x,y)`
     print
@@ -261,9 +264,9 @@ def test_joint_feature2():
      
     x = [node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([0, 0]) 
-         , np.array([0, 0, 0])
-         ]
+    y = np.hstack([ np.array([0, 0]) 
+                  , np.array([0, 0, 0])
+         ])
     print y
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -304,8 +307,8 @@ def test_joint_feature2():
      
     x = [ node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [np.array([0, 1]),
-         np.array([0, 1, 2])]
+    y = np.hstack([np.array([0, 1]),
+                   np.array([0, 1, 2])])
     print y
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -321,6 +324,7 @@ def test_joint_feature2():
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]))
+    
     print "MORE COMPLEX GRAPH :) -- BIS  OK"
     print "--- REORDERED MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
     node_f = [  np.array([ [2,2,2], [1,1,1] ])
@@ -338,8 +342,8 @@ def test_joint_feature2():
      
     x = [ node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [np.array([1, 0]),
-         np.array([2, 0, 1])]
+    y = np.hstack([np.array([1, 0]),
+                   np.array([2, 0, 1])])
     print y
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -377,8 +381,7 @@ def test_unary_potentials():
               ]
     x = [node_f, edges, edge_f]
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
-    y = [ np.array([1,2])
-         ]
+    y = np.hstack([ np.array([1,2])])
 #     y = np.array([1,0])
     print y
     
@@ -510,7 +513,7 @@ def test_joint_feature_discrete():
     #for inference_method in get_installed(["lp", "ad3", "qpbo"]):
     if True:
         crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]])
-        joint_feature_y = crf.joint_feature(x, [y_flat])
+        joint_feature_y = crf.joint_feature(x, y_flat)
         assert_equal(joint_feature_y.shape, (crf.size_joint_feature,))
         # first horizontal, then vertical
         # we trust the unaries ;)
@@ -563,7 +566,7 @@ def test_joint_feature_continuous():
         y_pred = crf.inference(x, w, relaxed=True)
 
         # compute joint_feature for prediction
-        joint_feature_y = crf.joint_feature(x, [y_pred])
+        joint_feature_y = crf.joint_feature(x, y_pred)
         assert_equal(joint_feature_y.shape, (crf.size_joint_feature,))
         # FIXME
         # first horizontal, then vertical
@@ -623,7 +626,7 @@ def test_energy_discrete():
                                     crf._get_pairwise_potentials(x, w), flat_edges, #CAUTION: pass the flatened edges!!
                                     y_hat)
 
-            joint_feature = crf.joint_feature(x, [y_hat])
+            joint_feature = crf.joint_feature(x, y_hat)
             energy_svm = np.dot(joint_feature, w)
 
             assert_almost_equal(energy, energy_svm)
@@ -631,16 +634,18 @@ def test_energy_discrete():
 
 if __name__ == "__main__":
     
-    if False: debug_joint_feature()
+    if 1: 
+        debug_joint_feature()
     
-    if False:
+    if 1:
         test_joint_feature()
+    if 1:
         test_joint_feature2()
         
-    if 0: test_unary_potentials()
+    if 1: test_unary_potentials()
     if 1: test_inference_util()
-    if 0: test_inference()
-    if 0: test_joint_feature_discrete()
+    if 1: test_inference()
+    if 1: test_joint_feature_discrete()
     if 1: test_joint_feature_continuous()
     if 1: test_energy_continuous()
     if 1: test_energy_discrete()

@@ -46,7 +46,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         
     An instance ``X`` is represented as a tuple ``([node_features, ..], [edges, ..], [edge_features, ..])`` 
 
-    Labels ``Y`` are given as a list of array of shape (n_type_nodes)
+    Labels ``Y`` are given as one array of shape (n_nodes)   The meaning of a label depends upon the node type. 
 
     """
 
@@ -225,9 +225,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             Feature vector associated with state (x, y).
 
         """
-        
         self._check_size_x(x)
-        if not isinstance(y, tuple): self._check_size_y(x,y)        
         l_node_features = self._get_node_features(x)
         l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x)
         l_n_nodes = [len(o) for o in self._get_node_features(x, True)]
@@ -246,13 +244,11 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             unary_marginals = np.zeros((n_nodes, self._n_states), dtype=np.int)
             i_start = 0
             #print self.l_n_states, self._l_type_startindex, y
-            for node_features, typ_start_index,  y_typ in zip(l_node_features, self._l_type_startindex, y):
+            for node_features, typ_start_index in zip(l_node_features, self._l_type_startindex):
                 if node_features is None: continue
                 i_stop = i_start + node_features.shape[0]
-#             for n_state, typ_start_index,  y_typ in zip(self.l_n_states, self._l_type_startindex, y):
-#                 i_stop = i_start + n_state
                 unary_marginals[ np.ogrid[i_start:i_stop] 
-                                , typ_start_index + y_typ[:] 
+                                , typ_start_index + y[i_start:i_stop] 
                                 ] = 1
                 i_start = i_stop
             #print "--- unary_marginals \n", `unary_marginals`
@@ -260,17 +256,17 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             ## pairwise
             #same thing, but the type of an edge is a pair of node types 
             pw = np.zeros((n_edges, self._n_states ** 2))
+            node_offset_by_typ = np.cumsum([0]+[0 if n is None else n.shape[0] for n in x[0]])
             i_start = 0
             for (typ1, typ2), edges, edgetype_start_index in zip(self._iter_type_pairs(), l_edges, self._l_edgetype_start_index):
                 if edges is None: continue
-                #we have edges from node typ1 to node typ2
-                y_typ1, y_typ2 = y[typ1], y[typ2] #the labels of all nodes of those two types
-                #now keep only the label of the nodes of interest
-                y1,y2 = y_typ1[edges[:,0]], y_typ2[edges[:,1]]
+                #the label of those pairs of nodes
+                y1 = y[node_offset_by_typ[typ1] + edges[:,0]]
+                y2 = y[node_offset_by_typ[typ2] + edges[:,1]]
                 #set the 1s where they should
                 i_stop = i_start + edges.shape[0]
                 pw[ np.ogrid[i_start:i_stop]
-                   , edgetype_start_index + self.l_n_states[typ2] * y1[:] + y2[:]
+                   , edgetype_start_index + self.l_n_states[typ2] * y1 + y2
                    ] = 1
                 i_start = i_stop
             #print "--- pw = \n", `pw`
@@ -307,6 +303,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         #print "--- all_edge_features =\n", `all_edge_features`
             
         pairwise_acc = np.dot(all_edge_features.T, pw)      # sum_of_features x edge_states
+#         print '-'*30
+#         print np.dot(pw.T, all_edge_features).T
+#         print '-'*30
+        
         #easier to read... :-( pairwise_acc = np.dot(pw.T, all_edge_features)      # sum_of_features x edge_states
         #print "--- pairwise_acc.shape = ", pairwise_acc.shape        
         #print "--- pairwise_acc =\n", `pairwise_acc`        
