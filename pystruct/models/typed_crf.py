@@ -23,6 +23,7 @@ class TypedCRF(StructuredModel):
         self.l_n_features = l_n_features
         self._n_features  = sum(self.l_n_features)   #total number of (node) features
 
+
         # check that ad3 is installed
         inference_method = get_installed(['ad3'])
         if not inference_method: raise Exception("ERROR: this model class requires AD3.")
@@ -30,6 +31,8 @@ class TypedCRF(StructuredModel):
         self.inference_calls = 0
         
         #class weights:
+        self._cached_all_edge, self._cached_all_edge_id = None, None
+
         # either we get class weights for all types of nodes, or for none of them!
         if l_class_weight:
             if len(l_class_weight) != self.n_types:
@@ -54,7 +57,7 @@ class TypedCRF(StructuredModel):
         #we store the slice objects
         self._a_feature_slice_by_typ = np.array([ slice(sum(self.l_n_features[:i]), sum(self.l_n_features[:i+1])) for i in range(self.n_types)])
 
-        #when putting edge states in a single sequence, index of 1st feature of an edge of type (typ1, typ2)
+        #when putting edge states in a single sequence, index of 1st state of an edge of type (typ1, typ2)
         self._l_edgetype_start_index = [] 
         i_start = 0
         for typ1_n_states in self.l_n_states:
@@ -63,8 +66,10 @@ class TypedCRF(StructuredModel):
                 i_start += typ1_n_states*typ2_n_states 
         self._l_edgetype_start_index.append(i_start)
         assert i_start == self._n_states**2
-        
 
+    def initialize(self, X, Y):
+        self._cached_all_edge, self._cached_all_edge_id = None, None
+               
     def _set_size_joint_feature(self):
         """
         We have:
@@ -110,22 +115,6 @@ class TypedCRF(StructuredModel):
             if max(nodes1) >= l_nodes[typ1].shape[0] or max(nodes2) > l_nodes[typ2].shape[0]:
                 raise ValueError("At least one edge points to non-existing node index")
     
-    def _check_size_y(self, x, y):
-        
-        if not isinstance(y, list):
-            raise ValueError("Y must be a list of arrays")
-        
-        l_features = self._get_node_features(x)
-        
-        for typ, (features, y_typ) in enumerate(zip(l_features, y)):
-            if not isinstance(y_typ, np.ndarray): 
-                raise ValueError("Y must be a list of arrays")
-            if features.shape[0] != len(y_typ):
-                raise ValueError("Node of type %d: Expected %d labels not %d"%(typ, features.shape[0], len(y_typ)))
-            
-            if min(y_typ) < 0 or max(y_typ) >=self.l_n_states[typ]:
-                    raise ValueError("Type %d: Some invalid label")
-
     def _get_node_features(self, x, bClean=False):
         if bClean:
             return [ np.empty((0,0)) if node_features is None or len(node_features)==0 else node_features for node_features in x[0]]
@@ -140,8 +129,10 @@ class TypedCRF(StructuredModel):
             return x[1]
     def _index_all_edges(self, x):
         """
-        return all edges as a single 2-column matrix, taking care of indices!!
+        return all edges as a single 2-column matrix, taking care of node indices!!
         """ 
+        if self._cached_all_edge_id == id(x): return self._cached_all_edge
+
         n_edges_total    = sum(0 if e is None else e.shape[0] for e in x[1])
         all_edges = np.zeros((n_edges_total, 2), dtype=np.int32)
         
@@ -154,9 +145,11 @@ class TypedCRF(StructuredModel):
             all_edges[i_start:i_stop, 0] = edges[:,0] + node_offset_by_typ[typ1]
             all_edges[i_start:i_stop, 1] = edges[:,1] + node_offset_by_typ[typ2]
             i_start = i_stop
+        
+        self._cached_all_edge, self._cached_all_edge_id = all_edges, id(x)
+        
         return all_edges
             
-        
     def _get_edges_by_type(self, x, typ1, typ2):
         return x[1][typ1*self.n_types+typ2] 
 
@@ -329,3 +322,4 @@ class TypedCRF(StructuredModel):
             return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
                                       return_energy=return_energy)
+            
