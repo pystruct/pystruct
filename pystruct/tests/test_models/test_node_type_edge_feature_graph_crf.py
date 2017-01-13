@@ -161,6 +161,7 @@ def test_joint_feature():
     
 #     y = np.array([1,0])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -175,6 +176,7 @@ def test_joint_feature():
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([0,0])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -191,6 +193,7 @@ def test_joint_feature():
     node_f = [ np.array([[1.1,1.2,1.3], [2.1,2.2,2.3]]) ]
     edge_f = [ np.array([[3.1,3.2,3.3]]) ]
     x = [node_f, edges, edge_f]
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     
@@ -209,6 +212,7 @@ def test_joint_feature():
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([1,2])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -222,6 +226,7 @@ def test_joint_feature():
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([0,0])
     print y
+    g.initialize(x, y)
     print "joint_feature = \n", `g.joint_feature(x,y)`
     print
     assert_array_equal(g.joint_feature(x,y)
@@ -268,6 +273,7 @@ def test_joint_feature2():
                   , np.array([0, 0, 0])
          ])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -310,6 +316,7 @@ def test_joint_feature2():
     y = np.hstack([np.array([0, 1]),
                    np.array([0, 1, 2])])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -345,6 +352,7 @@ def test_joint_feature2():
     y = np.hstack([np.array([1, 0]),
                    np.array([2, 0, 1])])
     print y
+    g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
     print
@@ -384,6 +392,7 @@ def test_unary_potentials():
     y = np.hstack([ np.array([1,2])])
 #     y = np.array([1,0])
     print y
+    g.initialize(x, y)
     
     gref = EdgeFeatureGraphCRF(4,3,3)
     xref = (node_f[0], edges[0], edge_f[0])
@@ -478,10 +487,12 @@ def test_inference():
     edge_features = edge_list_to_features(edge_list)
     x = ([x.reshape(-1, n_states)], [edges], [edge_features])
     y = [y.ravel()]
+    
     #for inference_method in get_installed(["lp", "ad3"]):
     if True:
         # same inference through CRF inferface
         crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]])   # ad3 only is supported..., inference_method=inference_method)
+        crf.initialize(x, y)
         #crf.initialize([x], [y])
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         y_pred = crf.inference(x, w, relaxed=True)
@@ -496,6 +507,7 @@ def test_inference():
         crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]])
         #crf.initialize([x], [y])
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+        crf.initialize(x)
         y_pred = crf.inference(x, w, relaxed=False)
         assert_array_equal(y[0], y_pred)
 
@@ -563,6 +575,8 @@ def test_joint_feature_continuous():
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         #crf.initialize([x], [y])
         #report_model_config(crf)
+        crf.initialize(x, y)
+        
         y_pred = crf.inference(x, w, relaxed=True)
 
         # compute joint_feature for prediction
@@ -595,6 +609,7 @@ def test_energy_continuous():
             pw1 = np.random.normal(size=(3, 3))
             pw2 = np.random.normal(size=(3, 3))
             w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
+            crf.initialize(x)
             res, energy = crf.inference(x, w, relaxed=True, return_energy=True)
             found_fractional = np.any(np.max(res[0], axis=-1) != 1)
             joint_feature = crf.joint_feature(x, res)
@@ -620,6 +635,7 @@ def test_energy_discrete():
             pw1 = np.random.normal(size=(3, 3))
             pw2 = np.random.normal(size=(3, 3))
             w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
+            crf.initialize(x)
             y_hat = crf.inference(x, w, relaxed=False)
             flat_edges = crf._index_all_edges(x)
             energy = compute_energy(crf._get_unary_potentials(x, w),
