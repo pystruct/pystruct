@@ -55,6 +55,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
                  , a_n_edge_features        #how many features per edge type?
+                 , inference_method="ad3" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
         #internal stuff
@@ -68,7 +69,9 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         
         self._n_edge_features  = self.a_n_edge_features.sum(axis=None)   #total number of (edge) features
 
-        TypedCRF.__init__(self, n_types, l_n_states, l_n_features, l_class_weight=l_class_weight)
+        TypedCRF.__init__(self, n_types, l_n_states, l_n_features, inference_method=inference_method, l_class_weight=l_class_weight)
+        
+        self._get_pairwise_potentials_initialize()
         
     def _set_size_joint_feature(self):
         """
@@ -131,7 +134,28 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
     def _get_edge_features_by_type(self, x, typ1, typ2):
         return x[2][typ1*self.n_types+typ2] 
 
-
+    def _get_pairwise_potentials_initialize(self):
+        """
+        Putting in cache the params required to build the pairwise potentials given x and w
+        """
+        self._cache_pairwise_potentials = list()
+        i_w, n_states1, n_states2, i_states1, i_states2 = 0, 0, 0, 0, 0
+#         for (typ1, typ2), edge_features, edgetype_start_index in zip(self._iter_type_pairs(), l_edge_features, self._l_edgetype_start_index):
+        for (typ1, typ2) in self._iter_type_pairs():
+            
+            n_features              = self.a_n_edge_features[typ1, typ2]
+            n_states1               = self.l_n_states[typ1]
+            n_states2               = self.l_n_states[typ2]
+            i_w_stop                = i_w + n_features * n_states1 * n_states2
+            i_states1_stop          = i_states1 + n_states1
+            i_states2_stop          = i_states2 + n_states2
+            
+            self._cache_pairwise_potentials.append( (n_features
+                                                     , n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop
+                                                     , i_w, i_w_stop) )
+            
+            i_w, i_states1, i_states2 = i_w_stop, i_states1_stop, i_states2_stop 
+        
     def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
 
@@ -156,41 +180,47 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         #         return np.dot(edge_features, pairwise).reshape(
         #             edge_features.shape[0], self.n_states, self.n_states)
         
-        l_edge_features = self._get_edge_features(x)
-        n_edges_total    = sum(0 if e is None else e.shape[0] for e in l_edge_features)
+        l_edge_features  = self._get_edge_features(x)
+        l_edge_nb = [0 if ef is None else ef.shape[0] for ef in l_edge_features]
+        n_edges_total    = sum(l_edge_nb)
+        
         wpw = w[self.size_unaries:]
         a_edges_states_states = np.zeros((n_edges_total, self._n_states, self._n_states), dtype=w.dtype)
         
-        i_w, i_edges, i_states1, i_states2 = 0, 0, 0, 0
-#         for (typ1, typ2), edge_features, edgetype_start_index in zip(self._iter_type_pairs(), l_edge_features, self._l_edgetype_start_index):
-        for (typ1, typ2), edge_features in zip(self._iter_type_pairs(), l_edge_features):
+#         i_w, i_edges, i_states1, i_states2 = 0, 0, 0, 0
+# #         for (typ1, typ2), edge_features, edgetype_start_index in zip(self._iter_type_pairs(), l_edge_features, self._l_edgetype_start_index):
+#         for (typ1, typ2), edge_features in zip(self._iter_type_pairs(), l_edge_features):
+#             if edge_features is None: continue
+#             
+#             n_edges, n_features     = edge_features.shape
+#             n_states1               = self.l_n_states[typ1]
+#             n_states2               = self.l_n_states[typ2]
+#             i_w_stop                = i_w + self.a_n_edge_features[typ1,typ2] * n_states1 * n_states2
+#             i_edges_stop            = i_edges + n_edges
+#             i_states1_stop          = i_states1 + n_states1
+#             i_states2_stop          = i_states2 + n_states2
+#             
+#             pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
+#             pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
+# 
+#             a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
+#             
+#             i_w, i_edges, i_states1, i_states2 = i_w_stop, i_edges_stop, i_states1_stop, i_states2_stop 
+
+        i_edges = 0
+        for ((n_features, n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop, i_w, i_w_stop)
+             , edge_features, n_edges) in zip(self._cache_pairwise_potentials, l_edge_features, l_edge_nb):
+            
             if edge_features is None: continue
-            
-            n_edges, n_features     = edge_features.shape
-            n_states1               = self.l_n_states[typ1]
-            n_states2               = self.l_n_states[typ2]
-            i_w_stop                = i_w + self.a_n_edge_features[typ1,typ2] * n_states1 * n_states2
             i_edges_stop            = i_edges + n_edges
-            i_states1_stop          = i_states1 + n_states1
-            i_states2_stop          = i_states2 + n_states2
             
-#             print "wpw ", wpw.size, wpw.shape
-#             print "n_features ", n_features
-#             print edgetype_start_index,edgetype_start_index+n_states1*n_states2
-#             print wpw[edgetype_start_index:edgetype_start_index+n_states1*n_states2]
             pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
-#             print "pw_typ_typ ", pw_typ_typ
             pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
-#             print "pot_typ_typ ", pot_typ_typ
-#             print (i_edges,i_edges_stop)
-#             print (i_states1,i_states1_stop)
-#             print (i_states2,i_states2_stop)
-#             print a_edges_states_states.shape
-#             print pot_typ_typ.shape
+
             a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
             
-            i_w, i_edges, i_states1, i_states2 = i_w_stop, i_edges_stop, i_states1_stop, i_states2_stop 
-        
+            i_edges = i_edges_stop 
+                    
         return a_edges_states_states.reshape(n_edges_total, self._n_states, self._n_states)
 
     def _block_ravel(self, a, lij):
