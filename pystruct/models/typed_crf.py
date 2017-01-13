@@ -12,7 +12,17 @@ class TypedCRF(StructuredModel):
                  , n_types                  #how many node type?
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
+                 , inference_method="ad3" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
+        
+        StructuredModel.__init__(self)
+        
+        if inference_method is None:
+            # get first in list that is installed
+            inference_method = get_installed(['ad3', 'max-product', 'lp'])[0]
+        self.inference_method = inference_method
+        self.inference_calls = 0
+        
         if len(l_n_states)   != n_types:
             raise ValueError("Expected 1 number of states per node type.")
         if l_n_features != None and len(l_n_features) != n_types:
@@ -23,16 +33,10 @@ class TypedCRF(StructuredModel):
         self.l_n_features = l_n_features
         self._n_features  = sum(self.l_n_features)   #total number of (node) features
 
-
-        # check that ad3 is installed
-        inference_method = get_installed(['ad3'])
-        if not inference_method: raise Exception("ERROR: this model class requires AD3.")
-        self.inference_method = inference_method[0]
-        self.inference_calls = 0
+        #Caching some heavily used values
+        self._get_unary_potentials_initialize()
         
         #class weights:
-        self._cached_all_edge, self._cached_all_edge_id = None, None
-
         # either we get class weights for all types of nodes, or for none of them!
         if l_class_weight:
             if len(l_class_weight) != self.n_types:
@@ -44,8 +48,7 @@ class TypedCRF(StructuredModel):
             #class weights are computed by type and simply concatenated
             self.class_weight = np.hstack([np.array(class_weight) for class_weight in l_class_weight])
         else:
-            n_things = sum(self.l_n_states)
-            self.class_weight = np.ones(n_things)
+            self.class_weight = np.ones(self._n_states)
 
         self._set_size_joint_feature()
 
@@ -67,9 +70,9 @@ class TypedCRF(StructuredModel):
         self._l_edgetype_start_index.append(i_start)
         assert i_start == self._n_states**2
 
-    def initialize(self, X, Y):
-        self._cached_all_edge, self._cached_all_edge_id = None, None
-               
+    def initialize(self, X, Y=None):
+        pass
+    
     def _set_size_joint_feature(self):
         """
         We have:
@@ -131,8 +134,6 @@ class TypedCRF(StructuredModel):
         """
         return all edges as a single 2-column matrix, taking care of node indices!!
         """ 
-        if self._cached_all_edge_id == id(x): return self._cached_all_edge
-
         n_edges_total    = sum(0 if e is None else e.shape[0] for e in x[1])
         all_edges = np.zeros((n_edges_total, 2), dtype=np.int32)
         
@@ -146,8 +147,6 @@ class TypedCRF(StructuredModel):
             all_edges[i_start:i_stop, 1] = edges[:,1] + node_offset_by_typ[typ2]
             i_start = i_stop
         
-        self._cached_all_edge, self._cached_all_edge_id = all_edges, id(x)
-        
         return all_edges
         
     def _get_edges_by_type(self, x, typ1, typ2):
@@ -159,17 +158,45 @@ class TypedCRF(StructuredModel):
                 yield (typ1, typ2)
         raise StopIteration
 
+#         
+#     def _get_unary_potentials_slow(self, x, w):
+#         self._check_size_w(w)
+#         self._check_size_x(x)
+#         l_node_features = self._get_node_features(x)
+#         a_nodes_features = scipy.sparse.block_diag(l_node_features)  #.toarray()
+#         w_unaries = w[:self.size_unaries]
+#         l_w_block = []
+#         for ((i_w,i_w2), (n_states, n_features)) in self._cache_unary_potentials:
+#             unary_params = w_unaries[i_w:i_w2].reshape(n_states, n_features)
+#             l_w_block.append(unary_params.T)
+#         a_features_states = scipy.sparse.block_diag(l_w_block)
+#         return a_nodes_features.dot(a_features_states).toarray()
+
+    def _get_unary_potentials_initialize(self):
+        """
+        pre-compute iteration params
+        """
+        self._cache_unary_potentials = list()
+         
+        #l_w_block = []
+        i_w, i_states = 0, 0
+        for n_states, n_features in zip(self.l_n_states, self.l_n_features):  
+            i_w2 = i_w + n_states*n_features        #number of weights for the type
+            i_states2 = i_states + n_states         #number of state of that type
+            self._cache_unary_potentials.append( ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) )
+            i_w, i_states = i_w2, i_states2 
+    
     def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
-
+ 
         Parameters
         ----------
         x : tuple
             Instance Representation.
-
+ 
         w : ndarray, shape=(size_joint_feature,)
             Weight vector for CRF instance.
-
+ 
         Returns
         -------
         unary : ndarray, shape=(sum_over_types(n_states_of_type)
@@ -182,25 +209,29 @@ class TypedCRF(StructuredModel):
         #         unary_params = w[:self.n_states * self.n_features].reshape(
         #             self.n_states, self.n_features)
         #         return np.dot(features, unary_params.T)
-
+ 
         #self.size_unaries == sum(  n_states * n_features for n_states, n_features in zip(self.l_n_states, self.l_n_features) )
         w_unaries = w[:self.size_unaries]
         a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
                                    , self._n_states), dtype=w.dtype)
-        #we work type by type and assemble the unaries
-        #"irrelevant" unaries (i.e. for state not applicable to a type, will get a 0
-        i_w, i_nodes, i_states = 0, 0, 0
-        for features, n_states, n_features in zip(l_node_features, self.l_n_states, self.l_n_features):  
-            i_w2 = i_w + n_states*n_features        #number of weights for the type
+#         #we work type by type and assemble the unaries
+#         #"irrelevant" unaries (i.e. for state not applicable to a type, will get a 0
+#         i_w, i_nodes, i_states = 0, 0, 0
+#         for features, n_states, n_features in zip(l_node_features, self.l_n_states, self.l_n_features):  
+#             i_w2 = i_w + n_states*n_features        #number of weights for the type
+#             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
+#             i_states2 = i_states + n_states         #number of state of that type
+#             w_unaries_type = w_unaries[i_w:i_w2]    #range for weights for that type
+#             #back to "usual" code!
+#             unary_params = w_unaries_type.reshape(n_states, n_features)
+#             #apart that we fill a sub-part of the unaries matrix 
+#             a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, unary_params.T)
+#             i_w, i_nodes, i_states = i_w2, i_nodes2, i_states2 
+        i_nodes = 0
+        for features, ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) in zip(l_node_features, self._cache_unary_potentials):  
             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
-            i_states2 = i_states + n_states         #number of state of that type
-            w_unaries_type = w_unaries[i_w:i_w2]    #range for weights for that type
-            #back to "usual" code!
-            unary_params = w_unaries_type.reshape(n_states, n_features)
-            #apart that we fill a sub-part of the unaries matrix 
-            a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, unary_params.T)
-            i_w, i_nodes, i_states = i_w2, i_nodes2, i_states2 
-
+            a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, w_unaries[i_w:i_w2].reshape(n_states, n_features).T)
+            i_nodes = i_nodes2
         # nodes x features  .  features x states  -->  nodes x states
         return a_nodes_states
             
@@ -252,7 +283,7 @@ class TypedCRF(StructuredModel):
         """
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials = self._get_unary_potentials(x, w)
+        unary_potentials    = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         flat_edges = self._index_all_edges(x)
         flat_y = np.hstack(y)
@@ -309,9 +340,9 @@ class TypedCRF(StructuredModel):
         """
         self._check_size_w(w)
         self.inference_calls += 1
-        unary_potentials = self._get_unary_potentials(x, w)
+        self.initialize(x)
+        unary_potentials    = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
-        
         flat_edges = self._index_all_edges(x)
 
         if constraints:
