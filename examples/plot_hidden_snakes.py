@@ -118,14 +118,41 @@ def shuffleSnakeCells(a_picture, bOneHot=True): #in place!!
     a_picture[_ai,_aj,:] =  a_picture[ai,aj,:]
     return a_picture
 
+def changeOneSnakeCell(a_picture, bOneHot=True): #in place!!
+    """
+    Change the color of 1 snake cells
+    """
+    if bOneHot:
+        ai, aj = np.where(a_picture[...,3] != 1)
+    else:
+        _p = np.copy(a_picture)
+        _p = one_hot_colors(_p)
+        ai, aj = np.where(_p[...,3] != 1)
+    assert len(ai) == 10
+    
+    iChange = random.randint(0,9)
+    
+    while True:
+        iFromCell = random.randint(0,9)
+        if  (a_picture[ai[iChange], aj[iChange],:] != a_picture[ai[iFromCell], aj[iFromCell],:]).any():
+             a_picture[ai[iChange], aj[iChange],:]  = a_picture[ai[iFromCell], aj[iFromCell],:]
+             #so that we do not care about which color is valid...
+             break
+
+    return a_picture
+
 def shuffleSnake(a_picture, bOneHot=True):
     """
     Shuffle either the snake's cells or the pcitures' pixels.
     """
-    if random.randint(0,1):
-        shuffleSnakeCells(a_picture, bOneHot)
+    if True:
+        changeOneSnakeCell(a_picture, bOneHot)
+        changeOneSnakeCell(a_picture, bOneHot)
     else:
-        shufflePictureCells(a_picture)
+        if random.randint(0,1):
+            shuffleSnakeCells(a_picture, bOneHot)
+        else:
+            shufflePictureCells(a_picture)
     
 def convertToSingleTypeX(X):
     """
@@ -312,8 +339,9 @@ Test accuracy: 0.907
  [   1    0    2    2   12    0    5    0    1    0   77]]
 
  --------------------------
-switch_to='ad3',
- max-iter=100
+    switch_to='ad3',
+    max-iter=100
+    
  Results using also input features for edges
 Test accuracy: 0.870
 [[2750    0    0    0    0    0    0    0    0    0    0]
@@ -330,8 +358,9 @@ Test accuracy: 0.870
 
 
 --------------------------
-switch_to='ad3',
-without max_iter
+    switch_to='ad3',
+    without max_iter
+    
 Results using also input features for edges
 Test accuracy: 0.997
 [[2749    0    0    0    0    0    0    0    1    0    0]
@@ -389,8 +418,8 @@ Test accuracy: 0.864
 
 
  --------------------------
-switch_to='ad3',
- max-iter=100
+    switch_to='ad3',
+     max-iter=100
  
 Training time = 34.5s
 Results using also input features for edges
@@ -407,8 +436,8 @@ Test accuracy: 0.870
  [  57    0    0    0    0    1    1    2    0   34    5]
  [  57    0    0    0    0    0    0    1    0    0   42]]
  --------------------------
-switch_to='ad3',
-without max-iter
+    switch_to='ad3',
+    without max-iter
 
 Training time = 1346.7s
 Results using also input features for edges
@@ -426,4 +455,90 @@ Test accuracy: 0.987
  [   0    0    0    0    0    0    1    0    1    0   98]]
 
  
+ 
+----------------------------------------------------------------
+CHANGING ONE CELL OF THE SNAKE 
+    switch_to='ad3',
+    without max-iter
+ 
+ Please be patient. Learning will take 5-20 minutes.
+200 200
+ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
+400 400
+Snakes are ok
+400 400 400
+TEST len= 100
+ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
+TEST len= 200
+Results using only directional features for edges
+Test accuracy: 0.857
+[[6355    0    0    0    4   26    0    8    1    4  102]
+ [ 100    0    0    0    0    0    0    0    0    0    0]
+ [  91    0    0    0    0    9    0    0    0    0    0]
+ [  91    0    0    0    0    0    0    0    0    0    9]
+ [  99    0    0    0    0    0    0    0    0    0    1]
+ [  96    0    0    0    0    1    0    1    0    0    2]
+ [  97    0    0    0    1    0    0    0    1    0    1]
+ [  95    0    0    0    0    4    0    1    0    0    0]
+ [  86    0    0    0    2    0    0    0    1    0   11]
+ [  70    0    0    0    0   13    0    3    0    7    7]
+ [  34    0    0    0    0    0    0    2    0    0   64]]
+Training time = 1852.6s
+Results using also input features for edges
+Test accuracy: 0.904
+[[6185   25   25   25   25   24   25   32   39   42   53]
+ [  41   58    0    0    0    0    1    0    0    0    0]
+ [  41    0   56    0    2    0    0    1    0    0    0]
+ [  41    0    1   56    0    2    0    0    0    0    0]
+ [  39    0    0    1   56    0    4    0    0    0    0]
+ [  39    0    0    0    1   58    0    2    0    0    0]
+ [  39    0    0    0    0    1   59    0    1    0    0]
+ [  38    0    0    0    0    0    1   60    0    1    0]
+ [  36    1    0    0    0    0    0    0   62    0    1]
+ [  36    0    0    1    1    0    0    0    0   62    0]
+ [  32    1    0    0    1    1    0    0    0    0   65]]
+
+
+----------------------------------------------------------------
+CHANGING TWO CELLs OF THE SNAKE 
+    switch_to='ad3',
+    without max-iter
+ 
+Please be patient. Learning will take 5-20 minutes.
+200 200
+ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
+400 400
+Snakes are ok
+400 400 400
+TEST len= 100
+ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
+TEST len= 200
+Results using only directional features for edges
+Test accuracy: 0.853
+[[6318    5   13    8    5    9   26   18   25   30   43]
+ [  93    5    0    0    0    1    0    0    0    1    0]
+ [  86    0    3    0    1    0    5    0    2    3    0]
+ [  84    0    0    0    0    3    3    3    3    4    0]
+ [  84    0    0    0    1    1    5    1    4    4    0]
+ [  82    0    0    2    1    5    2    2    4    2    0]
+ [  80    0    3    0    0    2    8    3    1    3    0]
+ [  79    0    1    1    0    2    4    3    4    6    0]
+ [  74    1    1    2    2    0    5    0    8    5    2]
+ [  71    0    3    0    0    3    3    3    4   13    0]
+ [  51    0    0    3    0    0    2    2    4    1   37]]
+Training time = 2100.8s
+Results using also input features for edges
+Test accuracy: 0.941
+[[6204   26   30   29   25   26   29   23   26   35   47]
+ [  11   88    0    0    0    0    1    0    0    0    0]
+ [  11    0   87    0    0    1    0    1    0    0    0]
+ [  10    1    1   85    0    1    1    1    0    0    0]
+ [   9    0    1    1   83    1    3    0    2    0    0]
+ [   9    0    0    1    1   83    1    3    0    2    0]
+ [   8    0    1    0    2    2   83    0    3    0    1]
+ [   8    0    0    1    0    2    2   85    0    2    0]
+ [   8    0    0    0    1    0    2    1   86    0    2]
+ [   8    0    0    0    0    1    0    1    1   89    0]
+ [   8    0    0    0    0    0    2    0    1    1   88]]
+
 """
