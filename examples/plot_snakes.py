@@ -96,12 +96,6 @@ if __name__ == '__main__':
     snakes = load_snakes()
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
     
-    #JL
-    X_train, Y_train = X_train[:40], Y_train[:40]
-    print len(X_train), len(Y_train)
-    print X_train[0].shape
-    print Y_train[0].shape
-    
     X_train = [one_hot_colors(x) for x in X_train]
     Y_train_flat = [y_.ravel() for y_ in Y_train]
     
@@ -125,12 +119,10 @@ if __name__ == '__main__':
     print("Test accuracy: %.3f"
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-    
+
     # now, use more informative edge features:
     crf = EdgeFeatureGraphCRF(inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
-                        #JL
-                        max_iter=20,
                         n_jobs=-1)
     ssvm.fit(X_train_edge_features, Y_train_flat)
     Y_pred2 = ssvm.predict(X_test_edge_features)
@@ -139,19 +131,20 @@ if __name__ == '__main__':
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    # plot stuff
-    fig, axes = plt.subplots(2, 2)
-    axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
-    axes[0, 0].set_title('Input')
-    y = Y_test[0].astype(np.int)
-    bg = 2 * (y != 0)  # enhance contrast
-    axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
-    axes[0, 1].set_title("Ground Truth")
-    axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-    axes[1, 0].set_title("Prediction w/o edge features")
-    axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-    axes[1, 1].set_title("Prediction with edge features")
-    for a in axes.ravel():
-        a.set_xticks(())
-        a.set_yticks(())
-    plt.show()
+    if False:
+        # plot stuff
+        fig, axes = plt.subplots(2, 2)
+        axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
+        axes[0, 0].set_title('Input')
+        y = Y_test[0].astype(np.int)
+        bg = 2 * (y != 0)  # enhance contrast
+        axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
+        axes[0, 1].set_title("Ground Truth")
+        axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+        axes[1, 0].set_title("Prediction w/o edge features")
+        axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+        axes[1, 1].set_title("Prediction with edge features")
+        for a in axes.ravel():
+            a.set_xticks(())
+            a.set_yticks(())
+        plt.show()
