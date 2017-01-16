@@ -166,6 +166,9 @@ def plot_snake(picture):
     plt.show()
 
 def augmentWithNoSnakeImages(X,Y, name, bOneHot=True):
+    """
+    return the number of added picture (AT THE END OF INPUT LISTS)
+    """
     print "ADDING PICTURE WIHOUT SNAKES!!!   %d elements in %s"%(len(X), name)
     
     X_NoSnake = [np.copy(x) for x in X]
@@ -182,13 +185,12 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True):
             Y_NoSnake.append(np.zeros(y.shape, dtype=np.int8))
     X_NoSnake = newX
     
-    return X+X_NoSnake, Y+Y_NoSnake
+    return len(X_NoSnake), X+X_NoSnake, Y+Y_NoSnake
     
-def shuffle_XY(X,Y):    
-    lxy = zip(X, Y)
-    random.shuffle(lxy)
-    X, Y = zip(*lxy)
-    return X, Y
+def shuffle_in_unison(*args):    
+    lTuple = zip(*args)
+    random.shuffle(lTuple)
+    return zip(*lTuple)
 
 if __name__ == '__main__':
     print("Please be patient. Learning will take 5-20 minutes.")
@@ -205,7 +207,7 @@ if __name__ == '__main__':
     #print `X_train[0]`
 
     if bADD_HIDDEN_SNAKES:
-        X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False)
+        _, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False)
         print len(X_train), len(Y_train)
     
     if False:
@@ -249,7 +251,7 @@ if __name__ == '__main__':
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
     print "TEST len=", len(X_test)
     if bADD_HIDDEN_SNAKES:
-        X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False)
+        _, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False)
         print "TEST len=", len(X_test)
     
     X_test = [one_hot_colors(x) for x in X_test]
