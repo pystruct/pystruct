@@ -93,7 +93,7 @@ def debug_joint_feature():
               , None
               ]
      
-    x = [l_node_f, l_edges, l_edge_f]
+    x = (l_node_f, l_edges, l_edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([   np.array([0, 1]),
                    np.array([0, 1, 2])
@@ -155,7 +155,7 @@ def test_joint_feature():
     print "---SIMPLE---------------------------------------------------------------------"
     g, (node_f, edges, edge_f) = get_simple_graph_structure(), get_simple_graph()
      
-    x = [node_f, edges, edge_f]
+    x = (node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([1,2])
     
@@ -192,7 +192,7 @@ def test_joint_feature():
     y = np.array([0,1])
     node_f = [ np.array([[1.1,1.2,1.3], [2.1,2.2,2.3]]) ]
     edge_f = [ np.array([[3.1,3.2,3.3]]) ]
-    x = [node_f, edges, edge_f]
+    x = (node_f, edges, edge_f)
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -208,7 +208,7 @@ def test_joint_feature():
     print "---SIMPLE + 2nd EDGE--------------------------------------------------------"
     node_f, edges, edge_f = get_simple_graph2()
 
-    x = [node_f, edges, edge_f]
+    x = (node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([1,2])
     print y
@@ -267,7 +267,7 @@ def test_joint_feature2():
               , None
               ]
      
-    x = [node_f, edges, edge_f]
+    x = (node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([0, 0]) 
                   , np.array([0, 0, 0])
@@ -311,7 +311,7 @@ def test_joint_feature2():
               , None
               ]
      
-    x = [ node_f, edges, edge_f]
+    x = ( node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([0, 1]),
                    np.array([0, 1, 2])])
@@ -347,7 +347,7 @@ def test_joint_feature2():
               , None
               ]
      
-    x = [ node_f, edges, edge_f]
+    x = ( node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([1, 0]),
                    np.array([2, 0, 1])])
@@ -387,7 +387,7 @@ def test_unary_potentials():
               ]    #an edge from 0 to 1
     edge_f = [ np.array([[3,3,3]]) 
               ]
-    x = [node_f, edges, edge_f]
+    x = (node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([1,2])])
 #     y = np.array([1,0])
@@ -436,7 +436,7 @@ def test_inference_util():
                , None
                , None                        ]    
 
-    x = [ node_f, edges, None]
+    x = ( node_f, edges, None)
     
     reindexed_exdges = g._index_all_edges(x)
     #print `reindexed_exdges`
@@ -453,7 +453,7 @@ def report_model_config(crf):
     
 def test_inference():
     """
-    Testing with a single type of nodes. Must de aw well as EdgeFeatureGraphCRF
+    Testing with a single type of nodes. Must do as well as EdgeFeatureGraphCRF
     """
     # Test inference with different weights in different directions
 
@@ -486,7 +486,7 @@ def test_inference():
 
     edge_features = edge_list_to_features(edge_list)
     x = ([x.reshape(-1, n_states)], [edges], [edge_features])
-    y = [y.ravel()]
+    y = y.ravel()
     
     #for inference_method in get_installed(["lp", "ad3"]):
     if True:
@@ -498,9 +498,9 @@ def test_inference():
         y_pred = crf.inference(x, w, relaxed=True)
         if isinstance(y_pred, tuple):
             # ad3 produces an integer result if it found the exact solution
-            assert_array_almost_equal(res[1], y_pred[1])
-            assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states))
-            assert_array_equal(y, np.argmax(y_pred[0], axis=-1))
+            assert_array_almost_equal(res[1], y_pred[1], 5)
+            assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states), 5)
+            assert_array_equal(y, np.argmax(y_pred[0], axis=-1), 5)
 
     #for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
@@ -509,7 +509,7 @@ def test_inference():
         w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
         crf.initialize(x)
         y_pred = crf.inference(x, w, relaxed=False)
-        assert_array_equal(y[0], y_pred)
+        assert_array_equal(y, y_pred)
 
 def test_joint_feature_discrete():
     """
@@ -650,7 +650,7 @@ def test_energy_discrete():
 
 if __name__ == "__main__":
     
-    if 1: 
+    if 0: 
         debug_joint_feature()
     
     if 1:
