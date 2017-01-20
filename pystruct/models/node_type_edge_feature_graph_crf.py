@@ -1,3 +1,29 @@
+# -*- coding: utf-8 -*-
+
+"""
+    Pairwise CRF with features/strength associated to each edge and different types of nodes
+
+    Copyright Xerox(C) 2017 JL. Meunier
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    
+    
+    Developed  for the EU project READ. The READ project has received funding 
+    from the European Union�s Horizon 2020 research and innovation programme 
+    under grant agreement No 674943.
+    
+"""
 import numpy as np
 
 from .typed_crf import TypedCRF
@@ -72,7 +98,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         TypedCRF.__init__(self, n_types, l_n_states, l_n_features, inference_method=inference_method, l_class_weight=l_class_weight)
         
         self._get_pairwise_potentials_initialize()
-        
+
     def _set_size_joint_feature(self):
         """
         We have:
@@ -99,10 +125,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
     def _check_size_x(self, x):
         l_edges = self._get_edges(x)
         if len(l_edges) != self.n_types**2:
-            raise ValueError("Expected %d edge arrays"%(self.n_types**2))
+            raise ValueError("Expected %d edge arrays or None"%(self.n_types**2))
         l_edge_features = self._get_edge_features(x) 
         if len(l_edge_features) != self.n_types**2:
-            raise ValueError("Expected %d edge feature arrays"%(self.n_types**2))
+            raise ValueError("Expected %d edge feature arrays or None"%(self.n_types**2))
 
         TypedCRF._check_size_x(self, x)
         
@@ -124,7 +150,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             edge_features = self._get_edge_features_by_type(x, typ1, typ2) 
             if edge_features is None: continue
             if edge_features.shape[1] != self.a_n_edge_features[typ1,typ2]:
-                raise ValueError("Types %d x %d: bad number of edge features"%(typ1,typ2))
+                raise ValueError("Types %d x %d: bad number of edge features. expected %d got %d"%(typ1,typ2, self.a_n_edge_features[typ1,typ2], edge_features.shape[1]))
 
     def _get_edge_features(self, x, bClean=False):
         if bClean:
@@ -139,22 +165,27 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         Putting in cache the params required to build the pairwise potentials given x and w
         """
         self._cache_pairwise_potentials = list()
-        i_w, n_states1, n_states2, i_states1, i_states2 = 0, 0, 0, 0, 0
-#         for (typ1, typ2), edge_features, edgetype_start_index in zip(self._iter_type_pairs(), l_edge_features, self._l_edgetype_start_index):
-        for (typ1, typ2) in self._iter_type_pairs():
-            
-            n_features              = self.a_n_edge_features[typ1, typ2]
+#         i_w, n_states1, n_states2, i_states1, i_states2 = 0, 0, 0, 0, 0
+#         for (typ1, typ2) in self._iter_type_pairs():
+
+        i_w, n_states1, i_states1 = 0, 0, 0
+
+        for typ1 in xrange(self.n_types):
             n_states1               = self.l_n_states[typ1]
-            n_states2               = self.l_n_states[typ2]
-            i_w_stop                = i_w + n_features * n_states1 * n_states2
             i_states1_stop          = i_states1 + n_states1
-            i_states2_stop          = i_states2 + n_states2
-            
-            self._cache_pairwise_potentials.append( (n_features
-                                                     , n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop
-                                                     , i_w, i_w_stop) )
-            
-            i_w, i_states1, i_states2 = i_w_stop, i_states1_stop, i_states2_stop 
+            n_states2, i_states2 = 0, 0
+            for typ2 in xrange(self.n_types):
+                n_features              = self.a_n_edge_features[typ1, typ2]
+                n_states2               = self.l_n_states[typ2]
+                i_w_stop                = i_w + n_features * n_states1 * n_states2
+                i_states2_stop          = i_states2 + n_states2
+                
+                self._cache_pairwise_potentials.append( (n_features
+                                                         , n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop
+                                                         , i_w, i_w_stop) )
+                
+                i_w, i_states2 = i_w_stop, i_states2_stop 
+            i_states1 = i_states1_stop
         
     def _get_pairwise_potentials(self, x, w):
         """Computes pairwise potentials for x and w.
@@ -173,12 +204,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             Pairwise weights.
         """
         self._check_size_w(w)
-        self._check_size_x(x)
-        #         edge_features = self._get_edge_features(x)
-        #         pairwise = np.asarray(w[self.n_states * self.n_features:])
-        #         pairwise = pairwise.reshape(self.n_edge_features, -1)
-        #         return np.dot(edge_features, pairwise).reshape(
-        #             edge_features.shape[0], self.n_states, self.n_states)
+        #self._check_size_x(x) #call initialize once and only once before!!
         
         l_edge_features  = self._get_edge_features(x)
         l_edge_nb = [0 if ef is None else ef.shape[0] for ef in l_edge_features]
@@ -186,12 +212,12 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         
         wpw = w[self.size_unaries:]
         a_edges_states_states = np.zeros((n_edges_total, self._n_states, self._n_states), dtype=w.dtype)
-        
+
 #         i_w, i_edges, i_states1, i_states2 = 0, 0, 0, 0
 # #         for (typ1, typ2), edge_features, edgetype_start_index in zip(self._iter_type_pairs(), l_edge_features, self._l_edgetype_start_index):
 #         for (typ1, typ2), edge_features in zip(self._iter_type_pairs(), l_edge_features):
 #             if edge_features is None: continue
-#             
+#              
 #             n_edges, n_features     = edge_features.shape
 #             n_states1               = self.l_n_states[typ1]
 #             n_states2               = self.l_n_states[typ2]
@@ -199,26 +225,29 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 #             i_edges_stop            = i_edges + n_edges
 #             i_states1_stop          = i_states1 + n_states1
 #             i_states2_stop          = i_states2 + n_states2
-#             
+#              
 #             pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
 #             pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
-# 
+#             print "pot_typ_typ.shape ", pot_typ_typ.shape
 #             a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
-#             
+#              
 #             i_w, i_edges, i_states1, i_states2 = i_w_stop, i_edges_stop, i_states1_stop, i_states2_stop 
 
         i_edges = 0
+        #print map(len, [self._cache_pairwise_potentials, l_edge_features, l_edge_nb])
         for ((n_features, n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop, i_w, i_w_stop)
              , edge_features, n_edges) in zip(self._cache_pairwise_potentials, l_edge_features, l_edge_nb):
-            
-            if edge_features is None: continue
+             
             i_edges_stop            = i_edges + n_edges
-            
-            pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
-            pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
-
-            a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
-            
+             
+            if not edge_features is None: 
+                pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
+                pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
+#                 print i_states1,i_states1_stop , i_states2,i_states2_stop, n_states1, n_states2
+#                 print "a_edges_states_states.shape ", a_edges_states_states.shape
+#                 print "a_edges_states_states[  ].shape ", a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ].shape
+                a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
+ 
             i_edges = i_edges_stop 
                     
         return a_edges_states_states.reshape(n_edges_total, self._n_states, self._n_states)
@@ -255,28 +284,47 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             Feature vector associated with state (x, y).
 
         """
-        self._check_size_x(x)
+#         print "x=", `x`
+#         print "y=", `y`
+        self._check_size_x(x)   #call initialize once!
         l_node_features = self._get_node_features(x)
         l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x)
         l_n_nodes = [len(o) for o in self._get_node_features(x, True)]
         l_n_edges = [edges.shape[0] for edges in self._get_edges(x, True)]
         n_nodes = sum(l_n_nodes)
         n_edges = sum(l_n_edges)
-
+        if False:
+            print
+            print type(y)
+            print "l_n_nodes = ", l_n_nodes
+            for nf in l_node_features: print "nf.shape ", None if nf is None else nf.shape, 
+            print
+            print "l_n_edges = ", l_n_edges
+            for ef in l_edge_features: print "ef.shape ", None if ef is None else ef.shape, 
+            print 
         if isinstance(y, tuple):
+            #print "y=", `y`
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
             unary_marginals = unary_marginals.reshape(n_nodes, self._n_states)
         else:
+            self._check_size_xy(x, y)
             #make one hot encoding
             #each type is assigned a range of columns, each starting at self._a_state_startindex_by_typ[ <typ> ]
             #in the arnge column I is for state i of that type
             unary_marginals = np.zeros((n_nodes, self._n_states), dtype=np.int)
             i_start = 0
             #print self.l_n_states, self._l_type_startindex, y
+#             print "l_node_features shapes", map(lambda x: x.shape, l_node_features)
+#             print "y.shape", y.shape
+#             print "y", y.ravel()
             for node_features, typ_start_index in zip(l_node_features, self._l_type_startindex):
                 if node_features is None: continue
                 i_stop = i_start + node_features.shape[0]
+#                 print "typ_start_index ", typ_start_index
+#                 print "y. ", y.shape, i_start, i_stop
+#                 print  y[i_start:i_stop].ravel()
+                unary_marginals[ :, typ_start_index + y[i_start:i_stop] ] 
                 unary_marginals[ np.ogrid[i_start:i_stop] 
                                 , typ_start_index + y[i_start:i_stop] 
                                 ] = 1
@@ -313,7 +361,6 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             i_start = i_stop
         assert i_start == n_nodes
         #print "--- all_node_features =\n", `all_node_features`
-        
         unaries_acc = np.dot(unary_marginals.T, all_node_features)   # node_states x sum_of_features matrix
         #print "--- unaries_acc =\n", `unaries_acc`
         
@@ -331,8 +378,12 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             i_col_start = i_col_stop
             i_start     = i_stop
         #print "--- all_edge_features =\n", `all_edge_features`
+
+        #print all_edge_features.T.shape, pw.shape
             
         pairwise_acc = np.dot(all_edge_features.T, pw)      # sum_of_features x edge_states
+        
+        
 #         print '-'*30
 #         print np.dot(pw.T, all_edge_features).T
 #         print '-'*30
