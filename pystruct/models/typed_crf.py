@@ -1,9 +1,34 @@
+# -*- coding: utf-8 -*-
+
+"""
+    CRF with different types of nodes
+
+    Copyright Xerox(C) 2017 JL. Meunier
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    
+    
+    Developed  for the EU project READ. The READ project has received funding 
+    from the European Union�s Horizon 2020 research and innovation programme 
+    under grant agreement No 674943.
+    
+"""
 import numpy as np
 
 from .base import StructuredModel
 from ..inference import inference_dispatch, get_installed
 from .utils import loss_augment_unaries
-from numpy import dtype
 
 
 class TypedCRF(StructuredModel):
@@ -71,8 +96,13 @@ class TypedCRF(StructuredModel):
         assert i_start == self._n_states**2
 
     def initialize(self, X, Y=None):
-        pass
-    
+        if isinstance(X, list):
+            map(self._check_size_x, X)
+            if not Y is None: map(self._check_size_xy, X, Y)
+        else:
+            self._check_size_x(X)
+            self._check_size_xy(X, Y)
+                
     def _set_size_joint_feature(self):
         """
         We have:
@@ -87,14 +117,12 @@ class TypedCRF(StructuredModel):
                    self.inference_method))
 
     def _check_size_x(self, x):
-        l_nodes = self._get_node_features(x)
-
         #node_features are [  i_in_typ -> features ]
-        l_features = self._get_node_features(x)
-        if len(l_features) != self.n_types:
+        l_node_features = self._get_node_features(x)
+        if len(l_node_features) != self.n_types:
             raise ValueError("Expected one node feature array per node type.")
         
-        for typ, typ_features in enumerate(l_features):
+        for typ, typ_features in enumerate(l_node_features):
             if typ_features.shape[1] != self.l_n_features[typ]:
                 raise ValueError("Expected %d features for type %d"%(self.l_n_features[typ], typ))
 
@@ -114,22 +142,49 @@ class TypedCRF(StructuredModel):
             #edges should point to valid node indices
             nodes1, nodes2 = edges[:,0], edges[:,1]
             if min(nodes1) < 0 or min(nodes2) < 0:
-                raise ValueError("At least one edge points to negative and therefore invalid node index")
-            if max(nodes1) >= l_nodes[typ1].shape[0] or max(nodes2) > l_nodes[typ2].shape[0]:
-                raise ValueError("At least one edge points to non-existing node index")
+                raise ValueError("At least one edge points to negative and therefore invalid node index: type %d to type %d"%(typ1,typ2))
+            if max(nodes1) >= l_node_features[typ1].shape[0]:
+                raise ValueError("At least one edge starts from a non-existing node index: type %d to type %d"%(typ1,typ2))
+            if max(nodes2) >= l_node_features[typ2].shape[0]:
+                raise ValueError("At least one edge points to a non-existing node index: type %d to type %d"%(typ1,typ2))    
     
+    def _check_size_xy(self, X, Y):
+        if Y is None: return
+        
+        #make sure Y has the proper length and acceptable labels
+        l_node_features = self._get_node_features(X, True)
+        
+        nb_nodes = sum(nf.shape[0] for nf in l_node_features)
+        if Y.shape[0] != nb_nodes:
+            raise ValueError("Expected 1 label for each of the %d nodes. Gopt %d labels."%(nb_nodes, Y.shape[0]))
+        
+        i_start = 0              
+        for typ, nf, n_states in zip(range(self.n_types), l_node_features, self.l_n_states):
+            nb_nodes = nf.shape[0]
+            Y_typ = Y[i_start:i_start+nb_nodes]
+            if  np.min(Y_typ) < 0:
+                raise ValueError("Got a negative label for type %d"%typ)
+            if np.max(Y_typ) >= n_states:
+                raise ValueError("Got a label outside of [0, %d] for type %d: %s"%(n_states-1, typ, Y_typ))
+            i_start = i_start + nb_nodes
+        
+        
+                    
     def _get_node_features(self, x, bClean=False):
         if bClean:
             return [ np.empty((0,0)) if node_features is None or len(node_features)==0 else node_features for node_features in x[0]]
         else:
             return x[0]
+    
     def _get_node_features_by_type(self, x, typ):
         return x[0][typ]
+    
     def _get_edges(self, x, bClean=False):
         if bClean:
             return [ np.empty((0,0)) if edges is None or len(edges)==0 else edges for edges in x[1]]
         else:
             return x[1]
+    
     def _index_all_edges(self, x):
         """
         return all edges as a single 2-column matrix, taking care of node indices!!
@@ -203,7 +258,6 @@ class TypedCRF(StructuredModel):
             Unary weights.
         """
         self._check_size_w(w)
-        self._check_size_x(x)
         l_node_features = self._get_node_features(x)
         #code for single type CRF
         #         unary_params = w[:self.n_states * self.n_features].reshape(
@@ -281,19 +335,70 @@ class TypedCRF(StructuredModel):
             shape (n_states, n_states) of accumulated pairwise marginals.
 
         """
+#         print "y.shape ", y.shape
         self.inference_calls += 1
         self._check_size_w(w)
         unary_potentials    = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         flat_edges = self._index_all_edges(x)
-        flat_y = np.hstack(y)
-        #loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
-        loss_augment_unaries(unary_potentials, flat_y, self.class_weight)
+        
+        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
 
-        return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+
+        l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
+        nodetype_data = (l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
+
+#         print "pairwise_potentials ", `pairwise_potentials`
+#         print "pairwise_potentials.shape ", pairwise_potentials.shape
+#         print "flat_edges = ", `flat_edges`
+#         print "flat_edges.shape = ", flat_edges.shape
+#         print " nb non zero = ", len(np.flatnonzero(pairwise_potentials))
+
+#         print "loss_inference"
+#         print "  UP ", show(unary_potentials)
+#         print "  PP ", show(pairwise_potentials)
+#         print "  E ", show(flat_edges)
+
+        Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                   self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy)
+                                  return_energy=return_energy,
+                                  nodetype=nodetype_data)
+        #print " LAI->", show(Y_pred)
+        
+#         print "=====", Y_pred.shape
 
+        if isinstance(Y_pred, tuple):
+            import ad3
+            unary_marginals, pairwise_marginals = Y_pred
+            _Y_pred = ad3.getY_from_typedmarginals(unary_marginals, nodetype_data)
+        else:
+            try:
+                self._check_size_xy(x, Y_pred)
+            except ValueError as e:
+                print "Y_pred is BAD, FIXING IT WITH RANDOM VALUES"
+                Y_pred = self.fix_Y_at_random(x, Y_pred)
+
+        if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
+        
+        #print "Y_pred ", `Y_pred`
+        
+        return Y_pred
+    
+    def fix_Y_at_random(self, x, Y_pred):
+        import random
+        l_node_features = self._get_node_features(x, True)
+        i_start = 0              
+        for nf, n_states in zip(l_node_features, self.l_n_states):
+            nb_nodes = nf.shape[0]
+            if nb_nodes:
+                Y_typ = Y_pred[i_start:i_start+nb_nodes]
+                if np.max(Y_typ) >= n_states:
+                    for i in range(nb_nodes):
+                        if Y_pred[i_start+i] >= n_states: Y_pred[i_start+i] = random.randint(0, n_states-1)
+            i_start = i_start + nb_nodes      
+        self._check_size_xy(x, Y_pred)  
+        return Y_pred
+        
     def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
         """Inference for x using parameters w.
 
@@ -345,12 +450,32 @@ class TypedCRF(StructuredModel):
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         flat_edges = self._index_all_edges(x)
 
+        l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
+        nodetype_data=(l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
+
         if constraints:
-            return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+#             print "inference"
+#             print "  UP ", show(unary_potentials)
+#             print "  PP ", show(pairwise_potentials)
+#             print "  E ", show(flat_edges)
+    
+            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy, constraints=constraints)
+                                      return_energy=return_energy, constraints=constraints,
+                                      nodetype=nodetype_data)
+            #print " I ->", show(Y_pred)            
         else:
-            return inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy)
-            
+                                      return_energy=return_energy,
+                                      nodetype=nodetype_data)
+#         print "===", Y_pred.shape
+# 
+#         try:
+#             self._check_size_xy(x, Y_pred)
+#         except ValueError as e:
+#             print "\tY is BAD, FIXING IT AT RANDOM"
+#         Y_pred = self.fix_Y_at_random(x, Y_pred)
+        if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
+        
+        return Y_pred
