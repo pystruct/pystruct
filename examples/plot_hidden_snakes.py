@@ -182,7 +182,7 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True):
             print "\t- DISCARDING a shuffled snake which is still a snake!!!!"
         else:
             newX.append(x)
-            Y_NoSnake.append(np.zeros(y.shape, dtype=np.int8))
+            Y_NoSnake.append(np.zeros(y.shape, dtype=np.int32))
     X_NoSnake = newX
     
     return len(X_NoSnake), X+X_NoSnake, Y+Y_NoSnake
@@ -221,12 +221,10 @@ if __name__ == '__main__':
             if not isSnakePresent(x): plot_snake(X_train[ix])
     
     X_train = X_train_hot
-    print "Snakes are ok"
-    
 
     if bSHUFFLE:
         #let's shuffle our data
-        X_train, Y_train = shuffle_XY(X_train, Y_train)
+        X_train, Y_train = shuffle_in_unison(X_train, Y_train)
 
     # -------------------------------------------------------------------------------------        
     X_train_directions, X_train_edge_features = prepare_data(X_train)
