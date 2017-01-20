@@ -32,6 +32,15 @@ But it does work as well as Decision Tree Fields ;)
 
 UPDATE: we also inject domain knowledge at inference time by telling that there 
 is at-most or exactly one of each annotation from 1 to 10  (0 is background).
+
+    JL Meunier - January 2017
+    
+    Developed for the EU project READ. The READ project has received funding 
+    from the European Union's Horizon 2020 research and innovation programme 
+    under grant agreement No 674943
+    
+    Copyright Xerox
+
 """
 import time
 import numpy as np
@@ -101,6 +110,7 @@ def prepare_data(X):
 print("Please be patient. Learning will take 5-20 minutes.")
 snakes = load_snakes()
 X_train, Y_train = snakes['X_train'], snakes['Y_train']
+#X_train, Y_train = X_train[:5], Y_train[:5]
 
 X_train = [one_hot_colors(x) for x in X_train]
 Y_train_flat = [y_.ravel() for y_ in Y_train]
