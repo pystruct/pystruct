@@ -4,7 +4,6 @@ from .linear_programming import lp_general_graph
 from .maxprod import inference_max_product
 from .common import _validate_params
 
-
 def get_installed(method_filter=None):
     if method_filter is None:
         method_filter = ["max-product", 'ad3', 'qpbo', 'ogm', 'lp']
@@ -312,7 +311,8 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
                   verbose=0, return_energy=False, branch_and_bound=False,
-                  constraints=None):
+                  constraints=None,
+                  nodetype=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -354,10 +354,12 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         - states is a list of unary states (class), 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
         - negated is a list of boolean indicating if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list 
         
-    NOTE: this hard logic constraint mechanism relies on the binarisation method described by Martins et al. in their 2011 ICML paper.
-    It has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
-    The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
+        NOTE: this hard logic constraint mechanism has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
+        The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
     
+    nodetype : internal use for NodeTypeEdgeFeatureGraphCRF model
+        NOTE: developed for the EU project READ (grant agreement No 674943), by JL Meunier (Xerox), in Q1 2017.
+
     Returns
     -------
     labels : nd-array
@@ -367,11 +369,10 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     import ad3
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
-
     unaries = unary_potentials.reshape(-1, n_states)
-    if constraints:
+    if constraints or nodetype:
         res = ad3.general_constrained_graph(unaries, edges, pairwise_potentials, constraints, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound)
+                            n_iterations=4000, exact=branch_and_bound, nodetype=nodetype)
     else:
         res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
@@ -382,8 +383,12 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     if solver_status in ["fractional", "unsolved"] and relaxed:
         unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
+        #print solver_status, pairwise_marginals
     else:
-        y = np.argmax(unary_marginals, axis=-1)
+        if nodetype:
+            y = ad3.getY_from_typedmarginals(unary_marginals, nodetype)
+        else:
+            y = np.argmax(unary_marginals, axis=-1)
     if return_energy:
         return y, -energy
     return y
