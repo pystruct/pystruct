@@ -35,6 +35,15 @@ not able to solve it alone, so we use the relaxed AD3 inference for learning.
 
 PS: This example runs a bit (5 minutes on 12 cores, 20 minutes on one core for me).
 But it does work as well as Decision Tree Fields ;)
+
+    JL Meunier - January 2017
+    
+    Developed for the EU project READ. The READ project has received funding 
+    from the European Union's Horizon 2020 research and innovation programme 
+    under grant agreement No 674943
+    
+    Copyright Xerox
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -90,7 +99,8 @@ if __name__ == '__main__':
     # now, use more informative edge features:
     crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  switch_to='ad3',
-                        n_jobs=-1)
+                        verbose=1,
+                        n_jobs=8)
     ssvm.fit( convertToSingleTypeX(X_train_edge_features), Y_train_flat)
     Y_pred2 = ssvm.predict( convertToSingleTypeX(X_test_edge_features) )
     print("Results using also input features for edges")
