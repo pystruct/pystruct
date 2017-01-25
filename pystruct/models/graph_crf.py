@@ -101,7 +101,7 @@ class GraphCRF(CRF):
             else:
                 self.size_joint_feature = (
                     self.n_states * self.n_features
-                    + self.n_states * (self.n_states + 1) / 2)
+                    + self.n_states * (self.n_states + 1) // 2)
 
     def _get_edges(self, x):
         return x[1]
