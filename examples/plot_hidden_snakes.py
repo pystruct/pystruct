@@ -118,7 +118,30 @@ def shuffleSnakeCells(a_picture, bOneHot=True): #in place!!
     a_picture[_ai,_aj,:] =  a_picture[ai,aj,:]
     return a_picture
 
-def changeOneSnakeCell(a_picture, bOneHot=True): #in place!!
+def changeOneSnakeCell(a_picture, bOneHot=True, nCell=10): #in place!!
+    """
+    Change the color of 1 snake cells
+    """
+    if bOneHot:
+        ai, aj = np.where(a_picture[...,3] != 1)
+    else:
+        _p = np.copy(a_picture)
+        _p = one_hot_colors(_p)
+        ai, aj = np.where(_p[...,3] != 1)
+    assert len(ai) == nCell, (len(ai), nCell)
+    
+    iChange = random.randint(0,nCell-1)
+    
+    for i in range(10):
+        iFromCell = random.randint(0,nCell-1)
+        if  (a_picture[ai[iChange], aj[iChange],:] != a_picture[ai[iFromCell], aj[iFromCell],:]).any():
+            a_picture[ai[iChange], aj[iChange],:]  = a_picture[ai[iFromCell], aj[iFromCell],:]
+            #so that we do not care about which color is valid...
+            break
+
+    return a_picture
+
+def eraseOneSnakeCell(a_picture, bOneHot=True): #in place!!
     """
     Change the color of 1 snake cells
     """
@@ -132,22 +155,19 @@ def changeOneSnakeCell(a_picture, bOneHot=True): #in place!!
     
     iChange = random.randint(0,9)
     
-    while True:
-        iFromCell = random.randint(0,9)
-        if  (a_picture[ai[iChange], aj[iChange],:] != a_picture[ai[iFromCell], aj[iFromCell],:]).any():
-             a_picture[ai[iChange], aj[iChange],:]  = a_picture[ai[iFromCell], aj[iFromCell],:]
-             #so that we do not care about which color is valid...
-             break
+    #a_picture[ai[iChange], aj[iChange]] = a_picture[0,0] #by construction it is background
 
     return a_picture
 
-def shuffleSnake(a_picture, bOneHot=True):
+
+def shuffleSnake(a_picture, bOneHot=True, nCell=10):
     """
     Shuffle either the snake's cells or the pcitures' pixels.
     """
-    if True:
-        changeOneSnakeCell(a_picture, bOneHot)
-        changeOneSnakeCell(a_picture, bOneHot)
+    if False:
+        eraseOneSnakeCell(a_picture, bOneHot)
+    elif True:
+        changeOneSnakeCell(a_picture, bOneHot, nCell=nCell)
     else:
         if random.randint(0,1):
             shuffleSnakeCells(a_picture, bOneHot)
@@ -165,14 +185,17 @@ def plot_snake(picture):
     plt.imshow(picture, interpolation='nearest')
     plt.show()
 
-def augmentWithNoSnakeImages(X,Y, name, bOneHot=True):
+def augmentWithNoSnakeImages(X,Y, name, bOneHot=True, iMult=1, nCell=10):
     """
     return the number of added picture (AT THE END OF INPUT LISTS)
     """
     print "ADDING PICTURE WIHOUT SNAKES!!!   %d elements in %s"%(len(X), name)
     
-    X_NoSnake = [np.copy(x) for x in X]
-    for x in X_NoSnake: shuffleSnake(x, bOneHot)
+    X_NoSnake = []
+    for i in range(int(iMult)):
+        X_NoSnake.extend([np.copy(x) for x in X])
+        
+    for x in X_NoSnake: shuffleSnake(x, bOneHot, nCell)
     #map(shufflePictureCells, X_NoSnake)
     
     newX = list()
@@ -184,7 +207,7 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True):
             newX.append(x)
             Y_NoSnake.append(np.zeros(y.shape, dtype=np.int32))
     X_NoSnake = newX
-    
+    assert len(X_NoSnake)==len(Y_NoSnake)
     return len(X_NoSnake), X+X_NoSnake, Y+Y_NoSnake
     
 def shuffle_in_unison(*args):    
@@ -192,10 +215,33 @@ def shuffle_in_unison(*args):
     random.shuffle(lTuple)
     return zip(*lTuple)
 
+def shorten_snakes(lX,lY, N):
+    newlX,newlY = list(), list()
+    for X, Y in zip(lX,lY):
+        assert X.shape[:2] == Y.shape, (X.shape, Y.shape)
+        ai, aj = np.where(Y>N)
+        X[ai,aj,:] = X[0,0,:]
+        Y[ai,aj] = 0
+        #crop
+        ai, aj = np.where(Y!=0)
+        aimin,aimax = min(ai)-1, max(ai)+2
+        ajmin,ajmax = min(aj)-1, max(aj)+2
+        newlY.append( Y[aimin:aimax, ajmin:ajmax] )
+        newlX.append( X[aimin:aimax, ajmin:ajmax,:])
+        
+    return newlX, newlY
+
+
 if __name__ == '__main__':
     print("Please be patient. Learning will take 5-20 minutes.")
+    
+    NCELL = 5
+    print "NCELL=", NCELL
+    
     snakes = load_snakes()
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
+    
+    #X_train, Y_train = X_train[:10], Y_train[:10]
     
     bSHUFFLE = True
     
@@ -205,9 +251,10 @@ if __name__ == '__main__':
     #X_train, Y_train = X_train[:10], Y_train[:10]
     print len(X_train), len(Y_train)
     #print `X_train[0]`
+    X_train, Y_train = shorten_snakes(X_train, Y_train, NCELL)
 
     if bADD_HIDDEN_SNAKES:
-        _, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False)
+        _, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False, nCell=NCELL)
         print len(X_train), len(Y_train)
     
     if False:
@@ -247,9 +294,11 @@ if __name__ == '__main__':
     # Evaluate using confusion matrix.
     # Clearly the middel of the snake is the hardest part.
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
+    X_test, Y_test = shorten_snakes(X_test, Y_test, NCELL)
+    
     print "TEST len=", len(X_test)
     if bADD_HIDDEN_SNAKES:
-        _, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False)
+        _, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False, nCell=NCELL)
         print "TEST len=", len(X_test)
     
     X_test = [one_hot_colors(x) for x in X_test]
@@ -498,7 +547,38 @@ Test accuracy: 0.904
  [  36    0    0    1    1    0    0    0    0   62    0]
  [  32    1    0    0    1    1    0    0    0    0   65]]
 
-
+TEST len= 100
+ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
+TEST len= 200
+Results using only directional features for edges
+Test accuracy: 0.878
+[[3839    4    9    6   13   27]
+ [ 100    0    0    0    0    0]
+ [  98    0    0    2    0    0]
+ [  96    0    1    0    2    1]
+ [  94    0    1    0    3    2]
+ [  81    0    0    1    0   18]]
+1000 inference calls
+2000 inference calls
+3000 inference calls
+4000 inference calls
+5000 inference calls
+6000 inference calls
+7000 inference calls
+8000 inference calls
+9000 inference calls
+10000 inference calls
+11000 inference calls
+12000 inference calls
+Training time = 310.7s
+Results using also input features for edges
+Test accuracy: 0.954
+[[3729   29   34   33   32   41]
+ [   7   93    0    0    0    0]
+ [   7    0   93    0    0    0]
+ [   7    0    0   93    0    0]
+ [   6    0    0    0   94    0]
+ [   6    0    0    0    0   94]]
 ----------------------------------------------------------------
 CHANGING TWO CELLs OF THE SNAKE 
     switch_to='ad3',
