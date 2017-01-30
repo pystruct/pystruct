@@ -270,7 +270,7 @@ def test_joint_feature2():
     x = (node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([0, 0]) 
-                  , np.array([0, 0, 0])
+                  , 2+np.array([0, 0, 0])
          ])
     print y
     g.initialize(x, y)
@@ -314,7 +314,7 @@ def test_joint_feature2():
     x = ( node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([0, 1]),
-                   np.array([0, 1, 2])])
+                   2+np.array([0, 1, 2])])
     print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
@@ -350,7 +350,7 @@ def test_joint_feature2():
     x = ( node_f, edges, edge_f)
     print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([1, 0]),
-                   np.array([2, 0, 1])])
+                   2+np.array([2, 0, 1])])
     print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
@@ -367,6 +367,139 @@ def test_joint_feature2():
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]))
+    
+def test_joint_feature3():
+
+    # -------------------------------------------------------------------------------------------
+    print "---MORE COMPLEX GRAPH AGAIN :) ---------------------------------------------------------------------"
+    g = NodeTypeEdgeFeatureGraphCRF(    
+                    2                   #how many node type?
+                 , [2, 3]               #how many labels   per node type?
+                 , [3, 4]               #how many features per node type?
+                 , np.array([  [0, 2]
+                             , [2, 3]])      #how many features per node type X node type? 
+                 )
+ 
+#     nodes  = np.array( [[0,0], [0,1], [1, 0], [1, 1], [1, 2]] )  
+    node_f = [  np.array([ [1,1,1], [2,2,2] ])
+              , np.array([ [.11, .12, .13, .14], [.21, .22, .23, .24], [.31, .32, .33, .34]]) 
+              ]
+    edges  = [ None
+              , np.array( [ 
+                          [0,1]   #an edge from typ0:0 to typ1:1 
+                        ])
+              , None
+              , np.array( [ 
+                          [0,1],   #an edge from typ0:0 to typ1:1 
+                          [1,2]   #an edge from typ1:1 to typ1:2 
+                        ])
+              ]    
+    edge_f = [ None
+              , np.array([[.221, .222]])
+              , None
+              , np.array([[.01,  .02,  .03 ],
+                          [.001, .002, .003]])
+              ]
+     
+    x = (node_f, edges, edge_f)
+    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    y = np.hstack([ np.array([0, 0]) 
+                  , 2+np.array([0, 0, 0])
+         ])
+    print y
+    g.initialize(x, y)
+    print g.size_unaries
+    print g.size_pairwise
+    jf = g.joint_feature(x,y)
+    print "joint_feature = \n", `jf`
+    print
+    assert_array_equal(jf, jf)
+    assert_array_almost_equal(jf
+                       , np.array([ 3.   ,  3.   ,  3.   ,  0.   ,  0.   ,  0.   ,  
+                                   0.63 ,  0.66 ,  0.69 ,  0.72 ,    0. , 0.,  0.,  0.   ,    0.,  0., 0. ,  0.,
+                                   #edges 0 to 0 2x2 states
+                                   #typ0 typ0 EMPTY
+                                   #typ0 typ1
+                                   .221, 0., 0.,   0., 0., 0.,
+                                   .222, 0., 0.,   0., 0., 0.,
+                                   #typ1 typ0
+                                    0., 0., 0.,   0., 0., 0.,
+                                    0., 0., 0.,   0., 0., 0.,
+                                   #typ1 typ1
+                                    0.011, 0., 0.,   0., 0., 0.,   0., 0., 0., 
+                                    0.022, 0., 0.,   0., 0., 0.,   0., 0., 0.,
+                                    0.033, 0., 0.,   0., 0., 0.,   0., 0., 0.
+                                   ])
+                              )
+
+    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    y = np.hstack([ np.array([0, 1]) 
+                  , 2+np.array([1, 1, 0])
+         ])
+    print y
+    g.initialize(x, y)
+    jf = g.joint_feature(x,y)
+    print "joint_feature = \n", `jf`
+    print
+    assert_array_equal(jf, jf)
+    assert_array_almost_equal(jf
+                       , np.array([ 1.   ,  1.   ,  1.   ,  2.   ,  2.   ,  2.   ,  
+                                   .31, .32, .33, .34 ,    .32, .34, .36, .38   ,    0.,  0., 0. ,  0.,
+                                   #edges 0 to 0 2x2 states
+                                   #typ0 typ0 EMPTY
+                                   #typ0 typ1
+                                   0., .221, 0.,   0., 0., 0.,
+                                   0., .222, 0.,   0., 0., 0.,
+                                   #typ1 typ0
+                                    0., 0., 0.,   0., 0., 0.,
+                                    0., 0., 0.,   0., 0., 0.,
+                                   #typ1 typ1
+                                    0., 0., 0.,   0.001, 0.01, 0.,   0., 0., 0., 
+                                    0., 0., 0.,   0.002, 0.02, 0.,   0., 0., 0.,
+                                    0., 0., 0.,   0.003, 0.03, 0.,   0., 0., 0.
+                                   ])
+                              )
+
+    w = np.array([ 1,1,1, 2,2,2,   10,10,10,10, 20,20,20,20, 30,30,30,30 ]
+                  +[1.0]*51, dtype=np.float64
+                  )
+    print `w`
+    ret_u = g._get_unary_potentials(x, w)
+    print `ret_u`
+    assert_array_almost_equal(ret_u,np.array([   #n_nodes x n_states
+                                              [3,  6, 0,0,0],
+                                              [6, 12, 0,0,0],
+                                              [0,  0, 5, 10, 15],
+                                              [0,  0, 9, 18, 27],
+                                              [0,  0, 13, 26, 39]
+                                            ])
+                              )
+    
+    assert len(w) == g.size_joint_feature
+    ret_pw = g._get_pairwise_potentials(x, w)
+    print "PW ", `ret_pw`
+    assert_array_almost_equal(ret_pw,np.array([   #n_edges, n_states, n_states
+                                              # 3  edges  5 states in total
+                  [ #edge: typ0 - typ1, 2 features
+                    [   0,  0,  0.443,  0.443,  0.443],      
+                    [   0,  0,  0.443,  0.443,  0.443],       
+                    [   0,  0,  0,  0,  0],       
+                    [   0,  0,  0,  0,  0],       
+                    [   0,  0,  0,  0,  0]       
+                ],
+                  [ #edge: typ1 - typ1, 2 features
+        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
+        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
+        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ],
+        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ],
+        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ]],       
+                  [ #edge: typ1 - typ1, 2 features
+        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
+        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
+        [ 0.   ,  0.   ,  0.006,  0.006,  0.006],
+        [ 0.   ,  0.   ,  0.006,  0.006,  0.006],
+        [ 0.   ,  0.   ,  0.006,  0.006,  0.006]]                   
+                                              ]))
     
 
 
@@ -649,7 +782,8 @@ def test_energy_discrete():
 
 
 if __name__ == "__main__":
-    
+    np.set_printoptions(precision=3, linewidth=9999)
+
     if 0: 
         debug_joint_feature()
     
@@ -657,6 +791,8 @@ if __name__ == "__main__":
         test_joint_feature()
     if 1:
         test_joint_feature2()
+    if 1:
+        test_joint_feature3()
         
     if 1: test_unary_potentials()
     if 1: test_inference_util()
