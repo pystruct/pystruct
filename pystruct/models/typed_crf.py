@@ -2,6 +2,8 @@
 
 """
     CRF with different types of nodes
+    
+    NOTE: this is an abstract class. Do not use directly.
 
     Copyright Xerox(C) 2017 JL. Meunier
 

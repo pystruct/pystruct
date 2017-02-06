@@ -52,6 +52,9 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
     a_n_edge_features: an array of shape (n_types, n_types) given the number of features as a function of the node types
     
+    NOTE: there should always be at least 1 feature for any pairs of types with some edge of that type in the graph.
+    Said differently, if you put 0 somewhere in that matrix, do not create any egde corresponding to that type of edge!!  
+    
     class_weight : None, or list of array-like
         Class weights. If a list of array-like is passed, the Ith one must have length equal to l_n_states[i]
         None means equal class weights (across node types)
