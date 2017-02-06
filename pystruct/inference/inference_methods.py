@@ -23,6 +23,7 @@ def get_installed(method_filter=None):
 class InferenceException(Exception):
     """
     When inference status is fractional or unsolved, this exception can be raised.
+    (If relaxed is not True and if an inference exception is requested by the calling code)
     The exception message is the solver status.
     """ 
     pass
