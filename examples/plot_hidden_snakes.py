@@ -5,11 +5,15 @@ Conditional Interactions on the Snakes Dataset
 
 This is a variant of plot_snakes.py 
 
-Snake are hidding, so another task is both to determine if a snake is in the picture, and
-identify its head to tail body.  
+Snake are hiding!! Therefore, some picture have colored pixels despite they do not contain any snake.
 
-We use the NodeTypeEdgeFeatureGraphCRF class with 2 type of nodes.
-
+    JL Meunier - January 2017
+    
+    Developed for the EU project READ. The READ project has received funding 
+    from the European Union's Horizon 2020 research and innovation programme 
+    under grant agreement No 674943
+    
+    Copyright Xerox
 
 This example uses the snake dataset introduced in
 Nowozin, Rother, Bagon, Sharp, Yao, Kohli: Decision Tree Fields ICCV 2011
@@ -48,79 +52,55 @@ import time
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import load_snakes
-from pystruct.utils import make_grid_edges, edge_list_to_features
-#from pystruct.models import EdgeFeatureGraphCRF
+from pystruct.models import EdgeFeatureGraphCRF
 from pystruct.models import NodeTypeEdgeFeatureGraphCRF
 
-from plot_snakes import  one_hot_colors, neighborhood_feature, prepare_data
+from plot_snakes import  one_hot_colors, prepare_data
 
-def isSnakePresent(a_hot_picture):
+
+if True:
+    np.random.seed(1605)
+    random.seed(98)
+        
+def isSnakePresent(a_hot_picture, nCell=10):
     """
-    Algorithmic check, to make sure that after shuffling we do not have a snake! :-)
-    work on the 1-hot encoded picture
+    Algorithmic check, to make sure that after tempering with the snake we do not have a snake! :-)
+    Works on the 1-hot encoded picture
     """
-    try:
-        ai, aj = np.where(a_hot_picture[...,3] != 1)
-        if len(ai) != 10: return False
-        lij = zip(ai, aj)
-        for n in range(10):
-            _lij = shiftSnake(a_hot_picture, lij)
-            if len(_lij) != len(lij)-1: return False
-            lij = _lij
-        if len(_lij) != 0: return False
-        return True
-    except:
-        return False
+    ai, aj = np.where(a_hot_picture[...,3] != 1)
     
-def shiftSnake(a_hot_picture, lij):
-    #the snake moves by one cell, head disappearing in sand
-    _lij = list()
-    for i,j in lij:
-        color_index = np.where(a_hot_picture[i,j,:]==1)[0][0]
+    #let's start from each cell until we can walk thru an entire snake
+    #yeah, brute force, but otherwise it is tricky to check!!
+    bSnake = False
+    for i0,j0 in zip(ai,aj):
+    
+        lij  = walkThruSnake(a_hot_picture, (i0, j0), nCell)
+        if len(lij) == nCell-1:
+            bSnake = True
+            break 
+    return bSnake
+    
+def walkThruSnake(a_hot_picture, (i,j), nCell=10):
+    """
+    Walk thru the snake from I,J
+    Return the list of visited cells (excluding start cell)
+    """
+    lij = list()
+    color_index = np.where(a_hot_picture[i,j,:]==1)[0][0]
+    while len(lij) < nCell -1:
         dj = np.array( [ 0, 0, 1, None, -1])[color_index]
         di = np.array( [-1, 1, 0, None,  0])[color_index]
-        i,j = i+di,j+dj
-        if a_hot_picture[i,j,3] != 1: #backgroun
-            _lij.append((i,j))
-    return _lij
-
-def shufflePictureCells(a_picture):  #in place!!
-    """
-    Shuffle the pixels
-    """
-    n = random.randint(1,4)
-    if n == 1:
-        map(np.random.shuffle, a_picture)
-    elif n == 2:
-        map(np.random.shuffle, np.transpose(a_picture, (1,0,2)))
-    else:
-        map(np.random.shuffle, a_picture)
-        map(np.random.shuffle, np.transpose(a_picture, (1,0,2)))
-        
-    return a_picture
-        
-def shuffleSnakeCells(a_picture, bOneHot=True): #in place!!
-    """
-    Shuffle the colors of the 10 snake cells
-    """
-    if bOneHot:
-        ai, aj = np.where(a_picture[...,3] != 1)
-    else:
-        _p = np.copy(a_picture)
-        _p = one_hot_colors(_p)
-        ai, aj = np.where(_p[...,3] != 1)
-    assert len(ai) == 10
+        i += di
+        j += dj
+        color_index = np.where(a_hot_picture[i,j,:]==1)[0][0]
+        if color_index == 3: break  #background
+        if (i,j) in lij: break      #crossing itself, or looping
+        lij.append((i,j))
+    return lij
     
-    l_shuffled_aij = zip(ai,aj)
-    random.shuffle( l_shuffled_aij )
-    _ai, _aj = zip(*l_shuffled_aij)
-    
-    a_picture[_ai,_aj,:] =  a_picture[ai,aj,:]
-    return a_picture
-
 def changeOneSnakeCell(a_picture, bOneHot=True, nCell=10): #in place!!
     """
-    Change the color of 1 snake cells
+    Change the color of 1 snake cells into another snake cell color
     """
     if bOneHot:
         ai, aj = np.where(a_picture[...,3] != 1)
@@ -141,74 +121,69 @@ def changeOneSnakeCell(a_picture, bOneHot=True, nCell=10): #in place!!
 
     return a_picture
 
-def eraseOneSnakeCell(a_picture, bOneHot=True): #in place!!
-    """
-    Change the color of 1 snake cells
-    """
-    if bOneHot:
-        ai, aj = np.where(a_picture[...,3] != 1)
-    else:
-        _p = np.copy(a_picture)
-        _p = one_hot_colors(_p)
-        ai, aj = np.where(_p[...,3] != 1)
-    assert len(ai) == 10
-    
-    iChange = random.randint(0,9)
-    
-    #a_picture[ai[iChange], aj[iChange]] = a_picture[0,0] #by construction it is background
-
-    return a_picture
-
-
-def shuffleSnake(a_picture, bOneHot=True, nCell=10):
+def distortSnake(a_picture, bOneHot=True, nCell=10):
     """
     Shuffle either the snake's cells or the pcitures' pixels.
     """
-    if False:
-        eraseOneSnakeCell(a_picture, bOneHot)
-    elif True:
-        changeOneSnakeCell(a_picture, bOneHot, nCell=nCell)
-    else:
-        if random.randint(0,1):
-            shuffleSnakeCells(a_picture, bOneHot)
+    bDOCUMENT = False   #to show the change on screen
+    
+    if bDOCUMENT:  
+        pict_mem = np.copy(a_picture)
+    
+    changeOneSnakeCell(a_picture, bOneHot, nCell=nCell)
+    
+    if bDOCUMENT:  
+        if bOneHot:
+            zz = a_picture
         else:
-            shufflePictureCells(a_picture)
+            zz = one_hot_colors(a_picture)
+        if not isSnakePresent(zz, nCell):
+            plot_snake(pict_mem)
+            plot_snake(a_picture)
     
 def convertToSingleTypeX(X):
     """
     For NodeTypeEdgeFeatureGraphCRF X is structured differently.
-    But NodeTypeEdgeFeatureGraphCRF can handle graph with a single node type. One needs to convert X to the new structure using this method.
+    But NodeTypeEdgeFeatureGraphCRF can handle graphs with a single node type. One simply needs to convert X to the new structure using this method.
     """
     return [([nf], [e], [ef]) for (nf,e,ef) in X]
+
 
 def plot_snake(picture):
     plt.imshow(picture, interpolation='nearest')
     plt.show()
 
+
 def augmentWithNoSnakeImages(X,Y, name, bOneHot=True, iMult=1, nCell=10):
     """
-    return the number of added picture (AT THE END OF INPUT LISTS)
+    return the number of added picture (ADDED AT THE END OF INPUT LISTS)
     """
     print "ADDING PICTURE WIHOUT SNAKES!!!   %d elements in %s"%(len(X), name)
     
     X_NoSnake = []
+    Y_NoSnake = []
     for i in range(int(iMult)):
         X_NoSnake.extend([np.copy(x) for x in X])
+        Y_NoSnake.extend([np.copy(y) for y in Y]) #shorten_sakes does modify Y...
         
-    for x in X_NoSnake: shuffleSnake(x, bOneHot, nCell)
-    #map(shufflePictureCells, X_NoSnake)
+    if True:
+        #best method for our experiment
+        for x in X_NoSnake: distortSnake(x, bOneHot, nCell)
+    else:
+        shorten_snakes(X_NoSnake, Y_NoSnake, nCell-1)
     
     newX = list()
-    Y_NoSnake = list()
-    for x,y in zip(X_NoSnake, Y):
-        if isSnakePresent(x):
+    newY = list()
+    for x,y in zip(X_NoSnake, Y_NoSnake):
+        _x = x if bOneHot else one_hot_colors(x)
+        if isSnakePresent(_x):
             print "\t- DISCARDING a shuffled snake which is still a snake!!!!"
+#             if True and not bOneHot: plot_snake(x)
         else:
             newX.append(x)
-            Y_NoSnake.append(np.zeros(y.shape, dtype=np.int32))
-    X_NoSnake = newX
-    assert len(X_NoSnake)==len(Y_NoSnake)
-    return len(X_NoSnake), X+X_NoSnake, Y+Y_NoSnake
+            newY.append(np.zeros(y.shape, dtype=np.int32))
+    assert len(newX)==len(newY)
+    return len(newX), X+newX, Y+newY
     
 def shuffle_in_unison(*args):    
     lTuple = zip(*args)
@@ -216,6 +191,9 @@ def shuffle_in_unison(*args):
     return zip(*lTuple)
 
 def shorten_snakes(lX,lY, N):
+    """
+    It is faster to work on shorter snakes, but easier as well for the models 
+    """
     newlX,newlY = list(), list()
     for X, Y in zip(lX,lY):
         assert X.shape[:2] == Y.shape, (X.shape, Y.shape)
@@ -231,394 +209,114 @@ def shorten_snakes(lX,lY, N):
         
     return newlX, newlY
 
-
+#=====================================================================================================
 if __name__ == '__main__':
     print("Please be patient. Learning will take 5-20 minutes.")
     
-    NCELL = 5
+    #if you want to shorten all the snakes
+    #NCELL = 3
+    NCELL = 10
     print "NCELL=", NCELL
     
+    
     snakes = load_snakes()
+
+    # --- TRAIN
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
-    
-    #X_train, Y_train = X_train[:10], Y_train[:10]
-    
-    bSHUFFLE = True
-    
-    bADD_HIDDEN_SNAKES = True
-    #bADD_HIDDEN_SNAKES = False
-    #JL
-    #X_train, Y_train = X_train[:10], Y_train[:10]
-    print len(X_train), len(Y_train)
-    #print `X_train[0]`
-    X_train, Y_train = shorten_snakes(X_train, Y_train, NCELL)
+    #X_train, Y_train = X_train[:10], Y_train[:10]    #if you want to debug...
+    if NCELL < 10: X_train, Y_train = shorten_snakes(X_train, Y_train, NCELL)
 
-    if bADD_HIDDEN_SNAKES:
-        _, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False, nCell=NCELL)
-        print len(X_train), len(Y_train)
-    
-    if False:
-        #show the faked pictures
-        for ix, x in enumerate(X_train): plot_snake(shufflePictureCells(x))  
-
-    X_train_hot = [one_hot_colors(x) for x in X_train]
-    
-    if False:
-        for ix, x in enumerate(X_train_hot): 
-            if not isSnakePresent(x): plot_snake(X_train[ix])
-    
-    X_train = X_train_hot
-
-    if bSHUFFLE:
-        #let's shuffle our data
-        X_train, Y_train = shuffle_in_unison(X_train, Y_train)
-
-    # -------------------------------------------------------------------------------------        
+    nbNoSnake, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", bOneHot=False, nCell=NCELL)
+    X_train = [one_hot_colors(x) for x in X_train]
+    X_train, Y_train = shuffle_in_unison(X_train, Y_train)
     X_train_directions, X_train_edge_features = prepare_data(X_train)
-
     Y_train_flat = [y_.ravel() for y_ in Y_train]
 
-    inference = 'qpbo'
-    # first, train on X with directions only:
-    #CHANGE!!
-    #We require NodeTypeEdgeFeatureGraphCRF
-    #crf = NodeTypeEdgeFeatureGraphCRF(inference_method=inference)
-    crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[2]], inference_method=inference)
-    XX = convertToSingleTypeX(X_train_directions)
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
-                        max_iter=100,
-                        n_jobs=1)
-    print len(XX), len(Y_train), len(Y_train_flat)
-    ssvm.fit(XX, Y_train_flat)
-    
-    # Evaluate using confusion matrix.
-    # Clearly the middel of the snake is the hardest part.
+    print "%d picture for training"%len(X_train)
+
+    # --- TEST
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
-    X_test, Y_test = shorten_snakes(X_test, Y_test, NCELL)
-    
-    print "TEST len=", len(X_test)
-    if bADD_HIDDEN_SNAKES:
-        _, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False, nCell=NCELL)
-        print "TEST len=", len(X_test)
+    if NCELL < 10: X_test, Y_test = shorten_snakes(X_test, Y_test, NCELL)
+    _, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", bOneHot=False, nCell=NCELL)
     
     X_test = [one_hot_colors(x) for x in X_test]
-    Y_test_flat = [y_.ravel() for y_ in Y_test]
     X_test_directions, X_test_edge_features = prepare_data(X_test)
-    Y_pred = ssvm.predict( convertToSingleTypeX(X_test_directions) )
-    print("Results using only directional features for edges")
-    print("Test accuracy: %.3f"
-          % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-    print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-       
+    Y_test_flat = [y_.ravel() for y_ in Y_test]
+
+    print "%d picture for test"%len(X_test)    
+
+    # -------------------------------------------------------------------------------------        
+
+    inference = 'qpbo'
+    bClassic = True  #True => use the old good EdgeFeatureGraphCRF
+
     # now, use more informative edge features:
-    crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
+    t0 = time.time()
+    if bClassic:
+        print "EdgeFeatureGraphCRF"
+        crf = EdgeFeatureGraphCRF(inference_method=inference)
+        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
+                        #WHY THIS??? max_iter=100,
+                        #why not this switch_to=ad3??? 
+                        switch_to='ad3',
+                        #verbose=1,
+                        n_jobs=2,
+                        )
+        ssvm.fit( X_train_edge_features , Y_train_flat)
+    else:    
+        print "NodeTypeEdgeFeatureGraphCRF"
+        crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
+        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
                         switch_to='ad3',
                         #JL adds a max-iter sometimes
                         #max_iter=100,
                         n_jobs=1)
-    t0 = time.time()
-    ssvm.fit( convertToSingleTypeX(X_train_edge_features) , Y_train_flat)
+        ssvm.fit( convertToSingleTypeX(X_train_edge_features) , Y_train_flat)
     print "Training time = %.1fs"%(time.time()-t0)
     
-    Y_pred2 = ssvm.predict( convertToSingleTypeX(X_test_edge_features) )
-    print("Results using also input features for edges")
+    if bClassic:    
+        Y_pred2 = ssvm.predict( X_test_edge_features )
+    else:
+        Y_pred2 = ssvm.predict( convertToSingleTypeX(X_test_edge_features) )
+    print("Results using input features for edges")
     print("Test accuracy: %.3f"
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    if False:
-        # plot stuff
-        fig, axes = plt.subplots(2, 2)
-        axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
-        axes[0, 0].set_title('Input')
-        y = Y_test[0].astype(np.int)
-        bg = 2 * (y != 0)  # enhance contrast
-        axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
-        axes[0, 1].set_title("Ground Truth")
-        axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-        axes[1, 0].set_title("Prediction w/o edge features")
-        axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-        axes[1, 1].set_title("Prediction with edge features")
-        for a in axes.ravel():
-            a.set_xticks(())
-            a.set_yticks(())
-        plt.show()
 
 
-
+    #------------------------------------------------------------------------------------------------------------------------
+    #Predict under constraints
+    if True and not bClassic:
+        def buildConstraintsFromSingleTyped(X, bOne=True):
+            """
+            We iterate over each graph, and make sure that for each, we constrain to have a single instances of classes 1 to 9
+            (or atmost one) 
+            
+            The constraints must be a list of tuples like ( <operator>, <unaries>, <states>, <negated> )
+            where:
+            - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+            - unaries is a list of the index of the unaries involved in this constraint
+            - states is a list of unary states, 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+            - negated is a list of boolean indicated if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list 
+            """
+            sLogicOp = "XOR" if bOne else "ATMOSTONE"
+            lConstraint = []
+            for ([nf], [e], [ef]) in X:
+                n_nodes = nf.shape[0]
+                lConstraintPerGraph = [ (sLogicOp, range(n_nodes), i, False) for i in range(1,NCELL+1) ] #only one 
+                lConstraint.append( lConstraintPerGraph )
+            return lConstraint
+        
+        X_3 = convertToSingleTypeX(X_test_edge_features)
+        lC = buildConstraintsFromSingleTyped(X_3, False)
+        Y_pred2 = ssvm.predict( X_3, lC )
+        print("Results using also input features for edges")
+        print "Inference with an ATMOST constraint per snake label"
+        print("Test accuracy: %.3f"
+              % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
+        print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))        
 
 """
-----------------------------------------------------------------
-ALWAYS SHUFFLING!!
-
-WITHOUT HIDDEN SNAKES
- 
-Please be patient. Learning will take 5-20 minutes.
-200 200
-Snakes are ok
-200 200 200
-TEST len= 100
-Results using only directional features for edges
-Test accuracy: 0.847
-[[2750    0    0    0    0    0    0    0    0    0    0]
- [   0   99    0    0    1    0    0    0    0    0    0]
- [   0    2   68    3    9    4    6    4    3    1    0]
- [   0    4   11   45    8   14    5    6    0    6    1]
- [   0    1   22   18   31    2   14    4    3    5    0]
- [   0    3    7   38   12   22    5    4    2    7    0]
- [   0    2   19   16   26    8   16    2    9    2    0]
- [   0    6   14   26   10   15    5   12    2   10    0]
- [   0    0   12   15   16    4   16    2   18    4   13]
- [   0    2    5   18    6    8    5    3    2   50    1]
- [   0    1   11    4   13    1    2    0    2    2   64]]
-Training time = 37.5s
-Results using also input features for edges
-Test accuracy: 0.907
-[[2749    0    0    0    0    0    0    0    1    0    0]
- [   0   99    0    1    0    0    0    0    0    0    0]
- [   0    0   98    0    1    0    0    1    0    0    0]
- [   0    9    2   79    1    6    0    2    1    0    0]
- [   0    1   38    4   38    0   15    2    2    0    0]
- [   1    5    3   41    2   30    1   13    1    3    0]
- [   1    0   17    7   12    1   44    1   15    0    2]
- [   1    3    1   19    5    7    2   52    2    8    0]
- [   0    2   10    1    9    2    4    2   63    1    6]
- [   2    0    2   14    0    5    0    3    2   71    1]
- [   1    0    2    2   12    0    5    0    1    0   77]]
-
- --------------------------
-    switch_to='ad3',
-    max-iter=100
-    
- Results using also input features for edges
-Test accuracy: 0.870
-[[2750    0    0    0    0    0    0    0    0    0    0]
- [   1   94    2    1    0    0    1    0    0    1    0]
- [   0    7   88    0    0    0    2    0    2    0    1]
- [   0   30   11   41    0    7    0    9    0    2    0]
- [   4    6   38   11   17    3    7    0   13    0    1]
- [   2    9   10   25    4   24    3   13    2    8    0]
- [   0    9   18    9    8    6   23    1   19    1    6]
- [   2    9    9   12    6   10    4   34    2   11    1]
- [   0    8   13    3    4    3    4    1   54    2    8]
- [  10    8    6    6    1    3    1    4    2   57    2]
- [   1    3    3    4    4    0    0    0    6    0   79]]
-
-
---------------------------
-    switch_to='ad3',
-    without max_iter
-    
-Results using also input features for edges
-Test accuracy: 0.997
-[[2749    0    0    0    0    0    0    0    1    0    0]
- [   0  100    0    0    0    0    0    0    0    0    0]
- [   0    0  100    0    0    0    0    0    0    0    0]
- [   0    0    0   99    0    0    0    0    0    1    0]
- [   0    0    0    0   99    0    1    0    0    0    0]
- [   0    0    0    1    0   98    0    1    0    0    0]
- [   0    0    0    0    1    0   98    0    1    0    0]
- [   0    0    0    0    0    1    0   99    0    0    0]
- [   0    0    0    0    0    0    0    0  100    0    0]
- [   0    0    0    1    0    0    0    1    0   98    0]
- [   0    0    0    0    1    0    0    0    0    0   99]]
-
-----------------------------------------------------------------
- 
-SHUFFLING EITHER PIXELS OR SNAKE CELLS
-
-Please be patient. Learning will take 5-20 minutes.
-200 200
-ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
-400 400
-Snakes are ok
-400 400 400
-TEST len= 100
-ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
-TEST len= 200
-Results using only directional features for edges
-Test accuracy: 0.858
-[[6336    2    1    6    7   11   13   72   31   11   10]
- [  87    9    0    0    2    0    0    0    0    2    0]
- [  44    0    2    1    1    1    9   31   10    1    0]
- [  49    0    0    1    0    6    5   15   18    3    3]
- [  50    0    1    0    2    2   12   16   12    2    3]
- [  52    1    0    2    0    2   11   23    4    5    0]
- [  58    0    1    0    3    1   13   14    7    2    1]
- [  57    0    1    1    1    5    1   16   10    5    3]
- [  57    1    0    1    3    3    8    8   12    3    4]
- [  57    0    0    0    1    0    1   16    8   15    2]
- [  58    0    0    0    0    3    0    9    3    3   24]]
-Training time = 44.0s
-Results using also input features for edges
-Test accuracy: 0.864
-[[6439    1    0    4    8    5    6    7    1   10   19]
- [  98    1    0    1    0    0    0    0    0    0    0]
- [  98    0    1    1    0    0    0    0    0    0    0]
- [  98    0    0    2    0    0    0    0    0    0    0]
- [  98    0    0    0    0    0    2    0    0    0    0]
- [  95    0    0    0    0    5    0    0    0    0    0]
- [  95    0    0    0    0    0    5    0    0    0    0]
- [  95    0    0    0    0    0    0    5    0    0    0]
- [  94    0    0    0    0    0    0    0    5    0    1]
- [  94    0    0    0    0    0    0    0    0    6    0]
- [  91    0    0    0    1    0    0    0    0    0    8]]
-
-
- --------------------------
-    switch_to='ad3',
-     max-iter=100
- 
-Training time = 34.5s
-Results using also input features for edges
-Test accuracy: 0.870
-[[6384    2    0    0    1   13   11    6    4   20   59]
- [  92    5    1    0    1    0    0    0    0    0    1]
- [  86    0    4    1    0    3    1    0    0    2    3]
- [  80    1    1    4    2    4    2    1    3    0    2]
- [  79    0    1    3    3    3    3    2    2    4    0]
- [  74    0    1    0    2    8    2    5    3    1    4]
- [  69    0    0    2    0    4   10    1    8    4    2]
- [  66    0    0    0    2    0    2   11    3   11    5]
- [  58    0    0    0    1    2    0    3   23    2   11]
- [  57    0    0    0    0    1    1    2    0   34    5]
- [  57    0    0    0    0    0    0    1    0    0   42]]
- --------------------------
-    switch_to='ad3',
-    without max-iter
-
-Training time = 1346.7s
-Results using also input features for edges
-Test accuracy: 0.987
-[[6437    7    8    8    4    2    1    0    7   14   12]
- [   2   97    0    0    0    1    0    0    0    0    0]
- [   2    0   97    0    1    0    0    0    0    0    0]
- [   0    0    0   97    0    2    0    1    0    0    0]
- [   0    0    1    0   96    0    2    0    1    0    0]
- [   0    0    0    2    0   95    0    3    0    0    0]
- [   0    0    1    0    2    0   94    0    3    0    0]
- [   0    0    0    1    0    3    0   93    0    3    0]
- [   0    0    1    0    1    0    1    0   97    0    0]
- [   0    0    0    0    0    1    0    1    0   98    0]
- [   0    0    0    0    0    0    1    0    1    0   98]]
-
- 
- 
-----------------------------------------------------------------
-CHANGING ONE CELL OF THE SNAKE 
-    switch_to='ad3',
-    without max-iter
- 
- Please be patient. Learning will take 5-20 minutes.
-200 200
-ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
-400 400
-Snakes are ok
-400 400 400
-TEST len= 100
-ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
-TEST len= 200
-Results using only directional features for edges
-Test accuracy: 0.857
-[[6355    0    0    0    4   26    0    8    1    4  102]
- [ 100    0    0    0    0    0    0    0    0    0    0]
- [  91    0    0    0    0    9    0    0    0    0    0]
- [  91    0    0    0    0    0    0    0    0    0    9]
- [  99    0    0    0    0    0    0    0    0    0    1]
- [  96    0    0    0    0    1    0    1    0    0    2]
- [  97    0    0    0    1    0    0    0    1    0    1]
- [  95    0    0    0    0    4    0    1    0    0    0]
- [  86    0    0    0    2    0    0    0    1    0   11]
- [  70    0    0    0    0   13    0    3    0    7    7]
- [  34    0    0    0    0    0    0    2    0    0   64]]
-Training time = 1852.6s
-Results using also input features for edges
-Test accuracy: 0.904
-[[6185   25   25   25   25   24   25   32   39   42   53]
- [  41   58    0    0    0    0    1    0    0    0    0]
- [  41    0   56    0    2    0    0    1    0    0    0]
- [  41    0    1   56    0    2    0    0    0    0    0]
- [  39    0    0    1   56    0    4    0    0    0    0]
- [  39    0    0    0    1   58    0    2    0    0    0]
- [  39    0    0    0    0    1   59    0    1    0    0]
- [  38    0    0    0    0    0    1   60    0    1    0]
- [  36    1    0    0    0    0    0    0   62    0    1]
- [  36    0    0    1    1    0    0    0    0   62    0]
- [  32    1    0    0    1    1    0    0    0    0   65]]
-
-TEST len= 100
-ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
-TEST len= 200
-Results using only directional features for edges
-Test accuracy: 0.878
-[[3839    4    9    6   13   27]
- [ 100    0    0    0    0    0]
- [  98    0    0    2    0    0]
- [  96    0    1    0    2    1]
- [  94    0    1    0    3    2]
- [  81    0    0    1    0   18]]
-1000 inference calls
-2000 inference calls
-3000 inference calls
-4000 inference calls
-5000 inference calls
-6000 inference calls
-7000 inference calls
-8000 inference calls
-9000 inference calls
-10000 inference calls
-11000 inference calls
-12000 inference calls
-Training time = 310.7s
-Results using also input features for edges
-Test accuracy: 0.954
-[[3729   29   34   33   32   41]
- [   7   93    0    0    0    0]
- [   7    0   93    0    0    0]
- [   7    0    0   93    0    0]
- [   6    0    0    0   94    0]
- [   6    0    0    0    0   94]]
-----------------------------------------------------------------
-CHANGING TWO CELLs OF THE SNAKE 
-    switch_to='ad3',
-    without max-iter
- 
-Please be patient. Learning will take 5-20 minutes.
-200 200
-ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
-400 400
-Snakes are ok
-400 400 400
-TEST len= 100
-ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
-TEST len= 200
-Results using only directional features for edges
-Test accuracy: 0.853
-[[6318    5   13    8    5    9   26   18   25   30   43]
- [  93    5    0    0    0    1    0    0    0    1    0]
- [  86    0    3    0    1    0    5    0    2    3    0]
- [  84    0    0    0    0    3    3    3    3    4    0]
- [  84    0    0    0    1    1    5    1    4    4    0]
- [  82    0    0    2    1    5    2    2    4    2    0]
- [  80    0    3    0    0    2    8    3    1    3    0]
- [  79    0    1    1    0    2    4    3    4    6    0]
- [  74    1    1    2    2    0    5    0    8    5    2]
- [  71    0    3    0    0    3    3    3    4   13    0]
- [  51    0    0    3    0    0    2    2    4    1   37]]
-Training time = 2100.8s
-Results using also input features for edges
-Test accuracy: 0.941
-[[6204   26   30   29   25   26   29   23   26   35   47]
- [  11   88    0    0    0    0    1    0    0    0    0]
- [  11    0   87    0    0    1    0    1    0    0    0]
- [  10    1    1   85    0    1    1    1    0    0    0]
- [   9    0    1    1   83    1    3    0    2    0    0]
- [   9    0    0    1    1   83    1    3    0    2    0]
- [   8    0    1    0    2    2   83    0    3    0    1]
- [   8    0    0    1    0    2    2   85    0    2    0]
- [   8    0    0    0    1    0    2    1   86    0    2]
- [   8    0    0    0    0    1    0    1    1   89    0]
- [   8    0    0    0    0    0    2    0    1    1   88]]
 
 """
