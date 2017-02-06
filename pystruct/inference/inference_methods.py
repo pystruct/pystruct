@@ -6,7 +6,7 @@ from .common import _validate_params
 
 def get_installed(method_filter=None):
     if method_filter is None:
-        method_filter = ["max-product", 'ad3', 'qpbo', 'ogm', 'lp']
+        method_filter = ["max-product", 'ad3', 'ad3+', 'qpbo', 'ogm', 'lp']
 
     installed = []
     unary = np.zeros((1, 1))
@@ -20,6 +20,12 @@ def get_installed(method_filter=None):
             pass
     return installed
 
+class InferenceException(Exception):
+    """
+    When inference status is fractional or unsolved, this exception can be raised.
+    The exception message is the solver status.
+    """ 
+    pass
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, return_energy=False, **kwargs):
@@ -87,6 +93,9 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                             return_energy=return_energy, **kwargs)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
+                             return_energy=return_energy, **kwargs)
+    elif inference_method == "ad3+":
+        return inference_ad3plus(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
@@ -370,11 +379,7 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
     unaries = unary_potentials.reshape(-1, n_states)
-    if constraints or nodetype:
-        res = ad3.general_constrained_graph(unaries, edges, pairwise_potentials, constraints, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound, nodetype=nodetype)
-    else:
-        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
@@ -385,14 +390,41 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         y = (unary_marginals, pairwise_marginals)
         #print solver_status, pairwise_marginals
     else:
-        if nodetype:
-            y = ad3.getY_from_typedmarginals(unary_marginals, nodetype)
-        else:
-            y = np.argmax(unary_marginals, axis=-1)
+        y = np.argmax(unary_marginals, axis=-1)
     if return_energy:
         return y, -energy
     return y
 
+def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=False,
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  constraints=None,
+                  inference_exception=None,
+                  nodetype=None):
+    import ad3
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+    unaries = unary_potentials.reshape(-1, n_states)
+    if constraints or nodetype:
+        res = ad3.general_constrained_graph(unaries, edges, pairwise_potentials, constraints, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound, nodetype=nodetype)
+    else:
+        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+    unary_marginals, pairwise_marginals, energy, solver_status = res
+    if verbose:
+        print(solver_status[0])
+
+    if relaxed and solver_status in ["fractional", "unsolved"]:
+        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
+        y = (unary_marginals, pairwise_marginals)
+        #print solver_status, pairwise_marginals
+    else:
+        if inference_exception and solver_status in ["fractional", "unsolved"]:
+            raise InferenceException(solver_status)
+        y = np.argmax(unary_marginals, axis=-1)
+    if return_energy:
+        return y, -energy
+    return y
 
 def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
                       **kwargs):

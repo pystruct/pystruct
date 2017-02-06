@@ -25,11 +25,15 @@
     
 """
 import numpy as np
+import random
 
 from .base import StructuredModel
 from ..inference import inference_dispatch, get_installed
 from .utils import loss_augment_unaries
 
+
+class InconsistentLabel(Exception):
+    pass
 
 class TypedCRF(StructuredModel):
     """Abstract base class"""
@@ -47,6 +51,7 @@ class TypedCRF(StructuredModel):
             inference_method = get_installed(['ad3', 'max-product', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
+        self.inference_exception = False    #if inference cannot be done, raises an exception
         
         if len(l_n_states)   != n_types:
             raise ValueError("Expected 1 number of states per node type.")
@@ -80,7 +85,8 @@ class TypedCRF(StructuredModel):
         #internal stuff
         #when putting features in a single sequence, index of 1st state for type i
         self._l_type_startindex = [ sum(self.l_n_states[:i]) for i in range(self.n_types)]
-
+        self._l_type_startindex.append(self._n_states) #convenience
+        
         #when putting states in a single sequence, index of 1st feature for type i (is at Ith position)
         #we store the slice objects
         self._a_feature_slice_by_typ = np.array([ slice(sum(self.l_n_features[:i]), sum(self.l_n_features[:i+1])) for i in range(self.n_types)])
@@ -102,7 +108,14 @@ class TypedCRF(StructuredModel):
         else:
             self._check_size_x(X)
             self._check_size_xy(X, Y)
-                
+    
+    def setInferenceException(self, bRaiseExceptionWhenInferenceNotSuccessful):
+        """
+        set exception on or off when inference canoot be done.
+        """
+        self.inference_exception = bRaiseExceptionWhenInferenceNotSuccessful
+        return self.inference_exception
+    
     def _set_size_joint_feature(self):
         """
         We have:
@@ -158,14 +171,16 @@ class TypedCRF(StructuredModel):
         if Y.shape[0] != nb_nodes:
             raise ValueError("Expected 1 label for each of the %d nodes. Gopt %d labels."%(nb_nodes, Y.shape[0]))
         
-        i_start = 0              
+        i_start = 0    
         for typ, nf, n_states in zip(range(self.n_types), l_node_features, self.l_n_states):
             nb_nodes = nf.shape[0]
             Y_typ = Y[i_start:i_start+nb_nodes]
             if  np.min(Y_typ) < 0:
                 raise ValueError("Got a negative label for type %d"%typ)
-            if np.max(Y_typ) >= n_states:
-                raise ValueError("Got a label outside of [0, %d] for type %d: %s"%(n_states-1, typ, Y_typ))
+#             if np.max(Y_typ) >= n_states:
+#                 raise ValueError("Got a label outside of [0, %d] for type %d: %s"%(n_states-1, typ, Y_typ))
+            if np.min(Y_typ) < self._l_type_startindex[typ] : raise InconsistentLabel("labels of type %d start at %d"%(typ, self._l_type_startindex[typ]))
+            if np.max(Y_typ) >= self._l_type_startindex[typ+1]: raise InconsistentLabel("labels of type %d end at %d"%(typ, self._l_type_startindex[typ+1]-1))
             i_start = i_start + nb_nodes
         
         
@@ -190,7 +205,7 @@ class TypedCRF(StructuredModel):
         return all edges as a single 2-column matrix, taking care of node indices!!
         """ 
         n_edges_total    = sum(0 if e is None else e.shape[0] for e in x[1])
-        all_edges = np.zeros((n_edges_total, 2), dtype=np.int32)
+        all_edges = np.zeros((n_edges_total, 2), dtype=np.int)
         
         node_offset_by_typ = np.cumsum([0]+[0 if n is None else n.shape[0] for n in x[0]])
         i_start = 0       
@@ -213,19 +228,6 @@ class TypedCRF(StructuredModel):
                 yield (typ1, typ2)
         raise StopIteration
 
-#         
-#     def _get_unary_potentials_slow(self, x, w):
-#         self._check_size_w(w)
-#         self._check_size_x(x)
-#         l_node_features = self._get_node_features(x)
-#         a_nodes_features = scipy.sparse.block_diag(l_node_features)  #.toarray()
-#         w_unaries = w[:self.size_unaries]
-#         l_w_block = []
-#         for ((i_w,i_w2), (n_states, n_features)) in self._cache_unary_potentials:
-#             unary_params = w_unaries[i_w:i_w2].reshape(n_states, n_features)
-#             l_w_block.append(unary_params.T)
-#         a_features_states = scipy.sparse.block_diag(l_w_block)
-#         return a_nodes_features.dot(a_features_states).toarray()
 
     def _get_unary_potentials_initialize(self):
         """
@@ -233,7 +235,6 @@ class TypedCRF(StructuredModel):
         """
         self._cache_unary_potentials = list()
          
-        #l_w_block = []
         i_w, i_states = 0, 0
         for n_states, n_features in zip(self.l_n_states, self.l_n_features):  
             i_w2 = i_w + n_states*n_features        #number of weights for the type
@@ -259,28 +260,10 @@ class TypedCRF(StructuredModel):
         """
         self._check_size_w(w)
         l_node_features = self._get_node_features(x)
-        #code for single type CRF
-        #         unary_params = w[:self.n_states * self.n_features].reshape(
-        #             self.n_states, self.n_features)
-        #         return np.dot(features, unary_params.T)
  
-        #self.size_unaries == sum(  n_states * n_features for n_states, n_features in zip(self.l_n_states, self.l_n_features) )
         w_unaries = w[:self.size_unaries]
         a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
                                    , self._n_states), dtype=w.dtype)
-#         #we work type by type and assemble the unaries
-#         #"irrelevant" unaries (i.e. for state not applicable to a type, will get a 0
-#         i_w, i_nodes, i_states = 0, 0, 0
-#         for features, n_states, n_features in zip(l_node_features, self.l_n_states, self.l_n_features):  
-#             i_w2 = i_w + n_states*n_features        #number of weights for the type
-#             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
-#             i_states2 = i_states + n_states         #number of state of that type
-#             w_unaries_type = w_unaries[i_w:i_w2]    #range for weights for that type
-#             #back to "usual" code!
-#             unary_params = w_unaries_type.reshape(n_states, n_features)
-#             #apart that we fill a sub-part of the unaries matrix 
-#             a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, unary_params.T)
-#             i_w, i_nodes, i_states = i_w2, i_nodes2, i_states2 
         i_nodes = 0
         for features, ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) in zip(l_node_features, self._cache_unary_potentials):  
             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
@@ -348,53 +331,37 @@ class TypedCRF(StructuredModel):
         l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
         nodetype_data = (l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
 
-#         print "pairwise_potentials ", `pairwise_potentials`
-#         print "pairwise_potentials.shape ", pairwise_potentials.shape
-#         print "flat_edges = ", `flat_edges`
-#         print "flat_edges.shape = ", flat_edges.shape
-#         print " nb non zero = ", len(np.flatnonzero(pairwise_potentials))
-
-#         print "loss_inference"
-#         print "  UP ", show(unary_potentials)
-#         print "  PP ", show(pairwise_potentials)
-#         print "  E ", show(flat_edges)
-
         Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy,
                                   nodetype=nodetype_data)
-        #print " LAI->", show(Y_pred)
-        
-#         print "=====", Y_pred.shape
 
-        if isinstance(Y_pred, tuple):
-            import ad3
-            unary_marginals, pairwise_marginals = Y_pred
-            _Y_pred = ad3.getY_from_typedmarginals(unary_marginals, nodetype_data)
-        else:
-            try:
-                self._check_size_xy(x, Y_pred)
-            except ValueError as e:
-                print "Y_pred is BAD, FIXING IT WITH RANDOM VALUES"
-                Y_pred = self.fix_Y_at_random(x, Y_pred)
+        #if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
 
-        if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
-        
-        #print "Y_pred ", `Y_pred`
-        
+        try:
+            if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
+        except InconsistentLabel:
+            #the inference engine predicted inconsistent labels
+            #with ad3+ this should never occur
+            assert self.inference_method != "ad3+", "Internal error in AD3+: inconsistent labels"
+            Y_pred = self.fix_Y_at_random(x, Y_pred)
+                    
         return Y_pred
     
     def fix_Y_at_random(self, x, Y_pred):
-        import random
+        print "\tY is BAD, FIXING IT AT RANDOM", `Y_pred`
+        
         l_node_features = self._get_node_features(x, True)
         i_start = 0              
-        for nf, n_states in zip(l_node_features, self.l_n_states):
+        for typ, (nf, n_states) in enumerate(zip(l_node_features, self.l_n_states)):
             nb_nodes = nf.shape[0]
             if nb_nodes:
                 Y_typ = Y_pred[i_start:i_start+nb_nodes]
-                if np.max(Y_typ) >= n_states:
+                typ_start = self._l_type_startindex[typ]
+                typ_end   = self._l_type_startindex[typ+1]
+                if np.min(Y_typ) < typ_start  or typ_end <= np.max(Y_typ):
                     for i in range(nb_nodes):
-                        if Y_pred[i_start+i] >= n_states: Y_pred[i_start+i] = random.randint(0, n_states-1)
+                        if Y_pred[i_start+i] < typ_start  or typ_end <= Y_pred[i_start+i]:  Y_pred[i_start+i] = random.randint(typ_start, typ_end-1)
             i_start = i_start + nb_nodes      
         self._check_size_xy(x, Y_pred)  
         return Y_pred
@@ -453,29 +420,32 @@ class TypedCRF(StructuredModel):
         l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
         nodetype_data=(l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
 
-        if constraints:
-#             print "inference"
-#             print "  UP ", show(unary_potentials)
-#             print "  PP ", show(pairwise_potentials)
-#             print "  E ", show(flat_edges)
-    
+        if self.inference_method == "ad3+":
+            #preferred method for TypedCRF inferences (called by the 'predict' method of the learner)
             Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                      self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy, constraints=constraints,
-                                      nodetype=nodetype_data)
-            #print " I ->", show(Y_pred)            
+                                          self.inference_method, relaxed=relaxed,
+                                          return_energy=return_energy,
+                                          constraints=constraints,
+                                          nodetype=nodetype_data,
+                                          inference_exception=self.inference_exception)             #<--
         else:
-            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                      self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy,
-                                      nodetype=nodetype_data)
-#         print "===", Y_pred.shape
-# 
-#         try:
-#             self._check_size_xy(x, Y_pred)
-#         except ValueError as e:
-#             print "\tY is BAD, FIXING IT AT RANDOM"
-#         Y_pred = self.fix_Y_at_random(x, Y_pred)
+            if constraints:
+                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+                                          self.inference_method, relaxed=relaxed,
+                                          return_energy=return_energy,
+                                          constraints=constraints,             #<--
+                                          nodetype=nodetype_data)              #<--
+            else:
+                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+                                          self.inference_method, relaxed=relaxed,
+                                          return_energy=return_energy,
+                                          nodetype=nodetype_data)             #<--
+
+        try:
+            if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
+        except:
+            Y_pred = self.fix_Y_at_random(x, Y_pred)
+            
         if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
         
         return Y_pred
