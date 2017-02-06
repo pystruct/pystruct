@@ -105,7 +105,7 @@ if __name__ == '__main__':
     # first, train on X with directions only:
     crf = EdgeFeatureGraphCRF(inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, max_iter=100,
-                        n_jobs=1)
+                    n_jobs=1)
     ssvm.fit(X_train_directions, Y_train_flat)
     
     # Evaluate using confusion matrix.
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     print("Test accuracy: %.3f"
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-
+    
     # now, use more informative edge features:
     crf = EdgeFeatureGraphCRF(inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
@@ -131,7 +131,7 @@ if __name__ == '__main__':
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    if False:
+    if True:
         # plot stuff
         fig, axes = plt.subplots(2, 2)
         axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
