@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # now, use more informative edge features:
     crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  switch_to='ad3',
-                        verbose=1,
+                        #verbose=1,
                         n_jobs=8)
     ssvm.fit( convertToSingleTypeX(X_train_edge_features), Y_train_flat)
     Y_pred2 = ssvm.predict( convertToSingleTypeX(X_test_edge_features) )
