@@ -385,7 +385,7 @@ def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=Fals
                   constraints=None,
                   inference_exception=None,
                   nodetype=None):
-   """Inference with AD3 dual decomposition subgradient solver.
+    """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
     ----------
