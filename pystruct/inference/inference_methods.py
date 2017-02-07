@@ -320,10 +320,72 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
+                  verbose=0, return_energy=False, branch_and_bound=False):
+    """Inference with AD3 dual decomposition subgradient solver.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array, shape (n_nodes, n_states)
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+        Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
+
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
+
+    relaxed : bool (default=False)
+        Whether to return the relaxed solution (``True``) or round to the next
+        integer solution (``False``).
+
+    verbose : int (default=0)
+        Degree of verbosity for solver.
+
+    return_energy : bool (default=False)
+        Additionally return the energy of the returned solution (according to
+        the solver).  If relaxed=False, this is the energy of the relaxed, not
+        the rounded solution.
+
+    branch_and_bound : bool (default=False)
+        Whether to attempt to produce an integral solution using
+        branch-and-bound.
+
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=False, this is a tuple of unary and edge 'marginals'.
+    """
+    import ad3
+    n_states, pairwise_potentials = \
+        _validate_params(unary_potentials, pairwise_potentials, edges)
+    unaries = unary_potentials.reshape(-1, n_states)
+    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+    unary_marginals, pairwise_marginals, energy, solver_status = res
+    if verbose:
+        print(solver_status[0])
+
+    if solver_status in ["fractional", "unsolved"] and relaxed:
+        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
+        y = (unary_marginals, pairwise_marginals)
+        #print solver_status, pairwise_marginals
+    else:
+        y = np.argmax(unary_marginals, axis=-1)
+    if return_energy:
+        return y, -energy
+    return y
+
+def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=False,
                   verbose=0, return_energy=False, branch_and_bound=False,
                   constraints=None,
+                  inference_exception=None,
                   nodetype=None):
-    """Inference with AD3 dual decomposition subgradient solver.
+   """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
     ----------
@@ -376,31 +438,6 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
     """
-    import ad3
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-    unaries = unary_potentials.reshape(-1, n_states)
-    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound)
-    unary_marginals, pairwise_marginals, energy, solver_status = res
-    if verbose:
-        print(solver_status[0])
-
-    if solver_status in ["fractional", "unsolved"] and relaxed:
-        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
-        y = (unary_marginals, pairwise_marginals)
-        #print solver_status, pairwise_marginals
-    else:
-        y = np.argmax(unary_marginals, axis=-1)
-    if return_energy:
-        return y, -energy
-    return y
-
-def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False,
-                  constraints=None,
-                  inference_exception=None,
-                  nodetype=None):
     import ad3
     n_states, pairwise_potentials = \
         _validate_params(unary_potentials, pairwise_potentials, edges)
