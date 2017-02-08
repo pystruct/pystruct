@@ -27,11 +27,9 @@
     
 """
 import numpy as np
-import random
 
 from .base import StructuredModel
-from ..inference import inference_dispatch, get_installed
-from .utils import loss_augment_unaries
+from ..inference import get_installed
 
 
 class InconsistentLabel(Exception):
@@ -50,7 +48,7 @@ class TypedCRF(StructuredModel):
         
         if inference_method is None:
             # get first in list that is installed
-            inference_method = get_installed(['ad3', 'max-product', 'lp'])[0]
+            inference_method = get_installed(['ad3+', 'ad3', 'max-product', 'lp'])[0]
         self.inference_method = inference_method
         self.inference_calls = 0
         self.inference_exception = False    #if inference cannot be done, raises an exception
@@ -162,6 +160,7 @@ class TypedCRF(StructuredModel):
                 raise ValueError("At least one edge starts from a non-existing node index: type %d to type %d"%(typ1,typ2))
             if max(nodes2) >= l_node_features[typ2].shape[0]:
                 raise ValueError("At least one edge points to a non-existing node index: type %d to type %d"%(typ1,typ2))    
+        return True
     
     def _check_size_xy(self, X, Y):
         if Y is None: return
@@ -184,7 +183,7 @@ class TypedCRF(StructuredModel):
             if np.min(Y_typ) < self._l_type_startindex[typ] : raise InconsistentLabel("labels of type %d start at %d"%(typ, self._l_type_startindex[typ]))
             if np.max(Y_typ) >= self._l_type_startindex[typ+1]: raise InconsistentLabel("labels of type %d end at %d"%(typ, self._l_type_startindex[typ+1]-1))
             i_start = i_start + nb_nodes
-        
+        return True
         
                     
     def _get_node_features(self, x, bClean=False):
@@ -257,7 +256,7 @@ class TypedCRF(StructuredModel):
  
         Returns
         -------
-        unary : ndarray, shape=(sum_over_types(n_states_of_type)
+        unary : ndarray, shape=( n_nodes, n_states )
             Unary weights.
         """
         self._check_size_w(w)
@@ -274,180 +273,3 @@ class TypedCRF(StructuredModel):
         # nodes x features  .  features x states  -->  nodes x states
         return a_nodes_states
             
-    def loss_augmented_inference(self, x, y, w, relaxed=False,
-                                 return_energy=False):
-        """Loss-augmented Inference for x relative to y using parameters w.
-
-        Finds (approximately)
-        armin_y_hat np.dot(w, joint_feature(x, y_hat)) + loss(y, y_hat)
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : tuple
-            Instance of a graph with unary evidence.
-            x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_features),
-            edges are an nd-array of shape (n_edges, 2)
-
-        y : ndarray, shape (n_nodes,)
-            Ground truth labeling relative to which the loss
-            will be measured.
-
-        w : ndarray, shape=(size_joint_feature,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(n_nodes)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (n_nodes, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
-        """
-#         print "y.shape ", y.shape
-        self.inference_calls += 1
-        self._check_size_w(w)
-        unary_potentials    = self._get_unary_potentials(x, w)
-        pairwise_potentials = self._get_pairwise_potentials(x, w)
-        flat_edges = self._index_all_edges(x)
-        
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
-
-
-        l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
-        nodetype_data = (l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
-
-        Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                  self.inference_method, relaxed=relaxed,
-                                  return_energy=return_energy,
-                                  nodetype=nodetype_data)
-
-        #if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
-
-        try:
-            if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-        except InconsistentLabel:
-            #the inference engine predicted inconsistent labels
-            #with ad3+ this should never occur
-            assert self.inference_method != "ad3+", "Internal error in AD3+: inconsistent labels"
-            Y_pred = self.fix_Y_at_random(x, Y_pred)
-                    
-        return Y_pred
-    
-    def fix_Y_at_random(self, x, Y_pred):
-        print "\tY is BAD, FIXING IT AT RANDOM", `Y_pred`
-        
-        l_node_features = self._get_node_features(x, True)
-        i_start = 0              
-        for typ, (nf, n_states) in enumerate(zip(l_node_features, self.l_n_states)):
-            nb_nodes = nf.shape[0]
-            if nb_nodes:
-                Y_typ = Y_pred[i_start:i_start+nb_nodes]
-                typ_start = self._l_type_startindex[typ]
-                typ_end   = self._l_type_startindex[typ+1]
-                if np.min(Y_typ) < typ_start  or typ_end <= np.max(Y_typ):
-                    for i in range(nb_nodes):
-                        if Y_pred[i_start+i] < typ_start  or typ_end <= Y_pred[i_start+i]:  Y_pred[i_start+i] = random.randint(typ_start, typ_end-1)
-            i_start = i_start + nb_nodes      
-        self._check_size_xy(x, Y_pred)  
-        return Y_pred
-        
-    def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
-        """Inference for x using parameters w.
-
-        Finds (approximately)
-        armin_y np.dot(w, joint_feature(x, y))
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : tuple
-            Instance of a graph with unary evidence.
-            x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_states),
-            edges are an nd-array of shape (n_edges, 2)
-
-        w : ndarray, shape=(size_joint_feature,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        constraints : None or list, default=False
-            hard logic constraints, if any
-            
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(width, height)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
-        """
-        self._check_size_w(w)
-        self.inference_calls += 1
-        self.initialize(x)
-        unary_potentials    = self._get_unary_potentials(x, w)
-        pairwise_potentials = self._get_pairwise_potentials(x, w)
-        flat_edges = self._index_all_edges(x)
-
-        l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
-        nodetype_data=(l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
-
-        if self.inference_method == "ad3+":
-            #preferred method for TypedCRF inferences (called by the 'predict' method of the learner)
-            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          constraints=constraints,
-                                          nodetype=nodetype_data,
-                                          inference_exception=self.inference_exception)             #<--
-        else:
-            if constraints:
-                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          constraints=constraints,             #<--
-                                          nodetype=nodetype_data)              #<--
-            else:
-                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          nodetype=nodetype_data)             #<--
-
-        try:
-            if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-        except:
-            Y_pred = self.fix_Y_at_random(x, Y_pred)
-            
-        if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-        
-        return Y_pred
