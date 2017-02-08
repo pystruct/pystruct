@@ -441,7 +441,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                                       return_energy=return_energy,
                                       nodetype=nodetype_data)
             #with ad3+ this should never occur
-            assert self._check_size_xy(x, Y_pred), "Internal error in AD3+: inconsistent labels"
+            if not isinstance(Y_pred, tuple): assert self._check_size_xy(x, Y_pred), "Internal error in AD3+: inconsistent labels"
         else:
             Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                       self.inference_method, relaxed=relaxed,
