@@ -543,13 +543,11 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                 Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                           self.inference_method, relaxed=relaxed,
                                           return_energy=return_energy,
-                                          constraints=constraints,             #<--
-                                          nodetype=nodetype_data)              #<--
+                                          constraints=constraints)              #<--
             else:
                 Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
                                           self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          nodetype=nodetype_data)             #<--
+                                          return_energy=return_energy)             #<--
 
         try:
             if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
