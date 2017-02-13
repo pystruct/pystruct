@@ -96,7 +96,7 @@ class TypedCRF(StructuredModel):
                 i_state_start += typ1_n_states*typ2_n_states 
 
     # -------------- CONVENIENCE --------------------------
-    def flatY(self, lY_by_typ):
+    def flattenY(self, lY_by_typ):
         """
         It is more convenient to have the Ys grouped by type, as the Xs are, and to have the first label of each type encoded as 0.
         
@@ -107,7 +107,7 @@ class TypedCRF(StructuredModel):
             lY.append( np.asarray(Y_typ) + n_start_state )
         return np.hstack(lY)
     
-    def unflatY(self, lX, flatY):
+    def unflattenY(self, lX, flatY):
         """
         predict returns a flat array of Y (same structure as for 'fit')
         This method structures the Y as a list of Y_per_type, where the first label of any type is 0 
