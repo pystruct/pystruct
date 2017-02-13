@@ -630,9 +630,9 @@ def test_inference():
         if isinstance(y_pred, tuple):
             # ad3 produces an integer result if it found the exact solution
             #np.set_printoptions(precision=2, threshold=9999)
-            assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states), 5)
-            assert_array_almost_equal(res[1], y_pred[1], 5)
-            assert_array_equal(y, np.argmax(y_pred[0], axis=-1), 5)
+            assert_array_almost_equal(res[0], y_pred[0][0].reshape(-1, n_states), 5)
+            assert_array_almost_equal(res[1], y_pred[1][0], 5)
+            assert_array_equal(y, np.argmax(y_pred[0][0], axis=-1), 5)
 
     #for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
