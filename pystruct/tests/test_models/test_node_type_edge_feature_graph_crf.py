@@ -166,7 +166,8 @@ def test_joint_feature():
     print "joint_feature = \n", `jf`
     print
     assert_array_equal(g.joint_feature(x,y)
-                       , np.array([ 0.,  0.,  0.,  1.,  1.,  1.,  2.,  2.,  2.,  0.,  0.,  0.,  0.,
+                       , np.array([ 0.,  0.,  0.,  1.,  1.,  1.,  2.,  2.,  2.,  0.,  0.,  0.
+                                   ,  0.,
         0.,  0.,  0.,  0.,  0.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  3.,  0.,  0.,  0.,  0.,
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  3.,  0.,
@@ -466,41 +467,38 @@ def test_joint_feature3():
     print `w`
     ret_u = g._get_unary_potentials(x, w)
     print `ret_u`
-    assert_array_almost_equal(ret_u,np.array([   #n_nodes x n_states
-                                              [3,  6, 0,0,0],
-                                              [6, 12, 0,0,0],
-                                              [0,  0, 5, 10, 15],
-                                              [0,  0, 9, 18, 27],
-                                              [0,  0, 13, 26, 39]
-                                            ])
-                              )
+    assert len(ret_u) == 2
+    assert_array_almost_equal(ret_u[0], np.array([   #n_nodes x n_states
+                                              [3,  6],
+                                              [6, 12]]))
+
+    assert_array_almost_equal(ret_u[1], np.array([   #n_nodes x n_states
+                                                [5, 10, 15],
+                                                [9, 18, 27],
+                                                [13, 26, 39]]))
     
     assert len(w) == g.size_joint_feature
     ret_pw = g._get_pairwise_potentials(x, w)
-    print "PW ", `ret_pw`
-    assert_array_almost_equal(ret_pw,np.array([   #n_edges, n_states, n_states
-                                              # 3  edges  5 states in total
-                  [ #edge: typ0 - typ1, 2 features
-                    [   0,  0,  0.443,  0.443,  0.443],      
-                    [   0,  0,  0.443,  0.443,  0.443],       
-                    [   0,  0,  0,  0,  0],       
-                    [   0,  0,  0,  0,  0],       
-                    [   0,  0,  0,  0,  0]       
-                ],
-                  [ #edge: typ1 - typ1, 2 features
-        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
-        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
-        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ],
-        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ],
-        [ 0.   ,  0.   ,  0.06 ,  0.06 ,  0.06 ]],       
-                  [ #edge: typ1 - typ1, 2 features
-        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
-        [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ],
-        [ 0.   ,  0.   ,  0.006,  0.006,  0.006],
-        [ 0.   ,  0.   ,  0.006,  0.006,  0.006],
-        [ 0.   ,  0.   ,  0.006,  0.006,  0.006]]                   
-                                              ]))
+    for _pw in ret_pw:
+        print "_pw ", `_pw`
+    pw00, pw01, pw10, pw11 = ret_pw
+    assert len(pw00) == 0
+    assert_array_almost_equal(pw01,np.array([   #n_edges, n_states, n_states
+                                  [[0.443,  0.443,  0.443],
+                                   [0.443,  0.443,  0.443]]
+                                               ]))
+    assert len(pw10) == 0
     
+    assert_array_almost_equal(pw11,np.array([   #n_edges, n_states, n_states
+                                  [[0.06 ,  0.06 ,  0.06],
+                                   [0.06 ,  0.06 ,  0.06],
+                                   [0.06 ,  0.06 ,  0.06]]
+                                             ,
+                                  [[0.006,  0.006,  0.006],
+                                   [0.006,  0.006,  0.006],
+                                   [0.006,  0.006,  0.006]]        
+                                               ]))
+
 
 
 def test_unary_potentials():
@@ -536,48 +534,48 @@ def test_unary_potentials():
     w = np.arange(g.size_joint_feature)
     pot = g._get_unary_potentials(x, w)
     print `pot`
-    assert_array_equal(pot, potref)
+    assert_array_equal(pot, [potref])
 
     pwpotref = gref._get_pairwise_potentials(xref, wref)
     print `pwpotref`
     pwpot = g._get_pairwise_potentials(x, w)
     print `pwpot`
-    assert_array_equal(pwpot, pwpotref)
+    assert_array_equal(pwpot, [pwpotref])
  
-def test_inference_util():
-    g = NodeTypeEdgeFeatureGraphCRF(    
-                    3                   #how many node type?
-                 , [2, 3, 1]               #how many labels   per node type?
-                 , [3, 4, 1]               #how many features per node type?
-                 , np.array([  [1, 2, 2]
-                             , [2, 3, 2]
-                             , [2, 2, 1]])      #how many features per node type X node type? 
-                 )
-    node_f = [  np.array([ [2,2,2], [1,1,1] ])
-              , np.array([ [.31, .32, .33, .34], [.11, .12, .13, .14], [.21, .22, .23, .24]]) 
-              , np.array([ [77], [88], [99]]) 
-              ]
-    edges  = [ np.array( [  [1, 0]] ),
-               np.array( [  [1,0]] )   #an edge from 0 to 2
-               , None
-               
-               , None
-               , None
-               , None
-               
-               , np.array( [[1,1]] )
-               , None
-               , None                        ]    
-
-    x = ( node_f, edges, None)
-    
-    reindexed_exdges = g._index_all_edges(x)
-    #print `reindexed_exdges`
-    assert_array_equal(reindexed_exdges,
-                       np.array( [[1,0],
-                                  [1,2],
-                                  [6,1]]))
-    
+# def test_inference_util():
+#     g = NodeTypeEdgeFeatureGraphCRF(    
+#                     3                   #how many node type?
+#                  , [2, 3, 1]               #how many labels   per node type?
+#                  , [3, 4, 1]               #how many features per node type?
+#                  , np.array([  [1, 2, 2]
+#                              , [2, 3, 2]
+#                              , [2, 2, 1]])      #how many features per node type X node type? 
+#                  )
+#     node_f = [  np.array([ [2,2,2], [1,1,1] ])
+#               , np.array([ [.31, .32, .33, .34], [.11, .12, .13, .14], [.21, .22, .23, .24]]) 
+#               , np.array([ [77], [88], [99]]) 
+#               ]
+#     edges  = [ np.array( [  [1, 0]] ),
+#                np.array( [  [1,0]] )   #an edge from 0 to 2
+#                , None
+#                
+#                , None
+#                , None
+#                , None
+#                
+#                , np.array( [[1,1]] )
+#                , None
+#                , None                        ]    
+# 
+#     x = ( node_f, edges, None)
+#     
+#     reindexed_exdges = g._index_all_edges(x)
+#     #print `reindexed_exdges`
+#     assert_array_equal(reindexed_exdges,
+#                        np.array( [[1,0],
+#                                   [1,2],
+#                                   [6,1]]))
+#     
 
 def report_model_config(crf):
     print crf.n_states
@@ -631,8 +629,9 @@ def test_inference():
         y_pred = crf.inference(x, w, relaxed=True)
         if isinstance(y_pred, tuple):
             # ad3 produces an integer result if it found the exact solution
-            assert_array_almost_equal(res[1], y_pred[1], 5)
+            #np.set_printoptions(precision=2, threshold=9999)
             assert_array_almost_equal(res[0], y_pred[0].reshape(-1, n_states), 5)
+            assert_array_almost_equal(res[1], y_pred[1], 5)
             assert_array_equal(y, np.argmax(y_pred[0], axis=-1), 5)
 
     #for inference_method in get_installed(["lp", "ad3", "qpbo"]):
@@ -770,9 +769,9 @@ def test_energy_discrete():
             w = np.hstack([unary_params.ravel(), pw1.ravel(), pw2.ravel()])
             crf.initialize(x)
             y_hat = crf.inference(x, w, relaxed=False)
-            flat_edges = crf._index_all_edges(x)
-            energy = compute_energy(crf._get_unary_potentials(x, w),
-                                    crf._get_pairwise_potentials(x, w), flat_edges, #CAUTION: pass the flatened edges!!
+            #flat_edges = crf._index_all_edges(x)
+            energy = compute_energy(crf._get_unary_potentials(x, w)[0],
+                                    crf._get_pairwise_potentials(x, w)[0], edges, #CAUTION: pass the flatened edges!!
                                     y_hat)
 
             joint_feature = crf.joint_feature(x, y_hat)
@@ -795,9 +794,11 @@ if __name__ == "__main__":
         test_joint_feature3()
         
     if 1: test_unary_potentials()
-    if 1: test_inference_util()
+#     if 1: test_inference_util()
     if 1: test_inference()
     if 1: test_joint_feature_discrete()
     if 1: test_joint_feature_continuous()
     if 1: test_energy_continuous()
     if 1: test_energy_discrete()
+    
+    print "OK"
