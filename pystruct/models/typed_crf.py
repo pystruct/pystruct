@@ -41,7 +41,7 @@ class TypedCRF(StructuredModel):
                  , n_types                  #how many node type?
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
-                 , inference_method="ad3" 
+                 , inference_method="ad3+" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
         StructuredModel.__init__(self)
@@ -62,9 +62,12 @@ class TypedCRF(StructuredModel):
         self._n_states    = sum(l_n_states)     #total number of states
         self.l_n_features = l_n_features
         self._n_features  = sum(self.l_n_features)   #total number of (node) features
+        
+        #number of typextype states, or number of states per type of edge
+        self.l_n_edge_states = [ n1 * n2 for n1 in self.l_n_states for n2 in self.l_n_states ]
 
-        #Caching some heavily used values
-        self._get_unary_potentials_initialize()
+#         #Caching some heavily used values
+#         self._get_unary_potentials_initialize()
         
         #class weights:
         # either we get class weights for all types of nodes, or for none of them!
@@ -73,38 +76,56 @@ class TypedCRF(StructuredModel):
                 raise ValueError("Expected 1 class weight list per node type.")
             for i, n_states in enumerate(self.l_n_states):
                 if len(l_class_weight[i]) != n_states:
-                    raise ValueError("Expected 1 class weight per state per node type. Wrong for l_class_weight[%d]"%i)
+                    raise ValueError("Expected 1 class weight per state per node type. Wrong for type %d"%i)
                     
             #class weights are computed by type and simply concatenated
-            self.class_weight = np.hstack([np.array(class_weight) for class_weight in l_class_weight])
+            self.l_class_weight = [np.asarray(class_weight) for class_weight in l_class_weight]
         else:
-            self.class_weight = np.ones(self._n_states)
+            self.l_class_weight = [np.ones(n) for n in self.l_n_states]
+        self.class_weight = np.hstack(self.l_class_weight)
 
         self._set_size_joint_feature()
 
         #internal stuff
         #when putting features in a single sequence, index of 1st state for type i
-        self._l_type_startindex = [ sum(self.l_n_states[:i]) for i in range(self.n_types)]
-        self._l_type_startindex.append(self._n_states) #convenience
+        self._l_type_startindex = [ sum(self.l_n_states[:i]) for i in range(self.n_types+1)]
         
         #when putting states in a single sequence, index of 1st feature for type i (is at Ith position)
         #we store the slice objects
         self._a_feature_slice_by_typ = np.array([ slice(sum(self.l_n_features[:i]), sum(self.l_n_features[:i+1])) for i in range(self.n_types)])
 
-        #when putting edge states in a single sequence, index of 1st state of an edge of type (typ1, typ2)
-        self._l_edgetype_start_index = [] 
-        i_start = 0
-        for typ1_n_states in self.l_n_states:
-            for typ2_n_states in self.l_n_states:
-                self._l_edgetype_start_index.append(i_start)
-                i_start += typ1_n_states*typ2_n_states 
-        self._l_edgetype_start_index.append(i_start)
-        assert i_start == self._n_states**2
 
+
+
+
+
+        
+        
+        
+        #when putting edge states in a single sequence, index of 1st state of an edge of type (typ1, typ2)
+        self.a_startindex_by_typ_typ = np.zeros((self.n_types, self.n_types), dtype=np.uint32)
+        i_state_start = 0
+        for typ1, typ1_n_states in enumerate(self.l_n_states):
+            for typ2, typ2_n_states in enumerate(self.l_n_states):
+                self.a_startindex_by_typ_typ[typ1,typ2] = i_state_start
+                i_state_start += typ1_n_states*typ2_n_states 
+
+
+    def flatY(self, lX, lY_by_typ):
+        """
+        It is more convenient to have the Ys grouped by type, as the Xs are.
+        Also, having a label starting at 0 for each type.
+        
+        This method does the job.
+        
+        lX is a list of X strutured as explained 
+        """
+        pass
+    
     def initialize(self, X, Y=None):
         if isinstance(X, list):
             map(self._check_size_x, X)
-            if not Y is None: map(self._check_size_xy, X, Y)
+            if not (Y is None): map(self._check_size_xy, X, Y)
         else:
             self._check_size_x(X)
             self._check_size_xy(X, Y)
@@ -188,12 +209,11 @@ class TypedCRF(StructuredModel):
                     
     def _get_node_features(self, x, bClean=False):
         if bClean:
-            return [ np.empty((0,0)) if node_features is None or len(node_features)==0 else node_features for node_features in x[0]]
+            #we replace None by empty array with proper shape
+            return [ np.empty((0,_n_feat)) if node_features is None else node_features 
+                    for (node_features, _n_feat) in zip(x[0], self.l_n_features)]
         else:
             return x[0]
-    
-    def _get_node_features_by_type(self, x, typ):
-        return x[0][typ]
     
     def _get_edges(self, x, bClean=False):
         if bClean:
@@ -201,25 +221,6 @@ class TypedCRF(StructuredModel):
         else:
             return x[1]
     
-    def _index_all_edges(self, x):
-        """
-        return all edges as a single 2-column matrix, taking care of node indices!!
-        """ 
-        n_edges_total    = sum(0 if e is None else e.shape[0] for e in x[1])
-        all_edges = np.zeros((n_edges_total, 2), dtype=np.int)
-        
-        node_offset_by_typ = np.cumsum([0]+[0 if n is None else n.shape[0] for n in x[0]])
-        i_start = 0       
-        for edges, (typ1, typ2) in zip(x[1], self._iter_type_pairs()):
-            if edges is None: continue
-            n_edges = edges.shape[0]
-            i_stop = i_start + n_edges
-            all_edges[i_start:i_stop, 0] = edges[:,0] + node_offset_by_typ[typ1]
-            all_edges[i_start:i_stop, 1] = edges[:,1] + node_offset_by_typ[typ2]
-            i_start = i_stop
-        
-        return all_edges
-        
     def _get_edges_by_type(self, x, typ1, typ2):
         return x[1][typ1*self.n_types+typ2] 
 
@@ -230,19 +231,20 @@ class TypedCRF(StructuredModel):
         raise StopIteration
 
 
-    def _get_unary_potentials_initialize(self):
-        """
-        pre-compute iteration params
-        """
-        self._cache_unary_potentials = list()
-         
-        i_w, i_states = 0, 0
-        for n_states, n_features in zip(self.l_n_states, self.l_n_features):  
-            i_w2 = i_w + n_states*n_features        #number of weights for the type
-            i_states2 = i_states + n_states         #number of state of that type
-            self._cache_unary_potentials.append( ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) )
-            i_w, i_states = i_w2, i_states2 
-    
+#     def _get_unary_potentials_initialize(self):
+#         """
+#         pre-compute iteration params
+#         """
+#     
+#         self._cache_unary_potentials = list()
+#           
+#         i_w, i_states = 0, 0
+#         for n_states, n_features in zip(self.l_n_states, self.l_n_features):  
+#             i_w2 = i_w + n_states*n_features        #number of weights for the type
+#             i_states2 = i_states + n_states         #number of state of that type
+#             self._cache_unary_potentials.append( ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) )
+#             i_w, i_states = i_w2, i_states2 
+ 
     def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
  
@@ -256,20 +258,35 @@ class TypedCRF(StructuredModel):
  
         Returns
         -------
-        unary : ndarray, shape=( n_nodes, n_states )
+        unaries : list of ndarray, shape=( n_nodes_typ, n_states_typ )
             Unary weights.
         """
         self._check_size_w(w)
-        l_node_features = self._get_node_features(x)
+        l_node_features = self._get_node_features(x, True)
  
-        w_unaries = w[:self.size_unaries]
-        a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
-                                   , self._n_states), dtype=w.dtype)
-        i_nodes = 0
-        for features, ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) in zip(l_node_features, self._cache_unary_potentials):  
-            i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
-            a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, w_unaries[i_w:i_w2].reshape(n_states, n_features).T)
-            i_nodes = i_nodes2
+        l_unary_potentials = []
+            
+        i_w = 0
+        for (features, n_states, n_features) in zip(l_node_features, self.l_n_states, self.l_n_features):  
+            n_w = n_states*n_features
+            l_unary_potentials.append( np.dot(features, w[i_w:i_w+n_w].reshape(n_states, n_features).T) )
+            i_w += n_w
+        assert i_w == self.size_unaries
+            
         # nodes x features  .  features x states  -->  nodes x states
-        return a_nodes_states
+        return l_unary_potentials
+    
+#         self._check_size_w(w)
+#         l_node_features = self._get_node_features(x)
+#  
+#         w_unaries = w[:self.size_unaries]
+#         a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
+#                                    , self._n_states), dtype=w.dtype)
+#         i_nodes = 0
+#         for features, ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) in zip(l_node_features, self._cache_unary_potentials):  
+#             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
+#             a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, w_unaries[i_w:i_w2].reshape(n_states, n_features).T)
+#             i_nodes = i_nodes2
+#         # nodes x features  .  features x states  -->  nodes x states
+#         return a_nodes_states
             
