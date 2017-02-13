@@ -444,16 +444,23 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
     res = ad3.general_constrained_graph(l_unary_potentials, l_edges, l_pairwise_potentials, constraints, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
     
-    unary_marginals, pairwise_marginals, energy, solver_status = res
+    l_unary_marginals, l_pairwise_marginals, energy, solver_status = res
     if verbose:
         print(solver_status)
 
     if relaxed and solver_status in ["fractional", "unsolved"]:
-        y = (unary_marginals, pairwise_marginals)
+        y = (l_unary_marginals, l_pairwise_marginals)
     else:
         if inference_exception and solver_status in ["fractional", "unsolved"]:
             raise InferenceException(solver_status)
-        y = np.argmax(unary_marginals, axis=-1)
+        #we now get a list of unary marginals
+        ly = list()
+        _cum_n_states = 0
+        for unary_marg in l_unary_marginals:
+            ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
+            _cum_n_states += unary_marg.shape[1] #number of states for that type
+        y = np.hstack(ly)
+        # when we will simplify y: y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg in l_unary_marginals]
 
     if return_energy:
         return y, -energy
