@@ -2,6 +2,8 @@
 
 """
     Pairwise CRF with features/strength associated to each edge and different types of nodes
+    
+    
 
     Copyright Xerox(C) 2017 JL. Meunier
 
@@ -55,10 +57,9 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
     l_n_features : list of int, default=None
         Number of features per type of node. 
 
-    a_n_edge_features: an array of shape (n_types, n_types) given the number of features as a function of the node types
+    a_n_edge_features: an array of shape (n_types, n_types) giving the number of features per pair of types
     
-    NOTE: there should always be at least 1 feature for any pairs of types with some edge of that type in the graph.
-    Said differently, if you put 0 somewhere in that matrix, do not create any egde corresponding to that type of edge!!  
+    NOTE: there should always be at least 1 feature for any pairs of types which has some edge in the graph.
     
     class_weight : None, or list of array-like
         Class weights. If a list of array-like is passed, the Ith one must have length equal to l_n_states[i]
@@ -89,7 +90,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
                  , a_n_edge_features        #how many features per edge type?
-                 , inference_method="ad3" 
+                 , inference_method="ad3+" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
         #internal stuff
@@ -101,6 +102,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         if not (self.a_n_edge_features == self.a_n_edge_features.T).all():
             raise ValueError("Expected a symmetric array of edge feature numbers")
         
+        self.l_n_edge_features  = self.a_n_edge_features.ravel()         #number of (edge) features per edge type
         self._n_edge_features  = self.a_n_edge_features.sum(axis=None)   #total number of (edge) features
 
         TypedCRF.__init__(self, n_types, l_n_states, l_n_features, inference_method=inference_method, l_class_weight=l_class_weight)
@@ -155,19 +157,19 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
         #check edge feature size 
         for typ1,typ2 in self._iter_type_pairs():
-            edge_features = self._get_edge_features_by_type(x, typ1, typ2) 
+            edge_features = l_edge_features[typ1*self.n_types+typ2] 
             if edge_features is None: continue
             if edge_features.shape[1] != self.a_n_edge_features[typ1,typ2]:
                 raise ValueError("Types %d x %d: bad number of edge features. expected %d got %d"%(typ1,typ2, self.a_n_edge_features[typ1,typ2], edge_features.shape[1]))
         return True
 
     def _get_edge_features(self, x, bClean=False):
-        if bClean:
-            return [ np.empty((0,0)) if o is None or len(o)==0 else o for o in x[2]]
+        if bClean:  
+            #we replace None by empty array with proper shape
+            return [ np.empty((0,_n_feat)) if _ef is None else _ef 
+                    for _ef, _n_feat in zip(x[2], self.l_n_edge_features)]
         else:
             return x[2]
-    def _get_edge_features_by_type(self, x, typ1, typ2):
-        return x[2][typ1*self.n_types+typ2] 
 
     def _get_pairwise_potentials_initialize(self):
         """
@@ -209,43 +211,56 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
         Returns
         -------
-        pairwise : ndarray, shape=(n_edges, n_states, n_states)
+        pairwise : list of ndarray, shape=(n_edges, n_states_typ1, n_states_typ2)
             Pairwise weights.
         """
         self._check_size_w(w)
-        #self._check_size_x(x) #call initialize once and only once before!!
         
-        l_edge_features  = self._get_edge_features(x)
-        l_edge_nb = [0 if ef is None else ef.shape[0] for ef in l_edge_features]
-        n_edges_total    = sum(l_edge_nb)
-        
+        l_edge_features  = self._get_edge_features(x, True)
         wpw = w[self.size_unaries:]
-        a_edges_states_states = np.zeros((n_edges_total, self._n_states, self._n_states), dtype=w.dtype)
 
-        i_edges = 0
-        for ((n_features, n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop, i_w, i_w_stop)
-             , edge_features, n_edges) in zip(self._cache_pairwise_potentials, l_edge_features, l_edge_nb):
-             
-            i_edges_stop            = i_edges + n_edges
-             
-            if not edge_features is None: 
-                pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
-                pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
-                a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
+        l_pairwise_potentials = []
+        
+        i_w = 0
+        for (typ1, typ2), edge_features in zip(self._iter_type_pairs(), l_edge_features):
+            n_edges, n_features = edge_features.shape
+            n_states1 = self.l_n_states[typ1]
+            n_states2 = self.l_n_states[typ2]
+            n_w = n_features * n_states1 * n_states2
+            if n_w:
+                pw_typ_typ = wpw[i_w:i_w + n_w].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
+                l_pairwise_potentials.append(  np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2) )
+            else:
+                l_pairwise_potentials.append( np.array([]) )  #first reshaping above complains: "ValueError: total size of new array must be unchanged"
+            i_w += n_w
  
-            i_edges = i_edges_stop 
-                    
-        return a_edges_states_states.reshape(n_edges_total, self._n_states, self._n_states)
+        return l_pairwise_potentials
+#     
+#         self._check_size_w(w)
+#         #self._check_size_x(x) #call initialize once and only once before!!
+#         
+#         l_edge_features  = self._get_edge_features(x)
+#         l_edge_nb = [0 if ef is None else ef.shape[0] for ef in l_edge_features]
+#         n_edges_total    = sum(l_edge_nb)
+#         
+#         wpw = w[self.size_unaries:]
+#         a_edges_states_states = np.zeros((n_edges_total, self._n_states, self._n_states), dtype=w.dtype)
+# 
+#         i_edges = 0
+#         for ((n_features, n_states1, n_states2, i_states1, i_states1_stop, i_states2, i_states2_stop, i_w, i_w_stop)
+#              , edge_features, n_edges) in zip(self._cache_pairwise_potentials, l_edge_features, l_edge_nb):
+#              
+#             i_edges_stop            = i_edges + n_edges
+#              
+#             if not edge_features is None: 
+#                 pw_typ_typ = wpw[i_w:i_w_stop].reshape(n_features, -1) # n_states1*n_states2 x nb_feat
+#                 pot_typ_typ = np.dot(edge_features, pw_typ_typ).reshape(n_edges, n_states1, n_states2)
+#                 a_edges_states_states[ i_edges:i_edges_stop, i_states1:i_states1_stop , i_states2:i_states2_stop ] = pot_typ_typ
+#  
+#             i_edges = i_edges_stop 
+#                     
+#         return a_edges_states_states.reshape(n_edges_total, self._n_states, self._n_states)
 
-    def _block_ravel(self, a, lij):
-        """
-        Ravel the array block by block
-        """
-        li, lj  = zip(*lij)
-        return np.hstack( [a[i0:i1,j0:j1].ravel()
-                                   for (i0, i1), (j0,j1)
-                                   in zip( zip(li, li[1:]), zip(lj, lj[1:]) ) 
-                                   ])
  
     def joint_feature(self, x, y):
         """Feature vector associated with instance (x, y).
@@ -272,10 +287,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 #         print "x=", `x`
 #         print "y=", `y`
         self._check_size_x(x)   #call initialize once!
-        l_node_features = self._get_node_features(x)
-        l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x)
-        l_n_nodes = [len(o) for o in self._get_node_features(x, True)]
-        l_n_edges = [edges.shape[0] for edges in self._get_edges(x, True)]
+        l_node_features = self._get_node_features(x, True)
+        l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x, True)
+        l_n_nodes = [len(nf) for nf in self._get_node_features(x, True)]
+        l_n_edges = [len(ef) for ef in self._get_edges        (x, True)]
         n_nodes = sum(l_n_nodes)
         n_edges = sum(l_n_edges)
 
@@ -283,74 +298,92 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             #print "y=", `y`
             # y is result of relaxation, tuple of unary and pairwise marginals
             unary_marginals, pw = y
-            unary_marginals = unary_marginals.reshape(n_nodes, self._n_states)
+            
+            #I tried to have the ad3+ inference to return lists, but the learner then fails...
+            #I do not want to interfere wit hit, so I "mangle" /"unmangle" the data...
+
+            if isinstance(unary_marginals, list):
+                l_unary_marginals = unary_marginals
+            else:
+                l_unary_marginals = []
+                i,j = 0,0
+                for (_n_nodes, _n_states) in zip(l_n_nodes, self.l_n_states):  #iteration by type
+                    _n_binaries = _n_nodes * _n_states
+                    _unary_marginals = unary_marginals[ i:i+_n_nodes , j:j+_n_states ] 
+                    i += _n_nodes
+                    j += _n_states
+                    l_unary_marginals.append(_unary_marginals)
+    
+            if isinstance(pw, list):
+                l_pw = pw
+            else:
+                #until we do better in ad3+ inference, but we cannot I think without touching the learners...
+                l_pw = []
+                i_start = 0
+                for _n_edges, (typ1, typ2) in zip(l_n_edges, self._iter_type_pairs()):
+                    n = self.l_n_states[typ1] * self.l_n_states[typ2]
+                    i_stop = i_start + _n_edges
+                    i_state_start = self.a_startindex_by_typ_typ[typ1,typ2]
+                    _edge_marginals = pw[i_start:i_stop, i_state_start:i_state_start+n]
+                    i_start = i_stop
+                    l_pw.append(_edge_marginals)
         else:
             self._check_size_xy(x, y)
-            #make one hot encoding
-            #each type is assigned a range of columns, each starting at self._a_state_startindex_by_typ[ <typ> ]
-            #in the arnge column I is for state i of that type
-            unary_marginals = np.zeros((n_nodes, self._n_states), dtype=np.int)
-
+            #make one hot encoding per type
+            l_unary_marginals = []
             i_start = 0
-            for node_features, typ_start_index in zip(l_node_features, self._l_type_startindex):
-                if node_features is None: continue
-                i_stop = i_start + node_features.shape[0]
-                unary_marginals[ np.ogrid[i_start:i_stop] 
-                                , y[i_start:i_stop] 
-                                ] = 1
+            #PBY for _n_nodes, _n_states in zip(l_n_nodes, self.l_n_states):
+            for _n_nodes, _n_states, typ_start_index in zip(l_n_nodes, self.l_n_states, self._l_type_startindex):
+                i_stop = i_start + _n_nodes
+                _unary_marginals = np.zeros((_n_nodes, _n_states), dtype=np.int)
+                gx = np.ogrid[:_n_nodes]
+                _unary_marginals[gx, y[i_start:i_stop]-typ_start_index] = 1
+                l_unary_marginals.append(_unary_marginals)
                 i_start = i_stop
             
             ## pairwise
             #same thing, but the type of an edge is a pair of node types 
-            pw = np.zeros((n_edges, self._n_states ** 2))
+            l_pw = []
             node_offset_by_typ = np.cumsum([0]+[0 if n is None else n.shape[0] for n in x[0]])
-            i_start = 0
-            for (typ1, typ2), edges, edgetype_start_index in zip(self._iter_type_pairs(), l_edges, self._l_edgetype_start_index):
-                if edges is None: continue
-                y1 = y[node_offset_by_typ[typ1] + edges[:,0]] - self._l_type_startindex[typ1]
-                assert (0<=y1).all() and (y1 <= self.l_n_states[typ1]).all()
-                y2 = y[node_offset_by_typ[typ2] + edges[:,1]] - self._l_type_startindex[typ2]
-                assert (0<=y2).all() and (y2 <= self.l_n_states[typ2]).all()
-                #set the 1s where they should
-                i_stop = i_start + edges.shape[0]
-                pw[ np.ogrid[i_start:i_stop]
-                   , edgetype_start_index + self.l_n_states[typ2] * y1 + y2
-                   ] = 1
-                i_start = i_stop
-            assert i_start == n_edges
+            for _n_edges, (typ1, typ2), edges in zip(l_n_edges, self._iter_type_pairs(), l_edges):
+                _n_states_typ1 = self.l_n_states[typ1]
+                _n_states_typ2 = self.l_n_states[typ2]
+                _pw = np.zeros((_n_edges, _n_states_typ1 * _n_states_typ2))
+                if _n_edges:
+                    y1 = y[node_offset_by_typ[typ1] + edges[:,0]] - self._l_type_startindex[typ1]
+                    y2 = y[node_offset_by_typ[typ2] + edges[:,1]] - self._l_type_startindex[typ2]
+                    assert (0<=y1).all() and (y1 <= self.l_n_states[typ1]).all()
+                    assert (0<=y2).all() and (y2 <= self.l_n_states[typ2]).all()
+                    #set the 1s where they should
+                    class_pair_ind = (y2 + _n_states_typ2 * y1)
+                    _pw[np.arange(_n_edges), class_pair_ind] = 1
+                l_pw.append(_pw)   
             
         #UNARY
-        #assign the feature of each node t the right range of column according to the node type
-        all_node_features = np.zeros((n_nodes, self._n_features))
-        i_start = 0
-        for (_a_feature_slice, node_features) in zip(self._a_feature_slice_by_typ, l_node_features):
-            i_stop = i_start + node_features.shape[0]
-            all_node_features[ i_start:i_stop
-                              , _a_feature_slice] = node_features
-            i_start = i_stop
-        assert i_start == n_nodes
-        unaries_acc = np.dot(unary_marginals.T, all_node_features)   # node_states x sum_of_features matrix
+        l_unary_acc_ravelled = [np.dot(unary_marginals.T, features).ravel() for (unary_marginals, features) in zip(l_unary_marginals, l_node_features)]
+        unaries_acc_ravelled = np.hstack(l_unary_acc_ravelled)
+    
+        #PW
+        l_pw_ravelled = [np.dot(ef.T, pw).ravel() for (ef, pw) in zip(l_edge_features, l_pw)]
+#         l_pw_ravelled = [np.zeros((n_edge_states,)) if pw is None else np.dot(ef.T, pw).ravel() for (ef, pw, n_edge_states) in zip(l_edge_features, l_pw, self.l_n_edge_states)]
+        pairwise_acc_ravelled = np.hstack(l_pw_ravelled)
         
-        #assign the edges feature to the right range of columns, depending on edge type
-        all_edge_features = np.zeros( (n_edges, self._n_edge_features) )
-        i_start = 0
-        i_col_start = 0
-        for edge_features, n_feat in zip(l_edge_features, self.a_n_edge_features.ravel()):
-            i_col_stop = i_col_start + n_feat
-            
-            if not edge_features is None: 
-                nb_edges = edge_features.shape[0]
-                i_stop     = i_start     + nb_edges
-                all_edge_features[ i_start:i_stop
-                                  , i_col_start:i_col_stop ] = edge_features
-                i_start     = i_stop
-            i_col_start = i_col_stop
-        
-#         if False:
-#             np.set_printoptions(precision=3, linewidth=9999)
-#             print "all_edge_features (edgexfeat) \n", `all_edge_features`
-#             print "pw (edgexstate)\n", `pw`
-        pairwise_acc = np.dot(all_edge_features.T, pw)      # sum_of_features x edge_states
+#         #assign the edges feature to the right range of columns, depending on edge type
+#         all_edge_features = np.zeros( (n_edges, self._n_edge_features) )
+#         i_start = 0
+#         i_col_start = 0
+#         for edge_features, n_feat in zip(l_edge_features, self.a_n_edge_features.ravel()):
+#             i_col_stop = i_col_start + n_feat
+#             
+#             if not edge_features is None: 
+#                 nb_edges = edge_features.shape[0]
+#                 i_stop     = i_start     + nb_edges
+#                 all_edge_features[ i_start:i_stop
+#                                   , i_col_start:i_col_stop ] = edge_features
+#                 i_start     = i_stop
+#             i_col_start = i_col_stop
+#         
+#         pairwise_acc = np.dot(all_edge_features.T, pw)      # sum_of_features x edge_states
 
 # This forced symetry / antisymetry is not supported for now
 #         for i in self.symmetric_edge_features:
@@ -362,14 +395,14 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 #             pw[i] = (pw_ - pw_.T).ravel() / 2.
 
         #we need to linearize it, while keeping only meaningful data
-        unaries_acc_ravelled = self._block_ravel(unaries_acc, [(0,0)]+zip(np.cumsum(self.l_n_states), np.cumsum(self.l_n_features)))
-        assert len(unaries_acc_ravelled) == self.size_unaries
+#         unaries_acc_ravelled = self._block_ravel(unaries_acc, [(0,0)]+zip(np.cumsum(self.l_n_states), np.cumsum(self.l_n_features)))
+#         assert len(unaries_acc_ravelled) == self.size_unaries
 
-        L1 = np.cumsum(self.a_n_edge_features.ravel())
-        L2 = np.cumsum([self.l_n_states[typ1] * self.l_n_states[typ2] for typ1, typ2 in self._iter_type_pairs() ])
-        pairwise_acc_ravelled = self._block_ravel(pairwise_acc, [(0,0)]+zip(L1,L2))
-
-        assert len(pairwise_acc_ravelled) == self.size_pairwise
+#         L1 = np.cumsum(self.a_n_edge_features.ravel())
+#         L2 = np.cumsum([self.l_n_states[typ1] * self.l_n_states[typ2] for typ1, typ2 in self._iter_type_pairs() ])
+#         pairwise_acc_ravelled = self._block_ravel(pairwise_acc, [(0,0)]+zip(L1,L2))
+# 
+#         assert len(pairwise_acc_ravelled) == self.size_pairwise
         joint_feature_vector = np.hstack([unaries_acc_ravelled, pairwise_acc_ravelled])
         
         assert joint_feature_vector.shape[0] == self.size_joint_feature, (joint_feature_vector.shape[0], self.size_joint_feature)
@@ -423,59 +456,93 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             shape (n_states, n_states) of accumulated pairwise marginals.
 
         """
-#         print "y.shape ", y.shape
         self.inference_calls += 1
         self._check_size_w(w)
-        unary_potentials    = self._get_unary_potentials(x, w)
-        pairwise_potentials = self._get_pairwise_potentials(x, w)
-        flat_edges = self._index_all_edges(x)
+        l_unary_potentials    = self._get_unary_potentials(x, w)
+        l_pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x, True)
         
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        i_start = 0
+        a_y = np.asarray(y)
+
+        #REF   loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        
+        
+        for typ, (unary_potentials, class_weight) in enumerate(zip(l_unary_potentials, self.l_class_weight)):
+            n_y = unary_potentials.shape[0]
+            y_typ = a_y[i_start:i_start+n_y] - self._l_type_startindex[typ]  #label 0 must correspond to 1st weight 
+            loss_augment_unaries(unary_potentials, y_typ, class_weight)
+            i_start += n_y
+
 
         if self.inference_method == "ad3+":
             l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
             nodetype_data = (l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
     
-            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+            Y_pred = inference_dispatch(l_unary_potentials, l_pairwise_potentials, edges,
                                       self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy,
-                                      nodetype=nodetype_data)
+                                      return_energy=return_energy)
+#                                       nodetype=nodetype_data)
             #with ad3+ this should never occur
             if not isinstance(Y_pred, tuple): assert self._check_size_xy(x, Y_pred), "Internal error in AD3+: inconsistent labels"
         else:
-            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                      self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy)
-                                        #no nodetype parameter!
-            #we may have inconsistent labels!
-            try:
-                if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-            except InconsistentLabel:
-                #the inference engine predicted inconsistent labels
-                Y_pred = self.fix_Y_at_random(x, Y_pred)
-            
+            raise Exception("You must use ad3+ as inference method")
         #if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
                     
         return Y_pred
+
+#         self.inference_calls += 1
+#         self._check_size_w(w)
+#         unary_potentials    = self._get_unary_potentials(x, w)
+#         pairwise_potentials = self._get_pairwise_potentials(x, w)
+#         flat_edges = self._index_all_edges(x)
+#         
+#         loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+# 
+#         if self.inference_method == "ad3+":
+#             l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
+#             nodetype_data = (l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
+#     
+#             Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+#                                       self.inference_method, relaxed=relaxed,
+#                                       return_energy=return_energy,
+#                                       nodetype=nodetype_data)
+#             #with ad3+ this should never occur
+#             if not isinstance(Y_pred, tuple): assert self._check_size_xy(x, Y_pred), "Internal error in AD3+: inconsistent labels"
+#         else:
+#             Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+#                                       self.inference_method, relaxed=relaxed,
+#                                       return_energy=return_energy)
+#                                         #no nodetype parameter!
+#             #we may have inconsistent labels!
+#             try:
+#                 if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
+#             except InconsistentLabel:
+#                 #the inference engine predicted inconsistent labels
+#                 Y_pred = self.fix_Y_at_random(x, Y_pred)
+#             
+#         #if self.inference_calls % 1000 == 0: print "%d inference calls"%self.inference_calls
+#                     
+#         return Y_pred
     
-    def fix_Y_at_random(self, x, Y_pred):
-        print "\tY is BAD, FIXING IT AT RANDOM", `Y_pred`
-        
-        l_node_features = self._get_node_features(x, True)
-        i_start = 0              
-        for typ, (nf, n_states) in enumerate(zip(l_node_features, self.l_n_states)):
-            nb_nodes = nf.shape[0]
-            if nb_nodes:
-                Y_typ = Y_pred[i_start:i_start+nb_nodes]
-                typ_start = self._l_type_startindex[typ]
-                typ_end   = self._l_type_startindex[typ+1]
-                if np.min(Y_typ) < typ_start  or typ_end <= np.max(Y_typ):
-                    for i in range(nb_nodes):
-                        if Y_pred[i_start+i] < typ_start  or typ_end <= Y_pred[i_start+i]:  Y_pred[i_start+i] = random.randint(typ_start, typ_end-1)
-            i_start = i_start + nb_nodes      
-        self._check_size_xy(x, Y_pred)  
-        return Y_pred
-        
+#     def fix_Y_at_random(self, x, Y_pred):
+#         print "\tY is BAD, FIXING IT AT RANDOM", `Y_pred`
+#          
+#         l_node_features = self._get_node_features(x, True)
+#         i_start = 0              
+#         for typ, (nf, n_states) in enumerate(zip(l_node_features, self.l_n_states)):
+#             nb_nodes = nf.shape[0]
+#             if nb_nodes:
+#                 Y_typ = Y_pred[i_start:i_start+nb_nodes]
+#                 typ_start = self._l_type_startindex[typ]
+#                 typ_end   = self._l_type_startindex[typ+1]
+#                 if np.min(Y_typ) < typ_start  or typ_end <= np.max(Y_typ):
+#                     for i in range(nb_nodes):
+#                         if Y_pred[i_start+i] < typ_start  or typ_end <= Y_pred[i_start+i]:  Y_pred[i_start+i] = random.randint(typ_start, typ_end-1)
+#             i_start = i_start + nb_nodes      
+#         self._check_size_xy(x, Y_pred)  
+#         return Y_pred
+#         
     def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
         """Inference for x using parameters w.
 
@@ -523,37 +590,22 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         self._check_size_w(w)
         self.inference_calls += 1
         self.initialize(x)
-        unary_potentials    = self._get_unary_potentials(x, w)
-        pairwise_potentials = self._get_pairwise_potentials(x, w)
-        flat_edges = self._index_all_edges(x)
+        l_unary_potentials    = self._get_unary_potentials(x, w)
+        l_pairwise_potentials = self._get_pairwise_potentials(x, w)
+        edges = self._get_edges(x, True)
 
         l_n_nodes = [nf.shape[0] for nf in self._get_node_features(x, True)]
+        assert l_n_nodes == [un.shape[0] for un in l_unary_potentials]
+        
         nodetype_data=(l_n_nodes, self.l_n_states) #the type of the nodes, the number of state by type
 
         if self.inference_method == "ad3+":
-            #preferred method for TypedCRF inferences (called by the 'predict' method of the learner)
-            Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
+            Y_pred = inference_dispatch(l_unary_potentials, l_pairwise_potentials, edges,
                                           self.inference_method, relaxed=relaxed,
                                           return_energy=return_energy,
                                           constraints=constraints,
-                                          nodetype=nodetype_data,
                                           inference_exception=self.inference_exception)             #<--
         else:
-            if constraints:
-                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          constraints=constraints)              #<--
-            else:
-                Y_pred = inference_dispatch(unary_potentials, pairwise_potentials, flat_edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy)             #<--
-
-        try:
-            if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-        except:
-            Y_pred = self.fix_Y_at_random(x, Y_pred)
+            raise Exception("You must use ad3+ as inference method")
             
-        if not isinstance(Y_pred, tuple): self._check_size_xy(x, Y_pred)
-        
         return Y_pred
