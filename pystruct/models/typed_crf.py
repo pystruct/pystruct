@@ -66,9 +66,6 @@ class TypedCRF(StructuredModel):
         #number of typextype states, or number of states per type of edge
         self.l_n_edge_states = [ n1 * n2 for n1 in self.l_n_states for n2 in self.l_n_states ]
 
-#         #Caching some heavily used values
-#         self._get_unary_potentials_initialize()
-        
         #class weights:
         # either we get class weights for all types of nodes, or for none of them!
         if l_class_weight:
@@ -87,20 +84,8 @@ class TypedCRF(StructuredModel):
         self._set_size_joint_feature()
 
         #internal stuff
-        #when putting features in a single sequence, index of 1st state for type i
+        #when putting node states in a single sequence, index of 1st state for type i
         self._l_type_startindex = [ sum(self.l_n_states[:i]) for i in range(self.n_types+1)]
-        
-        #when putting states in a single sequence, index of 1st feature for type i (is at Ith position)
-        #we store the slice objects
-        self._a_feature_slice_by_typ = np.array([ slice(sum(self.l_n_features[:i]), sum(self.l_n_features[:i+1])) for i in range(self.n_types)])
-
-
-
-
-
-
-        
-        
         
         #when putting edge states in a single sequence, index of 1st state of an edge of type (typ1, typ2)
         self.a_startindex_by_typ_typ = np.zeros((self.n_types, self.n_types), dtype=np.uint32)
@@ -110,19 +95,36 @@ class TypedCRF(StructuredModel):
                 self.a_startindex_by_typ_typ[typ1,typ2] = i_state_start
                 i_state_start += typ1_n_states*typ2_n_states 
 
-
-    def flatY(self, lX, lY_by_typ):
+    # -------------- CONVENIENCE --------------------------
+    def flatY(self, lY_by_typ):
         """
-        It is more convenient to have the Ys grouped by type, as the Xs are.
-        Also, having a label starting at 0 for each type.
+        It is more convenient to have the Ys grouped by type, as the Xs are, and to have the first label of each type encoded as 0.
         
-        This method does the job.
-        
-        lX is a list of X strutured as explained 
+        This method does the job. It returns a flat Y array, with unique code per class label, which can be passed to 'fit'
         """
-        pass
+        lY = list()
+        for n_start_state, Y_typ in zip(self._l_type_startindex, lY_by_typ):
+            lY.append( np.asarray(Y_typ) + n_start_state )
+        return np.hstack(lY)
     
+    def unflatY(self, lX, flatY):
+        """
+        predict returns a flat array of Y (same structure as for 'fit')
+        This method structures the Y as a list of Y_per_type, where the first label of any type is 0 
+        """
+        lY = list()
+        i_start_node = 0
+        for n_start_state, X in zip(self._l_type_startindex, lX):
+            n_nodes = X.shape[0]
+            Y = flatY[i_start_node : i_start_node+n_nodes] - n_start_state
+            lY.append(Y)
+            i_start_node += n_nodes
+        return lY
+        
     def initialize(self, X, Y=None):
+        """
+        It is optional to call it. Does data checking only!
+        """
         if isinstance(X, list):
             map(self._check_size_x, X)
             if not (Y is None): map(self._check_size_xy, X, Y)
@@ -137,6 +139,7 @@ class TypedCRF(StructuredModel):
         self.inference_exception = bRaiseExceptionWhenInferenceNotSuccessful
         return self.inference_exception
     
+    # -------------- INTERNAL STUFF --------------------------
     def _set_size_joint_feature(self):
         """
         We have:
@@ -199,8 +202,6 @@ class TypedCRF(StructuredModel):
             Y_typ = Y[i_start:i_start+nb_nodes]
             if  np.min(Y_typ) < 0:
                 raise ValueError("Got a negative label for type %d"%typ)
-#             if np.max(Y_typ) >= n_states:
-#                 raise ValueError("Got a label outside of [0, %d] for type %d: %s"%(n_states-1, typ, Y_typ))
             if np.min(Y_typ) < self._l_type_startindex[typ] : raise InconsistentLabel("labels of type %d start at %d"%(typ, self._l_type_startindex[typ]))
             if np.max(Y_typ) >= self._l_type_startindex[typ+1]: raise InconsistentLabel("labels of type %d end at %d"%(typ, self._l_type_startindex[typ+1]-1))
             i_start = i_start + nb_nodes
@@ -231,20 +232,6 @@ class TypedCRF(StructuredModel):
         raise StopIteration
 
 
-#     def _get_unary_potentials_initialize(self):
-#         """
-#         pre-compute iteration params
-#         """
-#     
-#         self._cache_unary_potentials = list()
-#           
-#         i_w, i_states = 0, 0
-#         for n_states, n_features in zip(self.l_n_states, self.l_n_features):  
-#             i_w2 = i_w + n_states*n_features        #number of weights for the type
-#             i_states2 = i_states + n_states         #number of state of that type
-#             self._cache_unary_potentials.append( ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) )
-#             i_w, i_states = i_w2, i_states2 
- 
     def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
  
@@ -276,17 +263,32 @@ class TypedCRF(StructuredModel):
         # nodes x features  .  features x states  -->  nodes x states
         return l_unary_potentials
     
-#         self._check_size_w(w)
-#         l_node_features = self._get_node_features(x)
-#  
-#         w_unaries = w[:self.size_unaries]
-#         a_nodes_states = np.zeros((sum(nf.shape[0] for nf in l_node_features)
-#                                    , self._n_states), dtype=w.dtype)
-#         i_nodes = 0
-#         for features, ((i_w,i_w2), (i_states, i_states2), (n_states, n_features)) in zip(l_node_features, self._cache_unary_potentials):  
-#             i_nodes2 = i_nodes + features.shape[0]  #number of nodes of that type
-#             a_nodes_states[i_nodes:i_nodes2, i_states:i_states2] = np.dot(features, w_unaries[i_w:i_w2].reshape(n_states, n_features).T)
-#             i_nodes = i_nodes2
-#         # nodes x features  .  features x states  -->  nodes x states
-#         return a_nodes_states
-            
+
+    def continuous_loss(self, y, l_y_hat):
+        # continuous version of the loss
+        # y is the result of linear programming
+        #BUT, in multitype mode, y_hat is a list of unaries
+        if y.ndim == 2:
+            raise ValueError("FIXME!")
+#         gx = np.indices(y.shape)
+#         # all entries minus correct ones
+#         result = 1 - y_hat[gx, y]
+        
+        l_result = list()
+        cum_n_node = 0
+        cum_n_state = 0
+        for y_hat in l_y_hat:
+            n_node, n_state = y_hat.shape
+            # all entries minus correct ones
+            y_type = y[cum_n_node:cum_n_node+n_node] - cum_n_state #select the correct range of labels and make the labels start at 0
+            gx = np.indices(y_type.shape)
+            result = 1 - y_hat[gx, y_type]
+            l_result.append(result)
+            cum_n_node += n_node
+            cum_n_state += n_state
+        result = np.hstack(l_result)
+
+        if hasattr(self, 'class_weight'):
+            return np.sum(self.class_weight[y] * result)
+        return np.sum(result)
+
