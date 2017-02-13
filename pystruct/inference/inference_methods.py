@@ -380,11 +380,10 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         return y, -energy
     return y
 
-def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=False,
+def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxed=False,
                   verbose=0, return_energy=False, branch_and_bound=False,
                   constraints=None,
-                  inference_exception=None,
-                  nodetype=None):
+                  inference_exception=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -439,30 +438,28 @@ def inference_ad3plus(unary_potentials, pairwise_potentials, edges, relaxed=Fals
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
     """
     import ad3
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-    unaries = unary_potentials.reshape(-1, n_states)
-    if constraints or nodetype:
-        res = ad3.general_constrained_graph(unaries, edges, pairwise_potentials, constraints, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound, nodetype=nodetype)
-    else:
-        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+#     n_states, pairwise_potentials = \
+#         _validate_params(unary_potentials, pairwise_potentials, edges)
+#     unaries = unary_potentials.reshape(-1, n_states)
+    res = ad3.general_constrained_graph(l_unary_potentials, l_edges, l_pairwise_potentials, constraints, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
+    
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
-        print(solver_status[0])
+        print(solver_status)
 
     if relaxed and solver_status in ["fractional", "unsolved"]:
-        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
         y = (unary_marginals, pairwise_marginals)
-        #print solver_status, pairwise_marginals
     else:
         if inference_exception and solver_status in ["fractional", "unsolved"]:
             raise InferenceException(solver_status)
         y = np.argmax(unary_marginals, axis=-1)
+
     if return_energy:
         return y, -energy
     return y
+
+
 
 def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
                       **kwargs):
