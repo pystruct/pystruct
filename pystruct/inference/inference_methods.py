@@ -320,7 +320,8 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False):
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  inference_exception=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -359,23 +360,50 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     labels : nd-array
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
+        
+    Code updated on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
+    Copyright JL Meunier, Xerox 2017
     """
     import ad3
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-    unaries = unary_potentials.reshape(-1, n_states)
-    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+    bMultiType = isinstance(unary_potentials, list)
+    if bMultiType:
+        res = ad3.general_graph(unary_potentials, edges, pairwise_potentials, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
+    else:
+        #usual code
+        n_states, pairwise_potentials = \
+            _validate_params(unary_potentials, pairwise_potentials, edges)
+        unaries = unary_potentials.reshape(-1, n_states)
+        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+        
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
-        print(solver_status[0])
+        print(solver_status)
 
     if solver_status in ["fractional", "unsolved"] and relaxed:
-        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
-        y = (unary_marginals, pairwise_marginals)
+        if bMultiType:
+            y = (unary_marginals, pairwise_marginals)  #those two are lists
+        else:
+            #usual code
+            unary_marginals = unary_marginals.reshape(unary_potentials.shape)
+            y = (unary_marginals, pairwise_marginals)
         #print solver_status, pairwise_marginals
     else:
-        y = np.argmax(unary_marginals, axis=-1)
+        if bMultiType:
+            #we now get a list of unary marginals
+            if inference_exception and solver_status in ["fractional", "unsolved"]:
+                raise InferenceException(solver_status)
+            ly = list()
+            _cum_n_states = 0
+            for unary_marg in unary_marginals:
+                ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
+                _cum_n_states += unary_marg.shape[1] #number of states for that type
+            y = np.hstack(ly)            
+        else:
+            #usual code
+            y = np.argmax(unary_marginals, axis=-1)
+        
     if return_energy:
         return y, -energy
     return y
@@ -428,14 +456,15 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
         NOTE: this hard logic constraint mechanism has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
         The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
     
-    nodetype : internal use for NodeTypeEdgeFeatureGraphCRF model
-        NOTE: developed for the EU project READ (grant agreement No 674943), by JL Meunier (Xerox), in Q1 2017.
-
     Returns
     -------
     labels : nd-array
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
+
+    Code written on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
+    Copyright JL Meunier, Xerox 2017
+        
     """
     import ad3
 #     n_states, pairwise_potentials = \
