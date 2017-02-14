@@ -10,8 +10,8 @@ if os.path.exists('MANIFEST'):
 include_dirs = [np.get_include()]
 
 setup(name="pystruct",
-      version="0.3.2",
-      install_requires=["ad3>=2.1.1"],
+      version="0.3.3",
+      install_requires=["ad3>=2.1.2"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',
