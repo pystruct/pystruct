@@ -582,7 +582,7 @@ def report_model_config(crf):
     print crf.n_features
     print crf.n_edge_features
     
-def test_inference():
+def inference_data():
     """
     Testing with a single type of nodes. Must do as well as EdgeFeatureGraphCRF
     """
@@ -618,30 +618,59 @@ def test_inference():
     edge_features = edge_list_to_features(edge_list)
     x = ([x.reshape(-1, n_states)], [edges], [edge_features])
     y = y.ravel()
+    return x, y, pw_horz, pw_vert, res, n_states
     
-    #for inference_method in get_installed(["lp", "ad3"]):
-    if True:
-        # same inference through CRF inferface
-        crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]])   # ad3 only is supported..., inference_method=inference_method)
-        crf.initialize(x, y)
-        #crf.initialize([x], [y])
-        w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
-        y_pred = crf.inference(x, w, relaxed=True)
-        if isinstance(y_pred, tuple):
-            # ad3 produces an integer result if it found the exact solution
-            #np.set_printoptions(precision=2, threshold=9999)
-            assert_array_almost_equal(res[0], y_pred[0][0].reshape(-1, n_states), 5)
-            assert_array_almost_equal(res[1], y_pred[1][0], 5)
-            assert_array_equal(y, np.argmax(y_pred[0][0], axis=-1), 5)
+def test_inference_ad3plus():
+    
+    x, y, pw_horz, pw_vert, res, n_states = inference_data()
+    # same inference through CRF inferface
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]]
+                                      , inference_method="ad3+")   
+    crf.initialize(x, y)
+    #crf.initialize([x], [y])
+    w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+    y_pred = crf.inference(x, w, relaxed=True)
+    if isinstance(y_pred, tuple):
+        # ad3 produces an integer result if it found the exact solution
+        #np.set_printoptions(precision=2, threshold=9999)
+        assert_array_almost_equal(res[0], y_pred[0][0].reshape(-1, n_states), 5)
+        assert_array_almost_equal(res[1], y_pred[1][0], 5)
+        assert_array_equal(y, np.argmax(y_pred[0][0], axis=-1), 5)
 
-    #for inference_method in get_installed(["lp", "ad3", "qpbo"]):
         # again, this time discrete predictions only
-        crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]])
-        #crf.initialize([x], [y])
-        w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
-        crf.initialize(x)
-        y_pred = crf.inference(x, w, relaxed=False)
-        assert_array_equal(y, y_pred)
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]]
+                                      , inference_method="ad3+")   
+    #crf.initialize([x], [y])
+    w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+    crf.initialize(x)
+    y_pred = crf.inference(x, w, relaxed=False)
+    assert_array_equal(y, y_pred)
+
+def test_inference_ad3():
+    
+    x, y, pw_horz, pw_vert, res, n_states = inference_data()
+    # same inference through CRF inferface
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]]
+                                      , inference_method="ad3")   
+    crf.initialize(x, y)
+    #crf.initialize([x], [y])
+    w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+    y_pred = crf.inference(x, w, relaxed=True)
+    if isinstance(y_pred, tuple):
+        # ad3 produces an integer result if it found the exact solution
+        #np.set_printoptions(precision=2, threshold=9999)
+        assert_array_almost_equal(res[0], y_pred[0][0].reshape(-1, n_states), 5)
+        assert_array_almost_equal(res[1], y_pred[1][0], 5)
+        assert_array_equal(y, np.argmax(y_pred[0][0], axis=-1), 5)
+
+        # again, this time discrete predictions only
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [3], [3], [[2]]
+                                      , inference_method="ad3")   
+    #crf.initialize([x], [y])
+    w = np.hstack([np.eye(3).ravel(), -pw_horz.ravel(), -pw_vert.ravel()])
+    crf.initialize(x)
+    y_pred = crf.inference(x, w, relaxed=False)
+    assert_array_equal(y, y_pred)
 
 def test_joint_feature_discrete():
     """
@@ -795,7 +824,8 @@ if __name__ == "__main__":
         
     if 1: test_unary_potentials()
 #     if 1: test_inference_util()
-    if 1: test_inference()
+    if 1: test_inference_ad3()
+    if 1: test_inference_ad3plus()
     if 1: test_joint_feature_discrete()
     if 1: test_joint_feature_continuous()
     if 1: test_energy_continuous()
