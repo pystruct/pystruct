@@ -52,6 +52,13 @@ class CRF(StructuredModel):
                              " got %s instead."
                              % (self.n_features, features.shape[1]))
 
+    def loss_augment_unaries(self, unary_potentials, y):
+        """
+        we define it as a method so that subclasses can specialize it.
+        """
+        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+
+
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
         """Loss-augmented Inference for x relative to y using parameters w.
@@ -103,8 +110,10 @@ class CRF(StructuredModel):
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
-
+        
+        #loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+        self.loss_augment_unaries(unary_potentials, y)
+        
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
