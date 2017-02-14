@@ -164,13 +164,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                 raise ValueError("Types %d x %d: bad number of edge features. expected %d got %d"%(typ1,typ2, self.a_n_edge_features[typ1,typ2], edge_features.shape[1]))
         return True
 
-    def _get_edge_features(self, x, bClean=False):
-        if bClean:  
-            #we replace None by empty array with proper shape
-            return [ np.empty((0,_n_feat)) if _ef is None else _ef 
-                    for _ef, _n_feat in zip(x[2], self.l_n_edge_features)]
-        else:
-            return x[2]
+    def _get_edge_features(self, x):
+        #we replace None by empty array with proper shape
+        return [ np.empty((0,_n_feat)) if _ef is None else _ef 
+                for _ef, _n_feat in zip(x[2], self.l_n_edge_features)]
 
     def _get_pairwise_potentials_initialize(self):
         """
@@ -215,7 +212,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         """
         self._check_size_w(w)
         
-        l_edge_features  = self._get_edge_features(x, True)
+        l_edge_features  = self._get_edge_features(x)
         wpw = w[self.size_unaries:]
 
         l_pairwise_potentials = []
@@ -259,9 +256,9 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
         """
         self._check_size_x(x)   #call initialize once!
         l_node_features = self._get_node_features(x, True)
-        l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x, True)
-        l_n_nodes = [len(nf) for nf in self._get_node_features(x, True)]
-        l_n_edges = [len(ef) for ef in self._get_edges        (x, True)]
+        l_edges, l_edge_features = self._get_edges(x), self._get_edge_features(x)
+        l_n_nodes = [len(nf) for nf in self._get_node_features(x)]
+        l_n_edges = [len(ef) for ef in self._get_edges        (x)]
         n_nodes = sum(l_n_nodes)
         n_edges = sum(l_n_edges)
 
@@ -343,59 +340,10 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
         return joint_feature_vector
 
-
-    def loss_augmented_inference(self, x, y, w, relaxed=False,
-                                 return_energy=False):
-        """Loss-augmented Inference for x relative to y using parameters w.
-
-        Finds (approximately)
-        armin_y_hat np.dot(w, joint_feature(x, y_hat)) + loss(y, y_hat)
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : tuple
-            Instance of a graph with unary evidence.
-            x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_features),
-            edges are an nd-array of shape (n_edges, 2)
-
-        y : ndarray, shape (n_nodes,)
-            Ground truth labeling relative to which the loss
-            will be measured.
-
-        w : ndarray, shape=(size_joint_feature,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(n_nodes)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (n_nodes, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
+    def loss_augment_unaries(self, l_unary_potentials, y):
         """
-        self.inference_calls += 1
-        self._check_size_w(w)
-        l_unary_potentials    = self._get_unary_potentials(x, w)
-        l_pairwise_potentials = self._get_pairwise_potentials(x, w)
-        edges = self._get_edges(x, True)
-        
+        we do it type-wise
+        """
         i_start = 0
         a_y = np.asarray(y)
 
@@ -404,97 +352,5 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
             y_typ = a_y[i_start:i_start+n_y] - self._l_type_startindex[typ]  #label 0 must correspond to 1st weight 
             loss_augment_unaries(unary_potentials, y_typ, class_weight)
             i_start += n_y
+        
 
-
-        if self.inference_method == "ad3+":
-    
-            Y_pred = inference_dispatch(l_unary_potentials, l_pairwise_potentials, edges,
-                                      self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy)
-            #with ad3+ this should never occur
-            if not isinstance(Y_pred, tuple): assert self._check_size_xy(x, Y_pred), "Internal error in AD3+: inconsistent labels"
-        else:
-            raise Exception("You must use ad3+ as inference method")
-                    
-        return Y_pred
-
-    
-#     def fix_Y_at_random(self, x, Y_pred):
-#         print "\tY is BAD, FIXING IT AT RANDOM", `Y_pred`
-#          
-#         l_node_features = self._get_node_features(x, True)
-#         i_start = 0              
-#         for typ, (nf, n_states) in enumerate(zip(l_node_features, self.l_n_states)):
-#             nb_nodes = nf.shape[0]
-#             if nb_nodes:
-#                 Y_typ = Y_pred[i_start:i_start+nb_nodes]
-#                 typ_start = self._l_type_startindex[typ]
-#                 typ_end   = self._l_type_startindex[typ+1]
-#                 if np.min(Y_typ) < typ_start  or typ_end <= np.max(Y_typ):
-#                     for i in range(nb_nodes):
-#                         if Y_pred[i_start+i] < typ_start  or typ_end <= Y_pred[i_start+i]:  Y_pred[i_start+i] = random.randint(typ_start, typ_end-1)
-#             i_start = i_start + nb_nodes      
-#         self._check_size_xy(x, Y_pred)  
-#         return Y_pred
-#         
-    def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
-        """Inference for x using parameters w.
-
-        Finds (approximately)
-        armin_y np.dot(w, joint_feature(x, y))
-        using self.inference_method.
-
-
-        Parameters
-        ----------
-        x : tuple
-            Instance of a graph with unary evidence.
-            x=(unaries, edges)
-            unaries are an nd-array of shape (n_nodes, n_states),
-            edges are an nd-array of shape (n_edges, 2)
-
-        w : ndarray, shape=(size_joint_feature,)
-            Parameters for the CRF energy function.
-
-        relaxed : bool, default=False
-            Whether relaxed inference should be performed.
-            Only meaningful if inference method is 'lp' or 'ad3'.
-            By default fractional solutions are rounded. If relaxed=True,
-            fractional solutions are returned directly.
-
-        return_energy : bool, default=False
-            Whether to return the energy of the solution (x, y) that was found.
-
-        constraints : None or list, default=False
-            hard logic constraints, if any
-            
-        Returns
-        -------
-        y_pred : ndarray or tuple
-            By default an inter ndarray of shape=(width, height)
-            of variable assignments for x is returned.
-            If ``relaxed=True`` and inference_method is ``lp`` or ``ad3``,
-            a tuple (unary_marginals, pairwise_marginals)
-            containing the relaxed inference result is returned.
-            unary marginals is an array of shape (width, height, n_states),
-            pairwise_marginals is an array of
-            shape (n_states, n_states) of accumulated pairwise marginals.
-
-        """
-        self._check_size_w(w)
-        self.inference_calls += 1
-        self.initialize(x)
-        l_unary_potentials    = self._get_unary_potentials(x, w)
-        l_pairwise_potentials = self._get_pairwise_potentials(x, w)
-        edges = self._get_edges(x, True)
-
-        if self.inference_method == "ad3+":
-            Y_pred = inference_dispatch(l_unary_potentials, l_pairwise_potentials, edges,
-                                          self.inference_method, relaxed=relaxed,
-                                          return_energy=return_energy,
-                                          constraints=constraints,
-                                          inference_exception=self.inference_exception)             #<--
-        else:
-            raise Exception("You must use ad3+ as inference method")
-            
-        return Y_pred
