@@ -28,14 +28,14 @@
 """
 import numpy as np
 
-from .base import StructuredModel
+from .crf import CRF
 from ..inference import get_installed
 
 
 class InconsistentLabel(Exception):
     pass
 
-class TypedCRF(StructuredModel):
+class TypedCRF(CRF):
     """Abstract base class"""
     def __init__(self
                  , n_types                  #how many node type?
@@ -44,12 +44,11 @@ class TypedCRF(StructuredModel):
                  , inference_method="ad3+" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
-        StructuredModel.__init__(self)
-        
         if inference_method is None:
             # get first in list that is installed
-            inference_method = get_installed(['ad3+', 'ad3', 'max-product', 'lp'])[0]
-        self.inference_method = inference_method
+            inference_method = get_installed(['ad3+', 'ad3'])[0]
+        self.setInferenceMethod(inference_method)
+        
         self.inference_calls = 0
         self.inference_exception = False    #if inference cannot be done, raises an exception
         
@@ -62,7 +61,7 @@ class TypedCRF(StructuredModel):
         self._n_states    = sum(l_n_states)     #total number of states
         self.l_n_features = l_n_features
         self._n_features  = sum(self.l_n_features)   #total number of (node) features
-        
+
         #number of typextype states, or number of states per type of edge
         self.l_n_edge_states = [ n1 * n2 for n1 in self.l_n_states for n2 in self.l_n_states ]
 
@@ -96,6 +95,12 @@ class TypedCRF(StructuredModel):
                 i_state_start += typ1_n_states*typ2_n_states 
 
     # -------------- CONVENIENCE --------------------------
+    def setInferenceMethod(self, inference_method):
+        if inference_method in ["ad3", "ad3+"]:
+            self.inference_method = inference_method
+        else:
+            raise Exception("You must use ad3 or ad3+ as inference method")
+    
     def flattenY(self, lY_by_typ):
         """
         It is more convenient to have the Ys grouped by type, as the Xs are, and to have the first label of each type encoded as 0.
@@ -216,11 +221,8 @@ class TypedCRF(StructuredModel):
         else:
             return x[0]
     
-    def _get_edges(self, x, bClean=False):
-        if bClean:
-            return [ np.empty((0,0)) if edges is None or len(edges)==0 else edges for edges in x[1]]
-        else:
-            return x[1]
+    def _get_edges(self, x):
+        return [ np.empty((0,2)) if edges is None or len(edges)==0 else edges for edges in x[1]]
     
     def _get_edges_by_type(self, x, typ1, typ2):
         return x[1][typ1*self.n_types+typ2] 
