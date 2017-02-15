@@ -1,3 +1,14 @@
+0.3.3
+===
+- ad3 now supports the NodeTypeEdgeFeatureGraphCRF model
+- ad3+ required only for hard logic constraints
+- smaller memory footprint than 0.3
+
+0.3
+===
+- Added new model NodeTypeEdgeFeatureGraphCRF
+- Added inference method ad3+ for new model and for supporting hard logic constraints in other CRF models
+
 0.3
 ===
 - Removed libdai bindings that were very experimental.
@@ -16,7 +27,3 @@
 - Renamed psi to joint_feature, as the joint feature function is sometimes also called phi, with psi referring to the energy.
 - Removed the GLPK dependency: now cvxopt is used to solve linear programs.
 
-0.3
-===
-- Added new model NodeTypeEdgeFeatureGraphCRF
-- Added inference method ad3+ for new model and for supporting hard logic constraints in other CRF models
