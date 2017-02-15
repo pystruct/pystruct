@@ -82,8 +82,8 @@ nbSWAP_Pixel_Pict_TYPES = 0         #0,1,2 are useful (this was for DEBUG)
 
 bMAKE_PICT_EASY = False     #DEBUG: we had a feature on the picture that tells directly if a snake is present or not
 
-#INFERENCE="ad3+"
-INFERENCE="ad3"
+#INFERENCE="ad3+"    #ad3+ is required when there are hard logic constraints
+INFERENCE="ad3"     #ad3 is faster than ad3+ and both should yield same results
 N_JOBS=8
 
 MAXITER=750
@@ -512,13 +512,14 @@ if __name__ == '__main__':
     if nbSWAP_Pixel_Pict_TYPES %2 == 1:
         XX_test, YY_test, l_constraints = swap_node_types([1,0], [NCELL+1,       2], XX_test, YY_test, l_constraints)
 
-    print "\t- results without constraints"
+    print "\t- results without constraints (using %s)"%INFERENCE
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test )
     REPORT(YY_test, YY_pred, time.time() - t0)
     
     print "_"*50
-    print "\t- results exploiting constraints"
+    print "\t- results exploiting constraints (using ad3+)"
+    ssvm.model.inference_method = "ad3+"
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test, l_constraints )
     REPORT(YY_test, YY_pred, time.time() - t0)
@@ -530,7 +531,8 @@ if __name__ == '__main__':
         ssvm.model.inference_method = "ad3+"
     else:
         ssvm.model.inference_method = "ad3"        
-    print "INFERENCE WITH ", ssvm.model.inference_method
+    print "\t- results without constraints (using %s)"%ssvm.model.inference_method
+    
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test )
     REPORT(YY_test, YY_pred, time.time() - t0)
