@@ -121,6 +121,7 @@ def test_blocks_multinomial_crf():
                  -.3, .3,
                  -.5, -.1, .3])
     for inference_method in get_installed():
+        #NOTE: ad3+ fails because it requires a different data structure
         crf = GridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
         y_hat = crf.inference(x, w)
