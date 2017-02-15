@@ -18,7 +18,7 @@ The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project and o
 The extension of those 2 projects is 100% ascendant compatible with pystruct. Anything that you did with pystruct works the same way with pystruct+. 
 So you can refer to the pystruct documentation for the API, examples, etc. ( http://pystruct.github.io )
 
-What is different in pystruct+ ?
+What is different in pystruct+?
  * the __*predict*__ method accepts now an optional constraint parameter
  * a new CRF model is proposed, __*NodeTypeEdgeFeatureGraphCRF*__
 
@@ -37,6 +37,7 @@ Currently, the offered extensions rely on the __*OneSlackSSVM*__ learner and on 
 ### For AD3+:
  * get the source code from https://github.com/jlmeunier/AD3
  * compile and install:
+
 > python setup.py install
 
 Note: on Windows10 I had trouble with compiling. One dirty workaround then consists in installing the standard AD3, overwritting the python modules with the AD3+ ones
@@ -45,6 +46,7 @@ Note: on Windows10 I had trouble with compiling. One dirty workaround then consi
 ### For Pystruct+:
  * get the source code from https://github.com/jlmeunier/pystruct
  * compile and install:
+
 > python setup.py install
 
 ## Tests
@@ -60,9 +62,9 @@ The idea is that some picture do not contain any snake despite 10 pixels have a 
 
 The original task remains but is more difficult: some non-blue pixels are now labelled 'background'. An additional task consists in labeling the picture as Snake or NoSnake.
 
-This double task is solved by the use of an additional type of node tha represents the picture itself, with 7 simplistic features. There are additional edges, from each pixel to the picture node. That's all. And it improves a lot from the results of the *EdgeFeatureGraphCRF*-based model. 
+This double task is solved by the use of an additional type of node that represents the picture itself, with 7 simplistic features. There are additional edges, from each pixel to the picture node. That's all. And it improves a lot from the results of the *EdgeFeatureGraphCRF*-based model. 
 
-In addition, we injected some more domain knowledge to illustrate the use of the hard logic constraints. In this case we enforce at most one pixel of label L per picture, for L in [1, 10]. This gives an extra accuracy bonus.
+In addition, we injected some more domain knowledge to illustrate the use of the hard logic constraints. In this case we enforce *at most one pixel of label L per picture, for L in [1, 10]*. This gives an extra accuracy bonus.
 
 ## Prediction with Hard-Logic Constraints
 
