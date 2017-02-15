@@ -82,8 +82,8 @@ nbSWAP_Pixel_Pict_TYPES = 0         #0,1,2 are useful (this was for DEBUG)
 
 bMAKE_PICT_EASY = False     #DEBUG: we had a feature on the picture that tells directly if a snake is present or not
 
-#INFERENCE="qpbo"
-INFERENCE="ad3+"
+#INFERENCE="ad3+"
+INFERENCE="ad3"
 N_JOBS=8
 
 MAXITER=750
