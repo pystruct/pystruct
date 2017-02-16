@@ -149,7 +149,38 @@ def get_simple_graph2():
         [4,4,4]
              ]) ]
     return (node_f, edges, edge_f)
+
+def test_flatten_unflattenY():
     
+    g, (node_f, edges, edge_f) = get_simple_graph_structure(), get_simple_graph()
+    y = np.array([1,2])
+    l_nf = [ np.zeros((2,3)) ]  #list of node feature , per type
+    X = (l_nf, None, None)      #we give no edge
+    y_ref = [ np.array([1,2]) ]
+    assert all( [ (y_typ1 == y_typ2).all() for y_typ1, y_typ2 in zip(g.unflattenY(X, y), y_ref) ])
+    
+    assert (y == g.flattenY(g.unflattenY(X, y))).all()
+
+    #============================================    
+    g, x, y = more_complex_graph()
+
+    Y = [ np.array([0, 0]) 
+        , np.array([0, 0, 0])   #we start again at zero on 2nd type
+        ]
+    
+    y = np.hstack([ np.array([0, 0]) 
+                  , 2+np.array([0, 0, 0])
+         ])
+    l_nf = [  np.zeros( (2,3) ), np.zeros( (3, 4) )]  #2 node with 3 features, 3 node with 4 features
+    X = (l_nf, None, None)      #we give no edge
+    assert (g.flattenY(Y) == y).all()
+    print g.unflattenY(X, y)
+    assert all( [ (y_typ1 == y_typ2).all() for y_typ1, y_typ2 in zip(g.unflattenY(X, y), Y) ])
+    
+    l_nf = [  np.zeros( (1,3) ), np.zeros( (3, 4) )]  #2 node with 3 features, 3 node with 4 features
+    X = (l_nf, None, None)      #we give no edge
+    assert_raises(ValueError, g.unflattenY, X, y)
+        
 def test_joint_feature():
  
     print "---SIMPLE---------------------------------------------------------------------"
@@ -238,10 +269,7 @@ def test_joint_feature():
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
                        )
 
-def test_joint_feature2():
-
-    # -------------------------------------------------------------------------------------------
-    print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
+def more_complex_graph():
     g = NodeTypeEdgeFeatureGraphCRF(    
                     2                   #how many node type?
                  , [2, 3]               #how many labels   per node type?
@@ -269,11 +297,19 @@ def test_joint_feature2():
               ]
      
     x = (node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([0, 0]) 
                   , 2+np.array([0, 0, 0])
          ])
+    return g, x, y
+        
+def test_joint_feature2():
+
+    # -------------------------------------------------------------------------------------------
+    print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
+    g, x, y = more_complex_graph()
     print y
+    
+    
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
     print "joint_feature = \n", `jf`
@@ -814,7 +850,9 @@ if __name__ == "__main__":
 
     if 0: 
         debug_joint_feature()
-    
+    if 1:
+        test_flatten_unflattenY()
+        
     if 1:
         test_joint_feature()
     if 1:

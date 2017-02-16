@@ -112,18 +112,21 @@ class TypedCRF(CRF):
             lY.append( np.asarray(Y_typ) + n_start_state )
         return np.hstack(lY)
     
-    def unflattenY(self, lX, flatY):
+    def unflattenY(self, X, flatY):
         """
         predict returns a flat array of Y (same structure as for 'fit')
         This method structures the Y as a list of Y_per_type, where the first label of any type is 0 
         """
         lY = list()
         i_start_node = 0
-        for n_start_state, X in zip(self._l_type_startindex, lX):
-            n_nodes = X.shape[0]
+        (l_node_features, l_edges, l_edge_features) = X
+        for n_start_state, nf in zip(self._l_type_startindex, l_node_features):
+            n_nodes = nf.shape[0]
             Y = flatY[i_start_node : i_start_node+n_nodes] - n_start_state
             lY.append(Y)
             i_start_node += n_nodes
+        if flatY.shape != (i_start_node,): 
+            raise ValueError("The total number of label does not match the total number of nodes: %d != %d"%(flatY.shape[0], i_start_node))
         return lY
         
     def initialize(self, X, Y=None):
