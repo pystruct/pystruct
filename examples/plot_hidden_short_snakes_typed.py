@@ -294,6 +294,26 @@ def listConstraints(lX):
         lConstraints.append( lConstraint_for_X ) 
     return lConstraints
 
+def listConstraints_ATMOSTONE(lX):
+    """
+    produce the list of constraints for this list of multi-type graphs
+    """
+    lConstraints = list()
+    for _lNF, _lE, _lEF in lX:
+        nf_pixel, nf_pict = _lNF
+        nb_pixels = len(nf_pixel)
+       
+        lConstraint_for_X = list()
+        
+        for _state in range(1, NCELL+1):
+            lConstraint_for_X.append( ("ATMOSTONE" , [ range(nb_pixels), []]
+                                            , [ _state, None ]      #atmost one cell in state _state whatever picture label
+                                            , [ False, None ]) 
+                                     ) #we have a list of constraints per X
+         
+        lConstraints.append( lConstraint_for_X ) 
+    return lConstraints
+
 
 def makeItEasy(lX_pict_feat, lY_pict):
     """
