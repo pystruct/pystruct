@@ -91,13 +91,27 @@ This was a limitation with regards to our needs (for a Document Understanding ta
 
 *NodeTypeEdgeFeatureGraphCRF* generalizes *EdgeFeatureGraphCRF*, so edges have features. NOTE: I think that you can mimics the absence opf feature on edges (as in *GraphCRF* model) by specifying one feature per edge, whose value is 1 for all edges.
 
-This extension has an impact on
+**This extension has an impact on:**
+ * the constructor
+ * the structure of the label weights, if not uniform
  * the structure of the Xs
  * the values in Ys
  * the structure of the optional constraint list at prediction
 
+### Class Constructor
+You need now to define the number of node types and the number of features per type (of node, and of edge) when instantiating *NodeTypeEdgeFeatureGraphCRF*.
+
+    def __init__(self
+                 , n_types                  #how many node type?
+                 , l_n_states               #how many labels   per node type?
+                 , l_n_features             #how many features per node type?
+                 , a_n_edge_features        #how many features per edge type? (array-like) shape=(n_type, n_type, n_feature_per_type_pair)
+                 , inference_method="ad3" 
+                 , l_class_weight=None):    #class_weight      per node type or None     <list of array-like> or None
+ 
+
 ### Xs and Ys
-In single type CRF, like *EdgeFeatureGraphCRF*, an instance x is represented as a tuple        
+In single type CRF, like *EdgeFeatureGraphCRF*, an instance *X* is represented as a tuple        
 
     (*node_features*, *edges*, *edge_features*) representing the graph. 
 
@@ -107,14 +121,14 @@ In single type CRF, like *EdgeFeatureGraphCRF*, an instance x is represented as 
 
     Labels y are given as array of shape (*n_nodes*,)
 
-In multiple type graphs, with *_n_types* types, an instance x is represented as a tuple
+In multiple type graphs, with *_n_types* types, an instance *X* is represented as a tuple
 
      (*l_node_features*, *l_edges*, *l_edge_features*) representing the graph. 
 * *l_node_feature*s is a list of length *n_types* containing arrays of shape (*n_typ_node*, *n_typ_features*), where *n_typ_node* is the number of nodes of that type, while *n_typ_features* is the number of features for this type of nodes.
-* *l_edges* is a list of length *n_types*^2 . The element of index i*j contains an array of shape (*n_typ_edge, 2) defining the edges from nodes of type *i* to nodes of type *j*, with *i* and *j* in [0, *n_types*-1]. 
-* *l_edge_features* is a list of length *n_types*^2. It contains the features of the edges for each pair of types, in same order as in previous parameter (cartesian product) Each item is an array of shape (*n_typ_edges*, *n_typ_edge_features*). if *n_typ_edge_features* is 0, then *n_typ_edges* should be 0 as well for all instances of graph! If you want an edge without features, set *n_typ_edge_features* to 1 and pass 1.0 as feature for all edges (of that type).
+* *l_edges* is a list of length *n_types*^2 . Each of its elements contains an array of shape (*n_typ_edge, 2) defining the edges from nodes of type *i* to nodes of type *j*, with *i* and *j* in [0, *n_types*-1], *j* being the secondary index (inner loop). 
+* *l_edge_features* is a list of length *n_types*^2. It contains the features of the edges for each pair of types, in same order as in previous parameter. Each item is an array of shape (*n_typ_edges*, *n_typ_edge_features*). if *n_typ_edge_features* is 0, then *n_typ_edges* should be 0 as well for all instances of graph! If you want an edge without features, set *n_typ_edge_features* to 1 and pass 1.0 as feature for all edges (of that type).
 
-Each y remains a vector array. While the label could start at 0 for all types, we have chosen not to do so. (Essentially,to make clear that types do not blend into each other, which is clear when you show a confusion matrix). So the labels of the first type start at 0, while labels of next type starts right after the value of the last label of previous type.
+Each *Y* remains a vector array. While the label could start at 0 for all types, we have chosen not to do so. (Essentially,to make clear that types do not blend into each other, which is clear when you show a confusion matrix). So the labels of the first type start at 0, while labels of next type starts right after the value of the last label of previous type.
 *NodeTypeEdgeFeatureGraphCRF* provides 2 convenience methods:
 * *flattenY*( [ [2,0,0], [3,3,4] ] ) --> [ 2,0,0, 5,5,7]  (assuming type 0 has 3 labels)
 * *unflattenY*(Xs, [ 2,0,0, 5,5,7] ) --> [ [2,0,0], [3,3,4] ]   (you'll also need to pass the Xs)
