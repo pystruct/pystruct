@@ -91,7 +91,7 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
                  , a_n_edge_features        #how many features per edge type?
-                 , inference_method="ad3+" 
+                 , inference_method="ad3" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
         #internal stuff
