@@ -14,7 +14,10 @@ def get_installed(method_filter=None):
     edges = np.empty((0, 2), dtype=np.int)
     for method in method_filter:
         try:
-            inference_dispatch(unary, pw, edges, inference_method=method)
+            if method != 'ad3+':
+                inference_dispatch(unary, pw, edges, inference_method=method)
+            else:
+                inference_dispatch(unary, np.zeros((0,1,1)), np.zeros((0,2), dtype=np.int), inference_method=method)
             installed.append(method)
         except ImportError:
             pass
@@ -470,6 +473,8 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
 #     n_states, pairwise_potentials = \
 #         _validate_params(unary_potentials, pairwise_potentials, edges)
 #     unaries = unary_potentials.reshape(-1, n_states)
+    bMultiType = isinstance(l_unary_potentials, list)
+
     res = ad3.general_constrained_graph(l_unary_potentials, l_edges, l_pairwise_potentials, constraints, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
     
@@ -482,14 +487,17 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
     else:
         if inference_exception and solver_status in ["fractional", "unsolved"]:
             raise InferenceException(solver_status)
-        #we now get a list of unary marginals
-        ly = list()
-        _cum_n_states = 0
-        for unary_marg in l_unary_marginals:
-            ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
-            _cum_n_states += unary_marg.shape[1] #number of states for that type
-        y = np.hstack(ly)
-        # when we will simplify y: y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg in l_unary_marginals]
+        if bMultiType:
+            #we now get a list of unary marginals
+            ly = list()
+            _cum_n_states = 0
+            for unary_marg in l_unary_marginals:
+                ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
+                _cum_n_states += unary_marg.shape[1] #number of states for that type
+            y = np.hstack(ly)
+            # when we will simplify y: y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg in l_unary_marginals]
+        else:
+            y = np.argmax(l_unary_marginals, axis=-1)
 
     if return_energy:
         return y, -energy
