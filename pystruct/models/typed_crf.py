@@ -7,22 +7,26 @@
 
     Copyright Xerox(C) 2017 JL. Meunier
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
     
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
     
     Developed  for the EU project READ. The READ project has received funding 
-    from the European Union�s Horizon 2020 research and innovation programme 
+    from the European Union's Horizon 2020 research and innovation programme 
     under grant agreement No 674943.
     
 """
@@ -41,7 +45,7 @@ class TypedCRF(CRF):
                  , n_types                  #how many node type?
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
-                 , inference_method="ad3+" 
+                 , inference_method="ad3" 
                  , l_class_weight=None):    #class_weight      per node type or None           <list of array-like> or None
         
         if inference_method is None:
@@ -198,7 +202,7 @@ class TypedCRF(CRF):
         if Y is None: return
         
         #make sure Y has the proper length and acceptable labels
-        l_node_features = self._get_node_features(X, True)
+        l_node_features = self._get_node_features(X)
         
         nb_nodes = sum(nf.shape[0] for nf in l_node_features)
         if Y.shape[0] != nb_nodes:
@@ -216,13 +220,10 @@ class TypedCRF(CRF):
         return True
         
                     
-    def _get_node_features(self, x, bClean=False):
-        if bClean:
-            #we replace None by empty array with proper shape
-            return [ np.empty((0,_n_feat)) if node_features is None else node_features 
-                    for (node_features, _n_feat) in zip(x[0], self.l_n_features)]
-        else:
-            return x[0]
+    def _get_node_features(self, x):
+        #we replace None by empty array with proper shape
+        return [ np.empty((0,_n_feat)) if node_features is None else node_features 
+                for (node_features, _n_feat) in zip(x[0], self.l_n_features)]
     
     def _get_edges(self, x):
         return [ np.empty((0,2)) if edges is None or len(edges)==0 else edges for edges in x[1]]
@@ -254,7 +255,7 @@ class TypedCRF(CRF):
             Unary weights.
         """
         self._check_size_w(w)
-        l_node_features = self._get_node_features(x, True)
+        l_node_features = self._get_node_features(x)
  
         l_unary_potentials = []
             
