@@ -1,3 +1,9 @@
+0.3.4
+===
+- MIT license
+- all tests are passing except test_latent_node_crf_learning.py (as in 0.2.4)
+
+
 0.3.3
 ===
 - ad3 now supports the NodeTypeEdgeFeatureGraphCRF model
