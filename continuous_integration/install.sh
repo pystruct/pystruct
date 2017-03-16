@@ -52,7 +52,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
-    $PIP install --user cvxopt
+    $PIP install --user -Iv cvxopt==1.1.8
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
