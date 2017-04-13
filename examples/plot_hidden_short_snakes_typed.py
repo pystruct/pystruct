@@ -5,9 +5,9 @@ Conditional Interactions on the Snakes Dataset
 
 This is a variant of plot_snakes.py 
 
-Snake are hidding, so we have 2 tasks:
+Snake are hidding, so we have 2 categorisers:
 - determining if a snake is in the picture, 
-- identifying its head to tail body.  
+- identifying its head to tail body (at pixel-level)
 
 We use the NodeTypeEdgeFeatureGraphCRF class with 2 type of nodes.
 
@@ -83,7 +83,7 @@ nbSWAP_Pixel_Pict_TYPES = 0         #0,1,2 are useful (this was for DEBUG)
 bMAKE_PICT_EASY = False     #DEBUG: we had a feature on the picture that tells directly if a snake is present or not
 
 #INFERENCE="ad3+"    #ad3+ is required when there are hard logic constraints
-INFERENCE="ad3"     #ad3 is faster than ad3+ and both should yield same results
+INFERENCE="ad3"     #ad3 is faster than ad3+ 
 N_JOBS=8
 
 MAXITER=750
@@ -106,13 +106,6 @@ def printConfig():
 if __name__ == '__main__': printConfig()
 
 
-if bFIXED_RANDOM_SEED:
-    np.random.seed(1605)
-    random.seed(98)
-else:
-    np.random.seed()
-    random.seed()
-    
 def plot_snake(picture):
     plt.imshow(picture, interpolation='nearest')
     plt.show()
@@ -271,7 +264,7 @@ def swap_node_types(l_perm, l_n_state, lX, lY, constraints=None):
         
     return _lX, _lY, _constraints
         
-def listConstraints(lX):
+def listConstraints(lX, ncell=NCELL):
     """
     produce the list of constraints for this list of multi-type graphs
     """
@@ -285,7 +278,7 @@ def listConstraints(lX):
         
         lConstraint_for_X = [("ANDOUT", l_l_unary, l_l_states, l_l_negated)]  #we have a list of constraints per X
         
-        for _state in range(1, NCELL+1):
+        for _state in range(1, ncell+1):
             lConstraint_for_X.append( ("XOROUT" , l_l_unary
                                             , [ _state, 1 ]      #exactly one cell in state _state with picture label being snake
                                             , l_l_negated) 
@@ -294,7 +287,7 @@ def listConstraints(lX):
         lConstraints.append( lConstraint_for_X ) 
     return lConstraints
 
-def listConstraints_ATMOSTONE(lX):
+def listConstraints_ATMOSTONE(lX, ncell=NCELL):
     """
     produce the list of constraints for this list of multi-type graphs
     """
@@ -305,7 +298,7 @@ def listConstraints_ATMOSTONE(lX):
        
         lConstraint_for_X = list()
         
-        for _state in range(1, NCELL+1):
+        for _state in range(1, ncell+1):
             lConstraint_for_X.append( ("ATMOSTONE" , [ range(nb_pixels), []]
                                             , [ _state, None ]      #atmost one cell in state _state whatever picture label
                                             , [ False, None ]) 
@@ -323,7 +316,14 @@ def makeItEasy(lX_pict_feat, lY_pict):
         X[0] = y
 
 
-def REPORT(l_Y_GT, lY_Pred, t=None):
+def appendIntVectorToCsv(fd, name, aV):
+    saV = np.array_str(aV, max_line_width=99999, precision=0)
+    saV = saV.strip()[1:-1] #removal of brackets
+    saV = ','.join(saV.split())
+    fd.write("%s,%s\n"%(name, saV))
+    fd.flush()
+    
+def REPORT(l_Y_GT, lY_Pred, t=None, ncell=NCELL, filename=None, bHisto=False, name=""):
     if t: print "\t( predict DONE IN %.1fs)"%t
         
     _flat_GT, _flat_P = (np.hstack([y.ravel() for y in l_Y_GT]),  
@@ -331,10 +331,25 @@ def REPORT(l_Y_GT, lY_Pred, t=None):
     confmat = confusion_matrix(_flat_GT, _flat_P)
     print confmat
     print "\ttrace   =", confmat.trace()
-    print "\tAccuracy= %.3f"%accuracy_score(_flat_GT, _flat_P)    
+    score = accuracy_score(_flat_GT, _flat_P)  
+    print "\tAccuracy= %.3f"%score
     
+    #CSV out?
+    if filename:
+        histo = np.histogram(np.hstack(_flat_GT), bins=range(ncell+2))        
+        diag = np.diag(confmat)
+        with open(filename, "ab") as fdCSV:
+            if bHisto: appendIntVectorToCsv(fdCSV, name+"_histo,", histo[0])
+            appendIntVectorToCsv(fdCSV, name+",%.3f"%score, diag)
     
 if __name__ == '__main__':
+
+    if bFIXED_RANDOM_SEED:
+        np.random.seed(1605)
+        random.seed(98)
+    else:
+        np.random.seed()
+        random.seed()    
     
     print("Please be patient...")
     snakes = load_snakes()
@@ -392,7 +407,7 @@ if __name__ == '__main__':
         inference=INFERENCE
         inference = "qpbo"
         crf = EdgeFeatureGraphCRF(inference_method=inference)
-        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  
+        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=0,  
                             max_iter=MAXITER,
                             n_jobs=N_JOBS
                             #,verbose=1
@@ -466,7 +481,7 @@ if __name__ == '__main__':
                                           )
         print crf
         
-        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=0,  
+        ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=0,
                             max_iter=MAXITER,
                             n_jobs=N_JOBS
                             #,verbose=1
@@ -527,7 +542,8 @@ if __name__ == '__main__':
     print  "\tlabel histogram (PIXELs and PICTUREs): ", np.histogram(   np.hstack([y.ravel() for y in YY_test]), bins=range(14))
     
     
-    l_constraints = listConstraints(XX_test)
+#     l_constraints = listConstraints(XX_test)
+    l_constraints = listConstraints_ATMOSTONE(XX_test)
     
     if nbSWAP_Pixel_Pict_TYPES %2 == 1:
         XX_test, YY_test, l_constraints = swap_node_types([1,0], [NCELL+1,       2], XX_test, YY_test, l_constraints)
