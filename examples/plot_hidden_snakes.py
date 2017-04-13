@@ -58,10 +58,6 @@ from pystruct.models import NodeTypeEdgeFeatureGraphCRF
 from plot_snakes import  one_hot_colors, prepare_data
 
 
-if True:
-    np.random.seed(1605)
-    random.seed(98)
-        
 def isSnakePresent(a_hot_picture, nCell=10):
     """
     Algorithmic check, to make sure that after tempering with the snake we do not have a snake! :-)
@@ -211,6 +207,9 @@ def shorten_snakes(lX,lY, N):
 
 #=====================================================================================================
 if __name__ == '__main__':
+    np.random.seed(1605)
+    random.seed(98)
+
     print("Please be patient. Learning will take 5-20 minutes.")
     
     #if you want to shorten all the snakes
