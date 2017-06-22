@@ -211,6 +211,7 @@ class TypedCRF(CRF):
         i_start = 0    
         for typ, nf, n_states in zip(range(self.n_types), l_node_features, self.l_n_states):
             nb_nodes = nf.shape[0]
+            if nb_nodes == 0: continue
             Y_typ = Y[i_start:i_start+nb_nodes]
             if  np.min(Y_typ) < 0:
                 raise ValueError("Got a negative label for type %d"%typ)
