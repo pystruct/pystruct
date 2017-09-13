@@ -100,8 +100,11 @@ def find_constraint_latent(model, x, y, w, relaxed=True):
     return h_hat, delta_joint_feature, slack, loss
 
 
-def inference(model, x, w):
-    return model.inference(x, w)
+def inference(model, x, w, constraints=None):
+    if constraints:
+        return model.inference(x, w, constraints=constraints)
+    else:
+        return model.inference(x, w)
 
 
 def loss_augmented_inference(model, x, y, w, relaxed=True):

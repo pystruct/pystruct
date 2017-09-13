@@ -2,6 +2,12 @@
 ==============================================
 Conditional Interactions on the Snakes Dataset
 ==============================================
+
+This is a variant of plot_snakes.py where we use the NodeTypeEdgeFeatureGraphCRF
+class instead of EdgeFeatureGraphCRF, despite there is only 1 type of nodes.
+So this should give exact same results as plot_snakes.py
+
+
 This example uses the snake dataset introduced in
 Nowozin, Rother, Bagon, Sharp, Yao, Kohli: Decision Tree Fields ICCV 2011
 
@@ -29,6 +35,15 @@ not able to solve it alone, so we use the relaxed AD3 inference for learning.
 
 PS: This example runs a bit (5 minutes on 12 cores, 20 minutes on one core for me).
 But it does work as well as Decision Tree Fields ;)
+
+    JL Meunier - January 2017
+    
+    Developed for the EU project READ. The READ project has received funding 
+    from the European Union's Horizon 2020 research and innovation programme 
+    under grant agreement No 674943
+    
+    Copyright Xerox
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,57 +54,17 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import load_snakes
 from pystruct.utils import make_grid_edges, edge_list_to_features
-from pystruct.models import EdgeFeatureGraphCRF
+#from pystruct.models import EdgeFeatureGraphCRF
+from pystruct.models import NodeTypeEdgeFeatureGraphCRF
 
+from plot_snakes import  one_hot_colors, neighborhood_feature, prepare_data
 
-def one_hot_colors(x):
-    x = x / 255
-    flat = np.dot(x.reshape(-1, 3), 2 ** np.arange(3))
-    one_hot = label_binarize(flat, classes=[1, 2, 3, 4, 6])
-    return one_hot.reshape(x.shape[0], x.shape[1], 5)
-
-
-def neighborhood_feature(x):
-    """Add a 3x3 neighborhood around each pixel as a feature."""
-    # we could also use a four neighborhood, that would work even better
-    # but one might argue then we are using domain knowledge ;)
-    features = np.zeros((x.shape[0], x.shape[1], 5, 9))
-    # position 3 is background.
-    features[:, :, 3, :] = 1
-    features[1:, 1:, :, 0] = x[:-1, :-1, :]
-    features[:, 1:, :, 1] = x[:, :-1, :]
-    features[:-1, 1:, :, 2] = x[1:, :-1, :]
-    features[1:, :, :, 3] = x[:-1, :, :]
-    features[:-1, :-1, :, 4] = x[1:, 1:, :]
-    features[:-1, :, :, 5] = x[1:, :, :]
-    features[1:, :-1, :, 6] = x[:-1, 1:, :]
-    features[:, :-1, :, 7] = x[:, 1:, :]
-    features[:, :, :, 8] = x[:, :, :]
-    return features.reshape(x.shape[0] * x.shape[1], -1)
-
-
-def prepare_data(X):
-    X_directions = []
-    X_edge_features = []
-    for x in X:
-        # get edges in grid
-        right, down = make_grid_edges(x, return_lists=True)
-        edges = np.vstack([right, down])
-        # use 3x3 patch around each point
-        features = neighborhood_feature(x)
-        # simple edge feature that encodes just if an edge is horizontal or
-        # vertical
-        edge_features_directions = edge_list_to_features([right, down])
-        # edge feature that contains features from the nodes that the edge connects
-        edge_features = np.zeros((edges.shape[0], features.shape[1], 4))
-        edge_features[:len(right), :, 0] = features[right[:, 0]]
-        edge_features[:len(right), :, 1] = features[right[:, 1]]
-        edge_features[len(right):, :, 0] = features[down[:, 0]]
-        edge_features[len(right):, :, 1] = features[down[:, 1]]
-        edge_features = edge_features.reshape(edges.shape[0], -1)
-        X_directions.append((features, edges, edge_features_directions))
-        X_edge_features.append((features, edges, edge_features))
-    return X_directions, X_edge_features
+def convertToSingleTypeX(X):
+    """
+    For NodeTypeEdgeFeatureGraphCRF X is structured differently.
+    But NodeTypeEdgeFeatureGraphCRF can handle graph with a single node type. One needs to convert X to the new structure using this method.
+    """
+    return [([nf], [e], [ef]) for (nf,e,ef) in X]
 
 if __name__ == '__main__':
     print("Please be patient. Learning will take 5-20 minutes.")
@@ -98,15 +73,16 @@ if __name__ == '__main__':
     
     X_train = [one_hot_colors(x) for x in X_train]
     Y_train_flat = [y_.ravel() for y_ in Y_train]
-    
+
+
     X_train_directions, X_train_edge_features = prepare_data(X_train)
-    
+
     inference = 'qpbo'
     # first, train on X with directions only:
-    crf = EdgeFeatureGraphCRF(inference_method=inference)
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, max_iter=100,
-                    n_jobs=1)
-    ssvm.fit(X_train_directions, Y_train_flat)
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[2]], inference_method=inference)
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  max_iter=100,
+                        n_jobs=1)
+    ssvm.fit(convertToSingleTypeX(X_train_directions), Y_train_flat)
     
     # Evaluate using confusion matrix.
     # Clearly the middel of the snake is the hardest part.
@@ -114,24 +90,25 @@ if __name__ == '__main__':
     X_test = [one_hot_colors(x) for x in X_test]
     Y_test_flat = [y_.ravel() for y_ in Y_test]
     X_test_directions, X_test_edge_features = prepare_data(X_test)
-    Y_pred = ssvm.predict(X_test_directions)
+    Y_pred = ssvm.predict( convertToSingleTypeX(X_test_directions) )
     print("Results using only directional features for edges")
     print("Test accuracy: %.3f"
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred)))
-    
+       
     # now, use more informative edge features:
-    crf = EdgeFeatureGraphCRF(inference_method=inference)
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, switch_to='ad3',
-                        n_jobs=-1)
-    ssvm.fit(X_train_edge_features, Y_train_flat)
-    Y_pred2 = ssvm.predict(X_test_edge_features)
+    crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  switch_to='ad3',
+                        #verbose=1,
+                        n_jobs=8)
+    ssvm.fit( convertToSingleTypeX(X_train_edge_features), Y_train_flat)
+    Y_pred2 = ssvm.predict( convertToSingleTypeX(X_test_edge_features) )
     print("Results using also input features for edges")
     print("Test accuracy: %.3f"
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    if True:
+    if False:
         # plot stuff
         fig, axes = plt.subplots(2, 2)
         axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
@@ -148,3 +125,34 @@ if __name__ == '__main__':
             a.set_xticks(())
             a.set_yticks(())
         plt.show()
+
+"""
+Please be patient. Learning will take 5-20 minutes.
+Results using only directional features for edges
+Test accuracy: 0.847
+[[2750    0    0    0    0    0    0    0    0    0    0]
+ [   0   99    0    0    1    0    0    0    0    0    0]
+ [   0    2   68    3    9    4    6    4    3    1    0]
+ [   0    4   11   45    8   14    5    6    0    6    1]
+ [   0    1   22   18   31    2   14    4    3    5    0]
+ [   0    3    7   38   12   22    5    4    2    7    0]
+ [   0    2   19   16   26    8   16    2    9    2    0]
+ [   0    6   14   26   10   15    5   12    2   10    0]
+ [   0    0   12   15   16    4   16    2   18    4   13]
+ [   0    2    5   18    6    8    5    3    2   50    1]
+ [   0    1   11    4   13    1    2    0    2    2   64]]
+Results using also input features for edges
+Test accuracy: 0.998
+[[2749    0    0    0    0    0    0    0    1    0    0]
+ [   0  100    0    0    0    0    0    0    0    0    0]
+ [   0    0  100    0    0    0    0    0    0    0    0]
+ [   0    0    0   99    0    0    0    0    0    1    0]
+ [   0    0    0    0   99    0    1    0    0    0    0]
+ [   0    0    0    1    0   98    0    1    0    0    0]
+ [   0    0    0    0    1    0   99    0    0    0    0]
+ [   0    0    0    0    0    1    0   99    0    0    0]
+ [   0    0    0    0    0    0    0    0  100    0    0]
+ [   0    0    0    0    0    0    0    1    0   99    0]
+ [   0    0    0    0    0    0    0    0    0    0  100]]
+
+"""

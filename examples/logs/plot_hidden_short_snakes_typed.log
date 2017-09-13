@@ -1,0 +1,158 @@
+== NCELL= 10
+== FIXED_SEED= True
+== INFERENCE = ad3+
+== N_JOBS = 8
+== SWAP= 0
+== EASY= False
+== MAX_ITER= 750
+== MODEL FILE= model.pkl
+Please be patient...
+TRAIN SET  200 200
+ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+TRAIN SET  376 376
+ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+TEST SET  187 187
+======================================================================================================
+ONE TYPE TRAINING AND TESTING: PIXELS
+	train label histogram :  (array([12198,   200,   200,   200,   200,   200,   200,   200,   200,
+         200,   200]), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11]))
+FIT DONE IN 312.4s
+	( predict DONE IN 1.4s)
+[[5633   37   37   39   37   38   32   29   37   47   49]
+ [  14   85    1    0    0    0    0    0    0    0    0]
+ [  13    0   85    1    0    0    0    0    0    1    0]
+ [  12    0    0   82    1    3    1    1    0    0    0]
+ [  12    0    0    0   79    1    7    1    0    0    0]
+ [  11    2    0    2    1   77    0    6    1    0    0]
+ [   9    0    3    1    2    1   79    0    5    0    0]
+ [   9    0    0    3    1    2    1   81    0    3    0]
+ [   8    0    0    0    3    1    2    1   84    0    1]
+ [   9    0    0    0    0    3    1    2    1   84    0]
+ [   7    0    0    0    0    0    3    1    1    1   87]]
+	trace   = 6456
+	Accuracy= 0.920
+__________________________________________________
+ONE TYPE TRAINING AND TESTING: PICTURES
+	train label histogram :  (array([176, 200]), array([0, 1, 2]))
+FIT DONE IN 0.0s
+	( predict DONE IN 0.0s)
+[[30 57]
+ [47 53]]
+	trace   = 83
+	Accuracy= 0.444
+======================================================================================================
+ TRAINING MULTI-TYPE MODEL 
+NodeTypeEdgeFeatureGraphCRF(n_states: [11, 2], inference_method: ad3+, n_features: [45, 7], n_edge_features: [[180  45]
+ [ 45   0]])
+======================================================================================================
+YY[0].shape (6, 6)
+	label histogram :  (array([12198,   200,   200,   200,   200,   200,   200,   200,   200,
+         200,   200,   176,   200]), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]))
+YY[0].shape (37,)
+FIT DONE IN 1344.1s
+Saving model in:  model.pkl
+INFERENCE WITH  ad3+
+	label histogram (PIXELs and PICTUREs):  (array([6015,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,
+         87,  100]), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]))
+	- results without constraints
+	( predict DONE IN 9.8s)
+[[5739   30   33   32   24   23   23   20   28   31   32    0    0]
+ [   5   93    2    0    0    0    0    0    0    0    0    0    0]
+ [   3    0   91    2    0    0    2    0    1    1    0    0    0]
+ [   4    0    0   89    2    0    0    3    1    1    0    0    0]
+ [   4    0    2    0   86    3    3    0    2    0    0    0    0]
+ [   4    2    0    3    0   82    2    5    1    1    0    0    0]
+ [   4    0    4    1    3    0   82    2    3    0    1    0    0]
+ [   4    0    0    4    1    3    1   84    1    2    0    0    0]
+ [   3    0    0    0    4    1    2    1   88    1    0    0    0]
+ [   3    0    0    0    0    4    1    4    1   86    1    0    0]
+ [   3    0    0    1    0    0    5    1    1    1   88    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   60   27]
+ [   0    0    0    0    0    0    0    0    0    0    0    3   97]]
+	trace   = 6765
+	Accuracy= 0.939
+__________________________________________________
+	- results exploiting constraints
+	( predict DONE IN 13.7s)
+[[5735   29   30   30   27   29   28   26   24   29   28    0    0]
+ [   9   91    0    0    0    0    0    0    0    0    0    0    0]
+ [   9    0   91    0    0    0    0    0    0    0    0    0    0]
+ [   9    0    0   91    0    0    0    0    0    0    0    0    0]
+ [   9    0    0    0   91    0    0    0    0    0    0    0    0]
+ [   9    0    0    0    0   91    0    0    0    0    0    0    0]
+ [   9    0    0    0    0    0   91    0    0    0    0    0    0]
+ [   9    0    0    0    0    0    0   91    0    0    0    0    0]
+ [   9    0    0    0    0    0    0    0   91    0    0    0    0]
+ [   9    0    0    0    0    0    0    0    0   91    0    0    0]
+ [   9    0    0    0    0    0    0    0    0    0   91    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   57   30]
+ [   0    0    0    0    0    0    0    0    0    0    0    9   91]]
+	trace   = 6793
+	Accuracy= 0.943
+__________________________________________________
+INFERENCE WITH  ad3
+	Y is BAD, FIXING IT AT RANDOM
+array([ 0,  0,  0,  0,  0,  0,  0,  0,  0, 12,  0,  0,  0,  0,  0,  0,  0,
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11])
+	( predict DONE IN 3.1s)
+[[5743   25   30   30   26   26   24   22   29   30   30    0    0]
+ [   6   92    2    0    0    0    0    0    0    0    0    0    0]
+ [   4    0   91    2    0    0    1    0    1    1    0    0    0]
+ [   5    0    0   89    2    0    0    2    1    1    0    0    0]
+ [   5    0    2    0   84    3    3    0    3    0    0    0    0]
+ [   5    2    0    3    0   80    3    5    0    2    0    0    0]
+ [   5    0    4    1    3    0   80    2    3    0    2    0    0]
+ [   5    0    0    4    1    3    1   83    1    2    0    0    0]
+ [   5    0    0    0    4    1    2    1   86    1    0    0    0]
+ [   5    0    0    0    0    4    1    4    1   84    1    0    0]
+ [   5    0    0    1    0    0    5    1    1    1   86    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   61   26]
+ [   0    0    0    0    0    0    0    0    0    0    0    5   95]]
+	trace   = 6754
+	Accuracy= 0.938
+DONE
+== NCELL= 10
+== FIXED_SEED= True
+== INFERENCE = ad3+
+== N_JOBS = 8
+== SWAP= 0
+== EASY= False
+== MAX_ITER= 750
+== MODEL FILE= model.pkl
