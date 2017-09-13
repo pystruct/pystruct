@@ -60,7 +60,8 @@ import matplotlib.pyplot as plt
 
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.linear_model import LogisticRegression
-from sklearn.grid_search import GridSearchCV
+#from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 
 from pystruct.learners import OneSlackSSVM
 from pystruct.datasets import load_snakes
