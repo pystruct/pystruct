@@ -82,13 +82,14 @@ NCELL=10
 #INFERENCE="ad3+"    #ad3+ is required when there are hard logic constraints
 INFERENCE="ad3"     #ad3 is faster than ad3+ 
 N_JOBS=8
-
 #MAXITER=750
-
 lNbSAMPLE=[200, 400, 600, 800]  #how many sample do we generate for each experiment?
-
 nbEXPERIMENT = 10
 
+# N_JOBS=1
+# lNbSAMPLE=[20]
+# nbEXPERIMENT=1
+# MAXITER=3
 #==============================================================================================
 
 def printConfig():
@@ -103,18 +104,12 @@ def printConfig():
 if __name__ == '__main__': printConfig()
 
 
-if bFIXED_RANDOM_SEED:
-    np.random.seed(1605)
-    random.seed(98)
-else:
-    np.random.seed()
-    random.seed()
-
 class GenSnakeException(Exception): pass
     
-def genSnakes(N, ncell=NCELL):
+def genSnakes(N, dUniqueSnakelij, ncell=NCELL):
     """
     Generate snakes at random.
+    dUniqueSnakelij contains the signature of all Snakes. We ensure unicity of each Snake.
     Return N tuple (snakes, Y) 
     """
     ltSnakeY = []
@@ -144,17 +139,22 @@ def genSnakes(N, ncell=NCELL):
                     lij.append( (i,j) )
                     ldir.append(dir)
                     i,j = _i,_j
-                #ok we have a Snake, let's create the image with background borders
-                imin,jmin = map(min, zip(*lij))
-                imax,jmax = map(max, zip(*lij))
-                aSnake = np.zeros((imax-imin+3, jmax-jmin+3, 3), dtype=np.uint8)
-                aSnake[:,:,2] = 255  #0,0,255
-                aY     = np.zeros((imax-imin+3, jmax-jmin+3)   , dtype=np.uint8)
-                for _lbl, ((_i,_j), _dir) in enumerate(zip(lij, ldir)): 
-                    aSnake[_i-imin+1, _j-jmin+1,:] = lDirectionColor[_dir]
-                    aY    [_i-imin+1, _j-jmin+1]   = _lbl + 1
-                    
-                break 
+                try:
+                    dUniqueSnakelij[tuple(lij)]
+                    raise GenSnakeException("Same as in trainset")
+                except KeyError:
+                    dUniqueSnakelij[tuple(lij)] = True
+                    #ok we have a Snake, let's create the image with background borders
+                    imin,jmin = map(min, zip(*lij))
+                    imax,jmax = map(max, zip(*lij))
+                    aSnake = np.zeros((imax-imin+3, jmax-jmin+3, 3), dtype=np.uint8)
+                    aSnake[:,:,2] = 255  #0,0,255
+                    aY     = np.zeros((imax-imin+3, jmax-jmin+3)   , dtype=np.uint8)
+                    for _lbl, ((_i,_j), _dir) in enumerate(zip(lij, ldir)): 
+                        aSnake[_i-imin+1, _j-jmin+1,:] = lDirectionColor[_dir]
+                        aY    [_i-imin+1, _j-jmin+1]   = _lbl + 1
+                        
+                    break 
             except GenSnakeException: pass
         ltSnakeY.append( (aSnake, aY) )
 #         print aSnake
@@ -162,9 +162,56 @@ def genSnakes(N, ncell=NCELL):
 #         plot_snake(aSnake)
     return ltSnakeY
 
+def plot_many_snakes(lX, nv=10, nh=20, ncell=NCELL):
+    """
+    Plot the one-hot-encoded snake on grids of size nv x nh
+    """
+    N = ncell+1 #to have border
+    i = 0
+    while i < len(lX):
+        j = min(i+nv*nh, len(lX))
+        lImg = lX[i:j]
+        allimg = np.zeros(shape=(N*nv,N*nh,3), dtype=np.uint8)
+        ih,iw = 0,0
+        for i_img, img in enumerate(lImg):
+            h,w,c = img.shape
+            assert c == 3
+            allimg[ih:ih+h, iw:iw+w, :] = img
+            iw += N
+            if i_img % nh == (nh-1):
+                ih += N
+                iw = 0
+        plot_snake(allimg)
+        i = j
+
+def plot_mistakes(lY_ref, lY_pred, lX_pict, ncell=NCELL):
+    """
+    Plot snake wrongly predicted, first NoSnake pictures, then Snake pictures
+    """
+    _ltSnake = (list(), list())     #misclassified NoSnake pictures, misclassified Snake pictures 
+    for _y_ref, _y_pred, _x in zip(lY_ref, lY_pred, lX_pict):
+        assert _y_ref.shape==_y_pred.shape
+        assert _y_ref.size ==_x.size/3+1
+        assert _y_ref[-1] in [ncell+1,ncell+2]
+        if _y_ref[-1] != _y_pred[-1]:
+            iSnake = _y_ref[-1] - ncell - 1 #0=NoSnake 1=Snake
+            _ltSnake[iSnake].append(_x)
+    
+    print "NoSnake pictures predicted as Snake"
+    plot_many_snakes(_ltSnake[0])
+    print "Snake   pictures predicted as NoSnake"
+    plot_many_snakes(_ltSnake[1])
+            
+            
 
 if __name__ == '__main__':
 
+    if bFIXED_RANDOM_SEED:
+        np.random.seed(1605)
+        random.seed(98)
+    else:
+        np.random.seed()
+        random.seed()
         
     print("Please be patient...")
     snakes = load_snakes()
@@ -172,12 +219,14 @@ if __name__ == '__main__':
     #--------------------------------------------------------------------------------------------------
     #we always test against the original test set
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
+    #plot_many_snakes(X_test)
+#     X_test_img = X_test
     if NCELL <10: X_test, Y_test = shorten_snakes(X_test, Y_test, NCELL)
-
+    
     nb_hidden, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", False, nCell=NCELL)
     Y_test_pict = np.array([1]*(len(X_test)-nb_hidden) + [0]*nb_hidden)
     print "TEST SET ", len(X_test), len(Y_test)
-    
+    X_test_pict = X_test
     X_test = [one_hot_colors(x) for x in X_test]
     X_test_pict_feat = prepare_picture_data(X_test)
     X_test_directions, X_test_edge_features = prepare_data(X_test)
@@ -188,22 +237,23 @@ if __name__ == '__main__':
         print "# EXPERIMENT %d / %d"%(iExp+1, nbEXPERIMENT)
         print "#"*75
         
+        dUniqueSnakelij = dict()
         
-        lXY = genSnakes(max(lNbSAMPLE))
+        lXY = genSnakes(max(lNbSAMPLE), dUniqueSnakelij)
         X_train_all, Y_train_all = zip(*lXY)
         X_train_all, Y_train_all = list(X_train_all), list(Y_train_all)
         print "*****  GENERATED %d snakes of length %d *****"%(len(X_train_all), NCELL)
     
         #Also generate an additional test set
         NTEST=100
-        lXYTest = genSnakes( NTEST )
+        lXYTest = genSnakes( NTEST, dUniqueSnakelij )
         X_test_gen, Y_test_gen = zip(*lXYTest)
         X_test_gen, Y_test_gen = list(X_test_gen), list(Y_test_gen)
         print "*****  GENERATED %d snakes of length %d *****"%(NTEST, NCELL)
+#         plot_many_snakes(X_test_img+X_test_gen)
         nb_hidden, X_test_gen, Y_test_gen = augmentWithNoSnakeImages(X_test_gen, Y_test_gen, "test_gen", False, nCell=NCELL)
         Y_test_gen_pict = np.array([1]*(len(X_test_gen)-nb_hidden) + [0]*nb_hidden)
         print "GENERATED TEST SET ", len(X_test_gen), len(Y_test_gen)
-        
         
         X_test_gen = [one_hot_colors(x) for x in X_test_gen]
         X_test_gen_pict_feat = prepare_picture_data(X_test_gen)
@@ -232,7 +282,7 @@ if __name__ == '__main__':
                 inference = "qpbo"
                 crf = EdgeFeatureGraphCRF(inference_method=inference)
                 ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  
-                                    #max_iter=MAXITER,
+#                                     max_iter=MAXITER,
                                     n_jobs=N_JOBS
                                     #,verbose=1
                                     , switch_to='ad3'
@@ -248,9 +298,9 @@ if __name__ == '__main__':
                 
                 t0 = time.time()
                 _Y_pred = ssvm.predict( X_test_edge_features )
-                REPORT(Y_test, _Y_pred, time.time() - t0, NCELL, "gen.csv", True, "singletype_%d"%nbSample)
+                REPORT(Y_test, _Y_pred, time.time() - t0, NCELL, "gen_singletype_%d.csv"%nbSample, True, "singletype_%d"%nbSample)
                 _Y_pred = ssvm.predict( X_test_gen_edge_features )
-                REPORT(Y_test_gen, _Y_pred, None        , NCELL, "gen.csv", True, "singletype_%d_gentest"%nbSample)
+                REPORT(Y_test_gen, _Y_pred, None        , NCELL, "gen_singletype_gentest_%d.csv"%nbSample, True, "singletype_%d_gentest"%nbSample)
             
             #--------------------------------------------------------------------------------------------------
             if True:
@@ -271,7 +321,7 @@ if __name__ == '__main__':
                 
                 t0 = time.time()
                 _Y_pred = mdl.predict( np.vstack(X_test_pict_feat) )
-                REPORT([Y_test_pict], _Y_pred, time.time() - t0, 2, "gen.csv", True, "picture_logit_%d"%nbSample)
+                REPORT([Y_test_pict], _Y_pred, time.time() - t0, 2, "gen_picture.csv", True, "picture_logit_%d"%nbSample)
                 
             #--------------------------------------------------------------------------------------------------
             print "======================================================================================================"
@@ -291,7 +341,7 @@ if __name__ == '__main__':
                                               )
             print crf
             ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=0.1,  
-                                #max_iter=MAXITER,
+#                                 max_iter=MAXITER,
                                 n_jobs=N_JOBS
                                 )
                                                                         
@@ -339,18 +389,19 @@ if __name__ == '__main__':
             print "\t- results without constraints (using %s)"%INFERENCE
             t0 = time.time()
             YY_pred = ssvm.predict( XX_test )
-            REPORT(YY_test, YY_pred, time.time() - t0       , NCELL+2, "gen.csv", True, "multitype_%d"%nbSample)
+            REPORT(YY_test, YY_pred, time.time() - t0       , NCELL+2, "gen_multitype_%d.csv"%nbSample, True, "multitype_%d"%nbSample)
+            #plot_mistakes(YY_test, YY_pred, X_test_pict)
             YY_pred = ssvm.predict( XX_test_gen )
-            REPORT(YY_test_gen, YY_pred, None               , NCELL+2, "gen.csv", True, "multitype_%d_gentest"%nbSample)
+            REPORT(YY_test_gen, YY_pred, None               , NCELL+2, "gen_multitype_gentest_%d.csv"%nbSample, True, "multitype_%d_gentest"%nbSample)
             
             print "_"*50
             print "\t- results exploiting constraints (using ad3+)"
             ssvm.model.inference_method = "ad3+"
             t0 = time.time()
             YY_pred = ssvm.predict( XX_test     , l_constraints )
-            REPORT(YY_test, YY_pred, time.time() - t0    , NCELL+2, "gen.csv", True, "multitype_constraints_%d"%nbSample)
+            REPORT(YY_test, YY_pred, time.time() - t0    , NCELL+2, "gen_multitype_constraints_%d.csv"%nbSample, True, "multitype_constraints_%d"%nbSample)
             YY_pred = ssvm.predict( XX_test_gen , l_constraints_gen )
-            REPORT(YY_test_gen, YY_pred, None            , NCELL+2, "gen.csv", True, "multitype_constraints_%d_gentest"%nbSample)
+            REPORT(YY_test_gen, YY_pred, None            , NCELL+2, "gen_multitype_constraints_gentest_%d.csv"%nbSample, True, "multitype_constraints_%d_gentest"%nbSample)
                 
             
             print "_"*50
