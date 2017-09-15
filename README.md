@@ -35,8 +35,8 @@ What is different in pystruct+?
 Currently, the offered extensions rely on the __*AD3+*__ solver. For learning I mostly used the __*OneSlackSSVM*__ learner, which requires to install cvxopt as well.
 
 ### For AD3+:
- * get the source code from https://github.com/jlmeunier/AD3
- * compile and install:
+ * get it from https://github.com/jlmeunier/AD3
+ * install: python setup.py install
 
 > python setup.py install
 
