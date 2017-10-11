@@ -156,3 +156,172 @@ DONE
 == EASY= False
 == MAX_ITER= 750
 == MODEL FILE= model.pkl
+
+
+ =================================================================================
+ After fixing prepare_data:
+ Oct 9 2017
+ 
+        edge_features[:len(right), :, 0] = features[right[:, 0]]
+        edge_features[:len(right), :, 1] = features[right[:, 1]]
+#ORIG        
+#         edge_features[len(right):, :, 0] = features[down[:, 0]]
+#         edge_features[len(right):, :, 1] = features[down[:, 1]]
+        edge_features[len(right):, :, 2] = features[down[:, 0]]
+        edge_features[len(right):, :, 3] = features[down[:, 1]]
+
+
+== NCELL= 10
+== FIXED_SEED= True
+== INFERENCE = ad3
+== N_JOBS = 8
+== SWAP= 0
+== EASY= False
+== MAX_ITER= 750
+== MODEL FILE= model.pkl
+Please be patient...
+TRAIN SET  200 200
+ADDING PICTURE WIHOUT SNAKES!!!   200 elements in train
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+TRAIN SET  376 376
+ADDING PICTURE WIHOUT SNAKES!!!   100 elements in test
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+	- DISCARDING a shuffled snake which is still a snake!!!!
+TEST SET  187 187
+======================================================================================================
+ONE TYPE TRAINING AND TESTING: PIXELS
+	train label histogram :  (array([12198,   200,   200,   200,   200,   200,   200,   200,   200,
+         200,   200], dtype=int64), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11]))
+FIT DONE IN 1340.7s
+	( predict DONE IN 14.0s)
+[[5605   37   37   37   33   32   35   38   49   56   56]
+ [  14   86    0    0    0    0    0    0    0    0    0]
+ [  13    0   85    2    0    0    0    0    0    0    0]
+ [  11    0    2   85    2    0    0    0    0    0    0]
+ [  11    0    0    2   85    2    0    0    0    0    0]
+ [  10    0    0    0    2   85    2    1    0    0    0]
+ [  10    0    1    0    0    2   85    2    0    0    0]
+ [   9    0    0    1    0    0    2   86    2    0    0]
+ [   7    0    0    0    1    0    0    2   87    2    1]
+ [   8    1    0    0    0    1    0    0    1   87    2]
+ [  10    0    1    0    0    0    1    0    0    0   88]]
+	trace   = 6464
+	Accuracy= 0.921
+__________________________________________________
+ONE TYPE TRAINING AND TESTING: PICTURES
+	train label histogram :  (array([176, 200], dtype=int64), array([0, 1, 2]))
+FIT DONE IN 0.1s
+[[30 57]
+ [47 53]]
+	trace   = 83
+	Accuracy= 0.444
+======================================================================================================
+ TRAINING MULTI-TYPE MODEL 
+NodeTypeEdgeFeatureGraphCRF(n_states: [11, 2], inference_method: ad3, n_features: [45, 7], n_edge_features: [[180  45]
+ [ 45   0]])
+======================================================================================================
+YY[0].shape (6L, 6L)
+	label histogram :  (array([12198,   200,   200,   200,   200,   200,   200,   200,   200,
+         200,   200,   176,   200], dtype=int64), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]))
+YY[0].shape (37L,)
+FIT DONE IN 1878.1s
+Saving model in:  model.pkl
+INFERENCE WITH  ad3
+	label histogram (PIXELs and PICTUREs):  (array([6015,  100,  100,  100,  100,  100,  100,  100,  100,  100,  100,
+         87,  100], dtype=int64), array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13]))
+	- results without constraints (using ad3)
+	( predict DONE IN 16.6s)
+[[5760   23   26   28   28   26   23   22   23   28   28    0    0]
+ [   6   93    1    0    0    0    0    0    0    0    0    0    0]
+ [   6    0   92    2    0    0    0    0    0    0    0    0    0]
+ [   6    0    0   92    2    0    0    0    0    0    0    0    0]
+ [   5    0    0    0   92    3    0    0    0    0    0    0    0]
+ [   5    0    0    0    0   92    3    0    0    0    0    0    0]
+ [   5    0    1    0    0    0   91    3    0    0    0    0    0]
+ [   5    0    0    1    0    0    0   91    3    0    0    0    0]
+ [   6    0    0    0    1    1    0    0   91    1    0    0    0]
+ [   6    0    0    0    0    1    1    0    0   91    1    0    0]
+ [   5    0    0    0    0    0    1    2    0    0   92    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   62   25]
+ [   0    0    0    0    0    0    0    0    0    0    0    5   95]]
+	trace   = 6834
+	Accuracy= 0.949
+__________________________________________________
+	- results exploiting constraints (using ad3+)
+	( predict DONE IN 182.0s)
+[[5749   21   25   27   28   28   27   28   27   28   27    0    0]
+ [   5   94    1    0    0    0    0    0    0    0    0    0    0]
+ [   4    1   94    1    0    0    0    0    0    0    0    0    0]
+ [   4    0    1   94    1    0    0    0    0    0    0    0    0]
+ [   4    0    0    1   94    1    0    0    0    0    0    0    0]
+ [   4    0    0    0    1   94    1    0    0    0    0    0    0]
+ [   4    0    0    0    0    1   94    1    0    0    0    0    0]
+ [   5    0    0    0    0    0    1   93    1    0    0    0    0]
+ [   5    0    0    0    0    1    0    1   93    0    0    0    0]
+ [   5    0    0    0    0    0    1    0    1   93    0    0    0]
+ [   4    0    0    0    0    0    0    1    0    1   94    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   60   27]
+ [   0    0    0    0    0    0    0    0    0    0    0    4   96]]
+	trace   = 6842
+	Accuracy= 0.950
+__________________________________________________
+	- results without constraints (using ad3+)
+	( predict DONE IN 88.4s)
+[[5736   25   28   30   28   27   28   26   27   30   30    0    0]
+ [   4   95    1    0    0    0    0    0    0    0    0    0    0]
+ [   3    1   94    2    0    0    0    0    0    0    0    0    0]
+ [   3    0    1   94    2    0    0    0    0    0    0    0    0]
+ [   3    0    0    1   94    2    0    0    0    0    0    0    0]
+ [   3    0    0    0    1   94    2    0    0    0    0    0    0]
+ [   3    0    1    0    0    1   93    2    0    0    0    0    0]
+ [   3    0    0    1    0    0    1   93    2    0    0    0    0]
+ [   3    0    0    0    1    1    0    1   93    1    0    0    0]
+ [   3    0    0    0    0    1    1    0    1   93    1    0    0]
+ [   3    0    0    0    0    0    1    1    0    1   94    0    0]
+ [   0    0    0    0    0    0    0    0    0    0    0   59   28]
+ [   0    0    0    0    0    0    0    0    0    0    0    3   97]]
+	trace   = 6829
+	Accuracy= 0.948
+DONE
+== NCELL= 10
+== FIXED_SEED= True
+== INFERENCE = ad3
+== N_JOBS = 8
+== SWAP= 0
+== EASY= False
+== MAX_ITER= 750
+== MODEL FILE= model.pkl

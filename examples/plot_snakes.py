@@ -84,8 +84,12 @@ def prepare_data(X):
         edge_features = np.zeros((edges.shape[0], features.shape[1], 4))
         edge_features[:len(right), :, 0] = features[right[:, 0]]
         edge_features[:len(right), :, 1] = features[right[:, 1]]
-        edge_features[len(right):, :, 0] = features[down[:, 0]]
-        edge_features[len(right):, :, 1] = features[down[:, 1]]
+#---ORIGINAL CODE        
+#         edge_features[len(right):, :, 0] = features[down[:, 0]]
+#         edge_features[len(right):, :, 1] = features[down[:, 1]]
+        edge_features[len(right):, :, 2] = features[down[:, 0]]
+        edge_features[len(right):, :, 3] = features[down[:, 1]]
+#---END OF FIX        
         edge_features = edge_features.reshape(edges.shape[0], -1)
         X_directions.append((features, edges, edge_features_directions))
         X_edge_features.append((features, edges, edge_features))

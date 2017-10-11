@@ -25,3 +25,45 @@ Test accuracy: 0.996
  [   0    0    1    0    0    0    1    0   98    0    0]
  [   0    0    0    1    0    0    0    0    0   99    0]
  [   0    0    0    0    1    0    0    0    0    0   99]]
+
+ 
+ =================================================================================
+ After fixing prepare_data:
+ Oct 9 2017
+ 
+        edge_features[:len(right), :, 0] = features[right[:, 0]]
+        edge_features[:len(right), :, 1] = features[right[:, 1]]
+#ORIG        
+#         edge_features[len(right):, :, 0] = features[down[:, 0]]
+#         edge_features[len(right):, :, 1] = features[down[:, 1]]
+        edge_features[len(right):, :, 2] = features[down[:, 0]]
+        edge_features[len(right):, :, 3] = features[down[:, 1]]
+
+ 
+ Please be patient. Learning will take 5-20 minutes.
+Results using only directional features for edges
+Test accuracy: 0.847
+[[2750    0    0    0    0    0    0    0    0    0    0]
+ [   0   99    0    0    1    0    0    0    0    0    0]
+ [   0    2   68    3    9    4    6    4    3    1    0]
+ [   0    4   11   45    8   14    5    6    0    6    1]
+ [   0    1   22   18   31    2   14    4    3    5    0]
+ [   0    3    7   38   12   22    5    4    2    7    0]
+ [   0    2   19   16   26    8   16    2    9    2    0]
+ [   0    6   14   26   10   15    5   12    2   10    0]
+ [   0    0   12   15   16    4   16    2   18    4   13]
+ [   0    2    5   18    6    8    5    3    2   50    1]
+ [   0    1   11    4   13    1    2    0    2    2   64]]
+Results using also input features for edges
+Test accuracy: 0.999
+[[2750    0    0    0    0    0    0    0    0    0    0]
+ [   0  100    0    0    0    0    0    0    0    0    0]
+ [   0    0  100    0    0    0    0    0    0    0    0]
+ [   0    1    0   99    0    0    0    0    0    0    0]
+ [   0    0    1    0   99    0    0    0    0    0    0]
+ [   0    0    0    1    0   99    0    0    0    0    0]
+ [   0    0    0    0    1    0   99    0    0    0    0]
+ [   0    0    0    0    0    1    0   99    0    0    0]
+ [   0    0    0    0    0    0    0    0  100    0    0]
+ [   0    0    0    0    0    0    0    0    0  100    0]
+ [   0    0    0    0    0    0    0    0    0    0  100]]
