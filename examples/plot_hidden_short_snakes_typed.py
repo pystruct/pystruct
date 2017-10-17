@@ -90,7 +90,7 @@ N_JOBS=8
 MAXITER=750
 
 sMODELFILE = None
-sMODELFILE = "model.pkl"        #we save the model in a file and do not re-trian if the file exists
+#sMODELFILE = "model.pkl"        #we save the model in a file and do not re-trian if the file exists
 
 #==============================================================================================
 
