@@ -4,10 +4,9 @@ from .linear_programming import lp_general_graph
 from .maxprod import inference_max_product
 from .common import _validate_params
 
-
 def get_installed(method_filter=None):
     if method_filter is None:
-        method_filter = ["max-product", 'ad3', 'qpbo', 'ogm', 'lp']
+        method_filter = ["max-product", 'ad3', 'ad3+', 'qpbo', 'ogm', 'lp']
 
     installed = []
     unary = np.zeros((1, 1))
@@ -15,12 +14,22 @@ def get_installed(method_filter=None):
     edges = np.empty((0, 2), dtype=np.int)
     for method in method_filter:
         try:
-            inference_dispatch(unary, pw, edges, inference_method=method)
+            if method != 'ad3+':
+                inference_dispatch(unary, pw, edges, inference_method=method)
+            else:
+                inference_dispatch(unary, np.zeros((0,1,1)), np.zeros((0,2), dtype=np.int), inference_method=method)
             installed.append(method)
         except ImportError:
             pass
     return installed
 
+class InferenceException(Exception):
+    """
+    When inference status is fractional or unsolved, this exception can be raised.
+    (If relaxed is not True and if an inference exception is requested by the calling code)
+    The exception message is the solver status.
+    """ 
+    pass
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, return_energy=False, **kwargs):
@@ -88,6 +97,9 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                             return_energy=return_energy, **kwargs)
     elif inference_method == "ad3":
         return inference_ad3(unary_potentials, pairwise_potentials, edges,
+                             return_energy=return_energy, **kwargs)
+    elif inference_method == "ad3+":
+        return inference_ad3plus(unary_potentials, pairwise_potentials, edges,
                              return_energy=return_energy, **kwargs)
     elif inference_method == "ogm":
         return inference_ogm(unary_potentials, pairwise_potentials, edges,
@@ -311,7 +323,8 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
 
 
 def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False):
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  inference_exception=None):
     """Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
@@ -350,26 +363,146 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     labels : nd-array
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
+        
+    Code updated on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
+    Copyright JL Meunier, Xerox 2017
     """
     import ad3
-    n_states, pairwise_potentials = \
-        _validate_params(unary_potentials, pairwise_potentials, edges)
-
-    unaries = unary_potentials.reshape(-1, n_states)
-    res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+    bMultiType = isinstance(unary_potentials, list)
+    if bMultiType:
+        res = ad3.general_graph(unary_potentials, edges, pairwise_potentials, verbose=verbose,
                             n_iterations=4000, exact=branch_and_bound)
+    else:
+        #usual code
+        n_states, pairwise_potentials = \
+            _validate_params(unary_potentials, pairwise_potentials, edges)
+        unaries = unary_potentials.reshape(-1, n_states)
+        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+        
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
-        print(solver_status[0])
+        print(solver_status)
 
     if solver_status in ["fractional", "unsolved"] and relaxed:
-        unary_marginals = unary_marginals.reshape(unary_potentials.shape)
-        y = (unary_marginals, pairwise_marginals)
+        if bMultiType:
+            y = (unary_marginals, pairwise_marginals)  #those two are lists
+        else:
+            #usual code
+            unary_marginals = unary_marginals.reshape(unary_potentials.shape)
+            y = (unary_marginals, pairwise_marginals)
+        #print solver_status, pairwise_marginals
     else:
-        y = np.argmax(unary_marginals, axis=-1)
+        if bMultiType:
+            #we now get a list of unary marginals
+            if inference_exception and solver_status in ["fractional", "unsolved"]:
+                raise InferenceException(solver_status)
+            ly = list()
+            _cum_n_states = 0
+            for unary_marg in unary_marginals:
+                ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
+                _cum_n_states += unary_marg.shape[1] #number of states for that type
+            y = np.hstack(ly)            
+        else:
+            #usual code
+            y = np.argmax(unary_marginals, axis=-1)
+        
     if return_energy:
         return y, -energy
     return y
+
+def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxed=False,
+                  verbose=0, return_energy=False, branch_and_bound=False,
+                  constraints=None,
+                  inference_exception=None):
+    """Inference with AD3 dual decomposition subgradient solver.
+
+    Parameters
+    ----------
+    unary_potentials : nd-array, shape (n_nodes, n_states)
+        Unary potentials of energy function.
+
+    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+        Pairwise potentials of energy function.
+        If the first case, edge potentials are assumed to be the same for all edges.
+        In the second case, the sequence needs to correspond to the edges.
+
+    edges : nd-array, shape (n_edges, 2)
+        Graph edges for pairwise potentials, given as pair of node indices. As
+        pairwise potentials are not assumed to be symmetric, the direction of
+        the edge matters.
+
+    relaxed : bool (default=False)
+        Whether to return the relaxed solution (``True``) or round to the next
+        integer solution (``False``).
+
+    verbose : int (default=0)
+        Degree of verbosity for solver.
+
+    return_energy : bool (default=False)
+        Additionally return the energy of the returned solution (according to
+        the solver).  If relaxed=False, this is the energy of the relaxed, not
+        the rounded solution.
+
+    branch_and_bound : bool (default=False)
+        Whether to attempt to produce an integral solution using
+        branch-and-bound.
+
+    constraints : list of logical constraints or None (default:=None)
+        A logical constraint is tuple like ( <operator>, <unaries>, <states>, <negated> )
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of each unary involved in this constraint
+        - states is a list of unary states (class), 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicating if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list 
+        
+        NOTE: this hard logic constraint mechanism has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
+        The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
+    
+    Returns
+    -------
+    labels : nd-array
+        Approximate (usually) MAP variable assignment.
+        If relaxed=False, this is a tuple of unary and edge 'marginals'.
+
+    Code written on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
+    Copyright JL Meunier, Xerox 2017
+        
+    """
+    import ad3
+#     n_states, pairwise_potentials = \
+#         _validate_params(unary_potentials, pairwise_potentials, edges)
+#     unaries = unary_potentials.reshape(-1, n_states)
+    bMultiType = isinstance(l_unary_potentials, list)
+
+    res = ad3.general_constrained_graph(l_unary_potentials, l_edges, l_pairwise_potentials, constraints, verbose=verbose,
+                            n_iterations=4000, exact=branch_and_bound)
+    
+    l_unary_marginals, l_pairwise_marginals, energy, solver_status = res
+    if verbose:
+        print(solver_status)
+
+    if relaxed and solver_status in ["fractional", "unsolved"]:
+        y = (l_unary_marginals, l_pairwise_marginals)
+    else:
+        if inference_exception and solver_status in ["fractional", "unsolved"]:
+            raise InferenceException(solver_status)
+        if bMultiType:
+            #we now get a list of unary marginals
+            ly = list()
+            _cum_n_states = 0
+            for unary_marg in l_unary_marginals:
+                ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
+                _cum_n_states += unary_marg.shape[1] #number of states for that type
+            y = np.hstack(ly)
+            # when we will simplify y: y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg in l_unary_marginals]
+        else:
+            y = np.argmax(l_unary_marginals, axis=-1)
+
+    if return_energy:
+        return y, -energy
+    return y
+
 
 
 def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,

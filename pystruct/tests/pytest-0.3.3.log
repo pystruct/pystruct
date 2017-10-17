@@ -1,0 +1,703 @@
+============================= test session starts ==============================
+platform linux2 -- Python 2.7.8, pytest-3.0.5, py-1.4.32, pluggy-0.4.0
+rootdir: /opt/project/read/jl_git/pystruct_JL, inifile: 
+collected 150 items
+
+test_datasets.py .
+test_libraries.py FF
+test_inference/test_exact_inference.py .
+test_inference/test_maxprod.py ..FF..FF
+test_learners/test_binary_svm.py .......
+test_learners/test_crammer_singer_svm.py .........
+test_learners/test_edge_feature_graph_learning.py ..
+test_learners/test_frankwolfe_svm.py ....
+test_learners/test_graph_svm.py ...
+test_learners/test_latent_node_crf_learning.py F....
+test_learners/test_latent_svm.py .....
+test_learners/test_n_slack_ssvm.py .........
+test_learners/test_one_slack_ssvm.py ........
+test_learners/test_perceptron.py .......
+test_learners/test_structured_perceptron.py ..
+test_learners/test_subgradient_latent_svm.py ...
+test_learners/test_subgradient_svm.py ......
+test_models/test_chain_crf.py .F
+test_models/test_directional_crf.py ....
+test_models/test_edge_feature_graph_crf.py ......
+test_models/test_graph_crf.py .........
+test_models/test_grid_crf.py .....FF...
+test_models/test_latent_crf.py ..............
+test_models/test_latent_node_crf.py .....
+test_models/test_multilabel_problem.py ...
+test_models/test_node_type_edge_feature_graph_crf.py ...........
+test_utils/test_utils_inference.py ...
+test_utils/test_utils_logging.py .
+
+=================================== FAILURES ===================================
+_________________________________ test_pyqpbo __________________________________
+
+    def test_pyqpbo():
+        import pyqpbo
+        pyqpbo
+>       assert 'qpbo' in get_installed()
+
+test_libraries.py:7: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../inference/inference_methods.py:17: in get_installed
+    inference_dispatch(unary, pw, edges, inference_method=method)
+../inference/inference_methods.py:100: in inference_dispatch
+    return_energy=return_energy, **kwargs)
+../inference/inference_methods.py:474: in inference_ad3plus
+    n_iterations=4000, exact=branch_and_bound)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:44: in general_constrained_graph
+    return general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose, n_iterations, eta, exact)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unaries = array([[ 0.]]), edges = array([], shape=(0, 2), dtype=int64)
+edge_weights = array([[ 0.]]), constraints = None, verbose = 0
+n_iterations = 4000, eta = 0.1, exact = False
+
+    def general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose=1, n_iterations=1000, eta=0.1, exact=False):
+        """
+        inference on a graph, with one type of node, taking into account logical constraints between unaries.
+    
+        The constraints must be a list of tuples like ( <operator>, <unaries>, <states>, <negated> )
+        The tuple is defined differently for single- and multi-type inference. See in each function below.
+    
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of the unaries involved in this constraint
+        - states is a list of unary states, 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicated if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list
+    
+        The graph is binarized as explained in Martins et al. ICML 2011 paper: "An Augmented Lagrangian Approach to Constrained MAP Inference".
+    
+        NOTE: I had to re-compile AD3 since v2.0.1 from Anaconda missed the create_binary_variable method
+    
+        JL Meunier - October 2016
+        """
+        if unaries.shape[1] != edge_weights.shape[1]:
+            raise ValueError("incompatible shapes of unaries"
+                             " and edge_weights.")
+>       if edge_weights.shape[1] != edge_weights.shape[2]:
+E       IndexError: tuple index out of range
+
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:70: IndexError
+___________________________________ test_ad3 ___________________________________
+
+    def test_ad3():
+        import ad3
+        ad3
+>       assert 'ad3' in get_installed()
+
+test_libraries.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../inference/inference_methods.py:17: in get_installed
+    inference_dispatch(unary, pw, edges, inference_method=method)
+../inference/inference_methods.py:100: in inference_dispatch
+    return_energy=return_energy, **kwargs)
+../inference/inference_methods.py:474: in inference_ad3plus
+    n_iterations=4000, exact=branch_and_bound)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:44: in general_constrained_graph
+    return general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose, n_iterations, eta, exact)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unaries = array([[ 0.]]), edges = array([], shape=(0, 2), dtype=int64)
+edge_weights = array([[ 0.]]), constraints = None, verbose = 0
+n_iterations = 4000, eta = 0.1, exact = False
+
+    def general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose=1, n_iterations=1000, eta=0.1, exact=False):
+        """
+        inference on a graph, with one type of node, taking into account logical constraints between unaries.
+    
+        The constraints must be a list of tuples like ( <operator>, <unaries>, <states>, <negated> )
+        The tuple is defined differently for single- and multi-type inference. See in each function below.
+    
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of the unaries involved in this constraint
+        - states is a list of unary states, 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicated if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list
+    
+        The graph is binarized as explained in Martins et al. ICML 2011 paper: "An Augmented Lagrangian Approach to Constrained MAP Inference".
+    
+        NOTE: I had to re-compile AD3 since v2.0.1 from Anaconda missed the create_binary_variable method
+    
+        JL Meunier - October 2016
+        """
+        if unaries.shape[1] != edge_weights.shape[1]:
+            raise ValueError("incompatible shapes of unaries"
+                             " and edge_weights.")
+>       if edge_weights.shape[1] != edge_weights.shape[2]:
+E       IndexError: tuple index out of range
+
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:70: IndexError
+_________________________ test_tree_max_product_chain __________________________
+
+    def test_tree_max_product_chain():
+        rnd = np.random.RandomState(0)
+        forward = np.c_[np.arange(9), np.arange(1, 10)]
+        backward = np.c_[np.arange(1, 10), np.arange(9)]
+        for i in range(10):
+            unary_potentials = rnd.normal(size=(10, 3))
+            pairwise_potentials = rnd.normal(size=(9, 3, 3))
+            for chain in [forward, backward]:
+                result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
+                                           chain, branch_and_bound=True)
+                result_mp = inference_max_product(unary_potentials,
+>                                                 pairwise_potentials, chain)
+
+test_inference/test_maxprod.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unary_potentials = array([[ 1.76405235,  0.40015721,  0.97873798],
+       [ 2.2408932 ,  1.867557...62, -1.45436567,  0.04575852],
+       [-0.18718385,  1.53277921,  1.46935877]])
+pairwise_potentials = array([[[ 0.15494743,  0.37816252, -0.88778575],
+        [-1.98079647, -0.3479..., -0.41361898, -0.74745481],
+        [ 1.92294203,  1.48051479,  1.86755896]]])
+edges = array([[0, 1],
+       [1, 2],
+       [2, 3],
+       [3, 4],
+       [4, 5],
+       [5, 6],
+       [6, 7],
+       [7, 8],
+       [8, 9]])
+max_iter = 30, damping = 0.5, tol = 1e-05, relaxed = None
+
+    def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                              max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
+        """Max-product inference.
+    
+        In case the edges specify a tree, dynamic programming is used
+        producing a result in only a single pass.
+    
+        Parameters
+        ----------
+        unary_potentials : nd-array
+            Unary potentials of energy function.
+    
+        pairwise_potentials : nd-array
+            Pairwise potentials of energy function.
+    
+        edges : nd-array
+            Edges of energy function.
+    
+        max_iter : int (default=10)
+            Maximum number of iterations. Ignored if graph is a tree.
+    
+        damping : float (default=.5)
+            Daming of messages in loopy message passing.
+            Ignored if graph is a tree.
+    
+        tol : float (default=1e-5)
+            Stopping tollerance for loopy message passing.
+        """
+>       from ._viterbi import viterbi
+E       ImportError: No module named _viterbi
+
+../inference/maxprod.py:50: ImportError
+__________________________ test_tree_max_product_tree __________________________
+
+    def test_tree_max_product_tree():
+        try:
+            from scipy.sparse.csgraph import minimum_spanning_tree
+        except:
+            raise SkipTest("Not testing trees, scipy version >= 0.11 required")
+    
+        rnd = np.random.RandomState(0)
+        for i in range(100):
+            # generate random tree using mst
+            graph = rnd.uniform(size=(10, 10))
+            tree = minimum_spanning_tree(sparse.csr_matrix(graph))
+            tree_edges = np.c_[tree.nonzero()]
+    
+            unary_potentials = rnd.normal(size=(10, 3))
+            pairwise_potentials = rnd.normal(size=(9, 3, 3))
+            result_ad3 = inference_ad3(unary_potentials, pairwise_potentials,
+                                       tree_edges, branch_and_bound=True)
+            result_mp = inference_max_product(unary_potentials,
+>                                             pairwise_potentials, tree_edges)
+
+test_inference/test_maxprod.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unary_potentials = array([[-1.16514984,  0.90082649,  0.46566244],
+       [-1.53624369,  1.488252...41,  1.94362119, -0.41361898],
+       [-0.74745481,  1.92294203,  1.48051479]])
+pairwise_potentials = array([[[ 1.86755896,  0.90604466, -0.86122569],
+        [ 1.91006495, -0.2680..., -1.10438334,  0.05216508],
+        [-0.739563  ,  1.5430146 , -1.29285691]]])
+edges = array([[1, 4],
+       [1, 5],
+       [1, 6],
+       [3, 4],
+       [6, 0],
+       [7, 5],
+       [8, 2],
+       [8, 7],
+       [9, 7]], dtype=int32)
+max_iter = 30, damping = 0.5, tol = 1e-05, relaxed = None
+
+    def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                              max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
+        """Max-product inference.
+    
+        In case the edges specify a tree, dynamic programming is used
+        producing a result in only a single pass.
+    
+        Parameters
+        ----------
+        unary_potentials : nd-array
+            Unary potentials of energy function.
+    
+        pairwise_potentials : nd-array
+            Pairwise potentials of energy function.
+    
+        edges : nd-array
+            Edges of energy function.
+    
+        max_iter : int (default=10)
+            Maximum number of iterations. Ignored if graph is a tree.
+    
+        damping : float (default=.5)
+            Daming of messages in loopy message passing.
+            Ignored if graph is a tree.
+    
+        tol : float (default=1e-5)
+            Stopping tollerance for loopy message passing.
+        """
+>       from ._viterbi import viterbi
+E       ImportError: No module named _viterbi
+
+../inference/maxprod.py:50: ImportError
+________________________ test_max_product_binary_blocks ________________________
+
+    def test_max_product_binary_blocks():
+        X, Y = generate_blocks(n_samples=1)
+        x, y = X[0], Y[0]
+        w = np.array([1, 0,  # unary
+                      0, 1,
+                      0,     # pairwise
+                      -4, 0])
+        crf = GridCRF(inference_method='max-product')
+        crf.initialize(X, Y)
+>       y_hat = crf.inference(x, w)
+
+test_inference/test_maxprod.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../models/grid_crf.py:66: in inference
+    return_energy=return_energy)
+../models/crf.py:178: in inference
+    return_energy=return_energy)
+../inference/inference_methods.py:109: in inference_dispatch
+    edges, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unary_potentials = array([[-1.64607852,  1.64607852],
+       [ 0.39976419, -0.39976419],
+       [...748486],
+       [-1.92111906,  1.92111906],
+       [-2.38331001,  2.38331001]])
+pairwise_potentials = array([[ 0., -4.],
+       [-4.,  0.]])
+edges = array([[  0,   1],
+       [  1,   2],
+       [  2,   3],
+       [  3,   4],
+  ...],
+       [104, 116],
+       [105, 117],
+       [106, 118],
+       [107, 119]])
+max_iter = 30, damping = 0.5, tol = 1e-05, relaxed = False
+
+    def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                              max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
+        """Max-product inference.
+    
+        In case the edges specify a tree, dynamic programming is used
+        producing a result in only a single pass.
+    
+        Parameters
+        ----------
+        unary_potentials : nd-array
+            Unary potentials of energy function.
+    
+        pairwise_potentials : nd-array
+            Pairwise potentials of energy function.
+    
+        edges : nd-array
+            Edges of energy function.
+    
+        max_iter : int (default=10)
+            Maximum number of iterations. Ignored if graph is a tree.
+    
+        damping : float (default=.5)
+            Daming of messages in loopy message passing.
+            Ignored if graph is a tree.
+    
+        tol : float (default=1e-5)
+            Stopping tollerance for loopy message passing.
+        """
+>       from ._viterbi import viterbi
+E       ImportError: No module named _viterbi
+
+../inference/maxprod.py:50: ImportError
+_______________________ test_max_product_multinomial_crf _______________________
+
+    def test_max_product_multinomial_crf():
+        X, Y = generate_blocks_multinomial(n_samples=1)
+        x, y = X[0], Y[0]
+        w = np.array([1., 0., 0.,  # unary
+                      0., 1., 0.,
+                      0., 0., 1.,
+                     .4,           # pairwise
+                     -.3, .3,
+                     -.5, -.1, .3])
+        crf = GridCRF(inference_method='max-product')
+        crf.initialize(X, Y)
+>       y_hat = crf.inference(x, w)
+
+test_inference/test_maxprod.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../models/grid_crf.py:66: in inference
+    return_energy=return_energy)
+../models/crf.py:178: in inference
+    return_energy=return_energy)
+../inference/inference_methods.py:109: in inference_dispatch
+    edges, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unary_potentials = array([[  1.18821277e+00,  -5.49700395e-01,   1.49119087e-01],
+       [  1.663....65956844e+00],
+       [ -4.41209409e-01,   5.64297032e-01,   1.24800047e+00]])
+pairwise_potentials = array([[ 0.4, -0.3, -0.5],
+       [-0.3,  0.3, -0.1],
+       [-0.5, -0.1,  0.3]])
+edges = array([[  0,   1],
+       [  1,   2],
+       [  2,   3],
+       [  3,   4],
+  ...],
+       [104, 116],
+       [105, 117],
+       [106, 118],
+       [107, 119]])
+max_iter = 30, damping = 0.5, tol = 1e-05, relaxed = False
+
+    def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                              max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
+        """Max-product inference.
+    
+        In case the edges specify a tree, dynamic programming is used
+        producing a result in only a single pass.
+    
+        Parameters
+        ----------
+        unary_potentials : nd-array
+            Unary potentials of energy function.
+    
+        pairwise_potentials : nd-array
+            Pairwise potentials of energy function.
+    
+        edges : nd-array
+            Edges of energy function.
+    
+        max_iter : int (default=10)
+            Maximum number of iterations. Ignored if graph is a tree.
+    
+        damping : float (default=.5)
+            Daming of messages in loopy message passing.
+            Ignored if graph is a tree.
+    
+        tol : float (default=1e-5)
+            Stopping tollerance for loopy message passing.
+        """
+>       from ._viterbi import viterbi
+E       ImportError: No module named _viterbi
+
+../inference/maxprod.py:50: ImportError
+_________________ test_binary_blocks_cutting_plane_latent_node _________________
+
+    def test_binary_blocks_cutting_plane_latent_node():
+        #testing cutting plane ssvm on easy binary dataset
+        # we use the LatentNodeCRF without latent nodes and check that it does the
+        # same as GraphCRF
+        X, Y = generate_blocks(n_samples=3)
+        crf = GraphCRF()
+        clf = NSlackSSVM(model=crf, max_iter=20, C=100, check_constraints=True,
+                         break_on_bad=False, n_jobs=1)
+        x1, x2, x3 = X
+        y1, y2, y3 = Y
+        n_states = len(np.unique(Y))
+        # delete some rows to make it more fun
+        x1, y1 = x1[:, :-1], y1[:, :-1]
+        x2, y2 = x2[:-1], y2[:-1]
+        # generate graphs
+        X_ = [x1, x2, x3]
+        G = [make_grid_edges(x) for x in X_]
+    
+        # reshape / flatten x and y
+        X_ = [x.reshape(-1, n_states) for x in X_]
+        Y = [y.ravel() for y in [y1, y2, y3]]
+    
+        X = list(zip(X_, G))
+    
+        clf.fit(X, Y)
+        Y_pred = clf.predict(X)
+        for y, y_pred in zip(Y, Y_pred):
+            assert_array_equal(y, y_pred)
+    
+        latent_crf = LatentNodeCRF(n_labels=2, n_hidden_states=0)
+        latent_svm = LatentSSVM(NSlackSSVM(model=latent_crf, max_iter=20, C=100,
+                                           check_constraints=True,
+                                           break_on_bad=False, n_jobs=1),
+                                latent_iter=3)
+        X_latent = list(zip(X_, G, np.zeros(len(X_))))
+>       latent_svm.fit(X_latent, Y, H_init=Y)
+
+test_learners/test_latent_node_crf_learning.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../learners/latent_structured_svm.py:123: in fit
+    initialize=False)
+../learners/n_slack_ssvm.py:313: in fit
+    for x, y in zip(X_b, Y_b))
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/sklearn/externals/joblib/parallel.py:804: in __call__
+    while self.dispatch_one_batch(iterator):
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/sklearn/externals/joblib/parallel.py:662: in dispatch_one_batch
+    self._dispatch(tasks)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/sklearn/externals/joblib/parallel.py:570: in _dispatch
+    job = ImmediateComputeBatch(batch)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/sklearn/externals/joblib/parallel.py:183: in __init__
+    self.results = batch()
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/sklearn/externals/joblib/parallel.py:72: in __call__
+    return [func(*args, **kwargs) for func, args, kwargs in self.items]
+../utils/inference.py:65: in find_constraint
+    y_hat = model.loss_augmented_inference(x, y, w, relaxed=relaxed)
+../models/latent_node_crf.py:217: in loss_augmented_inference
+    unary_potentials = self._get_unary_potentials(x, w)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LatentNodeCRF(n_states: 2, inference_method: ad3)
+x = (array([[-1.64607852,  1.64607852],
+       [ 0.39976419, -0.39976419],
+       [...087795],
+       [-0.76748486,  0.767... 2,   3],
+       [  3,   4],
+  ...],
+       [ 95, 106],
+       [ 96, 107],
+       [ 97, 108],
+       [ 98, 109]]), 0.0)
+w = array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.])
+
+    def _get_unary_potentials(self, x, w):
+        """Computes unary potentials for x and w.
+    
+            Parameters
+            ----------
+            x : tuple
+                Instance Representation.
+    
+            w : ndarray, shape=(size_joint_feature,)
+                Weight vector for CRF instance.
+    
+            Returns
+            -------
+            unary : ndarray, shape=(n_states)
+                Unary weights.
+            """
+        self._check_size_w(w)
+        self._check_size_x(x)
+        features = self._get_features(x)
+        unary_params = w[:self.n_input_states * self.n_features].reshape(
+            self.n_input_states, self.n_features)
+    
+        if self.latent_node_features:
+            unaries = np.dot(features, unary_params.T)
+            n_hidden = x[2]
+            n_visible = features.shape[0] - n_hidden
+        else:
+            # we only have features for visible nodes
+            n_visible, n_hidden = features.shape[0], x[2]
+            # assemble unary potentials for all nodes from observed evidence
+>           unaries = np.zeros((n_visible + n_hidden, self.n_states))
+E           TypeError: 'numpy.float64' object cannot be interpreted as an index
+
+../models/latent_node_crf.py:202: TypeError
+_____________________________ test_directed_chain ______________________________
+
+    def test_directed_chain():
+        # check that a directed model actually works differntly in the two
+        # directions.  chain of length three, three states 0, 1, 2 which want to be
+        # in this order, evidence only in the middle
+        x = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+    
+        w = np.array([1, 0, 0,  # unary
+                      0, 1, 0,
+                      0, 0, 1,
+                      0, 1, 0,  # pairwise
+                      0, 0, 1,
+                      0, 0, 0])
+        crf = ChainCRF(n_states=3, n_features=3)
+>       y = crf.inference(x, w)
+
+test_models/test_chain_crf.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../models/crf.py:178: in inference
+    return_energy=return_energy)
+../inference/inference_methods.py:109: in inference_dispatch
+    edges, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unary_potentials = array([[0, 0, 0],
+       [0, 1, 0],
+       [0, 0, 0]])
+pairwise_potentials = array([[0, 1, 0],
+       [0, 0, 1],
+       [0, 0, 0]])
+edges = array([[0, 1],
+       [1, 2]]), max_iter = 30, damping = 0.5
+tol = 1e-05, relaxed = False
+
+    def inference_max_product(unary_potentials, pairwise_potentials, edges,
+                              max_iter=30, damping=0.5, tol=1e-5, relaxed=None):
+        """Max-product inference.
+    
+        In case the edges specify a tree, dynamic programming is used
+        producing a result in only a single pass.
+    
+        Parameters
+        ----------
+        unary_potentials : nd-array
+            Unary potentials of energy function.
+    
+        pairwise_potentials : nd-array
+            Pairwise potentials of energy function.
+    
+        edges : nd-array
+            Edges of energy function.
+    
+        max_iter : int (default=10)
+            Maximum number of iterations. Ignored if graph is a tree.
+    
+        damping : float (default=.5)
+            Daming of messages in loopy message passing.
+            Ignored if graph is a tree.
+    
+        tol : float (default=1e-5)
+            Stopping tollerance for loopy message passing.
+        """
+>       from ._viterbi import viterbi
+E       ImportError: No module named _viterbi
+
+../inference/maxprod.py:50: ImportError
+_________________________ test_blocks_multinomial_crf __________________________
+
+    def test_blocks_multinomial_crf():
+        X, Y = generate_blocks_multinomial(n_samples=1, size_x=9, seed=0)
+        x, y = X[0], Y[0]
+        w = np.array([1., 0., 0.,  # unaryA
+                      0., 1., 0.,
+                      0., 0., 1.,
+                     .4,           # pairwise
+                     -.3, .3,
+                     -.5, -.1, .3])
+>       for inference_method in get_installed():
+
+test_models/test_grid_crf.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../inference/inference_methods.py:17: in get_installed
+    inference_dispatch(unary, pw, edges, inference_method=method)
+../inference/inference_methods.py:100: in inference_dispatch
+    return_energy=return_energy, **kwargs)
+../inference/inference_methods.py:474: in inference_ad3plus
+    n_iterations=4000, exact=branch_and_bound)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:44: in general_constrained_graph
+    return general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose, n_iterations, eta, exact)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unaries = array([[ 0.]]), edges = array([], shape=(0, 2), dtype=int64)
+edge_weights = array([[ 0.]]), constraints = None, verbose = 0
+n_iterations = 4000, eta = 0.1, exact = False
+
+    def general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose=1, n_iterations=1000, eta=0.1, exact=False):
+        """
+        inference on a graph, with one type of node, taking into account logical constraints between unaries.
+    
+        The constraints must be a list of tuples like ( <operator>, <unaries>, <states>, <negated> )
+        The tuple is defined differently for single- and multi-type inference. See in each function below.
+    
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of the unaries involved in this constraint
+        - states is a list of unary states, 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicated if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list
+    
+        The graph is binarized as explained in Martins et al. ICML 2011 paper: "An Augmented Lagrangian Approach to Constrained MAP Inference".
+    
+        NOTE: I had to re-compile AD3 since v2.0.1 from Anaconda missed the create_binary_variable method
+    
+        JL Meunier - October 2016
+        """
+        if unaries.shape[1] != edge_weights.shape[1]:
+            raise ValueError("incompatible shapes of unaries"
+                             " and edge_weights.")
+>       if edge_weights.shape[1] != edge_weights.shape[2]:
+E       IndexError: tuple index out of range
+
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:70: IndexError
+___________________________ test_binary_grid_unaries ___________________________
+
+    def test_binary_grid_unaries():
+        # test handling on unaries for binary grid CRFs
+        for ds in binary:
+            X, Y = ds(n_samples=1)
+            x, y = X[0], Y[0]
+>           for inference_method in get_installed():
+
+test_models/test_grid_crf.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../inference/inference_methods.py:17: in get_installed
+    inference_dispatch(unary, pw, edges, inference_method=method)
+../inference/inference_methods.py:100: in inference_dispatch
+    return_energy=return_energy, **kwargs)
+../inference/inference_methods.py:474: in inference_ad3plus
+    n_iterations=4000, exact=branch_and_bound)
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:44: in general_constrained_graph
+    return general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose, n_iterations, eta, exact)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+unaries = array([[ 0.]]), edges = array([], shape=(0, 2), dtype=int64)
+edge_weights = array([[ 0.]]), constraints = None, verbose = 0
+n_iterations = 4000, eta = 0.1, exact = False
+
+    def general_constrained_graph_singletype(unaries, edges, edge_weights, constraints, verbose=1, n_iterations=1000, eta=0.1, exact=False):
+        """
+        inference on a graph, with one type of node, taking into account logical constraints between unaries.
+    
+        The constraints must be a list of tuples like ( <operator>, <unaries>, <states>, <negated> )
+        The tuple is defined differently for single- and multi-type inference. See in each function below.
+    
+        where:
+        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of the unaries involved in this constraint
+        - states is a list of unary states, 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicated if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list
+    
+        The graph is binarized as explained in Martins et al. ICML 2011 paper: "An Augmented Lagrangian Approach to Constrained MAP Inference".
+    
+        NOTE: I had to re-compile AD3 since v2.0.1 from Anaconda missed the create_binary_variable method
+    
+        JL Meunier - October 2016
+        """
+        if unaries.shape[1] != edge_weights.shape[1]:
+            raise ValueError("incompatible shapes of unaries"
+                             " and edge_weights.")
+>       if edge_weights.shape[1] != edge_weights.shape[2]:
+E       IndexError: tuple index out of range
+
+../../../../VIRTUALENV_PYTHON_type/lib/python2.7/site-packages/ad3/simple_constrained_inference.py:70: IndexError
+=================== 10 failed, 140 passed in 321.52 seconds ====================

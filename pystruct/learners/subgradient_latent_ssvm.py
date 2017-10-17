@@ -274,7 +274,7 @@ class SubgradientLatentSSVM(SubgradientSSVM):
     def _objective(self, X, Y):
         constraints = Parallel(
             n_jobs=self.n_jobs,
-            verbose=self.verbose - 1)(delayed(find_constraint_latent)(
+            verbose=self.verbose)(delayed(find_constraint_latent)(
                 self.model, x, y, self.w)
                 for x, y in zip(X, Y))
         slacks = list(zip(*constraints))[2]

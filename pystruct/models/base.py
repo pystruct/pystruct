@@ -46,11 +46,13 @@ class StructuredModel(object):
         return (self.joint_feature(x_loss_augmented, y)
                 - self.joint_feature(x_loss_augmented, y_hat))
 
-    def inference(self, x, w, relaxed=None):
+    def inference(self, x, w, relaxed=None, constraints=None):
         raise NotImplementedError()
 
-    def batch_inference(self, X, w, relaxed=None):
+    def batch_inference(self, X, w, relaxed=None, constraints=None):
         # default implementation of batch inference
+        if constraints:
+            return [self.inference(x, w, relaxed=relaxed, constraints=c) for x,c in zip(X, constraints)]
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 

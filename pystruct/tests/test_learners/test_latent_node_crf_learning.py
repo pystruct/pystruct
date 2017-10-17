@@ -55,7 +55,7 @@ def test_binary_blocks_cutting_plane_latent_node():
                                        check_constraints=True,
                                        break_on_bad=False, n_jobs=1),
                             latent_iter=3)
-    X_latent = list(zip(X_, G, np.zeros(len(X_))))
+    X_latent = list(zip(X_, G, np.zeros(len(X_), dtype=np.int)))
     latent_svm.fit(X_latent, Y, H_init=Y)
     Y_pred = latent_svm.predict(X_latent)
     for y, y_pred in zip(Y, Y_pred):
