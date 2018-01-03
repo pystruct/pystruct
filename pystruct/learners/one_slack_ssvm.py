@@ -309,11 +309,6 @@ class OneSlackSSVM(BaseSSVM):
                 or self.inference_cache_ is None):
             self.inference_cache_ = [[] for y in Y_hat]
 
-#         def constraint_equal(y_1, y_2):
-#             if isinstance(y_1, tuple):
-#                 return np.all(y_1[0] == y_2[0]) and np.all(y_1[1] == y_2[1])
-#             return np.all(y_1 == y_2)
-
         for sample, x, y, y_hat in zip(self.inference_cache_, X, Y, Y_hat):
             already_there = [self.constraint_equal(y_hat, cache[2])
                              for cache in sample]
