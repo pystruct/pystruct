@@ -56,8 +56,8 @@ class CRF(StructuredModel):
         """
         we define it as a method so that subclasses can specialize it.
         """
-        loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
-
+        loss_augment_unaries(unary_potentials, np.asarray(y),
+                             self.class_weight)
 
     def loss_augmented_inference(self, x, y, w, relaxed=False,
                                  return_energy=False):
@@ -110,15 +110,15 @@ class CRF(StructuredModel):
         unary_potentials = self._get_unary_potentials(x, w)
         pairwise_potentials = self._get_pairwise_potentials(x, w)
         edges = self._get_edges(x)
-        
-        #loss_augment_unaries(unary_potentials, np.asarray(y), self.class_weight)
+
         self.loss_augment_unaries(unary_potentials, y)
-        
+
         return inference_dispatch(unary_potentials, pairwise_potentials, edges,
                                   self.inference_method, relaxed=relaxed,
                                   return_energy=return_energy)
 
-    def inference(self, x, w, relaxed=False, return_energy=False, constraints=None):
+    def inference(self, x, w, relaxed=False, return_energy=False,
+                  constraints=None):
         """Inference for x using parameters w.
 
         Finds (approximately)
@@ -148,7 +148,7 @@ class CRF(StructuredModel):
 
         constraints : None or list, default=False
             hard logic constraints, if any
-            
+
         Returns
         -------
         y_pred : ndarray or tuple
@@ -169,10 +169,15 @@ class CRF(StructuredModel):
         edges = self._get_edges(x)
 
         if constraints:
-            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                                      self.inference_method, relaxed=relaxed,
-                                      return_energy=return_energy, constraints=constraints)
+            return inference_dispatch(unary_potentials, pairwise_potentials,
+                                      edges,
+                                      self.inference_method,
+                                      relaxed=relaxed,
+                                      return_energy=return_energy,
+                                      constraints=constraints)
         else:
-            return inference_dispatch(unary_potentials, pairwise_potentials, edges,
-                                      self.inference_method, relaxed=relaxed,
+            return inference_dispatch(unary_potentials, pairwise_potentials,
+                                      edges,
+                                      self.inference_method,
+                                      relaxed=relaxed,
                                       return_energy=return_energy)

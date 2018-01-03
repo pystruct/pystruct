@@ -13,8 +13,8 @@ class StructuredModel(object):
 
     def __init__(self):
         """Initialize the model.
-        Needs to set self.size_joint_feature, the dimensionalty of the joint features for
-        an instance with labeling (x, y).
+        Needs to set self.size_joint_feature, the dimensionality of the joint
+        features for an instance with labeling (x, y).
         """
         self.size_joint_feature = None
 
@@ -52,7 +52,8 @@ class StructuredModel(object):
     def batch_inference(self, X, w, relaxed=None, constraints=None):
         # default implementation of batch inference
         if constraints:
-            return [self.inference(x, w, relaxed=relaxed, constraints=c) for x,c in zip(X, constraints)]
+            return [self.inference(x, w, relaxed=relaxed, constraints=c)
+                    for x, c in zip(X, constraints)]
         return [self.inference(x, w, relaxed=relaxed)
                 for x in X]
 
