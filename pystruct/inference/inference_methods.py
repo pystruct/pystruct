@@ -17,7 +17,9 @@ def get_installed(method_filter=None):
             if method != 'ad3+':
                 inference_dispatch(unary, pw, edges, inference_method=method)
             else:
-                inference_dispatch(unary, np.zeros((0,1,1)), np.zeros((0,2), dtype=np.int), inference_method=method)
+                inference_dispatch(unary, np.zeros((0,1,1))
+                                   , np.zeros((0,2), dtype=np.int)
+                                   , inference_method=method)
             installed.append(method)
         except ImportError:
             pass
@@ -25,15 +27,18 @@ def get_installed(method_filter=None):
 
 class InferenceException(Exception):
     """
-    When inference status is fractional or unsolved, this exception can be raised.
-    (If relaxed is not True and if an inference exception is requested by the calling code)
+    When inference status is fractional or unsolved, this exception can be 
+    raised.
+    (If relaxed is not True and if an inference exception is requested by the 
+    calling code)
     The exception message is the solver status.
     """ 
     pass
 
 def inference_dispatch(unary_potentials, pairwise_potentials, edges,
                        inference_method, return_energy=False, **kwargs):
-    """Computes the maximizing assignment of a pairwise discrete energy function.
+    """
+    Computes the maximizing assignment of a pairwise discrete energy function.
 
     Wrapper function to dispatch between inference method by string.
 
@@ -42,9 +47,11 @@ def inference_dispatch(unary_potentials, pairwise_potentials, edges,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -125,9 +132,11 @@ def inference_ogm(unary_potentials, pairwise_potentials, edges,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -240,9 +249,11 @@ def inference_qpbo(unary_potentials, pairwise_potentials, edges, **kwargs):
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -279,9 +290,11 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -332,9 +345,11 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -364,21 +379,24 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
         
-    Code updated on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
-    Copyright JL Meunier, Xerox 2017
+    Code updated on Feb 2017 to deal with multiple node types, by JL Meunier
+    , for the EU READ project (grant agreement No 674943)
+    
     """
     import ad3
     bMultiType = isinstance(unary_potentials, list)
     if bMultiType:
-        res = ad3.general_graph(unary_potentials, edges, pairwise_potentials, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound)
+        res = ad3.general_graph(unary_potentials, edges, pairwise_potentials
+                                , verbose=verbose
+                                , n_iterations=4000, exact=branch_and_bound)
     else:
         #usual code
         n_states, pairwise_potentials = \
             _validate_params(unary_potentials, pairwise_potentials, edges)
         unaries = unary_potentials.reshape(-1, n_states)
-        res = ad3.general_graph(unaries, edges, pairwise_potentials, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound)
+        res = ad3.general_graph(unaries, edges, pairwise_potentials
+                                , verbose=verbose, n_iterations=4000
+                                , exact=branch_and_bound)
         
     unary_marginals, pairwise_marginals, energy, solver_status = res
     if verbose:
@@ -395,13 +413,15 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
     else:
         if bMultiType:
             #we now get a list of unary marginals
-            if inference_exception and solver_status in ["fractional", "unsolved"]:
+            if inference_exception and solver_status in ["fractional"
+                                                         , "unsolved"]:
                 raise InferenceException(solver_status)
             ly = list()
             _cum_n_states = 0
             for unary_marg in unary_marginals:
                 ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
-                _cum_n_states += unary_marg.shape[1] #number of states for that type
+                # number of states for that type
+                _cum_n_states += unary_marg.shape[1]  
             y = np.hstack(ly)            
         else:
             #usual code
@@ -411,20 +431,24 @@ def inference_ad3(unary_potentials, pairwise_potentials, edges, relaxed=False,
         return y, -energy
     return y
 
-def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxed=False,
-                  verbose=0, return_energy=False, branch_and_bound=False,
-                  constraints=None,
-                  inference_exception=None):
-    """Inference with AD3 dual decomposition subgradient solver.
+
+def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges
+                      , relaxed=False
+                      , verbose=0, return_energy=False, branch_and_bound=False
+                      , constraints=None, inference_exception=None):
+    """
+    Inference with AD3 dual decomposition subgradient solver.
 
     Parameters
     ----------
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
-        If the first case, edge potentials are assumed to be the same for all edges.
+        If the first case, edge potentials are assumed to be the same for all 
+        edges.
         In the second case, the sequence needs to correspond to the edges.
 
     edges : nd-array, shape (n_edges, 2)
@@ -449,15 +473,23 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
         branch-and-bound.
 
     constraints : list of logical constraints or None (default:=None)
-        A logical constraint is tuple like ( <operator>, <unaries>, <states>, <negated> )
+        A logical constraint is tuple like 
+            ( <operator>, <unaries>, <states>, <negated> )
         where:
-        - operator is one of 'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
-        - unaries is a list of the index of each unary involved in this constraint
-        - states is a list of unary states (class), 1 per involved unary. If the states are all the same, you can pass it directly as a scalar value.
-        - negated is a list of boolean indicating if the unary must be negated. Again, if all values are the same, pass a single boolean value instead of a list 
+        - operator is one of:
+             'XOR' 'XOROUT' 'ATMOSTONE' 'OR' 'OROUT' 'ANDOUT' 'IMPLY'
+        - unaries is a list of the index of each unary involved in this 
+        constraint
+        - states is a list of unary states (class), 1 per involved unary. If the
+         states are all the same, you can pass it directly as a scalar value.
+        - negated is a list of boolean indicating if the unary must be negated.
+        Again, if all values are the same, pass a single boolean value instead
+        of a list 
         
-        NOTE: this hard logic constraint mechanism has been developed for the EU project READ, by JL Meunier (Xerox), in November 2016.
-        The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
+        NOTE: this hard logic constraint mechanism has been developed for the 
+        EU project READ, by JL Meunier (Xerox), in November 2016.
+        The READ project has received funding from the European Union's Horizon
+        2020 research and innovation programme under grant agreement No 674943.
     
     Returns
     -------
@@ -465,8 +497,10 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
 
-    Code written on Feb 2017 to deal with multiple node types, by JL Meunier, for the EU READ project (grant agreement No 674943)
-    Copyright JL Meunier, Xerox 2017
+    Code written on Feb 2017 to deal with multiple node types, by JL Meunier, 
+    for the EU READ project (grant agreement No 674943)
+    
+    JL Meunier
         
     """
     import ad3
@@ -475,8 +509,11 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
 #     unaries = unary_potentials.reshape(-1, n_states)
     bMultiType = isinstance(l_unary_potentials, list)
 
-    res = ad3.general_constrained_graph(l_unary_potentials, l_edges, l_pairwise_potentials, constraints, verbose=verbose,
-                            n_iterations=4000, exact=branch_and_bound)
+    res = ad3.general_constrained_graph(l_unary_potentials, l_edges
+                                        , l_pairwise_potentials, constraints
+                                        , verbose=verbose
+                                        , n_iterations=4000
+                                        , exact=branch_and_bound)
     
     l_unary_marginals, l_pairwise_marginals, energy, solver_status = res
     if verbose:
@@ -493,9 +530,12 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
             _cum_n_states = 0
             for unary_marg in l_unary_marginals:
                 ly.append( _cum_n_states + np.argmax(unary_marg, axis=-1) )
-                _cum_n_states += unary_marg.shape[1] #number of states for that type
+                #number of states for that type
+                _cum_n_states += unary_marg.shape[1] 
             y = np.hstack(ly)
-            # when we will simplify y: y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg in l_unary_marginals]
+            # when we will simplify y: 
+            #y = [_cum_n_statesnp.argmax(unary_marg, axis=-1) for unary_marg 
+            #  in l_unary_marginals]
         else:
             y = np.argmax(l_unary_marginals, axis=-1)
 
@@ -505,8 +545,8 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges, relaxe
 
 
 
-def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
-                      **kwargs):
+def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0
+                      , **kwargs):
     """Inference that only uses unary potentials.
 
     This methods can be used as a sanity check, as acceleration if no
@@ -517,7 +557,8 @@ def inference_unaries(unary_potentials, pairwise_potentials, edges, verbose=0,
     unary_potentials : nd-array, shape (n_nodes, n_states)
         Unary potentials of energy function.
 
-    pairwise_potentials : nd-array, shape (n_states, n_states) or (n_states, n_states, n_edges).
+    pairwise_potentials : nd-array, shape (n_states, n_states) 
+                        or (n_states, n_states, n_edges).
         Pairwise potentials of energy function.
         These will be ignored.
 
