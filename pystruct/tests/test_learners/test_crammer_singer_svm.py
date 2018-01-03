@@ -191,7 +191,6 @@ def test_class_weights_rescale_C():
     X, Y = make_blobs(n_samples=210, centers=3, random_state=1, cluster_std=3,
                       shuffle=False)
     X = np.hstack([X, np.ones((X.shape[0], 1))])
-    #X, Y = X[:170], Y[:170]
 
     weights = 1. / np.bincount(Y)
     weights *= len(weights) / np.sum(weights)
