@@ -171,7 +171,7 @@ class OneSlackSSVM(BaseSSVM):
         tmp1 = np.zeros(n_constraints)
         # positivity constraints:
         if self.negativity_constraint is None:
-            #empty constraints
+            # empty constraints
             zero_constr = np.zeros(0)
             joint_features_constr = np.zeros((0, n_constraints))
         else:
@@ -280,27 +280,32 @@ class OneSlackSSVM(BaseSSVM):
     @classmethod
     def constraint_equal(cls, y_1, y_2):
         """
-        This now more complex. y_1 and/or y_2 (I think) can be: array, pair of arrays, pair of list of arrays (multitype)
-        We need to compare those! 
+        This now more complex. y_1 and/or y_2 (I think) can be: array, pair of
+        arrays, pair of list of arrays (multitype)
+        We need to compare those!
         """
         if isinstance(y_1, tuple):
-            #y_1 is relaxed Y
-            #y_1 and y_2 might be lists of ndarray (multitype) instead of ndarray (single type)
+            # y_1 is relaxed Y
+            # y_1 and y_2 might be lists of ndarray (multitype) instead of
+            #    ndarray (single type)
             u_m_1, pw_m_1 = y_1
-            if isinstance(y_2, tuple): #we then compare two relaxed Ys
+            if isinstance(y_2, tuple):  # we then compare two relaxed Ys
                 u_m_2, pw_m_2 = y_2
-                #now, do we multitype or single type relaxed marginals??
+                # now, do we multitype or single type relaxed marginals??
                 if isinstance(u_m_1, list):
-                    return  all( np.all(_um1 == _um2) for _um1, _um2 in zip( u_m_1,  u_m_2) ) \
-                        and all( np.all(_pw1 == _pw2) for _pw1, _pw2 in zip(pw_m_1, pw_m_2))
+                    return all(np.all(_um1 == _um2) for _um1, _um2
+                               in zip( u_m_1,  u_m_2)) \
+                        and all(np.all(_pw1 == _pw2) for _pw1, _pw2
+                                in zip(pw_m_1, pw_m_2))
                 else:
                     return np.all(u_m_1 == u_m_2) and np.all(pw_m_1, pw_m_2)
             else:
-                #NOTE original code was possibly comparing array and scalar
-                #return np.all(y_1[0] == y_2[0]) and np.all(y_1[1] == y_2[1])
+                # NOTE original code was possibly comparing array and scalar
+                # return np.all(y_1[0] == y_2[0]) and np.all(y_1[1] == y_2[1])
                 return False
-        return np.all(y_1 == y_2)  #might compare array and tuple... :-/  Was like that, Ikeep
-        
+        # might compare array and tuple... :-/  Was like that, I keep
+        return np.all(y_1 == y_2)
+
     def _update_cache(self, X, Y, Y_hat):
         """Updated cached constraints."""
         if self.inference_cache == 0:
