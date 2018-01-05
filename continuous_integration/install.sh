@@ -34,7 +34,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 
     # Use the miniconda installer for faster download / install of conda
     # itself
-    wget http://repo.continuum.io/miniconda/Miniconda-3.6.0-Linux-x86_64.sh \
+    wget https://repo.continuum.io/miniconda/Miniconda2-4.3.31-Linux-x86_64.sh \
         -O miniconda.sh
     chmod +x miniconda.sh && ./miniconda.sh -b
     export PATH=/home/travis/miniconda/bin:$PATH
@@ -43,9 +43,9 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # Configure the conda environment and put it in the path using the
     # provided versions
     
-    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython scikit-learn cvxopt\
+    conda create -n testenv --yes python=$PYTHON_VERSION pip nose cython\
+        scikit-learn cvxopt pytest future \
         numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION
-
 
     source activate testenv
 
@@ -63,7 +63,14 @@ python --version
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
 # install our favorite inference packages 
-$PIP install pyqpbo ad3 scikit-learn
+#$PIP install pyqpbo ad3 scikit-learn
+$PIP install pyqpbo scikit-learn
+
+#get Transkribus/AD3
+#after the PR is validated, use normal AD3 instead! (written Jan 2018) 
+git clone https://github.com/Transkribus/AD3.git
+cd AD3
+python setup.py install
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
