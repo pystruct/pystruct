@@ -70,7 +70,7 @@ def test_checks():
  
 def debug_joint_feature():
     # -------------------------------------------------------------------------------------------
-    print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
+    #print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
     g = NodeTypeEdgeFeatureGraphCRF(    
                     2                   #how many node type?
                  , [2, 3]               #how many possible labels per node type?
@@ -94,15 +94,15 @@ def debug_joint_feature():
               ]
      
     x = (l_node_f, l_edges, l_edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([   np.array([0, 1]),
                    np.array([0, 1, 2])
             ])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array(
@@ -174,7 +174,7 @@ def test_flatten_unflattenY():
     l_nf = [  np.zeros( (2,3) ), np.zeros( (3, 4) )]  #2 node with 3 features, 3 node with 4 features
     X = (l_nf, None, None)      #we give no edge
     assert (g.flattenY(Y) == y).all()
-    print g.unflattenY(X, y)
+    #print g.unflattenY(X, y)
     assert all( [ (y_typ1 == y_typ2).all() for y_typ1, y_typ2 in zip(g.unflattenY(X, y), Y) ])
     
     l_nf = [  np.zeros( (1,3) ), np.zeros( (3, 4) )]  #2 node with 3 features, 3 node with 4 features
@@ -183,19 +183,19 @@ def test_flatten_unflattenY():
         
 def test_joint_feature():
  
-    print "---SIMPLE---------------------------------------------------------------------"
+    #print "---SIMPLE---------------------------------------------------------------------"
     g, (node_f, edges, edge_f) = get_simple_graph_structure(), get_simple_graph()
      
     x = (node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([1,2])
     
 #     y = np.array([1,0])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(g.joint_feature(x,y)
                        , np.array([ 0.,  0.,  0.,  1.,  1.,  1.,  2.,  2.,  2.,  0.,  0.,  0.
                                    ,  0.,
@@ -205,13 +205,13 @@ def test_joint_feature():
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
                        )
     
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([0,0])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(g.joint_feature(x,y)
                        , np.array([ 3.,  3.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  3.,
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
@@ -220,14 +220,14 @@ def test_joint_feature():
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
                        )
 
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([0,1])
     node_f = [ np.array([[1.1,1.2,1.3], [2.1,2.2,2.3]]) ]
     edge_f = [ np.array([[3.1,3.2,3.3]]) ]
     x = (node_f, edges, edge_f)
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
+    #print "joint_feature = \n", `jf`
     
     assert_array_equal(g.joint_feature(x,y)
                        , np.array([ 1.1,  1.2,  1.3,  2.1,  2.2,  2.3,  0. ,  0. ,  0. ,  0. ,  0. ,
@@ -237,17 +237,17 @@ def test_joint_feature():
         0. ,  3.3,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,  0. ,
         0. ,  0. ,  0. ,  0. ,  0. ])
                        )
-    print "---SIMPLE + 2nd EDGE--------------------------------------------------------"
+    #print "---SIMPLE + 2nd EDGE--------------------------------------------------------"
     node_f, edges, edge_f = get_simple_graph2()
 
     x = (node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([1,2])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf
                        , np.array([ 0.,  0.,  0.,  1.,  1.,  1.,  2.,  2.,  2.,  0.,  0.,  0.,  0.,
         0.,  0.,  0.,  0.,  4.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
@@ -255,12 +255,12 @@ def test_joint_feature():
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  4.,  3.,  0.,
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
                        )
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.array([0,0])
-    print y
+    #print y
     g.initialize(x, y)
-    print "joint_feature = \n", `g.joint_feature(x,y)`
-    print
+    #print "joint_feature = \n", `g.joint_feature(x,y)`
+    #print
     assert_array_equal(g.joint_feature(x,y)
                        , np.array([ 3.,  3.,  3.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  7.,
         0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,
@@ -305,15 +305,15 @@ def more_complex_graph():
 def test_joint_feature2():
 
     # -------------------------------------------------------------------------------------------
-    print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
+    #print "---MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
     g, x, y = more_complex_graph()
-    print y
+    #print y
     
     
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array([ 3.   ,  3.   ,  3.   ,  0.   ,  0.   ,  0.   ,  0.63 ,  0.66 ,
@@ -326,7 +326,7 @@ def test_joint_feature2():
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]))
 
-    print "---MORE COMPLEX GRAPH :) -- BIS -------------------------------------------------------------------"
+    #print "---MORE COMPLEX GRAPH :) -- BIS -------------------------------------------------------------------"
     g = NodeTypeEdgeFeatureGraphCRF(    
                     2                   #how many node type?
                  , [2, 3]               #how many labels   per node type?
@@ -349,14 +349,14 @@ def test_joint_feature2():
               ]
      
     x = ( node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([0, 1]),
                    2+np.array([0, 1, 2])])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array([ 1.   ,  1.   ,  1.   ,  2.   ,  2.   ,  2.   ,  0.11 ,  0.12 ,
@@ -369,8 +369,8 @@ def test_joint_feature2():
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]))
     
-    print "MORE COMPLEX GRAPH :) -- BIS  OK"
-    print "--- REORDERED MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
+    #print "MORE COMPLEX GRAPH :) -- BIS  OK"
+    #print "--- REORDERED MORE COMPLEX GRAPH :) ---------------------------------------------------------------------"
     node_f = [  np.array([ [2,2,2], [1,1,1] ])
               , np.array([ [.31, .32, .33, .34], [.11, .12, .13, .14], [.21, .22, .23, .24]]) 
               ]
@@ -385,14 +385,14 @@ def test_joint_feature2():
               ]
      
     x = ( node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([np.array([1, 0]),
                    2+np.array([2, 0, 1])])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array([ 1.   ,  1.   ,  1.   ,  2.   ,  2.   ,  2.   ,  0.11 ,  0.12 ,
@@ -408,7 +408,7 @@ def test_joint_feature2():
 def test_joint_feature3():
 
     # -------------------------------------------------------------------------------------------
-    print "---MORE COMPLEX GRAPH AGAIN :) ---------------------------------------------------------------------"
+    #print "---MORE COMPLEX GRAPH AGAIN :) ---------------------------------------------------------------------"
     g = NodeTypeEdgeFeatureGraphCRF(    
                     2                   #how many node type?
                  , [2, 3]               #how many labels   per node type?
@@ -439,17 +439,17 @@ def test_joint_feature3():
               ]
      
     x = (node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([0, 0]) 
                   , 2+np.array([0, 0, 0])
          ])
-    print y
+    #print y
     g.initialize(x, y)
-    print g.size_unaries
-    print g.size_pairwise
+    #print g.size_unaries
+    #print g.size_pairwise
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array([ 3.   ,  3.   ,  3.   ,  0.   ,  0.   ,  0.   ,  
@@ -469,15 +469,15 @@ def test_joint_feature3():
                                    ])
                               )
 
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([0, 1]) 
                   , 2+np.array([1, 1, 0])
          ])
-    print y
+    #print y
     g.initialize(x, y)
     jf = g.joint_feature(x,y)
-    print "joint_feature = \n", `jf`
-    print
+    #print "joint_feature = \n", `jf`
+    #print
     assert_array_equal(jf, jf)
     assert_array_almost_equal(jf
                        , np.array([ 1.   ,  1.   ,  1.   ,  2.   ,  2.   ,  2.   ,  
@@ -500,9 +500,9 @@ def test_joint_feature3():
     w = np.array([ 1,1,1, 2,2,2,   10,10,10,10, 20,20,20,20, 30,30,30,30 ]
                   +[1.0]*51, dtype=np.float64
                   )
-    print `w`
+    #print `w`
     ret_u = g._get_unary_potentials(x, w)
-    print `ret_u`
+    #print `ret_u`
     assert len(ret_u) == 2
     assert_array_almost_equal(ret_u[0], np.array([   #n_nodes x n_states
                                               [3,  6],
@@ -515,8 +515,8 @@ def test_joint_feature3():
     
     assert len(w) == g.size_joint_feature
     ret_pw = g._get_pairwise_potentials(x, w)
-    for _pw in ret_pw:
-        print "_pw ", `_pw`
+    #     for _pw in ret_pw:
+    #         print "_pw ", `_pw`
     pw00, pw01, pw10, pw11 = ret_pw
     assert len(pw00) == 0
     assert_array_almost_equal(pw01,np.array([   #n_edges, n_states, n_states
@@ -538,7 +538,7 @@ def test_joint_feature3():
 
 
 def test_unary_potentials():
-    print "---SIMPLE---------------------------------------------------------------------"
+    #print "---SIMPLE---------------------------------------------------------------------"
     #g, (node_f, edges, edge_f) = get_simple_graph_structure(), get_simple_graph()
 
     g = NodeTypeEdgeFeatureGraphCRF(
@@ -555,27 +555,27 @@ def test_unary_potentials():
     edge_f = [ np.array([[3,3,3]]) 
               ]
     x = (node_f, edges, edge_f)
-    print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
+    #print "- - - - - - - - - - - - - - - - - - - - - - - - - - - "
     y = np.hstack([ np.array([1,2])])
 #     y = np.array([1,0])
-    print y
+    #print y
     g.initialize(x, y)
     
     gref = EdgeFeatureGraphCRF(4,3,3)
     xref = (node_f[0], edges[0], edge_f[0])
     wref = np.arange(gref.size_joint_feature)
     potref = gref._get_unary_potentials(xref, wref)
-    print `potref`
+    #print `potref`
     
     w = np.arange(g.size_joint_feature)
     pot = g._get_unary_potentials(x, w)
-    print `pot`
+    #print `pot`
     assert_array_equal(pot, [potref])
 
     pwpotref = gref._get_pairwise_potentials(xref, wref)
-    print `pwpotref`
+    #print `pwpotref`
     pwpot = g._get_pairwise_potentials(x, w)
-    print `pwpot`
+    #print `pwpot`
     assert_array_equal(pwpot, [pwpotref])
  
 # def test_inference_util():
@@ -613,11 +613,11 @@ def test_unary_potentials():
 #                                   [6,1]]))
 #     
 
-def report_model_config(crf):
-    print crf.n_states
-    print crf.n_features
-    print crf.n_edge_features
-    
+# def report_model_config(crf):
+#     print crf.n_states
+#     print crf.n_features
+#     print crf.n_edge_features
+
 def inference_data():
     """
     Testing with a single type of nodes. Must do as well as EdgeFeatureGraphCRF
@@ -869,4 +869,4 @@ if __name__ == "__main__":
     if 1: test_energy_continuous()
     if 1: test_energy_discrete()
     
-    print "OK"
+    #print "OK"
