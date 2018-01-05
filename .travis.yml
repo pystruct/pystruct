@@ -22,11 +22,11 @@ virtualenv:
   system_site_packages: true
 env:
   matrix:
-    #- DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
+    - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
     ## ubuntu without opengm
-    - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
+    #OK- DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
     ## This environment tests the newest supported anaconda env
-    #- DISTRIB="conda" PYTHON_VERSION="2.7"
+    #OK- DISTRIB="conda" PYTHON_VERSION="2.7"
     #  NUMPY_VERSION="1.13.3" SCIPY_VERSION="0.19.1"
     # python3 only on ubuntu because of cvxopt
     #- DISTRIB="conda" PYTHON_VERSION="3.4" OPENGM="false"
