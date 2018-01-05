@@ -25,7 +25,7 @@ env:
     ##Ubuntu with OpenGM can work. I've seen it working (build #12)
     # But I'm getting into a random g++ bug:
     #    g++: internal compiler error: Killed (program cc1plus)
-	#    Please submit a full bug report, 
+    #    Please submit a full bug report, 
     #- DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
     ## ubuntu without opengm
     - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
