@@ -11,7 +11,7 @@ This is a fork from Andreas Mueller's [pystruct](https://github.com/pystruct/pys
  and prediction library. In particular, pystruct provides a well-documented tool for researchers as well as non-experts to make use of structured 
  prediction algorithms. And the design tries to stay as close as possible to the interface and conventions of [scikit-learn](http://scikit-learn.org).
 
-The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project and of its companion project [AD3+](https://github.com/jlmeunier/AD3) is to extend pystruct along two directions:
+The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project and of its companion project [AD3+](https://github.com/Transkribus/AD3) is to extend pystruct along two directions:
  * **supporting hard-logic constraints when predicting**
  * **supporting nodes of different nature in CRF graphs**
  
@@ -35,7 +35,7 @@ What is different in pystruct+?
 Currently, the offered extensions rely on the __*AD3+*__ solver. For learning I mostly used the __*OneSlackSSVM*__ learner, which requires to install cvxopt as well.
 
 ### For AD3+:
- * get it from https://github.com/jlmeunier/AD3
+ * get it from https://github.com/Transkribus/AD3
  * install: python setup.py install
 
 > python setup.py install
