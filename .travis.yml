@@ -22,13 +22,18 @@ virtualenv:
   system_site_packages: true
 env:
   matrix:
+    ##Ubuntu with OpenGM can work. I've seen it working (build #12)
+    # But I'm getting into a random g++ bug:
+    #    g++: internal compiler error: Killed (program cc1plus)
+	#    Please submit a full bug report, 
     #- DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="true"
     ## ubuntu without opengm
-    #- DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
+    - DISTRIB="ubuntu" PYTHON_VERSION="2.7" OPENGM="false"
     ## This environment tests the newest supported anaconda env
     - DISTRIB="conda" PYTHON_VERSION="2.7"
       NUMPY_VERSION="1.13.3" SCIPY_VERSION="0.19.1"
     # python3 only on ubuntu because of cvxopt
+    # Python3 need upgrade of Python code... Work ongoing! (JLM)
     #- DISTRIB="conda" PYTHON_VERSION="3.4" OPENGM="false"
     #  NUMPY_VERSION="1.10.4" SCIPY_VERSION="0.17.0"
 install: source continuous_integration/install.sh
