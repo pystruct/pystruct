@@ -69,8 +69,9 @@ $PIP install pyqpbo scikit-learn
 #get Transkribus/AD3
 #after the PR is validated, use normal AD3 instead! (written Jan 2018) 
 git clone https://github.com/Transkribus/AD3.git
-cd AD3
+pushd AD3
 python setup.py install
+popd
 
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
