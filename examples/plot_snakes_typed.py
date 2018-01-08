@@ -45,8 +45,10 @@ But it does work as well as Decision Tree Fields ;)
     Copyright Xerox
 
 """
+from __future__ import (absolute_import, division, print_function)
+
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -77,7 +79,7 @@ if __name__ == '__main__':
 
     X_train_directions, X_train_edge_features = prepare_data(X_train)
 
-    inference = 'qpbo'
+    inference = 'ad3+'
     # first, train on X with directions only:
     crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[2]], inference_method=inference)
     ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  max_iter=100,
@@ -98,7 +100,8 @@ if __name__ == '__main__':
        
     # now, use more informative edge features:
     crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
-    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,  switch_to='ad3',
+    ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1,
+                        #  switch_to='ad3',
                         #verbose=1,
                         n_jobs=8)
     ssvm.fit( convertToSingleTypeX(X_train_edge_features), Y_train_flat)
@@ -108,23 +111,23 @@ if __name__ == '__main__':
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    if False:
-        # plot stuff
-        fig, axes = plt.subplots(2, 2)
-        axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
-        axes[0, 0].set_title('Input')
-        y = Y_test[0].astype(np.int)
-        bg = 2 * (y != 0)  # enhance contrast
-        axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
-        axes[0, 1].set_title("Ground Truth")
-        axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-        axes[1, 0].set_title("Prediction w/o edge features")
-        axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-        axes[1, 1].set_title("Prediction with edge features")
-        for a in axes.ravel():
-            a.set_xticks(())
-            a.set_yticks(())
-        plt.show()
+#     if False:
+#         # plot stuff
+#         fig, axes = plt.subplots(2, 2)
+#         axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
+#         axes[0, 0].set_title('Input')
+#         y = Y_test[0].astype(np.int)
+#         bg = 2 * (y != 0)  # enhance contrast
+#         axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
+#         axes[0, 1].set_title("Ground Truth")
+#         axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+#         axes[1, 0].set_title("Prediction w/o edge features")
+#         axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+#         axes[1, 1].set_title("Prediction with edge features")
+#         for a in axes.ravel():
+#             a.set_xticks(())
+#             a.set_yticks(())
+#         plt.show()
 
 """
 Please be patient. Learning will take 5-20 minutes.

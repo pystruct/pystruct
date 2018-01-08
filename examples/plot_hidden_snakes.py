@@ -43,6 +43,8 @@ not able to solve it alone, so we use the relaxed AD3 inference for learning.
 PS: This example runs a bit (5 minutes on 12 cores, 20 minutes on one core for me).
 But it does work as well as Decision Tree Fields ;)
 """
+from __future__ import (absolute_import, division, print_function)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -76,11 +78,12 @@ def isSnakePresent(a_hot_picture, nCell=10):
             break 
     return bSnake
     
-def walkThruSnake(a_hot_picture, (i,j), nCell=10):
+def walkThruSnake(a_hot_picture, tIJ, nCell=10):
     """
     Walk thru the snake from I,J
     Return the list of visited cells (excluding start cell)
     """
+    (i,j) = tIJ
     lij = list()
     color_index = np.where(a_hot_picture[i,j,:]==1)[0][0]
     while len(lij) < nCell -1:
@@ -154,8 +157,8 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True, iMult=1, nCell=10):
     """
     return the number of added picture (ADDED AT THE END OF INPUT LISTS)
     """
-    print "ADDING PICTURE WIHOUT SNAKES!!!   %d elements in %s"%(len(X), name)
-    
+    print("ADDING PICTURE WIHOUT SNAKES!!!   %d elements in %s"%(len(X), name))
+
     X_NoSnake = []
     Y_NoSnake = []
     for i in range(int(iMult)):
@@ -173,7 +176,7 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True, iMult=1, nCell=10):
     for x,y in zip(X_NoSnake, Y_NoSnake):
         _x = x if bOneHot else one_hot_colors(x)
         if isSnakePresent(_x):
-            print "\t- DISCARDING a shuffled snake which is still a snake!!!!"
+            print("\t- DISCARDING a shuffled snake which is still a snake!!!!")
 #             if True and not bOneHot: plot_snake(x)
         else:
             newX.append(x)
@@ -182,7 +185,7 @@ def augmentWithNoSnakeImages(X,Y, name, bOneHot=True, iMult=1, nCell=10):
     return len(newX), X+newX, Y+newY
     
 def shuffle_in_unison(*args):    
-    lTuple = zip(*args)
+    lTuple = list(zip(*args))
     random.shuffle(lTuple)
     return zip(*lTuple)
 
@@ -215,7 +218,7 @@ if __name__ == '__main__':
     #if you want to shorten all the snakes
     #NCELL = 3
     NCELL = 10
-    print "NCELL=", NCELL
+    print("NCELL=", NCELL)
     
     
     snakes = load_snakes()
@@ -231,7 +234,7 @@ if __name__ == '__main__':
     X_train_directions, X_train_edge_features = prepare_data(X_train)
     Y_train_flat = [y_.ravel() for y_ in Y_train]
 
-    print "%d picture for training"%len(X_train)
+    print("%d picture for training"%len(X_train))
 
     # --- TEST
     X_test, Y_test = snakes['X_test'], snakes['Y_test']
@@ -242,7 +245,7 @@ if __name__ == '__main__':
     X_test_directions, X_test_edge_features = prepare_data(X_test)
     Y_test_flat = [y_.ravel() for y_ in Y_test]
 
-    print "%d picture for test"%len(X_test)    
+    print("%d picture for test"%len(X_test))    
 
     # -------------------------------------------------------------------------------------        
 
@@ -252,7 +255,7 @@ if __name__ == '__main__':
     # now, use more informative edge features:
     t0 = time.time()
     if bClassic:
-        print "EdgeFeatureGraphCRF"
+        print("EdgeFeatureGraphCRF")
         crf = EdgeFeatureGraphCRF(inference_method=inference)
         ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
                         #WHY THIS??? max_iter=100,
@@ -263,7 +266,7 @@ if __name__ == '__main__':
                         )
         ssvm.fit( X_train_edge_features , Y_train_flat)
     else:    
-        print "NodeTypeEdgeFeatureGraphCRF"
+        print("NodeTypeEdgeFeatureGraphCRF")
         crf = NodeTypeEdgeFeatureGraphCRF(1, [11], [45], [[180]], inference_method=inference)
         ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=.1, 
                         switch_to='ad3',
@@ -271,7 +274,7 @@ if __name__ == '__main__':
                         #max_iter=100,
                         n_jobs=1)
         ssvm.fit( convertToSingleTypeX(X_train_edge_features) , Y_train_flat)
-    print "Training time = %.1fs"%(time.time()-t0)
+    print("Training time = %.1fs"%(time.time()-t0))
     
     if bClassic:    
         Y_pred2 = ssvm.predict( X_test_edge_features )
@@ -311,11 +314,8 @@ if __name__ == '__main__':
         lC = buildConstraintsFromSingleTyped(X_3, False)
         Y_pred2 = ssvm.predict( X_3, lC )
         print("Results using also input features for edges")
-        print "Inference with an ATMOST constraint per snake label"
+        print("Inference with an ATMOST constraint per snake label")
         print("Test accuracy: %.3f"
               % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
         print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))        
 
-"""
-
-"""
