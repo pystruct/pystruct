@@ -1,5 +1,5 @@
 
-[![Build Status](https://travis-ci.org/pystruct/pystruct.png)](https://travis-ci.org/pystruct/pystruct)
+[![Build Status](https://travis-ci.org/jlmeunier/pystruct.png)](https://travis-ci.org/jlmeunier/pystruct)
 [![pypi version](http://img.shields.io/pypi/v/pystruct.svg?style=flat)](https://pypi.python.org/pypi/pystruct/)
 [![licence](http://img.shields.io/badge/licence-BSD-blue.svg?style=flat)](https://github.com/pystruct/pystruct/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/21369/pystruct/pystruct.svg)](https://zenodo.org/badge/latestdoi/21369/pystruct/pystruct)
