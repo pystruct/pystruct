@@ -228,11 +228,11 @@ class NodeTypeEdgeFeatureGraphCRF(TypedCRF):
 
         i_w, n_states1, i_states1 = 0, 0, 0
 
-        for typ1 in xrange(self.n_types):
+        for typ1 in range(self.n_types):
             n_states1 = self.l_n_states[typ1]
             i_states1_stop = i_states1 + n_states1
             n_states2, i_states2 = 0, 0
-            for typ2 in xrange(self.n_types):
+            for typ2 in range(self.n_types):
                 n_features = self.a_n_edge_features[typ1, typ2]
                 n_states2 = self.l_n_states[typ2]
                 i_w_stop = i_w + n_features * n_states1 * n_states2

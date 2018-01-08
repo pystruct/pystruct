@@ -128,7 +128,7 @@ class LatentNodeCRF(GraphCRF):
         else:
             n_input_states = self.n_labels
         self.n_input_states = n_input_states
-        self.size_joint_feature = (n_input_states * self.n_features +
+        self.size_joint_feature = int(n_input_states * self.n_features +
                                    self.n_states * (self.n_states + 1) / 2)
 
     def initialize(self, X, Y):

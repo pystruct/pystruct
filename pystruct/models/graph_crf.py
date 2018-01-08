@@ -99,7 +99,7 @@ class GraphCRF(CRF):
                 self.size_joint_feature = (self.n_states * self.n_features +
                                            self.n_states ** 2)
             else:
-                self.size_joint_feature = (
+                self.size_joint_feature = int(
                     self.n_states * self.n_features
                     + self.n_states * (self.n_states + 1) / 2)
 
