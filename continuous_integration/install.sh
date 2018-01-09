@@ -88,7 +88,7 @@ python --version
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
 # install our favorite inference packages 
-#$PIP install pyqpbo ad3 scikit-learn
+# Need  Transkribus/AD3  for now  $PIP install pyqpbo ad3 scikit-learn
 $PIP install pyqpbo scikit-learn
 
 # Build scikit-learn in the install.sh script to collapse the verbose

@@ -1,7 +1,7 @@
 0.3.7
 ===
 - Making pystruct compatible with Python3 (3.5 actually)
-- Making CI happy (but unstable??)
+- Making CI happy
 
 0.3.6
 ===
