@@ -90,16 +90,17 @@ python -c "import scipy; print('scipy %s' % scipy.__version__)"
 #$PIP install pyqpbo ad3 scikit-learn
 $PIP install pyqpbo scikit-learn
 
-#get Transkribus/AD3
-#after the PR is validated, use normal AD3 instead! (written Jan 2018) 
-git clone https://github.com/Transkribus/AD3.git
-pushd AD3
-python setup.py install
-popd
-
 # Build scikit-learn in the install.sh script to collapse the verbose
 # build output in the travis output when it succeeds.
 python --version
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
 python setup.py build_ext --inplace
+
+#get Transkribus/AD3
+#after the PR is validated, use normal AD3 instead! (written Jan 2018) 
+git clone https://github.com/Transkribus/AD3.git
+pushd AD3
+python setup.py install
+popd
+python -c "import ad3; print(ad3.__version__)"
