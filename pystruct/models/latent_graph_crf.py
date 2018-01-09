@@ -114,7 +114,7 @@ class LatentGraphCRF(GraphCRF):
                                  "or array-like of length n_labels. Got %s"
                                  % str(n_states_per_label))
         self.n_states_per_label = n_states_per_label
-        self.n_states = np.sum(n_states_per_label)
+        self.n_states = int(np.sum(n_states_per_label))
 
         # compute mapping from latent states to labels
         ranges = np.cumsum(n_states_per_label)

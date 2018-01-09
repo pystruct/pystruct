@@ -51,9 +51,14 @@ But it does work as well as Decision Tree Fields ;)
     Copyright Xerox
 
 """
+from __future__ import (absolute_import, division, print_function)
 
 import sys, os, time
-import random, cPickle
+import random
+try:
+   import cPickle as pickle
+except:
+   import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -95,16 +100,17 @@ sMODELFILE = None
 #==============================================================================================
 
 def printConfig():
-    print "== NCELL=", NCELL
-    print "== FIXED_SEED=", bFIXED_RANDOM_SEED
-    print "== INFERENCE =", INFERENCE
-    print "== N_JOBS =", N_JOBS
-    print "== SWAP=", nbSWAP_Pixel_Pict_TYPES
-    print "== EASY=", bMAKE_PICT_EASY
-    print "== MAX_ITER=", MAXITER
-    print "== MODEL FILE=", sMODELFILE
+    print("== NCELL=", NCELL)
+    print("== FIXED_SEED=", bFIXED_RANDOM_SEED)
+    print("== INFERENCE =", INFERENCE)
+    print("== N_JOBS =", N_JOBS)
+    print("== SWAP=", nbSWAP_Pixel_Pict_TYPES)
+    print("== EASY=", bMAKE_PICT_EASY)
+    print("== MAX_ITER=", MAXITER)
+    print("== MODEL FILE=", sMODELFILE)
 
-if __name__ == '__main__': printConfig()
+if __name__ == '__main__': 
+    printConfig()
 
 
 def plot_snake(picture):
@@ -127,7 +133,7 @@ def prepare_picture_data(X):
         [[45 55]
          [45 55]]
         """
-        for i in xrange(5):
+        for i in range(5):
             ai, aj = np.where(a_hot_picture[...,i] == 1)
             feat[0,i] = len(ai)
 
@@ -252,7 +258,8 @@ def swap_node_types(l_perm, l_n_state, lX, lY, constraints=None):
         _lY.append(_Y)
     
     if constraints:
-        print "WARNING: some constraints are not properly swapped because the node order has a meaning."
+        print("WARNING: some constraints are not properly swapped because the "
+              "node order has a meaning.")
         _constraints = list()
         for _lConstraints in constraints:
             for (op, l_l_unary, l_l_state, l_lnegated) in _lConstraints:
@@ -325,15 +332,16 @@ def appendIntVectorToCsv(fd, name, aV):
     fd.flush()
     
 def REPORT(l_Y_GT, lY_Pred, t=None, ncell=NCELL, filename=None, bHisto=False, name=""):
-    if t: print "\t( predict DONE IN %.1fs)"%t
+    if t: 
+        print("\t( predict DONE IN %.1fs)"%t)
         
     _flat_GT, _flat_P = (np.hstack([y.ravel() for y in l_Y_GT]),  
                          np.hstack([y.ravel() for y in lY_Pred]))
     confmat = confusion_matrix(_flat_GT, _flat_P)
-    print confmat
-    print "\ttrace   =", confmat.trace()
+    print(confmat)
+    print("\ttrace   =", confmat.trace())
     score = accuracy_score(_flat_GT, _flat_P)  
-    print "\tAccuracy= %.3f"%score
+    print("\tAccuracy= %.3f"%score)
     
     #CSV out?
     if filename:
@@ -358,12 +366,12 @@ if __name__ == '__main__':
     #--------------------------------------------------------------------------------------------------
     X_train, Y_train = snakes['X_train'], snakes['Y_train']
     #X_train, Y_train = X_train[:3], Y_train[:3]
-    print "TRAIN SET ", len(X_train), len(Y_train)
+    print("TRAIN SET ", len(X_train), len(Y_train))
 
     if NCELL <10: X_train, Y_train = shorten_snakes(X_train, Y_train, NCELL)
 
     nb_hidden, X_train, Y_train = augmentWithNoSnakeImages(X_train, Y_train, "train", False, nCell=NCELL)
-    print "TRAIN SET ",len(X_train), len(Y_train)
+    print("TRAIN SET ",len(X_train), len(Y_train))
     Y_train_pict = np.array([1]*(len(X_train)-nb_hidden) + [0]*nb_hidden)
     
     X_train = [one_hot_colors(x) for x in X_train]
@@ -373,7 +381,7 @@ if __name__ == '__main__':
 
     X_train_pict_feat = prepare_picture_data(X_train)
     if bMAKE_PICT_EASY:
-        print "Making the train picture task easy"
+        print("Making the train picture task easy")
         makeItEasy(X_train_pict_feat, Y_train_pict)
  
     X_train_directions, X_train_edge_features = prepare_data(X_train)
@@ -384,7 +392,7 @@ if __name__ == '__main__':
 
     nb_hidden, X_test, Y_test = augmentWithNoSnakeImages(X_test, Y_test, "test", False, nCell=NCELL)
     Y_test_pict = np.array([1]*(len(X_test)-nb_hidden) + [0]*nb_hidden)
-    print "TEST SET ", len(X_test), len(Y_test)
+    print("TEST SET ", len(X_test), len(Y_test))
     
     X_test = [one_hot_colors(x) for x in X_test]
 
@@ -392,16 +400,17 @@ if __name__ == '__main__':
 
     X_test_pict_feat = prepare_picture_data(X_test)
     if bMAKE_PICT_EASY:
-        print "Making the test picture task easy"
+        print("Making the test picture task easy")
         makeItEasy(X_test_pict_feat, Y_test_pict)    
     
     X_test_directions, X_test_edge_features = prepare_data(X_test)
 
     #--------------------------------------------------------------------------------------------------
-    print "======================================================================================================"
+    print("==================================================================="
+          "===================================")
     if True:        
         from pystruct.models.edge_feature_graph_crf import EdgeFeatureGraphCRF
-        print "ONE TYPE TRAINING AND TESTING: PIXELS"
+        print("ONE TYPE TRAINING AND TESTING: PIXELS")
 
 #         inference = 'ad3+'
 #         inference = 'qpbo'
@@ -416,11 +425,12 @@ if __name__ == '__main__':
                             )
 
         Y_train_flat = [y_.ravel() for y_ in Y_train]
-        print  "\ttrain label histogram : ", np.histogram(np.hstack(Y_train_flat), bins=range(NCELL+2))
+        print( "\ttrain label histogram : ", 
+               np.histogram(np.hstack(Y_train_flat), bins=range(NCELL+2)))
         
         t0 = time.time()
         ssvm.fit(X_train_edge_features, Y_train_flat)
-        print "FIT DONE IN %.1fs"%(time.time() - t0)
+        print("FIT DONE IN %.1fs"%(time.time() - t0))
         sys.stdout.flush()
         
         t0 = time.time()
@@ -429,10 +439,11 @@ if __name__ == '__main__':
     
     #--------------------------------------------------------------------------------------------------
     if True:
-        print "_"*50
-        print "ONE TYPE TRAINING AND TESTING: PICTURES"
+        print("_"*50)
+        print("ONE TYPE TRAINING AND TESTING: PICTURES")
     
-        print  "\ttrain label histogram : ", np.histogram(Y_train_pict, bins=range(3))
+        print( "\ttrain label histogram : ", 
+               np.histogram(Y_train_pict, bins=range(3)))
     
         lr = LogisticRegression(class_weight='balanced')
         
@@ -442,14 +453,15 @@ if __name__ == '__main__':
 
         t0 = time.time()
         mdl.fit(XX, Y_train_pict)
-        print "FIT DONE IN %.1fs"%(time.time() - t0)
+        print("FIT DONE IN %.1fs"%(time.time() - t0))
         
         t0 = time.time()
         _Y_pred = mdl.predict( np.vstack(X_test_pict_feat) )
         REPORT([Y_test_pict], _Y_pred, time.time() - t0)
         
     #--------------------------------------------------------------------------------------------------
-    print "======================================================================================================"
+    print("==================================================================="
+          "===================================")
 
 
     # first, train on X with directions only:
@@ -459,7 +471,7 @@ if __name__ == '__main__':
 #                     [10.0/200] + [10.0/200]*10,
 #                     [10.0/20 , 10.0/20]
 #             ]
-#     print "WEIGHTS:", l_weights
+#     print("WEIGHTS:", l_weights
     if nbSWAP_Pixel_Pict_TYPES %2 == 0:
         l_n_states = [NCELL+1, 2]   # 11 states for pixel nodes, 2 states for pictures
         l_n_feat   = [45, 7]        # 45 features for pixels, 7 for pictures
@@ -471,7 +483,7 @@ if __name__ == '__main__':
         ll_n_feat  = [[0, 45], [45  , 180]]
         
     if not sMODELFILE or not os.path.exists(sMODELFILE):
-        print " TRAINING MULTI-TYPE MODEL "
+        print(" TRAINING MULTI-TYPE MODEL ")
         #TRAINING                              
         crf = NodeTypeEdgeFeatureGraphCRF(2,            # How many node types?
                                           l_n_states,   # How many states per type?
@@ -480,7 +492,7 @@ if __name__ == '__main__':
                                           inference_method=INFERENCE
     #                                       , l_class_weight = l_weights 
                                           )
-        print crf
+        print(crf)
         
         ssvm = OneSlackSSVM(crf, inference_cache=50, C=.1, tol=0,
                             max_iter=MAXITER,
@@ -489,8 +501,9 @@ if __name__ == '__main__':
                             #, switch_to='ad3'
                             )
                                                                     
-        print "======================================================================================================"
-        print "YY[0].shape", Y_train[0].shape
+        print("==============================================================="
+              "=======================================")
+        print("YY[0].shape", Y_train[0].shape)
         XX, YY = convertToTwoType(X_train,
                                  X_train_edge_features,    # list of node_feat , edges, edge_feat for pixel nodes
                                  Y_train,
@@ -506,41 +519,45 @@ if __name__ == '__main__':
                 XX, YY = swap_node_types([1,0], [NCELL+1,       2], XX, YY)
             
         
-        print  "\tlabel histogram : ", np.histogram(   np.hstack([y.ravel() for y in YY]), bins=range(14))
+        print( "\tlabel histogram : ", 
+               np.histogram(np.hstack([y.ravel() for y in YY]), 
+                            bins=range(14)))
         
         
-        print "YY[0].shape", YY[0].shape
+        print("YY[0].shape", YY[0].shape)
         crf.initialize(XX, YY)# check if the data is properly built
         sys.stdout.flush()
         
         t0 = time.time()
         ssvm.fit(XX, YY)
-        print "FIT DONE IN %.1fs"%(time.time() - t0)
+        print("FIT DONE IN %.1fs"%(time.time() - t0))
         sys.stdout.flush()
     
         ssvm.alphas = None  
         ssvm.constraints_ = None
         ssvm.inference_cache_ = None    
         if sMODELFILE:
-            print "Saving model in: ", sMODELFILE
+            print("Saving model in: ", sMODELFILE)
             with open(sMODELFILE, "wb") as fd:
                 cPickle.dump(ssvm, fd)
     else:
         #REUSE PREVIOUSLY TRAINED MODEL
-        print " RUSING PREVIOULSLY TRAINED MULTI-TYPE MODEL: ", sMODELFILE
+        print(" RUSING PREVIOULSLY TRAINED MULTI-TYPE MODEL: ", sMODELFILE)
         
         with open(sMODELFILE, "rb") as fd:
-            ssvm = cPickle.load(fd)
+            ssvm = pickle.load(fd)
     
 
-    print "INFERENCE WITH ", INFERENCE
+    print("INFERENCE WITH ", INFERENCE)
     XX_test, YY_test =convertToTwoType(X_test,
                      X_test_edge_features,    # list of node_feat , edges, edge_feat for pixel nodes
                      Y_test,
                      X_test_pict_feat,         #a list of picture_node_features
                      Y_test_pict,              #a list of integers [0,1]
                      nCell=NCELL)     
-    print  "\tlabel histogram (PIXELs and PICTUREs): ", np.histogram(   np.hstack([y.ravel() for y in YY_test]), bins=range(14))
+    print( "\tlabel histogram (PIXELs and PICTUREs): ", 
+           np.histogram(np.hstack([y.ravel() for y in YY_test]), 
+                        bins=range(14)))
     
     
 #     l_constraints = listConstraints(XX_test)
@@ -549,32 +566,32 @@ if __name__ == '__main__':
     if nbSWAP_Pixel_Pict_TYPES %2 == 1:
         XX_test, YY_test, l_constraints = swap_node_types([1,0], [NCELL+1,       2], XX_test, YY_test, l_constraints)
 
-    print "\t- results without constraints (using %s)"%INFERENCE
+    print("\t- results without constraints (using %s)"%INFERENCE)
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test )
     REPORT(YY_test, YY_pred, time.time() - t0)
     
-    print "_"*50
-    print "\t- results exploiting constraints (using ad3+)"
+    print("_"*50)
+    print("\t- results exploiting constraints (using ad3+)")
     ssvm.model.inference_method = "ad3+"
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test, l_constraints )
     REPORT(YY_test, YY_pred, time.time() - t0)
         
     
-    print "_"*50
+    print("_"*50)
     
     if INFERENCE == "ad3":
         ssvm.model.inference_method = "ad3+"
     else:
         ssvm.model.inference_method = "ad3"        
-    print "\t- results without constraints (using %s)"%ssvm.model.inference_method
+    print("\t- results without constraints (using %s)"%ssvm.model.inference_method)
     
     t0 = time.time()
     YY_pred = ssvm.predict( XX_test )
     REPORT(YY_test, YY_pred, time.time() - t0)
 
-    print "DONE"
+    print("DONE")
     
     printConfig()
 
