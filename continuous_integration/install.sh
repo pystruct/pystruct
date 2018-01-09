@@ -77,6 +77,7 @@ elif [[ "$DISTRIB" == "ubuntu" ]]; then
     # Use standard ubuntu packages in their default version
     # except for cython :-/
     $PIP install --user cvxopt
+    $PIP install --user future  # for AD3
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
