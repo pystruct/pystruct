@@ -40,7 +40,7 @@ class ChainCRF(GraphCRF):
         Class weights. If an array-like is passed, it must have length
         n_classes. None means equal class weights.
 
-    directed : boolean, default=False
+    directed : boolean, default=True
         Whether to model directed or undirected connections.
         In undirected models, interaction terms are symmetric,
         so an edge ``a -> b`` has the same energy as ``b -> a``.
