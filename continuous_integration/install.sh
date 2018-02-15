@@ -99,8 +99,7 @@ python -c "import scipy; print('scipy %s' % scipy.__version__)"
 python setup.py build_ext --inplace
 
 #get Transkribus/AD3
-#after the PR is validated, use normal AD3 instead! (written Jan 2018) 
-git clone https://github.com/Transkribus/AD3.git
+git clone https://github.com/andre-martins/AD3
 pushd AD3
 python setup.py install
 popd
