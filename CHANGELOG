@@ -1,3 +1,8 @@
+0.3.8
+===
+- Use of standard latest ad3 code after PR merge
+- update readme accordingly
+
 0.3.7
 ===
 - Making pystruct compatible with Python3 (3.5 actually)

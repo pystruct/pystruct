@@ -11,7 +11,7 @@ This is a fork from Andreas Mueller's [pystruct](https://github.com/pystruct/pys
  and prediction library. In particular, pystruct provides a well-documented tool for researchers as well as non-experts to make use of structured 
  prediction algorithms. And the design tries to stay as close as possible to the interface and conventions of [scikit-learn](http://scikit-learn.org).
 
-The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project and of its companion project [AD3+](https://github.com/Transkribus/AD3) is to extend pystruct along two directions:
+The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project is to extend pystruct along two directions:
  * **supporting hard-logic constraints when predicting**
  * **supporting nodes of different nature in CRF graphs**
  
@@ -26,22 +26,25 @@ What is different in pystruct+?
  
  You can contact the author on [github](https://github.com/jlmeunier/pystruct). Comments and contributions are welcome.
  
- Developed  for the EU project READ. The READ project has received funding 
- from the European Union's Horizon 2020 research and innovation programme 
- under grant agreement No 674943.
+# Credit to EU READ Project
+Developed  for the EU project READ. The READ project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 674943.
  
  
 ## Installation
-Currently, the offered extensions rely on the __*AD3+*__ solver. For learning I mostly used the __*OneSlackSSVM*__ learner, which requires to install cvxopt as well.
+This extension requires **ad3** version 2.2 (so for now, Feb 15th, 2018, you need to get it directly from https://github.com/andre-martins/AD3 )
 
-### For AD3+:
- * get it from https://github.com/Transkribus/AD3
- * install: python setup.py install
+The support of hard-logic constraint requires you to choose as solver "ad3+". This is still ad3 code, but working on a binarized graph.
+
+For learning I mostly used the __*OneSlackSSVM*__ learner, which requires to install **cvxopt** as well.
+
+### Python libraries:
+> pip install install numpy scipy cvxopt pyqpbo scikit-learn nose pytest 
+
+### For AD3:
+ * get it from https://github.com/andre-martins/AD3
+ * install it: 
 
 > python setup.py install
-
-Note: on Windows10 I had trouble with compiling. One dirty workaround then consists in installing the standard AD3, overwritting the python modules with the AD3+ ones
-, and changing the version number in the the lib/site-package python folder to 2.1.2. Told you, dirty trick...
 
 ### For Pystruct+:
  * get the source code from https://github.com/jlmeunier/pystruct
