@@ -15,7 +15,11 @@ The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project is to
  * **supporting hard-logic constraints when predicting**
  * **supporting nodes of different nature in CRF graphs**
  
-The extension of those 2 projects is 100% ascendant compatible with pystruct. Anything that you did with pystruct works the same way with pystruct+. 
+ By-products of this fork are:
+ * Python 3 compatibility
+ * Unit tests passing again
+ 
+The extension is 100% ascendant compatible with pystruct. Anything that you did with pystruct works the same way with pystruct+. 
 So you can refer to the pystruct documentation for the API, examples, etc. ( http://pystruct.github.io )
 
 What is different in pystruct+?
