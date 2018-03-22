@@ -112,7 +112,7 @@ You need now to define the number of node types and the number of features per t
                  , n_types                  #how many node type?
                  , l_n_states               #how many labels   per node type?
                  , l_n_features             #how many features per node type?
-                 , a_n_edge_features        #how many features per edge type? (array-like) shape=(n_type, n_type, n_feature_per_type_pair)
+                 , a_n_edge_features        #how many features per edge type? (array-like) shape=(n_type, n_type) -> n_feature_per_type_pair
                  , inference_method="ad3" 
                  , l_class_weight=None):    #class_weight      per node type or None     <list of array-like> or None
  
