@@ -16,7 +16,7 @@ include_dirs = [np.get_include()]
 with io.open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
     
-setup(name="pystruct",
+setup(name="py3struct",
       version="0.3.8",
       install_requires=["ad3", "numpy"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
