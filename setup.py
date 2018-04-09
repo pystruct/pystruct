@@ -3,12 +3,19 @@ from setuptools.extension import Extension
 import numpy as np
 
 import os
+from os import path
+import io
 
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
+here = path.abspath(path.dirname(__file__))
 include_dirs = [np.get_include()]
 
+# Get the long description from the README file
+with io.open(path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+    
 setup(name="pystruct",
       version="0.3.8",
       install_requires=["ad3", "numpy"],
@@ -18,10 +25,12 @@ setup(name="pystruct",
                 'pystruct.tests.test_models', 'pystruct.tests.test_inference',
                 'pystruct.tests.test_utils'],
       include_package_data=True,
-      description="https://github.com/jlmeunier/pystruct  Structured Learning and Prediction in Python. ",
+      description="Structured Learning and Prediction in Python",
+      long_description=long_description,     
+      long_description_content_type='text/markdown', 
       author="Andreas Mueller",
       author_email="t3kcit@gmail.com",
-      url="http://pystruct.github.io",
+      url="https://github.com/jlmeunier/pystruct",
       license="BSD 2-clause",
       use_2to3=True,
       ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"],
