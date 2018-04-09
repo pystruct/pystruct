@@ -7,18 +7,15 @@
 
 
 # PyStruct+
-This is a fork from Andreas Mueller's [pystruct](https://github.com/pystruct/pystruct) project, which is an easy-to-use structured learning
- and prediction library. In particular, pystruct provides a well-documented tool for researchers as well as non-experts to make use of structured 
- prediction algorithms. And the design tries to stay as close as possible to the interface and conventions of [scikit-learn](http://scikit-learn.org).
+This fork of Andreas Mueller's [pystruct](https://github.com/pystruct/pystruct) project aims at:
+- supporting **Python3**
+- doing **SW maintenance** (e.g. unit tests are passing)
+- providing **2 extensions:**
+  - **supporting nodes of different nature in CRF graphs**
+  - **supporting hard-logic constraints when predicting**
 
-The goal of the [pystruct+](https://github.com/jlmeunier/pystruct) project is to extend pystruct along two directions:
- * **supporting hard-logic constraints when predicting**
- * **supporting nodes of different nature in CRF graphs**
- 
- By-products of this fork are:
- * Python 3 compatibility
- * Unit tests passing again
- 
+Pystruct is an easy-to-use structured learning and prediction library. In particular, pystruct provides a well-documented tool for researchers as well as non-experts to make use of structured prediction algorithms. And the design tries to stay as close as possible to the interface and conventions of [scikit-learn](http://scikit-learn.org).
+
 The extension is 100% ascendant compatible with pystruct. Anything that you did with pystruct works the same way with pystruct+. 
 So you can refer to the pystruct documentation for the API, examples, etc. ( http://pystruct.github.io )
 
@@ -35,7 +32,7 @@ Developed  for the EU project READ. The READ project has received funding from t
  
  
 ## Installation
-This extension requires **ad3** version 2.2 (so for now, Feb 15th, 2018, you need to get it directly from https://github.com/andre-martins/AD3 )
+This extension requires **ad3** latest version (so for now, Feb 15th, 2018, you need to get it directly from https://github.com/andre-martins/AD3 )
 
 The support of hard-logic constraint requires you to choose as solver "ad3+". This is still ad3 code, but working on a binarized graph.
 
