@@ -16,9 +16,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 try:
-    from sklearn.cross_validation import train_test_split
-except ImportError:
     from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
 from sklearn.datasets import load_digits
 
 from pystruct.models import GraphCRF, LatentGraphCRF

@@ -6,9 +6,9 @@ from nose.tools import assert_less
 
 from sklearn.datasets import load_iris
 try:
-    from sklearn.cross_validation import train_test_split
-except ImportError:
     from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF
 from pystruct.learners import SubgradientSSVM
