@@ -181,7 +181,7 @@ def test_class_weights():
     svm_class_weight.fit(X, Y)
 
     assert_greater(f1_score(Y, svm_class_weight.predict(X), average='macro'),
-                   f1_score(Y, svm.predict(X)), average='macro')
+                   f1_score(Y, svm.predict(X), average='macro'))
 
 
 def test_class_weights_rescale_C():
@@ -193,8 +193,7 @@ def test_class_weights_rescale_C():
     X = np.hstack([X, np.ones((X.shape[0], 1))])
     X, Y = X[:170], Y[:170]
 
-    weights = 1. / np.bincount(Y)
-    weights *= len(weights) / np.sum(weights)
+    weights = len(Y) / (np.bincount(Y) * len(np.unique(Y)))
     pbl_class_weight = MultiClassClf(n_features=3, n_classes=3,
                                      class_weight=weights, rescale_C=True)
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10, tol=1e-5)
@@ -202,7 +201,8 @@ def test_class_weights_rescale_C():
 
     try:
         linearsvm = LinearSVC(multi_class='crammer_singer',
-                              fit_intercept=False, class_weight='auto', C=10)
+                              fit_intercept=False, class_weight='balanced',
+                              C=10)
         linearsvm.fit(X, Y)
 
         assert_array_almost_equal(svm_class_weight.w, linearsvm.coef_.ravel(),
