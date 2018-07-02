@@ -31,7 +31,10 @@ import numpy as np
 from sklearn.datasets import dump_svmlight_file
 from sklearn.datasets import fetch_mldata, load_iris, load_digits
 from sklearn.metrics import accuracy_score
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.cross_validation import train_test_split
+except ImportError:
+    from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 from pystruct.models import MultiClassClf

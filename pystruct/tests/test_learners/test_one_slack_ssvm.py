@@ -4,7 +4,10 @@ from tempfile import mkstemp
 from nose.tools import assert_true, assert_equal, assert_less, assert_greater
 
 from sklearn.datasets import load_digits, load_iris
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.cross_validation import train_test_split
+except ImportError:
+    from sklearn.model_selection import train_test_split
 
 from pystruct.models import GridCRF, GraphCRF, BinaryClf
 from pystruct.learners import OneSlackSSVM

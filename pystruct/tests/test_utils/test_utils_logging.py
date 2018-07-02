@@ -2,7 +2,10 @@ import numpy as np
 from tempfile import mkstemp
 
 from sklearn.datasets import load_iris
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.cross_validation import train_test_split
+except ImportError:
+    from sklearn.model_selection import train_test_split
 
 from pystruct.models import GraphCRF
 from pystruct.learners import NSlackSSVM
