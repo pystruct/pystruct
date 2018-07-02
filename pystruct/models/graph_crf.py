@@ -96,10 +96,10 @@ class GraphCRF(CRF):
         # try to set the size of joint_feature if possible
         if self.n_features is not None and self.n_states is not None:
             if self.directed:
-                self.size_joint_feature = (self.n_states * self.n_features +
+                self.size_joint_feature = int(self.n_states * self.n_features +
                                            self.n_states ** 2)
             else:
-                self.size_joint_feature = (
+                self.size_joint_feature = int(
                     self.n_states * self.n_features
                     + self.n_states * (self.n_states + 1) / 2)
 
