@@ -108,7 +108,7 @@ The learner has the same interface as a scikit-learn estimator::
         n_jobs=1, negativity_constraint=None, show_loss_every=0,
         switch_to=None, tol=0.001, verbose=0)
 
-  >>> clf.predict(X_test)
+  >>> clf.predict(X_test) # doctest: +NORMALIZE_WHITESPACE
   array([2, 1, 0, 2, 0, 2, 0, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 0, 0, 2, 1, 0,
          0, 2, 0, 0, 1, 1, 0, 2, 2, 0, 2, 2, 1, 0, 2, 1, 1, 2, 0, 2, 0, 0, 1,
          2, 2, 2, 2, 1, 2, 1, 1, 2, 2, 2, 2, 1, 2])
