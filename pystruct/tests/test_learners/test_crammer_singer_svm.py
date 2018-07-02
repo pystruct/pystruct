@@ -180,8 +180,8 @@ def test_class_weights():
     svm_class_weight = OneSlackSSVM(pbl_class_weight, C=10)
     svm_class_weight.fit(X, Y)
 
-    assert_greater(f1_score(Y, svm_class_weight.predict(X)),
-                   f1_score(Y, svm.predict(X)))
+    assert_greater(f1_score(Y, svm_class_weight.predict(X), average='macro'),
+                   f1_score(Y, svm.predict(X)), average='macro')
 
 
 def test_class_weights_rescale_C():
