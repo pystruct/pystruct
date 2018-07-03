@@ -17,7 +17,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import load_digits
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
+
 from sklearn.svm import SVC
 
 from pystruct.models import BinaryClf

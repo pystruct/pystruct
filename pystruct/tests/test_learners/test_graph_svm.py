@@ -86,5 +86,6 @@ def test_standard_svm_blobs_2d_class_weight():
                                     break_on_bad=False)
     svm_class_weight.fit(X_graphs, Y[:, np.newaxis])
 
-    assert_greater(f1_score(Y, np.hstack(svm_class_weight.predict(X_graphs))),
-                   f1_score(Y, np.hstack(svm.predict(X_graphs))))
+    assert_greater(f1_score(Y, np.hstack(svm_class_weight.predict(X_graphs)),
+                            average='macro'),
+                   f1_score(Y, np.hstack(svm.predict(X_graphs)), average='macro'))
