@@ -11,7 +11,11 @@ import numpy as np
 
 #from sklearn.datasets import fetch_mldata
 from sklearn.datasets import load_digits
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
+
 from sklearn.svm import LinearSVC
 
 from pystruct.models import MultiClassClf

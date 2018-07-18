@@ -22,7 +22,7 @@ def make_edges_2x2():
 
 
 def test_binary_blocks_cutting_plane_latent_node():
-    #testing cutting plane ssvm on easy binary dataset
+    # testing cutting plane ssvm on easy binary dataset
     # we use the LatentNodeCRF without latent nodes and check that it does the
     # same as GraphCRF
     X, Y = generate_blocks(n_samples=3)

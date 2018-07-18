@@ -3,21 +3,14 @@ from setuptools.extension import Extension
 import numpy as np
 
 import os
-from os import path
-import io
 
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
-here = path.abspath(path.dirname(__file__))
 include_dirs = [np.get_include()]
 
-# Get the long description from the README file
-with io.open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
-    
-setup(name="py3struct",
-      version="0.3.8",
+setup(name="pystruct",
+      version="0.2.5",
       install_requires=["ad3", "numpy"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
@@ -26,11 +19,9 @@ setup(name="py3struct",
                 'pystruct.tests.test_utils'],
       include_package_data=True,
       description="Structured Learning and Prediction in Python",
-      long_description=long_description,     
-      long_description_content_type='text/markdown', 
       author="Andreas Mueller",
       author_email="t3kcit@gmail.com",
-      url="https://github.com/jlmeunier/pystruct",
+      url="http://pystruct.github.io",
       license="BSD 2-clause",
       use_2to3=True,
       ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"],
@@ -48,6 +39,7 @@ setup(name="py3struct",
                    'Operating System :: Unix',
                    'Operating System :: MacOS',
                    'Programming Language :: Python :: 2',
+                   'Programming Language :: Python :: 2.6',
                    'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3',
                    'Programming Language :: Python :: 3.6',

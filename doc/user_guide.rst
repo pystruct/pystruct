@@ -83,7 +83,7 @@ Lets say we want to classify the classical iris dataset. There are three classes
 
 We split the data into training and test set::
 
-  >>> from sklearn.cross_validation import train_test_split
+  >>> from sklearn.model_selection import train_test_split
   >>> X_train, X_test, y_train, y_test = train_test_split(
   ...     iris.data, iris.target, test_size=0.4, random_state=0)
 
@@ -108,7 +108,7 @@ The learner has the same interface as a scikit-learn estimator::
         n_jobs=1, negativity_constraint=None, show_loss_every=0,
         switch_to=None, tol=0.001, verbose=0)
 
-  >>> clf.predict(X_test)
+  >>> clf.predict(X_test) # doctest: +NORMALIZE_WHITESPACE
   array([2, 1, 0, 2, 0, 2, 0, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 1, 0, 0, 2, 1, 0,
          0, 2, 0, 0, 1, 1, 0, 2, 2, 0, 2, 2, 1, 0, 2, 1, 1, 2, 0, 2, 0, 0, 1,
          2, 2, 2, 2, 1, 2, 1, 1, 2, 2, 2, 2, 1, 2])
