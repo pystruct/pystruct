@@ -1,38 +1,8 @@
-0.3.8
-===
-- Use of standard latest ad3 code after PR merge
-- update readme accordingly
-
-0.3.7
-===
-- Making pystruct compatible with Python3 (3.5 actually)
-- Making CI happy
-
-0.3.6
-===
-- Taking into account Andreas feedback on the PR
-
-0.3.5
-===
-- Few fixes
-- all tests are passing
-
-0.3.4
-===
-- MIT license
-- all tests are passing except test_latent_node_crf_learning.py (as in 0.2.4)
-
-
-0.3.3
-===
-- ad3 now supports the NodeTypeEdgeFeatureGraphCRF model
-- ad3+ required only for hard logic constraints
-- smaller memory footprint than 0.3
-
-0.3
-===
+0.3.1
+=====
 - Added new model NodeTypeEdgeFeatureGraphCRF
-- Added inference method ad3+ for new model and for supporting hard logic constraints in other CRF models
+- all tests are passing, CIok
+- Python3 compatibility
 
 0.3
 ===
