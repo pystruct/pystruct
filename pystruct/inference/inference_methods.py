@@ -497,11 +497,6 @@ def inference_ad3plus(l_unary_potentials, l_pairwise_potentials, l_edges
         Approximate (usually) MAP variable assignment.
         If relaxed=False, this is a tuple of unary and edge 'marginals'.
 
-    Code written on Feb 2017 to deal with multiple node types, by JL Meunier, 
-    for the EU READ project (grant agreement No 674943)
-    
-    JL Meunier
-        
     """
     import ad3
 #     n_states, pairwise_potentials = \
