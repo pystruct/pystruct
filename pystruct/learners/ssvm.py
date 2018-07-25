@@ -18,13 +18,15 @@ class BaseSSVM(BaseEstimator):
         self.n_jobs = n_jobs
         self.logger = logger
 
-    def predict(self, X):
+    def predict(self, X, constraints=None):
         """Predict output on examples in X.
 
         Parameters
         ----------
         X : iterable
             Traing instances. Contains the structured input objects.
+
+        constraints : None or a list of hard logic constraints
 
         Returns
         -------
@@ -34,12 +36,24 @@ class BaseSSVM(BaseEstimator):
         """
         verbose = max(0, self.verbose - 3)
         if self.n_jobs != 1:
-            prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
-                delayed(inference)(self.model, x, self.w) for x in X)
+            if constraints:
+                prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                    delayed(inference)(self.model, x, self.w, constraints=c)
+                    for x, c in zip(X, constraints))
+            else:
+                prediction = Parallel(n_jobs=self.n_jobs, verbose=verbose)(
+                    delayed(inference)(self.model, x, self.w) for x in X)
             return prediction
         else:
             if hasattr(self.model, 'batch_inference'):
-                return self.model.batch_inference(X, self.w)
+                if constraints:
+                    return self.model.batch_inference(X, self.w,
+                                                      constraints=constraints)
+                else:
+                    return self.model.batch_inference(X, self.w)
+            if constraints:
+                return [self.model.inference(x, self.w, constraints=c)
+                        for x, c in zip(X, constraints)]
             return [self.model.inference(x, self.w) for x in X]
 
     def score(self, X, Y):

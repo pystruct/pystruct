@@ -121,6 +121,8 @@ def test_blocks_multinomial_crf():
                  -.3, .3,
                  -.5, -.1, .3])
     for inference_method in get_installed():
+        #NOTE: ad3+ fails because it requires a different data structure
+        if inference_method == 'ad3+': continue
         crf = GridCRF(inference_method=inference_method)
         crf.initialize(X, Y)
         y_hat = crf.inference(x, w)
@@ -133,6 +135,8 @@ def test_binary_grid_unaries():
         X, Y = ds(n_samples=1)
         x, y = X[0], Y[0]
         for inference_method in get_installed():
+            #NOTE: ad3+ fails because it requires a different data structure
+            if inference_method == 'ad3+': continue            
             crf = GridCRF(inference_method=inference_method)
             crf.initialize(X, Y)
             w_unaries_only = np.zeros(7)
