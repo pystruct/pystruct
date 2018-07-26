@@ -137,19 +137,20 @@ if __name__ == '__main__':
           % accuracy_score(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     print(confusion_matrix(np.hstack(Y_test_flat), np.hstack(Y_pred2)))
     
-    # plot stuff
-    fig, axes = plt.subplots(2, 2)
-    axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
-    axes[0, 0].set_title('Input')
-    y = Y_test[0].astype(np.int)
-    bg = 2 * (y != 0)  # enhance contrast
-    axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
-    axes[0, 1].set_title("Ground Truth")
-    axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-    axes[1, 0].set_title("Prediction w/o edge features")
-    axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
-    axes[1, 1].set_title("Prediction with edge features")
-    for a in axes.ravel():
-        a.set_xticks(())
-        a.set_yticks(())
-    plt.show()
+#     if True:
+#         # plot stuff
+#         fig, axes = plt.subplots(2, 2)
+#         axes[0, 0].imshow(snakes['X_test'][0], interpolation='nearest')
+#         axes[0, 0].set_title('Input')
+#         y = Y_test[0].astype(np.int)
+#         bg = 2 * (y != 0)  # enhance contrast
+#         axes[0, 1].matshow(y + bg, cmap=plt.cm.Greys)
+#         axes[0, 1].set_title("Ground Truth")
+#         axes[1, 0].matshow(Y_pred[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+#         axes[1, 0].set_title("Prediction w/o edge features")
+#         axes[1, 1].matshow(Y_pred2[0].reshape(y.shape) + bg, cmap=plt.cm.Greys)
+#         axes[1, 1].set_title("Prediction with edge features")
+#         for a in axes.ravel():
+#             a.set_xticks(())
+#             a.set_yticks(())
+#         plt.show()
