@@ -31,3 +31,5 @@ You can contact the authors either via the [mailing list](https://groups.google.
 or on [github](https://github.com/pystruct/pystruct).
 
 Currently the project is mostly maintained by Andreas Mueller, but contributions are very welcome.
+
+Jean-Luc Meunier (Naver Labs Europe) contributed a new model and did some maintenance, in the course of the EU READ project. See [READ_Contribution.md](https://github.com/pystruct/pystruct/blob/master/READ_Contribution.md)
