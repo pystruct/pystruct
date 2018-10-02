@@ -278,7 +278,7 @@ class TypedCRF(CRF):
         for typ1 in range(self.n_types):
             for typ2 in range(self.n_types):
                 yield (typ1, typ2)
-        raise StopIteration
+        return
 
     def _get_unary_potentials(self, x, w):
         """Computes unary potentials for x and w.
