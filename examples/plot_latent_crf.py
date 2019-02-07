@@ -15,7 +15,10 @@ cross) in the ground truth.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
 
 from pystruct.models import LatentGridCRF
 from pystruct.learners import LatentSSVM, OneSlackSSVM

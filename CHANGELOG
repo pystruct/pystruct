@@ -1,3 +1,13 @@
+0.3.2
+=====
+- 2 bug fixes
+
+0.3.1
+=====
+- Added new model NodeTypeEdgeFeatureGraphCRF
+- all tests are passing, CIok
+- Python3 compatibility
+
 0.3
 ===
 - Removed libdai bindings that were very experimental.
@@ -15,3 +25,4 @@
 - Speed improvements in loss-augmented inference.
 - Renamed psi to joint_feature, as the joint feature function is sometimes also called phi, with psi referring to the energy.
 - Removed the GLPK dependency: now cvxopt is used to solve linear programs.
+

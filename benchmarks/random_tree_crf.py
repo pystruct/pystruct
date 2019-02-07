@@ -1,7 +1,11 @@
 import numpy as np
 from scipy import sparse
 
-from sklearn.cross_validation import train_test_split
+try:
+    from sklearn.model_selection import train_test_split
+except ImportError:
+    from sklearn.cross_validation import train_test_split
+
 from scipy.sparse.csgraph import minimum_spanning_tree
 
 from pystruct.learners import SubgradientSSVM

@@ -128,7 +128,7 @@ class LatentNodeCRF(GraphCRF):
         else:
             n_input_states = self.n_labels
         self.n_input_states = n_input_states
-        self.size_joint_feature = (n_input_states * self.n_features +
+        self.size_joint_feature = int(n_input_states * self.n_features +
                                    self.n_states * (self.n_states + 1) / 2)
 
     def initialize(self, X, Y):
@@ -493,7 +493,7 @@ class EdgeFeatureLatentNodeCRF(LatentNodeCRF):
 
         if self.latent_node_features:
             unaries = np.dot(features, unary_params.T)
-            n_hidden = x[2]
+            n_hidden = x[-1]
             n_visible = features.shape[0] - n_hidden
         else:
             # we only have features for visible nodes
