@@ -175,8 +175,8 @@ class OneSlackSSVM(BaseSSVM):
             zero_constr = np.zeros(0)
             joint_features_constr = np.zeros((0, n_constraints))
         else:
-            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
             zero_constr = np.zeros(len(self.negativity_constraint))
+            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, joint_features_constr))))
@@ -218,7 +218,7 @@ class OneSlackSSVM(BaseSSVM):
                     y *= beta
                     y[:n_constraints] += -alpha*x[:n_constraints]
                     if self.negativity_constraint is not None:
-                        y[n_constraints:] += alpha*G[n_constraints:,:]*x[n_constraints:]
+                        y[n_constraints:] += alpha*G[n_constraints:,:]*x[:n_constraints]
                 else:
                     if self.negativity_constraint is None:
                         y[:] = -alpha*x + beta*y
