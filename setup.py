@@ -1,17 +1,38 @@
 from setuptools import setup
 from setuptools.extension import Extension
-import numpy as np
+from distutils.command.build import build as build_orig
 
 import os
 
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
-include_dirs = [np.get_include()]
+
+class build(build_orig):
+    """
+    Postpone np.get_include() until extensions are being built
+    https://stackoverflow.com/a/54128391
+    """
+
+    def finalize_options(self):
+        super().finalize_options()
+        __builtins__.__NUMPY_SETUP__ = False
+        import numpy as np
+        for ext_module in self.distribution.ext_modules:
+            if ext_module in ext_modules:
+                ext_module.include_dirs.append(np.get_include())
+
+
+ext_modules = [
+    Extension("pystruct.models.utils", ["src/utils.c"]),
+    Extension("pystruct.inference._viterbi", ["pystruct/inference/_viterbi.c"]),
+]
 
 setup(name="pystruct",
       version="0.3.2",
+      setup_requires=["cython", "numpy"],
       install_requires=["ad3", "numpy"],
+      cmdclass={'build': build},
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',
@@ -24,11 +45,7 @@ setup(name="pystruct",
       url="http://pystruct.github.io",
       license="BSD 2-clause",
       use_2to3=True,
-      ext_modules=[Extension("pystruct.models.utils", ["src/utils.c"],
-                             include_dirs=include_dirs),
-                   Extension("pystruct.inference._viterbi",
-                             ["pystruct/inference/_viterbi.c"],
-                             include_dirs=include_dirs)],
+      ext_modules=ext_modules,
       classifiers=['Intended Audience :: Science/Research',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved',
