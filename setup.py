@@ -1,6 +1,5 @@
 from setuptools import setup
 from setuptools.extension import Extension
-from distutils.command.build import build as build_orig
 
 import os
 
@@ -8,31 +7,35 @@ if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
 
-class build(build_orig):
+class MyExt(Extension, object):
     """
     Postpone np.get_include() until extensions are being built
     https://stackoverflow.com/a/54128391
     """
 
-    def finalize_options(self):
-        super().finalize_options()
-        __builtins__.__NUMPY_SETUP__ = False
+    def __init__(self, *args, **kwargs):
+        self.__include_dirs = []
+        super(MyExt, self).__init__(*args, **kwargs)
+
+    @property
+    def include_dirs(self):
         import numpy as np
-        for ext_module in self.distribution.ext_modules:
-            if ext_module in ext_modules:
-                ext_module.include_dirs.append(np.get_include())
+        return self.__include_dirs + [np.get_include()]
+
+    @include_dirs.setter
+    def include_dirs(self, dirs):
+        self.__include_dirs = dirs
 
 
 ext_modules = [
-    Extension("pystruct.models.utils", ["src/utils.c"]),
-    Extension("pystruct.inference._viterbi", ["pystruct/inference/_viterbi.c"]),
+    MyExt("pystruct.models.utils", ["src/utils.c"]),
+    MyExt("pystruct.inference._viterbi", ["pystruct/inference/_viterbi.c"]),
 ]
 
 setup(name="pystruct",
       version="0.3.2",
       setup_requires=["cython", "numpy"],
       install_requires=["ad3", "numpy"],
-      cmdclass={'build': build},
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',
