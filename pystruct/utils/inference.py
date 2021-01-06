@@ -1,5 +1,5 @@
 import itertools
-from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 import numpy as np
 
