@@ -11,7 +11,7 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
 from ..utils import loss_augmented_inference
