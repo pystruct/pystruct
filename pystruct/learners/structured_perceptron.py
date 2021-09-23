@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 from .ssvm import BaseSSVM
 

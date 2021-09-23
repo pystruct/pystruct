@@ -1,6 +1,6 @@
 
 import numpy as np
-from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
 from sklearn.base import BaseEstimator
 
 from ..utils import inference, objective_primal

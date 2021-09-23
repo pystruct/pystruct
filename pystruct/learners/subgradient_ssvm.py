@@ -1,7 +1,7 @@
 from time import time
 import numpy as np
 
-from sklearn.externals.joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, delayed, cpu_count
 from sklearn.utils import gen_even_slices, shuffle
 
 from .ssvm import BaseSSVM

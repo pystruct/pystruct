@@ -11,7 +11,7 @@ include_dirs = [np.get_include()]
 
 setup(name="pystruct",
       version="0.3.2",
-      install_requires=["ad3", "numpy"],
+      install_requires=["ad3", "numpy", "cvxopt", "future", "Cython", "scikit-learn"],
       packages=['pystruct', 'pystruct.learners', 'pystruct.inference',
                 'pystruct.models', 'pystruct.utils', 'pystruct.datasets',
                 'pystruct.tests', 'pystruct.tests.test_learners',
@@ -42,5 +42,6 @@ setup(name="pystruct",
                    'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3',
                    'Programming Language :: Python :: 3.6',
+                   'Programming Language :: Python :: 3.8'
                    ],
       )

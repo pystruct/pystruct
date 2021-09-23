@@ -12,7 +12,7 @@ import numpy as np
 import cvxopt
 import cvxopt.solvers
 
-from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
 from sklearn.utils import gen_even_slices
 
 from .ssvm import BaseSSVM
