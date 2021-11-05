@@ -175,8 +175,8 @@ class OneSlackSSVM(BaseSSVM):
             zero_constr = np.zeros(0)
             joint_features_constr = np.zeros((0, n_constraints))
         else:
-            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
             zero_constr = np.zeros(len(self.negativity_constraint))
+            joint_features_constr = joint_feature_matrix.T[self.negativity_constraint]
 
         # put together
         G = cvxopt.sparse(cvxopt.matrix(np.vstack((-idy, joint_features_constr))))
@@ -186,12 +186,109 @@ class OneSlackSSVM(BaseSSVM):
         A = cvxopt.matrix(np.ones((1, n_constraints)))
         b = cvxopt.matrix([C])
 
+        _n = len(h)
+        dims = {'l':_n, 'q':[], 's':[]}
         # solve QP model
         cvxopt.solvers.options['feastol'] = 1e-5
         try:
-            solution = cvxopt.solvers.qp(P, q, G, h, A, b)
+            e = cvxopt.matrix(1.0, (_n,1), 'd')
+            X = cvxopt.matrix(joint_feature_matrix)
+
+            def P_func(x, y, alpha=1.0, beta=0.0, trans='N'):
+                # y[:] = alpha * X*(X.T*x) + beta * y
+                cvxopt.blas.gemv(X, X.T*x, y, 'N', alpha, beta)
+
+            def A_func(x, y, alpha=1.0, beta=0.0, trans='N'):
+                '''
+                Function to compute y = alpha*A*x + beta*y, where A = e^{T},
+                so it reduce to addition or identity
+                '''
+                if trans == 'N':
+                    y[:] = alpha*sum(x) + beta*y
+                else:
+                    y[:] = alpha*x + beta*y
+
+            def G_func(x, y, alpha=1.0, beta=0.0, trans='N'):
+                '''
+                Function to compute y = alpha*G*x + beta*y as a mechanism to exploit
+                structure.  It is known that G = [-I ; X[index]] compose of two block
+                with the top block being a negative identity.
+                '''
+                if trans == 'N':
+                    y *= beta
+                    y[:n_constraints] += -alpha*x[:n_constraints]
+                    if self.negativity_constraint is not None:
+                        y[n_constraints:] += alpha*G[n_constraints:,:]*x[:n_constraints]
+                else:
+                    if self.negativity_constraint is None:
+                        y[:] = -alpha*x + beta*y
+                    else:
+                        # can probably be optimized further
+                        y[:] = alpha*G.T*x + beta*y
+
+            def KKT_func(W):
+                '''
+                Solves the KKT system 
+                [  P   e^{T}      G^{T} ] [   x   ]   [   bx   ]
+                [  e     0        0     ] [   y   ]   [   by   ]
+                [  G     0    -(W^{T}W) ] [   z   ] = [   bz   ]
+
+                via a full reduction on the simultaneuous equations.
+                Currently does not take advantage of the scenario where
+                negative_constraint is None, such that 
+                P + G^{T}(W^{T}W)^{-1}G = P + (W^{T}W)^{-1}
+                                        = XX^{T} + (W^{T}W)^{-1}
+                '''
+
+                d, di = W['d']**2, W['di']**2
+                LHS = P + G.T*cvxopt.spdiag(di)*G
+
+                # pre-factorization of a general matrix
+                ipiv = cvxopt.matrix(0, (_n+1, 1), 'i')
+                # cvxopt.lapack.getrf(LHS, ipiv)
+                cvxopt.lapack.potrf(LHS)
+
+                def f(x, y, z):
+                    '''
+                    Find the solution to x,y,z via the following three linear system
+                    y = [e^{T}Q^{-1}e]^{-1} [e^{T}Q^{-1}rx - by]
+                    x = Q^{-1}(rx - by)
+                    z = (W^{T}W)^{-1} (Gx - bz)
+                    where Q = P + G^{T}(W^{T}W)^{-1}G
+                    and rx = bx + G^{T}(W^{T}W)^{-1}bz
+                    '''
+                    # Although we can represent the block below as
+                    # x += G.T*cvxopt.mul(di, z)
+                    # we use G_func defined above so that there is more room to optimize
+
+                    # solve intermediate
+                    rx = cvxopt.mul(di, z)
+                    G_func(rx, x, alpha=1.0, beta=1.0, trans='T')
+                    rx = +x
+                    # cvxopt.lapack.getrs(LHS, ipiv, rx)
+                    cvxopt.lapack.potrs(LHS, rx)
+
+                    # solve for y
+                    v = +e
+                    # cvxopt.lapack.getrs(LHS, ipiv, v)
+                    cvxopt.lapack.potrs(LHS, v)
+                    y[:] = (sum(rx) - y)/sum(v)
+                    # solve for x
+                    x -= y
+                    # cvxopt.lapack.getrs(LHS, ipiv, x)
+                    cvxopt.lapack.potrs(LHS, x)
+
+                    # solve for z
+                    G_func(x, z, alpha=1.0, beta=-1.0)
+                    z[:] = cvxopt.mul(W['di'], z)
+                return f
+
+            # cvxopt.solvers.options['show_progress'] = True
+            solution = cvxopt.solvers.coneqp(P_func, q, G_func, h, dims, A_func, b, kktsolver=KKT_func)
+            # solution = cvxopt.solvers.qp(P, q, G, h, A, b)
         except ValueError:
             solution = {'status': 'error'}
+
         if solution['status'] != "optimal":
             print("regularizing QP!")
             P = cvxopt.matrix(np.dot(joint_feature_matrix, joint_feature_matrix.T)
