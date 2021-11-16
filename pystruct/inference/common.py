@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import numpy as np
 
 
@@ -49,3 +50,12 @@ def compute_energy(unary_potentials, pairwise_potentials, edges, labels):
     for edge, pw in zip(edges, pairwise_potentials):
         energy += pw[labels[edge[0]], labels[edge[1]]]
     return energy
+
+
+def parallel(func, x, n_jobs=None):
+    p = mp.Pool(n_jobs)
+    y = p.map(func, x)
+    p.close()
+    p.join()
+
+    return y
