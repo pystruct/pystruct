@@ -12,7 +12,8 @@ def test_chain():
                                 ('ad3', {'branch_and_bound': True}),
                                 ('ogm', {'alg': 'dyn'}),
                                 ('ogm', {'alg': 'dd'}),
-                                ('ogm', {'alg': 'trw'})])
+                                ('ogm', {'alg': 'trw'}),
+                                'max-product'])
     n_states = 3
     n_nodes = 10
 

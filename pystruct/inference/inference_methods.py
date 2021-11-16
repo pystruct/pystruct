@@ -285,6 +285,12 @@ def inference_lp(unary_potentials, pairwise_potentials, edges, relaxed=False,
                  return_energy=False, **kwargs):
     """Inference with build-in LP solver using cvxopt backend.
 
+    This solver is very slow and only meant as a fallback or very small models.
+    The main advantage is that it will always give the exact result to the linear
+    programming relaxation, and it will return pairwise marginals if no integral
+    solution is found.
+    In most cases, the AD3 solver is preferrable.
+
     Parameters
     ----------
     unary_potentials : nd-array, shape (n_nodes, n_states)
